@@ -231,12 +231,11 @@ public class mio_icif_block_foam extends BaseEntityBlock {
         BlockState replacedState = level.getBlockState(pos);
 
         if (replacedState.getBlock() instanceof mio_icif_block_wire) {
-            if (!replacedState.getValue(mio_icif_block_wire.FOAMLOGGED)) {
+            if (!mio_icif_block_wire.foamlogged(replacedState)) {
                 // 0.1.11.29: a scaffolded cable keeps its scaffold, and the foam drives the water out
-                boolean reinforced = this.defaultBlockState().getValue(REINFORCED) || replacedState.getValue(mio_icif_block_wire.FOAM_REINFORCED);
+                boolean reinforced = this.defaultBlockState().getValue(REINFORCED) || mio_icif_block_wire.foamReinforced(replacedState);
                 BlockState newWireState = replacedState
-                    .setValue(mio_icif_block_wire.FOAMLOGGED, true)
-                    .setValue(mio_icif_block_wire.FOAM_REINFORCED, reinforced)
+                    .setValue(mio_icif_block_wire.CASING, com.miophas.singularity_iteration.common.block.wire.WireCasing.foamed(reinforced))
                     .setValue(mio_icif_block_wire.WATERLOGGED, false);
                 if (!level.isClientSide) {
                     level.setBlockAndUpdate(pos, newWireState);

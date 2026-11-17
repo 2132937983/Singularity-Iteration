@@ -73,13 +73,12 @@ public final class Round11529GameTests {
     public static void foamDrivesWaterOut(GameTestHelper h) {
         BlockPos at = new BlockPos(1, 2, 1);
         BlockState wet = block("wiring/cable/block_tin_cable").defaultBlockState();
-        wet = wet.setValue(flag(wet, "waterlogged"), true).setValue(flag(wet, "foam_reinforced"), true);
+        wet = Round33GameTests.casing(wet.setValue(flag(wet, "waterlogged"), true), "scaffold");
         h.setBlock(at, wet);
         use(h, at, item("build/block_construction_foam"));
         BlockState now = h.getBlockState(at);
-        h.assertTrue(now.getValue(flag(now, "foamlogged")), "foamed: " + now);
+        h.assertTrue("reinforced_foam".equals(Round33GameTests.casingOf(now)), "foamed, scaffold kept as reinforced foam: " + now);
         h.assertTrue(!now.getValue(flag(now, "waterlogged")) && now.getFluidState().isEmpty(), "no water left: " + now);
-        h.assertTrue(now.getValue(flag(now, "foam_reinforced")), "scaffold kept");
         h.succeed();
     }
 
@@ -90,12 +89,12 @@ public final class Round11529GameTests {
         h.setBlock(at, block("wiring/cable/block_superconducting_cable"));
         h.assertTrue(!(boolean) call(h.getBlockEntity(at), "canColor", DyeColor.RED), "superconductor dye");
         BlockState foamed = block("wiring/cable/block_tin_cable_1").defaultBlockState();
-        foamed = foamed.setValue(flag(foamed, "foamlogged"), true);
+        foamed = Round33GameTests.casing(foamed, "foam");
         h.setBlock(at, foamed);
         use(h, at, item("item_tool_cutter"));
         h.assertTrue(h.getBlockState(at).getBlock() == block("wiring/cable/block_tin_cable_1"), "the cutter does not strip through foam");
         BlockState bare = block("wiring/cable/block_tin_cable").defaultBlockState();
-        h.setBlock(at, bare.setValue(flag(bare, "foamlogged"), true));
+        h.setBlock(at, Round33GameTests.casing(bare, "foam"));
         use(h, at, item("resource/item_rubber"));
         h.assertTrue(h.getBlockState(at).getBlock() == block("wiring/cable/block_tin_cable"), "rubber does not insulate through foam");
         h.succeed();
@@ -121,7 +120,9 @@ public final class Round11529GameTests {
                 if (model.endsWith("_wall")) walls++;
                 if (model.endsWith("scaffold_iron")) scaffolds++;
                 var when = p.getAsJsonObject().getAsJsonObject("when");
-                if (model.endsWith("_wall")) h.assertTrue("true".equals(when.get("foam_hardened").getAsString()), f + ": a wall under wet foam");
+                // 0.1.11.33: one part per drawn casing value (no wall under wet foam, no disguised value draws a casing)
+                String value = when.get("casing").getAsString();
+                h.assertTrue(!value.startsWith("disguised") && (!model.endsWith("_wall") || value.endsWith("_wall")), f + ": casing " + value + " draws " + model);
             }
             h.assertTrue(casing == 5 && walls == 2 && scaffolds == 1, f + ": casing parts " + casing + " walls " + walls + " scaffolds " + scaffolds);
         }

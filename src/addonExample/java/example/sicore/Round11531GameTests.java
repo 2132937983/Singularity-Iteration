@@ -11,7 +11,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -28,7 +27,6 @@ public final class Round11531GameTests {
     private Round11531GameTests() {}
 
     private static Block block(String path) { return BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", path)); }
-    private static BooleanProperty flag(BlockState state, String name) { return (BooleanProperty) state.getBlock().getStateDefinition().getProperty(name); }
     private static BlockState facing(String id, Direction side) {
         var state = block(id).defaultBlockState();
         return state.setValue((DirectionProperty) state.getBlock().getStateDefinition().getProperty("facing"), side);
@@ -64,13 +62,13 @@ public final class Round11531GameTests {
     @GameTest(template = "empty", batch = "round11531_fair", timeoutTicks = 60)
     public static void meltLeavesScaffold(GameTestHelper h) {
         BlockState wire = block("wiring/cable/block_tin_cable_1").defaultBlockState();
-        meltInto(h, wire.setValue(flag(wire, "foam_reinforced"), true), "build/block_scaffold_iron");
+        meltInto(h, Round33GameTests.casing(wire, "scaffold"), "build/block_scaffold_iron");
     }
 
     @GameTest(template = "empty", batch = "round11531_fair", timeoutTicks = 60)
     public static void meltLeavesWall(GameTestHelper h) {
         BlockState wire = block("wiring/cable/block_tin_cable_1").defaultBlockState();
-        wire = wire.setValue(flag(wire, "foamlogged"), true).setValue(flag(wire, "foam_hardened"), true).setValue(flag(wire, "foam_reinforced"), true);
+        wire = Round33GameTests.casing(wire, "construction_wall");
         meltInto(h, wire, "build/block_construction_wall");
     }
 

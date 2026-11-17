@@ -117,7 +117,7 @@ public final class DisguiseModels {
 
     private static boolean disguised(BlockState state) {
         if (state.getBlock() instanceof mio_icif_block_foam) return state.getValue(mio_icif_block_foam.DISGUISED);
-        return state.hasProperty(mio_icif_block_wire.DISGUISED) && state.getValue(mio_icif_block_wire.DISGUISED);
+        return state.hasProperty(mio_icif_block_wire.CASING) && mio_icif_block_wire.disguised(state);
     }
 
     /** The disguise shown at {@code pos} (null for none): a foam's, or a foamlogged wire's. */
@@ -127,7 +127,7 @@ public final class DisguiseModels {
         if (be instanceof mio_icif_block_foam_entity foam && foam.hasDisguise()) block = foam.getDisguisedBlock();
         else if (be instanceof mio_icif_wire wire && wire.hasDisguise()) {
             BlockState state = wire.getBlockState();
-            if (state.hasProperty(mio_icif_block_wire.FOAMLOGGED) && state.getValue(mio_icif_block_wire.FOAMLOGGED)) block = wire.getDisguisedBlock();
+            if (state.hasProperty(mio_icif_block_wire.CASING) && mio_icif_block_wire.foamlogged(state)) block = wire.getDisguisedBlock();
         }
         return block == null || block == Blocks.AIR ? null : block.defaultBlockState();
     }

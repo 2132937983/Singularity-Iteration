@@ -1,6 +1,17 @@
 # 奇点迭代变更日志
 
-累计记录 `0.1.7.16` 至 `0.1.11.32` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+累计记录 `0.1.7.16` 至 `0.1.11.33` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+
+## 0.1.11.33
+
+基于 0.1.11.32。电缆系统审计的 W4（用户裁定 D4）：导线包覆的方块状态重构，旧存档自动迁移。
+
+- 导线的四个布尔属性 `foamlogged`、`foam_reinforced`、`foam_hardened`、`disguised` 合并为一个属性 `casing`（`WireCasing`），10 个取值：`none`（裸线）、`scaffold`（铺在铁脚手架里）、`foam` / `reinforced_foam`（湿泡沫 / 强化湿泡沫）、`cf_wall` / `construction_wall`（凝固后的 CF 墙 / 建筑墙，导线仍在里面导电），以及后四种各自的 `disguised_*`（用伪装器伪装过）。以前的布尔组合里有一半是不可能出现的状态（没有泡沫却凝固、没有泡沫却伪装），每种导线 2048 个状态，现在 1280 个（检测、断路器、保险丝等带 `active` 的特殊导线翻倍）。
+- 旧存档迁移：区块读取时（`ChunkSerializer.read`）在调色板解码前把旧的四个布尔量换算成 `casing`；单个方块状态 NBT 的读取（`NbtUtils.readBlockState`：结构、蓝图建造器读取的 litematic / 结构文件、下落方块等）同样换算。不迁移的话，方块状态解码会丢掉不认识的属性，旧世界里所有导线的脚手架、泡沫和墙体都会消失。不可能的旧组合换算成最接近的合法值（没有泡沫时：有强化标记的算脚手架，否则算裸线）。
+- 方块状态 JSON：17 个导线方块状态的包覆部件改由新工具 `tools/gen_cable_casing_blockstates.py` 生成（每个画出外观的取值一个部件，伪装取值不画包覆，由伪装模型包装器画伪装方块），`--check` 校验无差异。
+- 代码：`mio_icif_block_wire` 提供 `casing(state)`、`foamlogged(state)`、`foamReinforced(state)`、`foamHardened(state)`、`disguised(state)`、`withCasing(state, casing)`；泡沫方块、泡沫喷枪、伪装器、扳手、导线方块实体、伪装模型、截图场景都改用这些方法。行为不变。
+- 截图场景 `cables` 的 `6_casings` 改为 10 种包覆逐一摆放（伪装的四种伪装成石头），另加检测导线的湿泡沫与 CF 墙；已核对外观。
+- 测试：新增 `Round11533GameTests` 3 项（`casing` 是 10 个取值、旧属性不存在、每种导线 1280 个状态；16 种旧布尔组合经 `NbtUtils.readBlockState` 换算正确且其他属性保留；把真实区块写出、调色板改回旧格式、经 `ChunkSerializer.read` 读回后包覆仍在）。`Round11529`、`Round11531`、`Round32` 改用 `casing`（测试工具 `Round33GameTests.casing` / `casingOf`）。
 
 ## 0.1.11.32
 

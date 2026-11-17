@@ -1232,14 +1232,8 @@ public final class CaptureDirector {
                 BlockPos at = new BlockPos(x, -60, 4);
                 level.setBlock(at, block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
                 var st = level.getBlockState(at);
-                var def = st.getBlock().getStateDefinition();
-                var reinforced = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_reinforced");
-                var foam = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged");
-                var hard = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_hardened");
-                if (x >= 1) st = st.setValue(reinforced, true);
-                if (x >= 2) st = st.setValue(foam, true);
-                if (x >= 3) st = st.setValue(hard, true);
-                level.setBlock(at, st, 3);
+                var casing = new com.miophas.singularity_iteration.common.block.wire.WireCasing[]{com.miophas.singularity_iteration.common.block.wire.WireCasing.NONE, com.miophas.singularity_iteration.common.block.wire.WireCasing.SCAFFOLD, com.miophas.singularity_iteration.common.block.wire.WireCasing.REINFORCED_FOAM, com.miophas.singularity_iteration.common.block.wire.WireCasing.CONSTRUCTION_WALL}[x];
+                level.setBlock(at, com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire.withCasing(st, casing), 3);
             }
             place(level, new BlockPos(6, -60, 4), "wiring/block_wireless_power_transmission_node", Direction.NORTH);
             place(level, new BlockPos(9, -60, 4), "wiring/block_wireless_power_transmission_node", Direction.NORTH);
@@ -2468,9 +2462,8 @@ public final class CaptureDirector {
 
     private static void disguiseWire(ServerLevel level, BlockPos at, String look) {
         var state = block("wiring/cable/block_tin_cable_1").defaultBlockState();
-        var def = state.getBlock().getStateDefinition();
-        state = state.setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("disguised"), true);
-        if (look != null) state = state.setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged"), true);
+        // 0.1.11.33: a disguise needs foam (casing); without a look the cable stays bare
+        if (look != null) state = com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire.withCasing(state, com.miophas.singularity_iteration.common.block.wire.WireCasing.DISGUISED_FOAM);
         level.setBlock(at, state, 3);
         if (look != null && level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire w)
             w.setDisguisedBlockId(ResourceLocation.withDefaultNamespace(look));
@@ -2520,21 +2513,20 @@ public final class CaptureDirector {
         shot(40, "cables/3_close_right");
         server(1, sp -> { if (superconductorAt != null) sp.teleportTo(sp.serverLevel(), superconductorAt.getX() + 0.5, -58.6, superconductorAt.getZ() - 1.6, 0, 40); });
         shot(40, "cables/5_superconducting");
-        // 0.1.11.29: casings: tin under wet foam, wet reinforced foam, set; a detector cable under wet foam and set
+        // 0.1.11.33: every casing value on an insulated tin cable (the disguised ones look like stone), and a detector
+        // cable under wet foam and set
         server(1, sp -> {
             var level = sp.serverLevel();
-            String[] ids = {"wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable",
-                "wiring/block_eu_detector_cable", "wiring/block_eu_detector_cable"};
-            boolean[][] f = {{true, false, false}, {true, true, false}, {true, false, true}, {true, false, false}, {true, false, true}};
-            for (int i = 0; i < ids.length; i++) {
-                var st = block(ids[i]).defaultBlockState();
-                var def = st.getBlock().getStateDefinition();
-                st = st.setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged"), f[i][0])
-                    .setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_reinforced"), f[i][1])
-                    .setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_hardened"), f[i][2]);
-                level.setBlock(new BlockPos(-4 + i * 2, -60, -2), st, 3);
+            var values = com.miophas.singularity_iteration.common.block.wire.WireCasing.values();
+            for (int i = 0; i < values.length + 2; i++) {
+                boolean detector = i >= values.length;
+                var casing = detector ? (i == values.length ? com.miophas.singularity_iteration.common.block.wire.WireCasing.FOAM : com.miophas.singularity_iteration.common.block.wire.WireCasing.CF_WALL) : values[i];
+                var at = new BlockPos(-11 + i * 2, -60, -2);
+                level.setBlock(at, com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire.withCasing(block(detector ? "wiring/block_eu_detector_cable" : "wiring/cable/block_tin_cable_1").defaultBlockState(), casing), 3);
+                if (casing.disguised && level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire w)
+                    w.setDisguisedBlockId(ResourceLocation.withDefaultNamespace("stone"));
             }
-            sp.teleportTo(level, 0.5, -58.5, -5.5, 0, 30);
+            sp.teleportTo(level, 0.5, -56.5, -13.5, 0, 22);
         });
         shot(40, "cables/6_casings");
         String[][] pages = {

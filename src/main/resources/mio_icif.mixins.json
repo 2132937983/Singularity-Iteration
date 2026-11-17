@@ -10,7 +10,9 @@
     "LargeStackSlotMixin",
     "LivingEquipEnergyMixin",
     "ArmorEquipSoundMixin",
-    "LevelEntityTickGuardMixin"
+    "LevelEntityTickGuardMixin",
+    "ChunkSerializerWireCasingMixin",
+    "NbtUtilsWireCasingMixin"
   ],
   "client": [
     "client.ItemInHandReequipMixin",

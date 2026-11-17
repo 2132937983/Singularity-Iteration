@@ -197,7 +197,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
 
         // 0.1.11.29: a cable inside foam or a wall is hit on the block's outer face: the clicked face toggles (the arms
         // cannot be told apart there, so a blocked face could not be opened again)
-        if (state.getValue(mio_icif_block_wire.FOAMLOGGED)) {
+        if (mio_icif_block_wire.foamlogged(state)) {
             boolean blocked = wireEntity.isDirectionBlocked(clickedFace);
             if (blocked) wireEntity.unblockDirection(clickedFace); else wireEntity.blockDirection(clickedFace);
             ((mio_icif_block_wire) state.getBlock()).refreshConnections(level, pos);

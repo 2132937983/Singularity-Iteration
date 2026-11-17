@@ -3342,7 +3342,7 @@
   "gui.mio_icif.chunk_loader.status.starting": "Starting...",
   "gui.mio_icif.chunk_loader.status.active": "Active: %1$s chunks",
   "gui.mio_icif.chunk_loader.status.limited": "Limit: %1$s of %2$s chunks loaded",
-  "gui.mio_icif.chunk_loader.status.no_energy": "No energy",
+  "gui.mio_icif.chunk_loader.status.no_energy": "No energy: stopped (its chunk unloads unless a player is near)",
   "gui.mio_icif.chunk_loader.status.empty": "No chunk selected",
   "gui.mio_icif.chunk_loader.status.config_off": "Chunk loaders are off on this server",
   "gui.mio_icif.chunk_loader.status.admin_off": "Disabled by an administrator",
@@ -5359,5 +5359,12 @@
   "gui.mio_icif.chunk_loader.cell.self": "Own chunk [%s, %s]",
   "gui.mio_icif.chunk_loader.cell.selected": "Selected [%s, %s] · click to remove",
   "gui.mio_icif.chunk_loader.cell.unselected": "Not selected [%s, %s] · click to select",
-  "jade.mio_icif.chunk_loader": "Chunks: %s held / %s selected · %s · %s EU/t"
+  "jade.mio_icif.chunk_loader": "Chunks: %s held / %s selected · %s · %s EU/t",
+  "gui.mio_icif.chunk_loader.status.grace": "No energy: holding only its own chunk for %s more",
+  "gui.mio_icif.chunk_loader.state.grace": "no energy (own chunk kept)",
+  "gui.mio_icif.grid_panel.alarm.loader_grace": "Chunk loader out of energy",
+  "gui.mio_icif.grid_panel.alarm.loader_stopped": "Chunk loader stopped",
+  "gui.mio_icif.grid_panel.alarm.loader_restored": "Chunk loader running again",
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "No-energy grace (minutes)",
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "Minutes a loader out of energy keeps its own chunk and takes all its chunks back when energy returns. 0: it stops at once."
 }

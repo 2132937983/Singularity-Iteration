@@ -142,6 +142,8 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
     public int getForcedChunkCount() { return data.getCount() > 9 ? data.get(9) : 0; }
     /** 0.1.11.36: the EU paid per tick now. */
     public int getEnergyPerTick() { return data.getCount() > 10 ? data.get(10) : 0; }
+    /** 0.1.11.37: seconds of the no-energy grace left (0 outside it). */
+    public int getGraceSecondsLeft() { return data.getCount() > 11 ? data.get(11) : 0; }
 
     public boolean isChunkLoaded(int dx, int dz) {
         int radius = 4;

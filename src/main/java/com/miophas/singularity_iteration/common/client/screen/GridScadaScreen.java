@@ -456,12 +456,13 @@ public class GridScadaScreen extends AbstractContainerScreen<EnergyTerminalMenu>
         g.drawString(font, Component.translatable(K + "alarms", s.alarms.size()), x + 4, top + 4, PanelCharts.ACCENT, false);
         int lineH = 20, lines = (bottom - top - 18) / lineH;
         alarmScroll = Math.min(alarmScroll, Math.max(0, s.alarms.size() - lines));
-        String[] types = {"trip", "reclose", "lockout", "reset", "fuse", "melt", "insulation", "explosion", "shortfall"};
+        String[] types = {"trip", "reclose", "lockout", "reset", "fuse", "melt", "insulation", "explosion", "shortfall",
+            "loader_grace", "loader_stopped", "loader_restored"};   // 0.1.11.37
         for (int i = 0; i < lines && i + alarmScroll < s.alarms.size(); i++) {
             var a = s.alarms.get(i + alarmScroll);
             int y = top + 16 + i * lineH;
             String type = types[Math.min(types.length - 1, a.type())];
-            int colour = switch (type) { case "reclose", "reset" -> PanelCharts.up(); case "trip", "fuse", "shortfall" -> PanelCharts.WARN; default -> PanelCharts.down(); };
+            int colour = switch (type) { case "reclose", "reset", "loader_restored" -> PanelCharts.up(); case "trip", "fuse", "shortfall", "loader_grace" -> PanelCharts.WARN; default -> PanelCharts.down(); };
             long ago = Math.max(0, s.gameTime - a.time()) / 20;
             g.drawString(font, font.plainSubstrByWidth(Component.translatable(K + "alarm." + type).getString(), half - 70), x + 4, y, colour, false);
             PanelCharts.right(g, font, Component.translatable(K + "ago", DspUi.duration(ago)).getString(), x + half - 4, y, PanelCharts.DIM);

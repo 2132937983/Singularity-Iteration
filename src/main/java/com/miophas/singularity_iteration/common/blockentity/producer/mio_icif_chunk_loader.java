@@ -91,8 +91,10 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
     public static final int STATUS_OWNER_OFFLINE = 7;
     public static final int STATUS_CHUNK_LIMIT = 8;
     public static final int STATUS_LOADER_LIMIT = 9;
+    /** 0.1.11.37 (audit D1): out of energy, holding only its own chunk (free) until the grace ends. */
+    public static final int STATUS_GRACE = 10;
     public static final String[] STATUS_NAMES = {"starting", "active", "limited", "no_energy", "empty", "config_off",
-        "admin_off", "owner_offline", "chunk_limit", "loader_limit"};
+        "admin_off", "owner_offline", "chunk_limit", "loader_limit", "grace"};
     /** Rules are re-checked this often (ticks) in the steady state. */
     private static final int POLICY_INTERVAL = 20;
 
@@ -109,6 +111,10 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
     private boolean ticketUpdate;
     private boolean destroyed;
     private long paidTick = Long.MIN_VALUE;
+    /** 0.1.11.37: game time the energy ran out (grace running), or {@link Long#MIN_VALUE}. Saved, so a restart does not renew it. */
+    private long noEnergySince = Long.MIN_VALUE;
+    /** 0.1.11.37: the grace ran out; no new grace until the loader has paid again (else it entered one every tick). Saved. */
+    private boolean graceSpent;
 
     @Nullable private UUID owner;
     private String ownerName = "";
@@ -139,6 +145,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
                 case 8 -> status;
                 case 9 -> active ? forcedChunks.size() : 0;
                 case 10 -> (int) Math.min(Integer.MAX_VALUE, active ? cost(forcedChunks.size()) : 0);   // 0.1.11.36: EU/t paid now
+                case 11 -> graceSecondsLeft();   // 0.1.11.37
                 default -> 0;
             };
         }
@@ -149,7 +156,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         @Override
         public int getCount() { return DATA_COUNT; }
     };
-    public static final int DATA_COUNT = 11;
+    public static final int DATA_COUNT = 12;
 
     /** Recomputes the selection bits of the screen map (after a selection change only). */
     private void refreshChunkBits() {
@@ -404,7 +411,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         long amount = cost(forcedChunks.size());
         if (amount > 0 && (energyStorage.consumeEnergyInternal(amount, true) != amount
                 || energyStorage.consumeEnergyInternal(amount, false) != amount)) {
-            stop(server, STATUS_NO_ENERGY);
+            noEnergy(server);
             return;
         }
         setStatus(verdict);
@@ -415,7 +422,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         boolean ticking = ChunkLoaderPolicy.randomTicks();
         long amount = cost(granted.size());
         var payment = amount == 0 ? null : energyStorage.scexReserveInternal(amount);
-        if (amount != 0 && payment == null) { stop(server, STATUS_NO_ENERGY); return; }
+        if (amount != 0 && payment == null) { noEnergy(server); return; }
         LongOpenHashSet selected = new LongOpenHashSet(granted);
         ticketUpdate = true;
         boolean complete = false;
@@ -446,6 +453,12 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
             setLit(active);
             if (active) {
                 if (parked) { parked = false; ChunkLoaderPolicy.unpark(server, worldPosition); }
+                if (graceSpent) { graceSpent = false; }
+                if (noEnergySince != Long.MIN_VALUE) {   // 0.1.11.37: the energy is back within the grace
+                    noEnergySince = Long.MIN_VALUE;
+                    com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.record(server,
+                        com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.Type.LOADER_RESTORED, worldPosition, forcedChunks.size(), 0);
+                }
                 setStatus(verdict);
             } else setStatus(STATUS_NO_ENERGY);
             setChanged();
@@ -458,6 +471,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
     }
 
     private void stop(ServerLevel server, int reason, boolean touchBlock) {
+        if (noEnergySince != Long.MIN_VALUE) { noEnergySince = Long.MIN_VALUE; setChanged(); }
         // nothing held and the same reason as last tick: nothing to do (no allocation, no lookups)
         if (!active && forcedChunks.isEmpty() && status == reason) return;
         int before = active ? forcedChunks.size() : 0;
@@ -478,6 +492,56 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         }
         if (before > 0) ChunkLoaderPolicy.budgetFreed(server.getServer(), owner);
     }
+
+    /**
+     * 0.1.11.37 (chunk loader audit D1): the energy ran out. With a grace ({@code noEnergyGraceMinutes}) the loader keeps
+     * only its own chunk, free, so it keeps ticking and takes all its chunks back the tick the energy returns
+     * ({@link #syncTickets} runs every tick while it is not active); at the end of the grace it stops. Before 0.1.11.37 it
+     * stopped at once and released its own chunk too: with nobody near, it never ticked again, whatever the energy.
+     */
+    private void noEnergy(ServerLevel server) {
+        int minutes = ChunkLoaderPolicy.graceMinutes();
+        long now = server.getGameTime();
+        if (minutes <= 0 || graceSpent || !loadedChunks.contains(selfKey())) { stop(server, STATUS_NO_ENERGY); return; }
+        if (noEnergySince == Long.MIN_VALUE) {
+            noEnergySince = now;
+            int before = active ? forcedChunks.size() : 0;
+            holdOwnChunkOnly(server);
+            setLit(false);
+            com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.record(server,
+                com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.Type.LOADER_NO_ENERGY, worldPosition, before, minutes);
+            if (before > 1) ChunkLoaderPolicy.budgetFreed(server.getServer(), owner);
+            setChanged();
+        } else if (now - noEnergySince >= minutes * 1200L) {
+            graceSpent = true;
+            stop(server, STATUS_NO_ENERGY);
+            com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.record(server,
+                com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.Type.LOADER_STOPPED, worldPosition, 0, minutes);
+            return;
+        }
+        setStatus(STATUS_GRACE);
+    }
+
+    /** Releases every ticket but the one of the loader's own chunk (placing that one if it is missing). */
+    private void holdOwnChunkOnly(ServerLevel server) {
+        long self = selfKey();
+        for (long key : new LongOpenHashSet(forcedChunks)) if (key != self) removeTicket(server, key);
+        if (!forcedChunks.contains(self)) {
+            ChunkPos chunk = fromChunkKey(self);
+            OwnedChunkTickets.CONTROLLER.forceChunk(server, worldPosition, chunk.x, chunk.z, true, forcedTicking);
+            forcedChunks.add(self);
+        }
+        active = false;
+    }
+
+    /** Seconds of the no-energy grace left (0 outside it). */
+    private int graceSecondsLeft() {
+        if (noEnergySince == Long.MIN_VALUE || level == null) return 0;
+        long left = ChunkLoaderPolicy.graceMinutes() * 1200L - (level.getGameTime() - noEnergySince);
+        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, left / 20));
+    }
+
+    public boolean inGrace() { return noEnergySince != Long.MIN_VALUE; }
 
     private void setStatus(int value) {
         status = value;
@@ -522,6 +586,21 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         long amount = cost(retained.size());
         // No external callback occurs between this quote and whole-EU debit.
         if (!retained.contains(selfKey()) || energyStorage.consumeEnergyInternal(amount, true) != amount) {
+            // 0.1.11.37 (audit D1): too little energy at start-up: keep the own chunk for the grace (the time already spent
+            // in it before the restart counts), so the loader can take its chunks back when its energy comes
+            int minutes = ChunkLoaderPolicy.graceMinutes();
+            long now = level.getGameTime();
+            boolean grace = !granted.isEmpty() && retained.contains(selfKey()) && minutes > 0 && !graceSpent
+                && (noEnergySince == Long.MIN_VALUE || now - noEnergySince < minutes * 1200L);
+            if (grace) {
+                for (long key : retained) if (key != selfKey()) helper.removeTicket(worldPosition, key, ticking);
+                forcedChunks.clear(); forcedChunks.add(selfKey()); forcedTicking = ticking; active = false;
+                if (noEnergySince == Long.MIN_VALUE) noEnergySince = now;
+                policyGeneration = ChunkLoaderPolicy.generation(); policyCountdown = POLICY_INTERVAL;
+                setStatus(STATUS_GRACE);
+                setChanged();
+                return;
+            }
             helper.removeAllTickets(worldPosition); active = false;
             stop(server, granted.isEmpty() ? verdict : STATUS_NO_ENERGY, false);
             return;
@@ -634,6 +713,8 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         }
         if (adminDisabled) tag.putBoolean("AdminDisabled", true);
         if (parked) tag.putBoolean("Parked", true);
+        if (noEnergySince != Long.MIN_VALUE) tag.putLong("NoEnergySince", noEnergySince);   // 0.1.11.37
+        if (graceSpent) tag.putBoolean("GraceSpent", true);
     }
 
     @Override
@@ -658,6 +739,8 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         ownerSeen = tag.getLong("OwnerSeen");
         adminDisabled = tag.getBoolean("AdminDisabled");
         parked = tag.getBoolean("Parked");
+        noEnergySince = tag.contains("NoEnergySince", Tag.TAG_LONG) ? tag.getLong("NoEnergySince") : Long.MIN_VALUE;
+        graceSpent = tag.getBoolean("GraceSpent");
         rulesDirty = true;
         // the loader always keeps its own chunk (tickets elsewhere would outlive an unloaded loader)
         if (!loadedChunks.isEmpty() && !loadedChunks.contains(selfKey()) && loadedChunks.size() < MAX_CHUNKS) loadedChunks.add(selfKey());

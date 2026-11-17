@@ -610,6 +610,12 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     public static final ModConfigSpec.BooleanValue CHUNK_LOADERS_OWNER_ONLY_EDIT = CHUNK_LOADER_BUILDER
         .comment("true = only the owner (and operators) may change the chunk selection. true = 仅所有者（及管理员）可修改区块选择。")
         .translation("mio_icif.configuration.chunk_loaders.ownerOnlyEdit").define("ownerOnlyEdit", false);
+    // 0.1.11.37 (chunk loader audit D1)
+    public static final ModConfigSpec.IntValue CHUNK_LOADERS_GRACE_MINUTES = CHUNK_LOADER_BUILDER
+        .comment("Minutes a loader out of energy keeps its own chunk (free) and comes back with all its chunks when energy returns;",
+                 "after that it stops and its chunk unloads. Also after a restart. 0 = stop at once (as before 0.1.11.37).",
+                 "加载器没电时免费保持自身区块的分钟数，期间来电即恢复全部区块；超时才停下，其区块随之卸载。重启后同样适用。0 = 立即停下（0.1.11.37 之前的行为）。")
+        .translation("mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes").defineInRange("noEnergyGraceMinutes", 10, 0, 1440);
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder CHUNK_LOADER_POP = BUILDER.pop();
 

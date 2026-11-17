@@ -24,7 +24,9 @@ public final class GridAlarms {
     private GridAlarms() {}
 
     public enum Type { BREAKER_TRIP, BREAKER_RECLOSE, BREAKER_LOCKOUT, BREAKER_RESET, FUSE_BLOWN, CABLE_MELTED, INSULATION_BURNED,
-        MACHINE_EXPLODED, CRITICAL_SHORTFALL }
+        MACHINE_EXPLODED, CRITICAL_SHORTFALL,
+        /** 0.1.11.37: a chunk loader ran out of energy (keeps its own chunk), stopped after the grace, got its chunks back. */
+        LOADER_NO_ENERGY, LOADER_STOPPED, LOADER_RESTORED }
 
     /** One alarm: game time, type, block position ({@link BlockPos#asLong()}), detail (a cause ordinal or a count) and a value. */
     public record Alarm(long time, Type type, long pos, int detail, double value) { }

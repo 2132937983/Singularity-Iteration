@@ -237,6 +237,7 @@ public class Singularity_Iteration {
             Singularity_Iteration_Config.CHUNK_LOADERS_EU_PER_CHUNK.get(),
             Singularity_Iteration_Config.CHUNK_LOADERS_RANDOM_TICKS.get(),
             Singularity_Iteration_Config.CHUNK_LOADERS_OWNER_ONLY_EDIT.get());
+        com.miophas.singularity_iteration.common.energy.ChunkLoaderPolicy.setGraceMinutes(Singularity_Iteration_Config.CHUNK_LOADERS_GRACE_MINUTES.get());   // 0.1.11.37
     }
 
     private void onConfigReload(net.neoforged.fml.event.config.ModConfigEvent event) {

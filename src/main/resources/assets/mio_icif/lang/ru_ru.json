@@ -3431,7 +3431,7 @@
   "gui.mio_icif.chunk_loader.status.starting": "Запуск...",
   "gui.mio_icif.chunk_loader.status.active": "Активен: чанков — %1$s",
   "gui.mio_icif.chunk_loader.status.limited": "Лимит: загружено %1$s из %2$s чанков",
-  "gui.mio_icif.chunk_loader.status.no_energy": "Нет энергии",
+  "gui.mio_icif.chunk_loader.status.no_energy": "Нет энергии: остановлен (чанк выгрузится, если рядом нет игрока)",
   "gui.mio_icif.chunk_loader.status.empty": "Чанк не выбран",
   "gui.mio_icif.chunk_loader.status.config_off": "Загрузчики чанков отключены на этом сервере",
   "gui.mio_icif.chunk_loader.status.admin_off": "Отключено администратором",
@@ -5359,5 +5359,12 @@
   "gui.mio_icif.chunk_loader.cell.self": "Свой чанк [%s, %s]",
   "gui.mio_icif.chunk_loader.cell.selected": "Выбран [%s, %s] · нажмите, чтобы убрать",
   "gui.mio_icif.chunk_loader.cell.unselected": "Не выбран [%s, %s] · нажмите, чтобы выбрать",
-  "jade.mio_icif.chunk_loader": "Чанки: удержано %s / выбрано %s · %s · %s EU/t"
+  "jade.mio_icif.chunk_loader": "Чанки: удержано %s / выбрано %s · %s · %s EU/t",
+  "gui.mio_icif.chunk_loader.status.grace": "Нет энергии: держит только свой чанк, ещё %s",
+  "gui.mio_icif.chunk_loader.state.grace": "нет энергии (свой чанк удержан)",
+  "gui.mio_icif.grid_panel.alarm.loader_grace": "У загрузчика чанков нет энергии",
+  "gui.mio_icif.grid_panel.alarm.loader_stopped": "Загрузчик чанков остановлен",
+  "gui.mio_icif.grid_panel.alarm.loader_restored": "Загрузчик чанков снова работает",
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "Отсрочка без энергии (минуты)",
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "Сколько минут загрузчик без энергии держит свой чанк и возвращает все чанки, когда энергия появится. 0: сразу останавливается."
 }

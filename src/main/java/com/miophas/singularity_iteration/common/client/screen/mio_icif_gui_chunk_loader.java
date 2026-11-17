@@ -250,6 +250,10 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
     private Component statusText(int status) {
         String[] names = com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_NAMES;
         String name = status >= 0 && status < names.length ? names[status] : "starting";
+        if (status == com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_GRACE) {   // 0.1.11.37
+            int left = menu.getGraceSecondsLeft();
+            return Component.translatable("gui.mio_icif.chunk_loader.status.grace", String.format(java.util.Locale.ROOT, "%d:%02d", left / 60, left % 60));
+        }
         return Component.translatable("gui.mio_icif.chunk_loader.status." + name, menu.getForcedChunkCount(), menu.getLoadedChunkCount());
     }
 

@@ -56,7 +56,7 @@ public final class MachineItemData {
             "scex_layer_ready", "scex_mining_route", "scex_pipe_advance", "scex_mining_cost",
             "scex_mining_payment", "scex_pending_mining_drops"));
         // 0.1.10.11: the next placer becomes the owner; an admin lock stays with the loader
-        TYPE_STRIP.put("com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader", Set.of("loadedChunks", "active",
+        TYPE_STRIP.put("com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader", Set.of("loadedChunks", "active", "NoEnergySince", "GraceSpent",
             "Owner", "OwnerName", "OwnerSeen", "Parked"));
         TYPE_STRIP.put("com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyPart", Set.of(
             "coreX", "coreY", "coreZ", "structureCompleted", "structureComplete"));

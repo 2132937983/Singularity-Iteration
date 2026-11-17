@@ -1550,7 +1550,7 @@
   "gui.mio_icif.chunk_loader.status.starting": "起動中…",
   "gui.mio_icif.chunk_loader.status.active": "稼働中: %1$s チャンク",
   "gui.mio_icif.chunk_loader.status.limited": "上限: %2$s チャンク中 %1$s を読み込み",
-  "gui.mio_icif.chunk_loader.status.no_energy": "エネルギー不足",
+  "gui.mio_icif.chunk_loader.status.no_energy": "電力なしで停止（近くにプレイヤーがいなければチャンクはアンロードされる）",
   "gui.mio_icif.chunk_loader.status.empty": "チャンク未選択",
   "gui.mio_icif.chunk_loader.status.config_off": "このサーバーではチャンクローダーが無効です",
   "gui.mio_icif.chunk_loader.status.admin_off": "管理者により停止中",
@@ -5359,5 +5359,12 @@
   "gui.mio_icif.chunk_loader.cell.self": "自分のチャンク [%s, %s]",
   "gui.mio_icif.chunk_loader.cell.selected": "選択中 [%s, %s] · クリックで解除",
   "gui.mio_icif.chunk_loader.cell.unselected": "未選択 [%s, %s] · クリックで選択",
-  "jade.mio_icif.chunk_loader": "チャンク：保持 %s / 選択 %s · %s · %s EU/t"
+  "jade.mio_icif.chunk_loader": "チャンク：保持 %s / 選択 %s · %s · %s EU/t",
+  "gui.mio_icif.chunk_loader.status.grace": "電力なし：自分のチャンクだけを保持、残り %s",
+  "gui.mio_icif.chunk_loader.state.grace": "電力なし（自分のチャンクを保持）",
+  "gui.mio_icif.grid_panel.alarm.loader_grace": "チャンクローダーの電力切れ",
+  "gui.mio_icif.grid_panel.alarm.loader_stopped": "チャンクローダー停止",
+  "gui.mio_icif.grid_panel.alarm.loader_restored": "チャンクローダー復帰",
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "電力切れの猶予（分）",
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "電力切れの間、自分のチャンクを保持する分。その間に電力が戻ればすべてのチャンクを取り戻す。0：すぐ停止。"
 }

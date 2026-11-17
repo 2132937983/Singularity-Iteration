@@ -137,12 +137,14 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
         boolean transferred = false;
 
         // the link has no range limit: an unloaded target is skipped instead of loading its chunk every tick
-        if (targetPosition != null && level.isLoaded(targetPosition)) {
+        // 0.1.11.3: a node never sends to itself (the transfer below read the target before draining the node, so a
+        // node linked to its own position gained what it sent every tick)
+        if (targetPosition != null && !targetPosition.equals(worldPosition) && level.isLoaded(targetPosition)) {
             IEnergyStorageAccess storage = getEnergyStorage();
             // whatever is buffered moves (it used to wait for a full 32768 EU, so a weakly fed node never sent)
             if (storage.getAmount() > 0) {
                 net.minecraft.world.level.block.entity.BlockEntity targetBE = level.getBlockEntity(targetPosition);
-                if (targetBE != null) {
+                if (targetBE != null && targetBE != this) {
                     if (targetBE instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity absBE) {
                         com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage targetStorage = absBE.getEnergyStorageInternal();
                         long targetCurrent = targetStorage.getAmount();
@@ -152,7 +154,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
                             long toTransfer = Math.min(Math.min(transferSpeed, storage.getAmount()), targetMax - targetCurrent);
                             long used = storage.useEnergy(toTransfer, false);   // credit only what was actually taken
                             if (used > 0) {
-                                targetStorage.setEnergy(targetCurrent + used);
+                                targetStorage.setEnergy(targetStorage.getAmount() + used);   // read again after the debit
                                 transferred = true;
                             }
                         }
@@ -192,6 +194,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
     }
 
     public void setTargetPosition(BlockPos target) {
+        if (target != null && target.equals(worldPosition)) target = null;   // 0.1.11.3: no link to itself
         this.targetPosition = target;
         setChanged();
         if (level != null && !level.isClientSide()) {
@@ -223,6 +226,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
             int y = tag.getInt("TargetY");
             int z = tag.getInt("TargetZ");
             targetPosition = new BlockPos(x, y, z);
+            if (targetPosition.equals(worldPosition)) targetPosition = null;   // 0.1.11.3: a saved link to itself is dropped
         } else {
             targetPosition = null;
         }
@@ -249,6 +253,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
             int y = tag.getInt("TargetY");
             int z = tag.getInt("TargetZ");
             targetPosition = new BlockPos(x, y, z);
+            if (targetPosition.equals(worldPosition)) targetPosition = null;   // 0.1.11.3: a saved link to itself is dropped
         } else {
             targetPosition = null;
         }

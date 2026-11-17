@@ -9,8 +9,8 @@ import java.util.Objects;
 /**
  * <p><b>EN:</b> Deterministic fair-share distributor for the smart grid mode.
  *
- * <p>This class replaces the packet priority walk of {@link FractionalDistributor}
- * when {@link IndependentEnergyMode#fairDistribution()} is on. It does not use
+ * <p>The only distributor of the native pass since 0.1.11.32 (the packet priority walk, distributionMode=legacy, was
+ * removed). It does not use
  * a random number. It does not depend on the order of receivers. It gives the
  * same result for the same input.
  *
@@ -285,10 +285,10 @@ public final class FairShareDistributor {
 
     /**
      * One positive delivery. {@code domain} and {@code entry} identify the
-     * route (the same values as {@link FractionalDistributor.Delivery}).
+     * route (the domain and the entry in it).
      * {@code voltage} is the packet that the source pushes to this receiver,
-     * for overvoltage effects: {@code min(packet, max(debit, min(room, budget)))},
-     * where room and budget are the values at the start of the round.
+     * for overvoltage effects: {@code min(packet, max(debit, budget))} (0.1.11.31: the room of the receiver no longer counts),
+     * where the budget is the value at the start of the round.
      */
     public record Delivery(int domain, int entry, int source, int receiver,
                            EnergyAmount credit, EnergyAmount pathLoss, double voltage) {
@@ -391,6 +391,9 @@ public final class FairShareDistributor {
         // JA: 各（供給元、受信側）の組で損失が最小の経路を選ぶ。同点ならドメインと項目の順で最初の経路（決定的）。linkDomain < 0 = 経路なし。
         int[][] linkDomain = new int[sourceCount][receiverCount], linkEntry = new int[sourceCount][receiverCount];
         long[][] linkLoss = new long[sourceCount][receiverCount];
+        // 0.1.11.31 (cable audit): the route's conductor loss breaks a tie, so without line loss (every effective loss 0)
+        // the shorter route still wins over the first one found in another domain
+        long[][] linkMilli = new long[sourceCount][receiverCount];
         for (int i = 0; i < sourceCount; i++) Arrays.fill(linkDomain[i], -1);
         for (int d = 0; d < domains.size(); d++) {
             var domain = domains.get(d);
@@ -407,8 +410,10 @@ public final class FairShareDistributor {
                     if (milli < 0) throw new IllegalArgumentException("Negative route loss");
                     if (loss == LineLoss.PROPORTIONAL && milli >= den) continue; // The loss takes the full packet.
                     long effective = loss == LineLoss.LOSSLESS ? 0 : milli;
-                    if (linkDomain[source][r] < 0 || effective < linkLoss[source][r]) {
+                    if (linkDomain[source][r] < 0 || effective < linkLoss[source][r]
+                            || effective == linkLoss[source][r] && milli < linkMilli[source][r]) {
                         linkDomain[source][r] = d; linkEntry[source][r] = entry; linkLoss[source][r] = effective;
+                        linkMilli[source][r] = milli;
                     }
                 }
             }
@@ -523,9 +528,12 @@ public final class FairShareDistributor {
                 long credit = pairCredit[source][r];
                 if (credit <= 0) continue;
                 long pathLoss = pairLoss[source][r];
-                double pushed = fromCoarse(Math.min(initialRoom[r], initialBudget[source])).toDouble();
+                // 0.1.11.31 (cable audit D3, user decision): the packet is the source's, capped by what it has to give this
+                // tick; the room of the receiver no longer lowers it (a nearly full machine let an over-voltage source
+                // through unharmed, an empty one did not)
+                double offered = fromCoarse(initialBudget[source]).toDouble();
                 double debit = fromCoarse(credit + pathLoss).toDouble();
-                double voltage = Math.min((double) packet[source], Math.max(debit, pushed));
+                double voltage = Math.min((double) packet[source], Math.max(debit, offered));
                 deliveries.add(new Delivery(linkDomain[source][r], linkEntry[source][r], source, r,
                     fromCoarse(credit), fromCoarse(pathLoss), voltage));
             }

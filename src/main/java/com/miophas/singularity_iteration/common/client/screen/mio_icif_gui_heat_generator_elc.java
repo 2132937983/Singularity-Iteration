@@ -136,25 +136,7 @@ public class mio_icif_gui_heat_generator_elc extends mio_icif_screen<com.miophas
         }
     }
 
-    @Override
-    public void containerTick() {
-        super.containerTick();
-
-        // 直接从方块实体同步数据到客户端
-        HeatGeneratorElcMenu menu = this.getMenu();
-        if (menu != null && menu.getBlockEntity() != null) {
-            var be = menu.getBlockEntity();
-            menu.data.set(0, be.isWorking() ? 1 : 0);
-            menu.data.set(1, be.getEnergyStorage().getEnergyStored());
-            menu.data.set(2, be.getEnergyStorage().getMaxEnergyStored());
-            menu.data.set(3, (int) be.getHeatStored());
-            menu.data.set(4, (int) be.getHeatCapacity());
-            menu.data.set(5, be.getTemperature());
-            menu.data.set(6, be.getCoilCount());
-            menu.data.set(7, be.getTransmitHeat());
-            menu.data.set(8, be.getMaxHeatEmittedPerTick());
-        }
-    }
-
-
+    // 0.1.11.3: no containerTick override. It copied the client block entity's values (never ticked on the client and
+    // only updated when the chunk loaded) over the values the menu syncs from the server each tick, so the progress,
+    // energy and heat bars stayed frozen or flickered.
 }

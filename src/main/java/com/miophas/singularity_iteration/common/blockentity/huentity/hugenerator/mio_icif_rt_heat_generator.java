@@ -82,10 +82,16 @@ private int currentHeatRate = 0;
         return side == null || side == getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING) ? this : null;
     }
 
+    /** 0.1.11.20: the chart of the heat offered (HU/t) for the screen. */
+    private final com.miophas.singularity_iteration.common.energy.Recorder chart = new com.miophas.singularity_iteration.common.energy.Recorder();
+    public com.miophas.singularity_iteration.common.energy.Recorder getChart() { return chart; }
+    public int getPellets() { return Math.max(0, cachedPelletCount); }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_rt_heat_generator blockEntity) {
         if (level.isClientSide()) {
             return;
         }
+        blockEntity.chart.tick(level.getGameTime(), blockEntity.currentHeatRate);
 
         if (com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.enabled()) {
             int count = blockEntity.countPellets();

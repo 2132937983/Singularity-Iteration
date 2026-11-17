@@ -26,6 +26,13 @@ public final class TacticalMapClient {
     /** Ticks the key has been held since a press that may become the holo table, -1 when none. */
     private static int held = -1;
     private static final int HOLD_TICKS = 8;
+    /** 0.1.11.40: the key opened or closed a screen and is still held; its repeats wait for the release. */
+    private static boolean waitRelease;
+
+    /** Called when the holo table closes: a still held map key must not open the map. */
+    public static void waitForRelease() {
+        waitRelease = com.miophas.singularity_iteration.common.client.armory.HeldKeys.down(KEY);
+    }
 
     @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
@@ -41,19 +48,24 @@ public final class TacticalMapClient {
         @SubscribeEvent
         static void tick(ClientTickEvent.Post event) {
             Minecraft mc = Minecraft.getInstance();
+            if (waitRelease && !com.miophas.singularity_iteration.common.client.armory.HeldKeys.down(KEY)) waitRelease = false;
             while (KEY != null && KEY.consumeClick()) {
                 if (mc.player == null || mc.screen != null) continue;
+                // 0.1.11.40 (U-2): a key repeat is no new press: it neither restarts the hold timer nor reopens what the key closed
+                if (held >= 0 || waitRelease) continue;
                 if (!FcsState.active(SuitModuleType.HOLOMAP)) {
                     mc.player.displayClientMessage(Component.translatable("gui.mio_icif.tactical_map.need_unit"), true);
+                    waitRelease = true;
                     continue;
                 }
                 if (com.miophas.singularity_iteration.common.client.armory.HoloTable.available()) { held = 0; continue; }
                 mc.setScreen(new TacticalMapScreen());
+                waitRelease = true;
             }
             // 0.1.10.2: tap = tactical map, hold = holo table
             if (held >= 0) {
                 if (mc.player == null || mc.screen != null) { held = -1; return; }
-                if (KEY.isDown()) {
+                if (com.miophas.singularity_iteration.common.client.armory.HeldKeys.down(KEY)) {
                     if (++held >= HOLD_TICKS) {
                         held = -1;
                         com.miophas.singularity_iteration.common.client.armory.HoloTable.open();

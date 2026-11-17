@@ -509,7 +509,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         if (!canWork()) { stopWork(); return; }
         isWorking = true;
         if (progress < maxProgress) return;
-        if (performMining()) progress = 0;
+        if (performMining()) { progress = 0; countFinishedOperation(); }   // 0.1.11.3: closes the work cycle
         else stopWork();
         ContainerToTank.markUnsaved(this);
     }

@@ -8,5 +8,10 @@
     "id": "mio_icif:resource/item_silver_ingot"
   },
   "eu_cost": 500000,
-  "duration": 1
+  "duration": 1,
+  "process": {
+    "kind": "nuclear",
+    "from": "Sn",
+    "to": "Ag"
+  }
 }

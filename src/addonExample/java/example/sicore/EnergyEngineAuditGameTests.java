@@ -2,15 +2,11 @@ package example.sicore;
 
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentTransformerBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.DomainDistributor;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.FractionalDistributor;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.RouteCosts;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.TransformerAccounting;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.TransformerBatch;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -55,6 +51,10 @@ public final class EnergyEngineAuditGameTests {
         });
     }
 
+    /**
+     * 0.1.11.31 (cable audit D3): the packet is the source's, not the receiver's room, so a 2048 EU source destroys an
+     * HV storage block with 1 EU of room as it destroys an empty one (it survived before, as long as it was nearly full).
+     */
     @GameTest(template = "empty", batch = "energy_engine_effect_audit", timeoutTicks = 45)
     public static void characterizeHighTierSourceWithOneEuDemand(GameTestHelper h) {
         BlockPos sourcePos = new BlockPos(1, 1, 1), sinkPos = sourcePos.east();
@@ -65,11 +65,11 @@ public final class EnergyEngineAuditGameTests {
         sink.getEnergyStorageInternal().setStored(sink.getEnergyStorageInternal().getCapacity() - 1);
         h.runAfterDelay(20, () -> {
             long debit = 100_000 - source.getEnergyStorageInternal().getAmount();
-            h.assertTrue(debit == 1, "Partial-demand audit did not transfer exactly 1 EU: " + debit);
-            h.assertTrue(h.getLevel().getBlockEntity(h.absolutePos(sinkPos)) == sink,
-                "Nominal 2048 EU source destroyed a sink after delivering only 1 EU");
+            h.assertTrue(debit <= 1, "Partial-demand audit took more than the 1 EU of room: " + debit);
+            h.assertTrue(h.getLevel().getBlockEntity(h.absolutePos(sinkPos)) != sink,
+                "A 2048 EU packet into an HV storage block with 1 EU of room did not destroy it");
             System.out.println("ENERGY_AUDIT partial_demand nominalPacket=2048 actualDebit=" + debit
-                + " sinkSurvived=" + (h.getLevel().getBlockEntity(h.absolutePos(sinkPos)) == sink) + " ic2ExpectedSurvival=true");
+                + " sinkSurvived=" + (h.getLevel().getBlockEntity(h.absolutePos(sinkPos)) == sink));
             h.setBlock(sourcePos, Blocks.AIR);
             h.setBlock(sinkPos, Blocks.AIR);
         });
@@ -123,47 +123,24 @@ public final class EnergyEngineAuditGameTests {
             increments.add(current - previous); previous = current;
         }
         void report(GameTestHelper h) {
-            h.assertTrue(increments.size() == 40 && previous > startSink, "Audit did not observe a live 40-tick circuit");
-            long expected = low * sources.size();
-            h.assertTrue(previous - startSink == expected * 40, "Boost throughput: expected " + expected + " EU/t");
-            if (sources.size() == 4)
-                h.assertTrue(increments.stream().allMatch(v -> v == low * 4), "Sufficient four-source boost still skips ticks");
-            else h.assertTrue(increments.stream().filter(v -> v == 0).count() == 30, "Single-source boost changed its packet threshold");
             System.out.println("ENERGY_AUDIT boost low=" + low + " sources=" + sources.size()
                 + " samples=" + increments.size() + " sourceDebit=" + (startSources - sourceTotal())
                 + " bufferDelta=" + (buffer() - startBuffer) + " sinkCredit=" + (previous - startSink)
                 + " zeroTicks=" + increments.stream().filter(v -> v == 0).count()
                 + " average=" + ((previous - startSink) / 40.0) + " increments=" + increments);
+            h.assertTrue(increments.size() == 40 && previous > startSink, "Audit did not observe a live 40-tick circuit");
+            long expected = low * sources.size();
+            h.assertTrue(previous - startSink == expected * 40, "Boost throughput: expected " + expected + " EU/t");
+            if (sources.size() == 4)
+                h.assertTrue(increments.stream().allMatch(v -> v == low * 4), "Sufficient four-source boost still skips ticks");
+            // 0.1.11.32 (fair share only): one source passes through the step-up every tick; the legacy walk buffered a
+            // full packet and skipped 30 of 40 ticks (the same throughput)
+            else h.assertTrue(increments.stream().allMatch(v -> v == low), "Single-source boost skips ticks: " + increments);
         }
     }
 
     private static void numericAudit(GameTestHelper h) {
-        RouteCosts direct = new RouteCosts() {
-            public boolean reaches(int receiver) { return receiver == 0; }
-            public long lossMilliTo(int receiver) { return 0; }
-        };
         for (long low : new long[]{512, 2048}) {
-            var quotes = new ArrayList<DomainDistributor.Source>();
-            var amounts = new ArrayList<EnergyAmount>();
-            for (int i = 0; i < 4; i++) {
-                quotes.add(new DomainDistributor.Source(low * 8, low, false));
-                amounts.add(EnergyAmount.of(low * 8));
-            }
-            var domains = List.of(new DomainDistributor.Domain(new int[]{0, 1, 2, 3},
-                List.of(direct, direct, direct, direct), new int[][]{{0}, {0}, {0}, {0}}));
-            var integers = DomainDistributor.allocateTraced(quotes, domains, new int[]{0}, new long[]{low * 8}, new Random(1));
-            // Fractional room forces the exact planner instead of its integer fast path.
-            var fractions = FractionalDistributor.allocateTraced(quotes, amounts, domains, new int[]{0},
-                List.of(EnergyAmount.fromDouble(low * 8 - 0.5)), List.of(), new Random(1));
-            long debit = 0;
-            EnergyAmount exactDebit = EnergyAmount.ZERO;
-            for (int i = 0; i < 4; i++) { debit += integers.debit(i); exactDebit = exactDebit.add(fractions.debit(i)); }
-            h.assertTrue(debit == integers.credit(0) + integers.dissipated(), "Integer allocator violated conservation");
-            h.assertTrue(exactDebit.equals(fractions.credit(0).add(fractions.dissipated())), "Exact allocator violated conservation");
-            h.assertTrue(integers.credit(0) == low * 4 && fractions.credit(0).equals(EnergyAmount.of(low * 4)),
-                "Receiver did not accept all four sources in integer and fractional paths");
-            System.out.println("ENERGY_AUDIT four_sources low=" + low + " integralCredit=" + integers.credit(0)
-                + " fractionalCredit=" + fractions.credit(0).toDouble() + " ic2SufficientRoomExpected=" + low * 4);
             var batch = TransformerBatch.allocate(new TransformerAccounting.Configuration(low, false), low * 8,
                 new long[]{low * 16}, new int[]{0});
             h.assertTrue(batch.debit() == batch.credit(0) + batch.dissipated(), "Transformer batch violated conservation");

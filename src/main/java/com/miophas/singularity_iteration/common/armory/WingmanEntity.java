@@ -20,7 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -44,7 +43,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,7 +54,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>The Wingman wears the real items of one Armory suit (four armor pieces, main hand, off
  *       hand). The items are moved, not copied. Thus the Wingman has the armor value, the
  *       weapon damage, the enchantments and the electric armor protection of the suit, as for a
- *       player who wears it. The base values are the player base values (20 health, attack
+ *       player who wears it (0.1.11.39: the suit modules, such as the deflector, work only for players). The base values are the player base values (20 health, attack
  *       damage 1, attack speed 4).</li>
  *   <li>The items never disappear. Recall, owner logout, owner in a different dimension, low
  *       power and a removal (for example {@code /kill}) put the items back into the Armory. If
@@ -65,27 +63,29 @@ import org.jetbrains.annotations.Nullable;
  *   <li>A hit that would kill the Wingman sets it to 1 health. It then returns to the Armory
  *       and is invulnerable on the way. Only void damage and {@code /kill} remove it at once.</li>
  *   <li>The owner and the other Wingmen of the owner cannot hurt it.</li>
- *   <li>Upkeep: {@link #UPKEEP_EU} EU per second. The electric pieces of the suit pay first (the
- *       full-set pool applies). If they cannot pay, the Armory pays when it is loaded. After
- *       {@link #LOW_POWER_LIMIT} seconds without power, the Wingman returns.</li>
+ *   <li>Upkeep: {@link WingmanConfig#upkeepEuPerSecond()} EU per second (default 160). The electric pieces of the suit pay
+ *       first (the full-set pool applies), then (0.1.11.41) the reserve the Armory charged at deployment, then the Armory
+ *       when it is loaded; the unused reserve goes back to the Armory. After
+ *       {@link WingmanConfig#lowPowerSeconds()} seconds without power (default 5), the Wingman returns.</li>
  * </ul>
  */
 @SuppressWarnings("null")
 public class WingmanEntity extends Mob {
-    /** EU per second of flight. */
-    public static final long UPKEEP_EU = 160;
-    /** EU of one Fulton recovery (paid by the Armory). */
-    public static final long FULTON_EU = 4000;
-    /** Seconds without power before the Wingman returns. */
-    public static final int LOW_POWER_LIMIT = 5;
-    /** Mobs that a Fulton recovery cannot take (data pack tag). */
-    public static final TagKey<EntityType<?>> FULTON_IMMUNE = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
-        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "wingman/fulton_immune"));
 
-    public static final byte ACTIVE = 0, RETURNING = 1, LIFTING = 2;
+    /** States; 2 was LIFTING (the Fulton lift, removed in 0.1.11.43): a saved one loads as ACTIVE. */
+    public static final byte ACTIVE = 0, RETURNING = 1;
 
     private static final double CRUISE = 0.9, COMBAT = 1.15, ACCEL = 0.14;
-    private static final double SCAN_RANGE = 24, LEASH = 28, CATCH_UP = 64;
+    /** Follow-range attribute (the live target ranges are {@link WingmanConfig#scanRange()} and {@link WingmanConfig#leash()}). */
+    private static final double SCAN_RANGE = 24;
+    /**
+     * Distance to the owner beyond which the Wingman jumps to its place (0.1.11.50, decision four A: 96, was 64; at high
+     * speed it flies the owner's velocity and stays close, the jump is the last resort, and it lands with that velocity).
+     */
+    static final double CATCH_UP = 96;
+    /** 0.1.11.50: farther than this from its place and not closing in for STUCK_TICKS: stuck behind terrain, it jumps. */
+    static final double STUCK_DISTANCE = 16;
+    static final int STUCK_TICKS = 60;
 
     private static final EntityDataAccessor<Byte> DATA_MODE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> DATA_STATE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
@@ -97,6 +97,8 @@ public class WingmanEntity extends Mob {
     private static final EntityDataAccessor<Boolean> DATA_LANDED = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BOOLEAN);
     /** 0.1.10.11: blade slash counter (high bits) and kind (low 2 bits: {@link #SLASH_COMBO}, {@link #SLASH_DASH}, {@link #SLASH_ARTS}). */
     private static final EntityDataAccessor<Integer> DATA_SLASH = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    /** 0.1.11.46 (motion audit M2): ticks until the held ranged weapon fires again, set at each shot (the draw, the reload). */
+    private static final EntityDataAccessor<Integer> DATA_FIRE_CD = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
     public static final int SLASH_COMBO = 0, SLASH_DASH = 1, SLASH_ARTS = 2;
 
     // server state (saved)
@@ -105,14 +107,17 @@ public class WingmanEntity extends Mob {
     private int set;
     /** 0.1.10.5: the token of this sortie ({@link WingmanSorties}); null in a save of an older version. */
     @Nullable private UUID sortie;
+    /** 0.1.11.41 (Wingman audit W2, decision 1 C): EU of upkeep charged by the Armory at deployment (saved); see {@link #upkeep}. */
+    private long reserve;
+    /** 0.1.11.41: the Armory paid (part of) the last upkeep (not saved). */
+    private boolean armoryPaid;
     // server state (not saved)
     @Nullable private LivingEntity target;
     private int attackCooldown, deflectCooldown, lowPowerSeconds, stateTicks, slot, slotCount = 1;
     // 0.1.8.4 combat state: circling direction (+1/-1), melee peel-off, blade dash, Slash Art timer, blocked line
-    private int strafeSign = 1, retreatTicks, dashTicks, artsCooldown, blockedTicks;
+    private int strafeSign = 1, retreatTicks, artsCooldown, blockedTicks;
     /** Ticks between two Slash Arts of a blade-wielding Wingman. */
     private static final int ARTS_INTERVAL = 200;
-    private int lastFulton = -1;
     private boolean secured, protectedReturn;
     // 0.1.9.1 tactics: firing station (re-planned every STATION_TICKS), evasion cooldown
     @Nullable private Vec3 station;
@@ -132,6 +137,36 @@ public class WingmanEntity extends Mob {
         setPersistenceRequired();
         setCanPickUpLoot(false);
         for (EquipmentSlot s : EquipmentSlot.values()) setDropChance(s, 0);   // items leave only through secure()
+        // 0.1.11.52 (gaze and Iron Man phase P0, decision one A): the Wingman turns its head itself. The vanilla look control
+        // ran after its AI every tick, pulled the head 10 degrees back to the body and set the pitch to 0: in a fight the
+        // head swung between the enemy and the body (a "look around") and never looked up or down at it.
+        this.lookControl = new net.minecraft.world.entity.ai.control.LookControl(this) {
+            @Override
+            public void tick() { }
+        };
+    }
+
+    /**
+     * 0.1.11.61 (hit feel and constructivist FX phase Q0, decision one A): vanilla advances the swing only in
+     * {@code Monster.aiStep} and {@code Player.aiStep}; a Wingman is a {@code Mob}, so its first swing never ended: the
+     * arm stood still (the cut key frames and the slash arc read the swing) and every later swing was dropped (no animate
+     * packet either). Both sides advance it here.
+     */
+    @Override
+    public void aiStep() {
+        updateSwingTime();
+        super.aiStep();
+    }
+
+    /**
+     * 0.1.11.52 (P0): the body is turned by the Wingman ({@link #setYaw}: it follows the head by at most {@link #BODY_TURN}
+     * degrees per tick, the neck at most {@link #NECK} degrees); the vanilla body control (which turned the body to the
+     * head after 10 still ticks and to the motion when moving) is not used. On the client the body keeps the synced yaw.
+     */
+    @Override
+    protected float tickHeadTurn(float yRot, float animStep) {
+        yBodyRot = getYRot();
+        return animStep;
     }
 
     /**
@@ -186,6 +221,7 @@ public class WingmanEntity extends Mob {
         builder.define(DATA_BOOSTS, 0);
         builder.define(DATA_LANDED, false);
         builder.define(DATA_SLASH, 0);
+        builder.define(DATA_FIRE_CD, 20);
     }
 
     // ------------------------------------------------------------------ accessors
@@ -203,6 +239,16 @@ public class WingmanEntity extends Mob {
     /** 0.1.10.11: true while the Wingman stands on the ground (idle landing). */
     public boolean landed() { return entityData.get(DATA_LANDED); }
     public int set() { return set; }
+
+    /** 0.1.11.58: the tick of this Wingman's last callout ({@link WingmanCallouts}). */
+    long lastCallout = Long.MIN_VALUE / 2;
+    private boolean toldReserveLow;
+
+    /** 0.1.11.58: the owner when online (server). */
+    @Nullable
+    ServerPlayer ownerPlayer() {
+        return owner == null || !(level() instanceof ServerLevel world) ? null : world.getServer().getPlayerList().getPlayer(owner);
+    }
     @Nullable GlobalPos armory() { return armory; }
     /** 0.1.10.5: the sortie token (server), see {@link WingmanSorties}. */
     @Nullable UUID sortie() { return sortie; }
@@ -231,6 +277,7 @@ public class WingmanEntity extends Mob {
      */
     public void order(WingmanOrder order, @Nullable Vec3 pos, @Nullable LivingEntity focus) {
         if (order == WingmanOrder.FOCUS && focus == null) order = WingmanOrder.NONE;
+        deathGuard = false;   // 0.1.11.43: an order of the owner ends the guard of the place of death
         this.order = order;
         this.orderPos = order.anchored() ? (pos != null ? pos : position()) : null;
         this.orderTarget = order == WingmanOrder.FOCUS ? focus.getId() : -1;
@@ -241,6 +288,7 @@ public class WingmanEntity extends Mob {
 
     /** 0.1.10.2 "form up": the order ends and the tactical mode applies again. */
     public void clearOrder() {
+        deathGuard = false;
         order = WingmanOrder.NONE;
         orderPos = null;
         orderTarget = -1;
@@ -283,6 +331,93 @@ public class WingmanEntity extends Mob {
         return capacity <= 0 ? -1 : (float) stored / capacity;
     }
 
+    // ------------------------------------------------------------------ wear (0.1.11.42, Wingman audit W3, decision 2 C)
+    //
+    // A Wingman wears its gear as a player does: a hit on it wears the armor (a quarter of the damage, at least 1, as for a
+    // player), a melee hit or a shot wears the weapon by 1. A piece is never worn out: the last point of durability is kept,
+    // and when any piece is below WORN_FRACTION the Wingman flies home, where the Armory repairs it. Arrows stay free.
+    // Before, a Wingman (a Mob) wore nothing: NeoForge wears the armor of players only.
+
+    /** A piece below this fraction of its durability sends the Wingman home. */
+    public static final float WORN_FRACTION = 0.10F;
+
+    /**
+     * True for a piece that wears: damageable, and not an electric item (an electric item spends charge instead, and
+     * some show their charge as durability: an empty one would count as worn).
+     */
+    static boolean wears(ItemStack stack) {
+        if (stack.isEmpty() || !stack.isDamageableItem() || stack.getMaxDamage() <= 0) return false;
+        var item = stack.getItem();
+        return !(item instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem
+            || item instanceof com.miophas.singularity_iteration.core.api.item.IElectricArmorItem
+            || item instanceof com.miophas.singularity_iteration.core.api.item.IElectricToolItem);
+    }
+
+    /** Wears {@code stack} (in {@code slot}) by {@code amount}, keeping its last point of durability. */
+    void wear(ItemStack stack, EquipmentSlot slot, int amount) {
+        if (amount <= 0 || !wears(stack) || level().isClientSide) return;
+        int left = stack.getMaxDamage() - stack.getDamageValue();
+        int dmg = Math.min(amount, left - 1);
+        if (dmg > 0) stack.hurtAndBreak(dmg, this, slot);
+        // 0.1.11.58 (P6): a piece that falls below DAMAGED_FRACTION is called
+        float max = stack.getMaxDamage();
+        if (left >= max * WingmanPose.DAMAGED_FRACTION && left - dmg < max * WingmanPose.DAMAGED_FRACTION)
+            WingmanCallouts.say(this, WingmanCallouts.Kind.DAMAGED, stack.getHoverName());
+        checkWorn();
+    }
+
+    /** The first worn piece (below {@link #WORN_FRACTION}), or empty. */
+    static ItemStack wornPiece(Iterable<ItemStack> pieces) {
+        for (ItemStack s : pieces) {
+            if (!wears(s)) continue;
+            if ((s.getMaxDamage() - s.getDamageValue()) < s.getMaxDamage() * WORN_FRACTION) return s;
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /** A worn piece sends the Wingman home for repairs (once). */
+    private void checkWorn() {
+        if (state() == RETURNING) return;
+        ItemStack worn = wornPiece(items());
+        if (!worn.isEmpty()) {
+            WingmanCallouts.say(this, WingmanCallouts.Kind.REPAIR, worn.getHoverName());
+            startReturn(Component.translatable("message.mio_icif.wingman.worn", worn.getHoverName()));
+        }
+    }
+
+    @Override
+    protected void hurtArmor(DamageSource source, float damage) {
+        wearArmor(source, damage, EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD);
+    }
+
+    @Override
+    protected void hurtHelmet(DamageSource source, float damage) {
+        wearArmor(source, damage, EquipmentSlot.HEAD);
+    }
+
+    private void wearArmor(DamageSource source, float damage, EquipmentSlot... slots) {
+        if (damage <= 0) return;
+        int amount = (int) Math.max(1.0F, damage / 4.0F);
+        for (EquipmentSlot slot : slots) {
+            ItemStack piece = getItemBySlot(slot);
+            if (piece.getItem() instanceof net.minecraft.world.item.ArmorItem && piece.canBeHurtBy(source)) wear(piece, slot, amount);
+        }
+    }
+
+    // ---- an energy weapon out of charge (0.1.11.42, decision 2 C)
+    /** Tick until which a ranged Wingman whose energy weapon could not fire fights in melee. */
+    private int dryUntil = -1;
+    /** The owner was told about the empty weapon (once per empty spell). */
+    private boolean toldEmpty;
+
+    /** Tells the owner once that the weapon of this Wingman is out of charge. */
+    private void tellEmpty(ItemStack weapon) {
+        if (toldEmpty || !(level() instanceof ServerLevel world) || owner == null) return;
+        toldEmpty = true;
+        ServerPlayer player = world.getServer().getPlayerList().getPlayer(owner);
+        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.no_charge", weapon.getHoverName()), true);
+    }
+
     // ------------------------------------------------------------------ server logic
     @Override
     protected void customServerAiStep() {
@@ -301,6 +436,7 @@ public class WingmanEntity extends Mob {
                 for (ItemStack extra : result.extras()) spawnAtLocation(extra);
             }
         }
+        if (!getPassengers().isEmpty()) dropCargo();   // 0.1.11.43: a Fulton cargo of an older save is let go (slow falling)
         if (attackCooldown > 0) attackCooldown--;
         if (deflectCooldown > 0) deflectCooldown--;
         if (boostCooldown > 0) boostCooldown--;
@@ -310,7 +446,10 @@ public class WingmanEntity extends Mob {
         disarmIdle();                                          // 0.1.10.4: the nanosaber goes off after a fight
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
         boolean ownerHere = player != null && player.isAlive() && player.level() == world && !player.isSpectator();
-        if (state() != RETURNING && !ownerHere) {
+        // 0.1.11.43 (W4, decision 3 B): the owner died here: the squad guards the place instead of flying home
+        boolean ownerDead = player != null && !player.isAlive() && player.level() == world && !player.isSpectator();
+        if (ownerDead && state() == ACTIVE && !deathGuard) startDeathGuard(world, player);
+        if (state() != RETURNING && !ownerHere && !(deathGuard && player != null && player.level() == world)) {
             startReturn(null);
         }
         if (tickCount % 20 == 0 && state() != RETURNING) upkeep(world, player);
@@ -319,9 +458,13 @@ public class WingmanEntity extends Mob {
         try {
             switch (state()) {
                 case RETURNING -> tickReturn(world);
-                case LIFTING -> tickLift(world, player);
                 default -> {
-                    if (!ownerHere) return;
+                    if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
+                    if (!ownerHere && swapPhase == SWAP_NONE && !rescuing() && cleanSlate < 0) return;
+                    if (pilot != null) { tickPiloted(); return; }                            // 0.1.11.60: flown by its owner
+                    if (cleanSlate >= 0) { tickCleanSlate(); return; }                     // 0.1.11.59: the Clean Slate protocol
+                    if (rescuing()) { tickRescue(player, ownerHere); return; }             // 0.1.11.56: an emergency rescue
+                    if (swapPhase != SWAP_NONE) { tickSwap(player, ownerHere); return; }   // 0.1.11.54: a suit swap
                     // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
                     if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
                     if (distanceToSqr(player) > CATCH_UP * CATCH_UP) catchUp(player);
@@ -329,7 +472,6 @@ public class WingmanEntity extends Mob {
                         case OFFENSIVE -> tickOffensive(player);
                         case DISPERSAL -> tickDispersal(player);
                         case ESCORT -> tickEscort(world, player);
-                        case FULTON -> tickFulton(world, player);
                     }
                 }
             }
@@ -342,6 +484,46 @@ public class WingmanEntity extends Mob {
         }
     }
 
+    // ---- the owner's death (0.1.11.43, Wingman audit W4, decision 3 B)
+    //
+    // When the owner dies in the dimension of the squad, each Wingman holds the place of death (a HOLD order there: it
+    // engages what comes near, the dropped items included) instead of flying home. The guard ends when the owner, alive
+    // again, comes within DEATH_GUARD_END blocks (the Wingman forms up), when the owner gives an order, or after
+    // DEATH_GUARD_TICKS (the Wingman flies home). A respawn in another dimension or a logout sends it home as before.
+
+    /** Ticks a Wingman guards the place of its owner's death (2 minutes). */
+    static final int DEATH_GUARD_TICKS = 2400;
+    /** Blocks from the place of death within which the returning owner ends the guard. */
+    static final double DEATH_GUARD_END = 24;
+    private boolean deathGuard;
+    private long guardUntil;
+
+    /** 0.1.11.43: true while this Wingman guards the place of its owner's death. */
+    public boolean deathGuard() { return deathGuard; }
+
+    private void startDeathGuard(ServerLevel world, ServerPlayer player) {
+        order(WingmanOrder.HOLD, player.position(), null);
+        deathGuard = true;
+        guardUntil = world.getGameTime() + DEATH_GUARD_TICKS;
+        if (slot == 0) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.death_guard", DEATH_GUARD_TICKS / 1200), false);
+    }
+
+    /** One tick of the guard; true when it took the tick (the guard goes on or ended with the flight home). */
+    private boolean tickDeathGuard(ServerLevel world, @Nullable ServerPlayer player, boolean ownerHere) {
+        if (world.getGameTime() > guardUntil) {
+            deathGuard = false;
+            startReturn(Component.translatable("message.mio_icif.wingman.death_guard_over"));
+            return true;
+        }
+        if (ownerHere && orderPos != null && player.position().distanceToSqr(orderPos) < DEATH_GUARD_END * DEATH_GUARD_END) {
+            clearOrder();   // the owner is back: form up
+            return false;
+        }
+        if (player == null || order == WingmanOrder.NONE) return !ownerHere;
+        tickOrder(world, player);
+        return true;
+    }
+
     // ---- idle landing (0.1.10.11)
     //
     // With nothing to do for LAND_DELAY ticks (no target, no cargo) while the owner stands on the
@@ -351,13 +533,31 @@ public class WingmanEntity extends Mob {
     // jumping into flight or gliding make it take off at once.
 
     private static final int LAND_DELAY = 40;
+    /** Distance to the landing spot at which the Wingman stands on it (0.1.11.44: 4 cm, was 25 cm). */
+    static final double TOUCHDOWN = 0.04;
     private static final double LAND_STAY = 3.5;
     private boolean idleThisTick;
     private int quietTicks, ownerStill;
     @Nullable private Vec3 ownerLast, landSpot, landPost, landOwner;
+    /** 0.1.11.50: the owner's smoothed velocity (blocks per tick), measured from its positions. */
+    private Vec3 ownerVelocity = Vec3.ZERO;
+    /** 0.1.11.50: EU of escort speed flown since the last upkeep; true while it could not be paid (cruise speed only). */
+    private double speedDue;
+    private boolean speedStarved;
+    private int stuckTicks;
+    private double stuckBest = Double.MAX_VALUE;
+
+    /** 0.1.11.50: the owner's velocity as this Wingman measures it. */
+    Vec3 ownerVelocity() { return ownerVelocity; }
+
+    /** 0.1.11.50: true while the escort speed above cruise could not be paid. */
+    public boolean speedStarved() { return speedStarved; }
 
     private void trackOwner(ServerPlayer player) {
         Vec3 p = player.position();
+        // 0.1.11.50 (F1): the owner's velocity from its positions (the server's velocity of a player is not kept up to date
+        // for elytra or maneuver flight)
+        ownerVelocity = ownerLast == null ? Vec3.ZERO : WingmanFlight.ownerVelocity(ownerVelocity, p.subtract(ownerLast));
         boolean still = ownerLast != null && player.onGround() && !player.isFallFlying() && !player.getAbilities().flying
             && p.subtract(ownerLast).horizontalDistanceSqr() < 0.06 * 0.06 && Math.abs(p.y - ownerLast.y) < 0.1;
         ownerStill = still ? ownerStill + 1 : 0;
@@ -384,19 +584,45 @@ public class WingmanEntity extends Mob {
             }
             if (landSpot != null) {
                 Vec3 to = landSpot.subtract(position());
-                if (to.lengthSqr() < 0.25 * 0.25) { touchDown(); holdLanded(player); return; }
+                // 0.1.11.44 (motion audit M0): touch down within 4 cm (the sink below gets it there); it was 25 cm, a visible jump
+                if (to.lengthSqr() < TOUCHDOWN * TOUCHDOWN) { touchDown(); holdLanded(player); return; }
                 if (to.horizontalDistanceSqr() > 0.4 * 0.4) {
                     // line up above the spot first (with the usual obstacle avoidance) ...
                     steer(new Vec3(landSpot.x, Math.max(getY(), landSpot.y + 1.2), landSpot.z), CRUISE * 0.7, player);
                 } else {
                     // ... then sink straight down: the column above the spot was checked free
-                    double down = Math.min(0.14, Math.max(0.03, -to.y * 0.35));
+                    double down = Math.min(0.14, Math.max(Math.min(0.03, -to.y), -to.y * 0.35));
                     setDeltaMovement(to.x * 0.4, to.y < 0 ? -down : Math.min(0.1, to.y), to.z * 0.4);
                 }
                 return;
             }
         }
-        steer(post, CRUISE, player);
+        if (anchored) steer(post, CRUISE, player);
+        else follow(post, player);
+    }
+
+    /**
+     * 0.1.11.50 (escort and open Armory phase F1, decision three B): flies to a place that moves with the owner. The
+     * Wingman flies the owner's velocity plus the correction to the place, with a speed limit and an
+     * acceleration that grow with the owner's speed ({@link WingmanFlight}); the speed above cruise is charged with the next
+     * upkeep. When it could not be paid, or the owner stands, this is the old flight to the place at cruise speed.
+     */
+    private void follow(Vec3 post, ServerPlayer player) {
+        Vec3 carry = speedStarved ? Vec3.ZERO : ownerVelocity;
+        double ownerSpeed = carry.length();
+        double cap = WingmanFlight.cap(ownerSpeed, CRUISE), accel = WingmanFlight.accel(ownerSpeed, ACCEL);
+        Vec3 to = post.subtract(position());   // with the owner's velocity flown this tick, it is at the next place
+        Vec3 want = WingmanTactics.avoid(this, WingmanFlight.want(to, carry, cap).add(separation()));
+        Vec3 v = WingmanFlight.accelerate(getDeltaMovement(), want, accel);
+        if (horizontalCollision) v = v.add(0, 0.3, 0);
+        setDeltaMovement(v);
+        if (WingmanConfig.upkeepEuPerSecond() > 0) speedDue += WingmanFlight.speedCost(v.length(), CRUISE) * WingmanConfig.speedCostFactor();
+        faceFlight(v, player);
+        // stuck behind terrain: far from the place and not closing in for STUCK_TICKS
+        double dist = to.length();
+        if (dist <= STUCK_DISTANCE || speedStarved) { stuckTicks = 0; stuckBest = Double.MAX_VALUE; return; }
+        if (dist < stuckBest - 0.5) { stuckBest = dist; stuckTicks = 0; }
+        else if (++stuckTicks >= STUCK_TICKS) catchUp(player);
     }
 
     /** Ground below {@code post} within 8 blocks with room for the suit, or null (water, lava, blocked, too deep). */
@@ -434,7 +660,7 @@ public class WingmanEntity extends Mob {
     private void holdLanded(ServerPlayer player) {
         setDeltaMovement(Vec3.ZERO);
         // face the way the owner looks, slowly; head level
-        setYaw(getYRot() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - getYRot()), -6, 6));
+        setYaw(facing() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - facing()), -6, 6));
         setXRot(getXRot() * 0.8F);
     }
 
@@ -450,7 +676,12 @@ public class WingmanEntity extends Mob {
         // 0.1.10.5: count the nominal EU that is covered. Energy Saving makes a piece pay less EU
         // for the same share; before, the saved EU counted as unpaid (the Armory paid it again, or
         // the Wingman flew home for low power).
-        long due = UPKEEP_EU;
+        long base = WingmanConfig.upkeepEuPerSecond();
+        // 0.1.11.50 (decision three B): the escort speed above cruise flown since the last upkeep is paid with it
+        long speed = (long) Math.ceil(speedDue);
+        speedDue = 0;
+        if (base <= 0) { lowPowerSeconds = 0; speedStarved = false; return; }
+        long due = base + speed;
         var api = MioIcifAPI.instance().getItemAPI();
         for (EquipmentSlot s : SuitEnergyPool.ARMOR_SLOTS) {
             ItemStack piece = getItemBySlot(s);
@@ -458,15 +689,69 @@ public class WingmanEntity extends Mob {
             due -= SuitEnergyPool.payPart(this, piece, due);
             if (due <= 0) break;
         }
+        // 0.1.11.41 (decision 1 C): the reserve charged at deployment pays next, so a Wingman flies on away from a loaded Armory
+        if (due > 0 && reserve > 0) {
+            long take = Math.min(reserve, due);
+            reserve -= take;
+            due -= take;
+        }
+        armoryPaid = false;
         if (due > 0) {
             mio_icif_armory home = loadedArmory(world);
             var payment = home == null ? null : home.getEnergyStorageInternal().scexReserveInternal(due);
-            if (payment != null) { payment.commit(); due = 0; }
+            if (payment != null) { payment.commit(); due = 0; armoryPaid = true; }
+            else if (home != null && due > speed) {
+                // 0.1.11.50: the Armory cannot pay the escort speed too: it pays the upkeep alone (the Wingman slows to cruise)
+                var upkeepOnly = home.getEnergyStorageInternal().scexReserveInternal(due - speed);
+                if (upkeepOnly != null) { upkeepOnly.commit(); due = speed; armoryPaid = true; }
+            }
         }
-        if (due <= 0) { lowPowerSeconds = 0; return; }
-        if (++lowPowerSeconds >= LOW_POWER_LIMIT) {
+        boolean starvedBefore = speedStarved;
+        speedStarved = due > 0;   // what is left unpaid: no escort speed above cruise until a full payment
+        if (speedStarved && !starvedBefore && speed > 0) WingmanCallouts.say(this, WingmanCallouts.Kind.SPEED_STARVED);
+        // 0.1.11.58 (P6): the reserve is down to its last minute (once until it is refilled)
+        if (reserve > 0 && reserve < base * 60) {
+            if (!toldReserveLow) toldReserveLow = WingmanCallouts.say(this, WingmanCallouts.Kind.RESERVE_LOW);
+        } else if (reserve >= base * 60) toldReserveLow = false;
+        if (due <= speed) { lowPowerSeconds = 0; return; }   // only the speed went unpaid: the upkeep itself is covered
+        if (++lowPowerSeconds >= WingmanConfig.lowPowerSeconds()) {
+            WingmanCallouts.say(this, WingmanCallouts.Kind.LOW_POWER);
             startReturn(player == null ? null : Component.translatable("message.mio_icif.wingman.low_power"));
         }
+    }
+
+    /** 0.1.11.41: EU of the upkeep reserve left. */
+    public long reserve() { return reserve; }
+
+    /** 0.1.11.41: sets the upkeep reserve (deployment, tests). */
+    void setReserve(long eu) { reserve = Math.max(0, eu); }
+
+    /** EU stored in the electric pieces of the suit (0 without). */
+    long suitStored() {
+        var api = MioIcifAPI.instance().getItemAPI();
+        long stored = 0;
+        for (EquipmentSlot s : SuitEnergyPool.ARMOR_SLOTS) {
+            ItemStack piece = getItemBySlot(s);
+            if (!piece.isEmpty() && api.isElectricArmor(piece)) stored += Math.max(0, api.getElectricArmorStored(piece));
+        }
+        return stored;
+    }
+
+    /** {@link #enduranceSeconds()}: no upkeep (free flight). */
+    public static final int ENDURANCE_FREE = -1;
+    /** {@link #enduranceSeconds()}: suit and reserve are empty and the Armory pays (it flies as long as the Armory has energy). */
+    public static final int ENDURANCE_ARMORY = -2;
+
+    /**
+     * 0.1.11.41: seconds of flight the suit charge and the reserve pay for (Energy Saving makes it a little longer), or
+     * {@link #ENDURANCE_FREE} / {@link #ENDURANCE_ARMORY}.
+     */
+    public int enduranceSeconds() {
+        long upkeep = WingmanConfig.upkeepEuPerSecond();
+        if (upkeep <= 0) return ENDURANCE_FREE;
+        long own = suitStored() + reserve;
+        if (own < upkeep && armoryPaid) return ENDURANCE_ARMORY;
+        return (int) Math.min(Integer.MAX_VALUE, own / upkeep);
     }
 
     /** The Armory of this Wingman when its chunk is loaded (no chunk load), else null. */
@@ -480,12 +765,13 @@ public class WingmanEntity extends Mob {
 
     // ---- modes
     private void tickOffensive(ServerPlayer player) {
+        double leash = WingmanConfig.leash();
         LivingEntity focus = ownerFocus(player);
         if (focus != null && focus != target) target = focus;          // the owner's new target first, at once
-        else if (tickCount % 5 == 0 || !valid(target, player, LEASH)) {
+        else if (tickCount % 5 == 0 || !valid(target, player, leash)) {
             // 0.1.9.1: threat scoring (owner's call, fusing creepers, attackers, hunters, focus fire)
-            target = WingmanTactics.select(this, player, player.position(), SCAN_RANGE, valid(target, player, LEASH) ? target : null,
-                e -> valid(e, player, LEASH));
+            target = WingmanTactics.select(this, player, player.position(), WingmanConfig.scanRange(), valid(target, player, leash) ? target : null,
+                e -> valid(e, player, leash));
         }
         if (target != null) engage(target, player);
         else idle(formation(player), player, false);
@@ -494,8 +780,9 @@ public class WingmanEntity extends Mob {
     private void tickDispersal(ServerPlayer player) {
         double angle = Math.toRadians(player.getYRot()) + slot * (Math.PI * 2 / slotCount);
         Vec3 station = player.position().add(-Math.sin(angle) * 10, 3.5, Math.cos(angle) * 10);
-        if (tickCount % 10 == 0 || !valid(target, player, LEASH)) {
-            target = WingmanTactics.select(this, player, station, 14, valid(target, player, LEASH) ? target : null, e -> valid(e, player, LEASH));
+        double leash = WingmanConfig.leash();
+        if (tickCount % 10 == 0 || !valid(target, player, leash)) {
+            target = WingmanTactics.select(this, player, station, 14, valid(target, player, leash) ? target : null, e -> valid(e, player, leash));
             // decoy: the mobs near the station that hunt the owner turn to this Wingman
             for (Mob mob : level().getEntitiesOfClass(Mob.class, new AABB(station, station).inflate(12),
                     m -> m instanceof Enemy && m.getTarget() == player)) mob.setTarget(this);
@@ -513,6 +800,7 @@ public class WingmanEntity extends Mob {
                 world.sendParticles(ParticleTypes.ELECTRIC_SPARK, threat.getX(), threat.getY(), threat.getZ(), 10, 0.15, 0.15, 0.15, 0.2);
                 world.playSound(null, threat.getX(), threat.getY(), threat.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.NEUTRAL, 0.8F, 1.3F);
                 threat.discard();
+                WingmanCallouts.say(this, WingmanCallouts.Kind.INTERCEPT);
                 deflectCooldown = 3;
             }
             return;
@@ -529,81 +817,479 @@ public class WingmanEntity extends Mob {
         else idle(formation(player), player, false);
     }
 
-    private void tickFulton(ServerLevel world, ServerPlayer player) {
-        if (tickCount % 10 == 0 && !fultonCandidate(target, player)) target = pickFulton(player);
-        if (target == null) { idle(formation(player), player, false); return; }
-        steer(target.position().add(0, target.getBbHeight() + 0.7, 0), COMBAT, player);
-        face(target.position());
-        if (distanceToSqr(target.position().add(0, target.getBbHeight(), 0)) < 1.9 * 1.9) {
-            mio_icif_armory home = fultonArmory(world);
-            if (home == null) {
-                player.displayClientMessage(Component.translatable("message.mio_icif.wingman.fulton_no_armory"), true);
-                target = null;
-                return;
-            }
-            var payment = home.getEnergyStorageInternal().scexReserveInternal(FULTON_EU);
-            if (payment == null) {
-                player.displayClientMessage(Component.translatable("message.mio_icif.armory.no_energy", FULTON_EU, home.storedEnergy()), true);
-                target = null;
-                return;
-            }
-            payment.commit();
-            lastFulton = target.getId();
-            target.startRiding(this, true);
-            world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_LATCH.get(), SoundSource.NEUTRAL, 1.0F, 0.8F);
-            setState(LIFTING);
-        }
-    }
+    // ---- remote piloting (0.1.11.60, gaze and Iron Man phase P8; WingmanPilot keeps the link)
 
-    /** The paired Armory for a Fulton recovery: same dimension as this Wingman, loaded or not. */
-    @Nullable
-    private mio_icif_armory fultonArmory(ServerLevel world) {
-        if (armory == null || armory.dimension() != world.dimension()) return null;
-        return world.getBlockEntity(armory.pos()) instanceof mio_icif_armory a ? a : null;
-    }
+    /** Pilot speeds (blocks per tick) and acceleration; ticks between two cuts of a blade or a melee weapon at the least. */
+    static final double PILOT_SPEED = 0.8, PILOT_SPRINT = 1.6, PILOT_ACCEL = 0.22;
+    @Nullable private UUID pilot;
+    private WingmanPilot.Input pilotInput = new WingmanPilot.Input(0, 0, 0, false, 0, 0, false, false);
+    private boolean pilotAttackHeld;
 
-    private void tickLift(ServerLevel world, @Nullable ServerPlayer player) {
-        Entity cargo = getFirstPassenger();
-        if (cargo == null) { setState(ACTIVE); return; }
-        setDeltaMovement(getDeltaMovement().scale(0.6).add(0, 0.18, 0));
-        if (stateTicks % 3 == 0) world.sendParticles(ParticleTypes.CLOUD, getX(), getY() - 0.4, getZ(), 2, 0.2, 0.1, 0.2, 0.02);
-        if (stateTicks < 30) return;
-        mio_icif_armory home = fultonArmory(world);
-        Vec3 drop = home == null ? null : dropPoint(world, home.getBlockPos(), cargo);
-        ejectPassengers();
-        if (drop != null) {
-            cargo.teleportTo(drop.x, drop.y, drop.z);
-            cargo.fallDistance = 0;
-            if (cargo instanceof Mob mob) mob.setPersistenceRequired();
-            world.playSound(null, drop.x, drop.y, drop.z, mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-            if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.fulton_done", cargo.getDisplayName()), true);
-        } else if (player != null) {
-            cargo.teleportTo(player.getX(), player.getY(), player.getZ());
-        }
+    /** 0.1.11.60: the owner flying this Wingman (null: its own AI). */
+    @Nullable public UUID pilot() { return pilot; }
+
+    void setPilot(@Nullable UUID who) {
+        pilot = who;
         target = null;
-        if (player != null && player.level() == world) catchUp(player);
-        setState(ACTIVE);
+        clearOrder();
+        pilotInput = new WingmanPilot.Input(0, 0, 0, false, facing(), getXRot(), false, false);
     }
 
-    /** A free place next to the Armory for a recovered mob: two-high air on solid ground. */
+    void pilotInput(WingmanPilot.Input input) { pilotInput = input; }
+
+    /** One tick flown by the owner: look, move along the look, attack, boost. */
+    private void tickPiloted() {
+        WingmanPilot.Input in = pilotInput;
+        setYaw(in.yaw());
+        setXRot(in.pitch());
+        Vec3 look = Vec3.directionFromRotation(in.pitch(), in.yaw());
+        double yaw = Math.toRadians(in.yaw());
+        Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+        Vec3 want = look.scale(in.forward()).add(right.scale(in.strafe())).add(0, in.vertical(), 0);
+        if (want.lengthSqr() > 1.0E-4) want = want.normalize().scale(in.sprint() ? PILOT_SPRINT : PILOT_SPEED);
+        setDeltaMovement(WingmanFlight.accelerate(getDeltaMovement(), want, PILOT_ACCEL));
+        if (horizontalCollision) setDeltaMovement(getDeltaMovement().add(0, 0.2, 0));
+        if (in.use() && boostCooldown == 0) boost(look);
+        boolean pressed = in.attack() && !pilotAttackHeld;
+        pilotAttackHeld = in.attack();
+        if (in.attack()) pilotAttack(look, pressed);
+    }
+
+    /** The creature in the crosshair within {@code range}, or null. */
     @Nullable
-    private static Vec3 dropPoint(ServerLevel world, BlockPos home, Entity cargo) {
-        int height = Math.max(1, Mth.ceil(cargo.getBbHeight()));
-        for (int r = 2; r <= 4; r++) {
-            for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
-                    for (int dy = -1; dy <= 2; dy++) {
-                        BlockPos feet = home.offset(dx, dy, dz);
-                        if (!world.getBlockState(feet.below()).isFaceSturdy(world, feet.below(), net.minecraft.core.Direction.UP)) continue;
-                        boolean free = true;
-                        for (int h = 0; h < height && free; h++) free = world.getBlockState(feet.above(h)).getCollisionShape(world, feet.above(h)).isEmpty();
-                        if (free) return Vec3.atBottomCenterOf(feet);
-                    }
+    private LivingEntity aimed(Vec3 look, double range) {
+        Vec3 eye = getEyePosition(), end = eye.add(look.scale(range));
+        var hit = ProjectileUtil.getEntityHitResult(level(), this, eye, end, getBoundingBox().expandTowards(look.scale(range)).inflate(1),
+            e -> e instanceof LivingEntity l && l.isAlive() && !(e instanceof WingmanEntity) && !e.getUUID().equals(owner));
+        return hit != null && hit.getEntity() instanceof LivingEntity l ? l : null;
+    }
+
+    /** Attack along the look: a shot, a blade input (on each press) or a melee strike. */
+    private void pilotAttack(Vec3 look, boolean pressed) {
+        if (attackCooldown > 0) return;
+        ItemStack weapon = getMainHandItem();
+        switch (weaponKind()) {
+            case RANGED -> {
+                Vec3 muzzle = getEyePosition().add(look.scale(0.6));
+                int cooldown = fire(weapon, look.scale(20), null);
+                if (cooldown >= 0) {
+                    entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);
+                    attackCooldown = Math.max(2, cooldown);
+                    entityData.set(DATA_FIRE_CD, attackCooldown);
+                    wear(weapon, EquipmentSlot.MAINHAND, 1);
+                } else {
+                    attackCooldown = 10;
+                    tellEmpty(weapon);
                 }
             }
+            case BLADE -> {
+                if (!pressed) return;   // each click is one input, as for a player (the combo windows decide)
+                if (SlashBladeCombat.attack(this, aimed(look, 4.5)) != null) slash(SLASH_COMBO);
+                attackCooldown = 2;
+            }
+            default -> {
+                LivingEntity hit = aimed(look, 3.5);
+                swing(InteractionHand.MAIN_HAND);
+                if (hit != null) meleeImpact(hit, doHurtTarget(hit));
+                else meleeImpact(null, false);
+                attackCooldown = Mth.ceil(20.0 / Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED)));
+            }
         }
-        return Vec3.atCenterOf(home).add(0, 1.2, 0);
+    }
+
+    // ---- the Clean Slate protocol (0.1.11.59, gaze and Iron Man phase P7; WingmanCleanSlate)
+
+    /** Ticks left until this Wingman bursts (-1: none). */
+    private int cleanSlate = -1;
+
+    @Nullable private Vec3 slateSlot, slateCentre;
+
+    /** 0.1.11.59: climb for {@code ticks}, then burst into a firework; the suit goes home. */
+    void cleanSlate(int ticks) { cleanSlate(ticks, null, null); }
+
+    /** 0.1.11.64: climb to {@code slot} in the ring about {@code centre}, burst after {@code ticks}; the suit goes home. */
+    void cleanSlate(int ticks, @Nullable Vec3 slot, @Nullable Vec3 centre) {
+        if (swapPhase != SWAP_NONE) flushSwap();
+        rescue = WingmanRescue.Danger.NONE;
+        clearOrder();
+        target = null;
+        slateSlot = slot;
+        slateCentre = centre;
+        cleanSlate = Math.max(1, ticks);
+    }
+
+    /** 0.1.11.59: true while this Wingman climbs for the Clean Slate protocol. */
+    public boolean cleaningSlate() { return cleanSlate >= 0; }
+
+    private void tickCleanSlate() {
+        Vec3 v = getDeltaMovement();
+        if (slateSlot != null) {
+            // 0.1.11.64: into the ring, then hold there facing its centre
+            Vec3 to = slateSlot.subtract(position());
+            Vec3 want = to.scale(0.25);
+            if (want.length() > 1.6) want = want.normalize().scale(1.6);
+            setDeltaMovement(WingmanFlight.accelerate(v, want, 0.4));
+            if (slateCentre != null && to.lengthSqr() < 4) face(slateCentre);
+        } else {
+            // straight up, faster and faster, the boot thrusters roaring
+            setDeltaMovement(v.x * 0.8, Math.min(1.4, Math.max(0.2, v.y) + 0.08), v.z * 0.8);
+            setXRot(-60);
+        }
+        if (--cleanSlate > 0) return;
+        if (level() instanceof ServerLevel world) {
+            Vec3 at = position().add(0, 1.0, 0);
+            var burst = new WingmanCleanSlate.Burst(at, WingmanCleanSlate.burst(WingmanCleanSlate.colours(
+                List.of(getItemBySlot(EquipmentSlot.CHEST), getItemBySlot(EquipmentSlot.HEAD), getItemBySlot(EquipmentSlot.LEGS), getItemBySlot(EquipmentSlot.FEET)))));
+            for (ServerPlayer p : world.players())   // only clients with the channel (a vanilla client or a test player has none)
+                if (p.distanceToSqr(at) < 256 * 256 && p.connection != null && p.connection.hasChannel(WingmanCleanSlate.Burst.TYPE))
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, burst);
+            // 0.1.11.64: a deep blast under the crack; the pieces fly home in straight lines (copies: the items go by secure())
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.NEUTRAL, 6.0F, 0.5F);
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.NEUTRAL, 6.0F, 0.8F);
+            Vec3 home = ArmoryPieceEntity.homeTarget(world, armory, at);
+            for (ArmoryPiece p : ArmoryPiece.VALUES) {
+                ItemStack stack = getItemBySlot(p.slot);
+                if (stack.isEmpty()) continue;
+                Vec3 from = ArmoryFlight.dockPoint(this, 1.0F, p);
+                int ticks = Math.max(14, Math.min(60, (int) (from.distanceTo(home) / 1.6)));
+                world.addFreshEntity(ArmoryPieceEntity.straight(world, this, stack.copy(), p, from, home, ticks));
+            }
+        }
+        cleanSlate = -1;
+        secure();     // the suit goes home (the Armory, else the owner's inventory)
+        discard();
+    }
+
+    // ---- emergency rescue (0.1.11.56, gaze and Iron Man phase P4; WingmanRescue picks the Wingman)
+
+    /** Ticks a falling owner is held after the catch, and the most ticks a rescue flight lasts. */
+    static final int CATCH_HOLD = 10, RESCUE_TICKS = 100;
+    /** Distance at which the owner is caught. */
+    static final double CATCH_REACH = 1.8;
+    private WingmanRescue.Danger rescue = WingmanRescue.Danger.NONE;
+    private int rescueTicks, holdTicks;
+    private long lastRescue = Long.MIN_VALUE / 2;
+
+    /** 0.1.11.56: true while this Wingman flies a rescue. */
+    public boolean rescuing() { return rescue != WingmanRescue.Danger.NONE; }
+
+    /** 0.1.11.56: true when this Wingman can be sent on a rescue for {@code danger} now. */
+    boolean canRescue(long now, WingmanRescue.Danger danger) {
+        if (state() != ACTIVE || secured || rescuing() || swapPhase != SWAP_NONE || now - lastRescue < WingmanRescue.COOLDOWN) return false;
+        return danger != WingmanRescue.Danger.LOW_HEALTH || armourPieces() >= 2;   // near death it brings a suit
+    }
+
+    private int armourPieces() {
+        int n = 0;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) if (p.isArmor() && !getItemBySlot(p.slot).isEmpty()) n++;
+        return n;
+    }
+
+    /** 0.1.11.56: starts a rescue of the owner. */
+    void startRescue(WingmanRescue.Danger danger, ServerPlayer player) {
+        lastRescue = level().getGameTime();
+        clearOrder();
+        deathGuard = false;
+        target = null;
+        if (danger == WingmanRescue.Danger.LOW_HEALTH) {
+            // near death: the suit comes to the owner at once
+            if (suitUp(player) == null) WingmanCallouts.say(this, WingmanCallouts.Kind.RESCUE_SUIT);
+            return;
+        }
+        rescue = danger;
+        rescueTicks = 0;
+        holdTicks = 0;
+        level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_BOOST.get(), SoundSource.NEUTRAL, 1.0F, 0.8F);
+    }
+
+    /** One tick of a fall rescue: race to the owner, catch them, hold them, then swap suits when they wear less armour. */
+    private void tickRescue(@Nullable ServerPlayer player, boolean ownerHere) {
+        if (!ownerHere || ++rescueTicks > RESCUE_TICKS || holdTicks == 0 && player.onGround()) { rescue = WingmanRescue.Danger.NONE; return; }
+        face(player.getEyePosition());
+        Vec3 pv = player.getDeltaMovement();
+        if (holdTicks == 0) {
+            Vec3 to = player.position().add(pv).add(0, -0.4, 0).subtract(position());
+            double cap = Math.max(3.0, pv.length() + 1.5);
+            Vec3 want = pv.add(to.scale(0.6));
+            if (want.length() > cap) want = want.normalize().scale(cap);
+            setDeltaMovement(WingmanFlight.accelerate(getDeltaMovement(), want, 0.9));
+            if (distanceTo(player) <= CATCH_REACH) {
+                holdTicks = CATCH_HOLD;
+                player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, false, false, true));
+                WingmanCallouts.say(this, WingmanCallouts.Kind.CAUGHT);
+                level().playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.PLAYERS, 1.0F, 0.8F);
+                holdOwner(player);
+            }
+            return;
+        }
+        holdOwner(player);
+        if (--holdTicks > 0) return;
+        rescue = WingmanRescue.Danger.NONE;
+        // caught: the owner gets the suit when they wear less armour than the Wingman
+        if (WingmanRescue.armourPieces(player) < armourPieces() && armourPieces() >= 2 && suitUp(player) == null)
+            WingmanCallouts.say(this, WingmanCallouts.Kind.RESCUE_SUIT);
+    }
+
+    /** Holds the caught owner: no fall, no fall distance; the Wingman under them. */
+    private void holdOwner(ServerPlayer player) {
+        player.setDeltaMovement(player.getDeltaMovement().multiply(0.3, 0, 0.3).add(0, 0.02, 0));
+        player.hurtMarked = true;
+        player.resetFallDistance();
+        Vec3 under = player.position().add(0, -1.2, 0).subtract(position());
+        setDeltaMovement(under.scale(0.5));
+    }
+
+    // ---- suit swap (0.1.11.54, gaze and Iron Man phase P2, decision four A)
+    //
+    // The owner calls a Wingman to swap suits (the command wheel, squad control). It flies to a place in front of the
+    // owner and faces them; its pieces come off (the suit frame has no body: it is gone) and fly onto the owner, who is
+    // suited up when they arrive (the seal of the Armory); then the owner's old pieces fly the other way and the Wingman
+    // stands up in them, in its old place of the squad (same sortie, same Armory set). While pieces fly they are held by
+    // the Wingman (saved with it): a cancel (the owner gone, dead, far, or the Wingman removed) puts them back.
+    //
+    // A slot is swapped when the Wingman has a piece there or the owner has gear there (hands: an unstackable item);
+    // a slot with Curse of Binding is left alone; the owner's hand items that are not gear, the Armory remote and items
+    // the Armory does not take go into the owner's inventory instead. With fewer than two armour pieces after the swap
+    // the Wingman flies home (none at all: it is dismissed and its sortie closes).
+
+    static final byte SWAP_NONE = 0, SWAP_APPROACH = 1, SWAP_TO_OWNER = 2, SWAP_TO_WINGMAN = 3, SWAP_RESUME = 4;
+    /** Ticks the Wingman tries to reach the owner, and the farthest the owner may be when the pieces arrive. */
+    static final int SWAP_APPROACH_TICKS = 200;
+    static final double SWAP_REACH = 12;
+    private byte swapPhase = SWAP_NONE;
+    private int swapWait;
+    private final ItemStack[] swapOut = emptyPieces(), swapIn = emptyPieces();
+    private final boolean[] swapTake = new boolean[ArmoryPiece.VALUES.length];
+
+    private static ItemStack[] emptyPieces() {
+        ItemStack[] a = new ItemStack[ArmoryPiece.VALUES.length];
+        java.util.Arrays.fill(a, ItemStack.EMPTY);
+        return a;
+    }
+
+    /** 0.1.11.54: the swap phase (0 none). */
+    public byte swapPhase() { return swapPhase; }
+
+    /** 0.1.11.54: starts a suit swap with the owner; null when it starts, else the reason (a message key). */
+    @Nullable
+    public String suitUp(ServerPlayer player) { return suitUp(player, null); }
+
+    /** 0.1.11.57 (P5): a swap of one piece ({@code only}; null: the whole suit). */
+    @Nullable
+    public String suitUp(ServerPlayer player, @Nullable ArmoryPiece only) {
+        if (state() != ACTIVE || secured) return "message.mio_icif.wingman.swap.busy";
+        if (swapPhase != SWAP_NONE) return "message.mio_icif.wingman.swap.busy";
+        if (player.level() != level()) return "message.mio_icif.wingman.swap.far";
+        clearOrder();
+        deathGuard = false;
+        target = null;
+        swapPhase = SWAP_APPROACH;
+        swapWait = 0;
+        swapOnly = only;
+        return null;
+    }
+
+    /** 0.1.11.57: the one piece a swap hands over (null: the whole suit). */
+    @Nullable private ArmoryPiece swapOnly;
+
+    /** An item the owner holds that counts as gear (it goes to the Wingman): a tool, weapon, shield or totem (unstackable). */
+    static boolean handGear(ItemStack stack) {
+        return !stack.isEmpty() && stack.getMaxStackSize() == 1;
+    }
+
+    /** True when the owner's {@code stack} in {@code piece} goes to the Wingman. */
+    public static boolean givesToWingman(ItemStack stack, ArmoryPiece piece) {
+        if (stack.isEmpty() || stack.getItem() instanceof ArmoryRemoteItem || !ArmoryRules.isSummonable(stack)) return false;
+        if (!piece.isArmor() && !handGear(stack)) return false;
+        return ArmoryRules.fits(stack, piece);
+    }
+
+    private static boolean bound(ItemStack stack, ServerPlayer player) {
+        return !stack.isEmpty() && !player.isCreative()
+            && net.minecraft.world.item.enchantment.EnchantmentHelper.has(stack, net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
+    }
+
+    /** Where the Wingman stands for the swap: in front of the owner, at the owner's height, facing them. */
+    private static Vec3 swapPlace(ServerPlayer player) {
+        Vec3 look = player.getLookAngle().multiply(1, 0, 1);
+        look = look.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : look.normalize();
+        return player.position().add(look.scale(1.8)).add(0, 0.05, 0);
+    }
+
+    private void tickSwap(@Nullable ServerPlayer player, boolean ownerHere) {
+        if (swapPhase == SWAP_RESUME) { flushSwap(); return; }
+        if (player != null) face(player.getEyePosition());
+        switch (swapPhase) {
+            case SWAP_APPROACH -> {
+                if (!ownerHere || ++swapWait > SWAP_APPROACH_TICKS) { cancelSwap(player); return; }
+                Vec3 place = swapPlace(player);
+                double d = position().distanceTo(place);
+                if (d > 0.7) {
+                    steer(place, Math.max(COMBAT, ownerVelocity.length() + 0.6), player);
+                    face(player.getEyePosition());
+                    return;
+                }
+                setDeltaMovement(Vec3.ZERO);
+                beginSwap(player);
+            }
+            case SWAP_TO_OWNER -> {
+                setDeltaMovement(getDeltaMovement().scale(0.5));
+                if (--swapWait > 0) return;
+                if (!ownerHere || player.distanceTo(this) > SWAP_REACH) { cancelSwap(player); return; }
+                suitOwner(player);
+            }
+            case SWAP_TO_WINGMAN -> {
+                setDeltaMovement(getDeltaMovement().scale(0.5));
+                if (--swapWait > 0) return;
+                standUp(player);
+            }
+            default -> swapPhase = SWAP_NONE;
+        }
+    }
+
+    /** The Wingman's pieces come off and fly to the owner. */
+    private void beginSwap(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) level();
+        int longest = 1;
+        boolean any = false;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            ItemStack mine = getItemBySlot(p.slot), theirs = player.getItemBySlot(p.slot);
+            swapTake[i] = (swapOnly == null || p == swapOnly) && !bound(theirs, player) && (!mine.isEmpty() || givesToWingman(theirs, p));
+            if (!swapTake[i]) continue;
+            any = true;
+            swapOut[i] = mine.copy();
+            setItemSlot(p.slot, ItemStack.EMPTY);
+            if (swapOut[i].isEmpty()) continue;
+            Vec3 from = ArmoryFlight.dockPoint(this, 1.0F, p), to = ArmoryFlight.dockPoint(player, 1.0F, p);
+            ArmoryPieceEntity echo = ArmoryPieceEntity.echo(level, this, swapOut[i].copy(), p, from, to);
+            level.addFreshEntity(echo);
+            longest = Math.max(longest, ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(from, to)));
+        }
+        if (!any) { cancelSwap(player); return; }
+        level.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_UNLOCK.get(), SoundSource.NEUTRAL, 0.9F, 1.0F);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 1.0, getZ(), 14, 0.3, 0.5, 0.3, 0.08);
+        swapPhase = SWAP_TO_OWNER;
+        swapWait = longest;
+    }
+
+    /**
+     * 0.1.11.55 (P3): a new Wingman takes the owner's ejected pieces: they fly from the owner's body to it, and it stands
+     * up in them when they arrive ({@link #standUp}); it holds them meanwhile (saved with it).
+     */
+    void receiveSuit(ServerPlayer player, ItemStack[] items) {
+        ServerLevel level = (ServerLevel) level();
+        int longest = 1;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            if (items[i].isEmpty()) continue;
+            swapIn[i] = items[i];
+            swapTake[i] = true;
+            Vec3 from = ArmoryFlight.dockPoint(player, 1.0F, p), to = ArmoryFlight.dockPoint(this, 1.0F, p);
+            level.addFreshEntity(ArmoryPieceEntity.echo(level, player, items[i].copy(), p, from, to));
+            longest = Math.max(longest, ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(from, to)));
+        }
+        swapPhase = SWAP_TO_WINGMAN;
+        swapWait = longest;
+        ejected = true;
+    }
+
+    /** 0.1.11.55: true while the pieces of an eject fly to this new Wingman (no "back in formation" message). */
+    private boolean ejected;
+
+    /** The pieces arrive: the owner is suited up, their old pieces fly to the Wingman. */
+    private void suitOwner(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) level();
+        int longest = 1;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            if (!swapTake[i]) continue;
+            ItemStack theirs = player.getItemBySlot(p.slot).copy();
+            if (bound(theirs, player)) {   // bound since the start: this slot stays as it is, the piece goes back to the suit
+                swapIn[i] = swapOut[i];
+                swapOut[i] = ItemStack.EMPTY;
+                continue;
+            }
+            ArmoryPieceEntity.equipSilently(player, p.slot, swapOut[i]);
+            swapOut[i] = ItemStack.EMPTY;
+            if (theirs.isEmpty()) continue;
+            if (givesToWingman(theirs, p)) {
+                swapIn[i] = theirs;
+                Vec3 from = ArmoryFlight.dockPoint(player, 1.0F, p), to = ArmoryFlight.dockPoint(this, 1.0F, p);
+                level.addFreshEntity(ArmoryPieceEntity.echo(level, player, theirs.copy(), p, from, to));
+                longest = Math.max(longest, ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(from, to)));
+            } else {
+                ArmoryPieceEntity.stash(player, theirs);
+            }
+        }
+        player.inventoryMenu.broadcastChanges();
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_COMPLETE.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, player.getX(), player.getY() + 1.0, player.getZ(), 16, 0.3, 0.6, 0.3, 0.06);
+        WingmanCallouts.say(this, WingmanCallouts.Kind.SUITED);
+        swapPhase = SWAP_TO_WINGMAN;
+        swapWait = longest;
+    }
+
+    /** The owner's old pieces arrive: the Wingman stands up in them (or flies home / is dismissed with too few). */
+    private void standUp(@Nullable ServerPlayer player) {
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            if (swapIn[i].isEmpty()) continue;
+            if (getItemBySlot(p.slot).isEmpty()) setItemSlot(p.slot, swapIn[i]);
+            else spawnAtLocation(swapIn[i]);
+            swapIn[i] = ItemStack.EMPTY;
+        }
+        swapPhase = SWAP_NONE;
+        swapOnly = null;
+        java.util.Arrays.fill(swapTake, false);
+        level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.NEUTRAL, 0.9F, 1.1F);
+        int armour = 0;
+        boolean anything = false;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            if (getItemBySlot(p.slot).isEmpty()) continue;
+            anything = true;
+            if (p.isArmor()) armour++;
+        }
+        if (!anything) {
+            // nothing to fly in: dismissed, its sortie closes (the suit is on the owner)
+            if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.dismissed", getName()), false);
+            secure();
+            discard();
+            return;
+        }
+        if (armour < 2) {
+            startReturn(Component.translatable("message.mio_icif.wingman.swap.home", getName()));
+            return;
+        }
+        WingmanCallouts.say(this, ejected ? WingmanCallouts.Kind.EJECTED : WingmanCallouts.Kind.REJOINED);
+        ejected = false;
+    }
+
+    /** Ends a swap before the owner was suited up: the pieces go back on the Wingman. */
+    private void cancelSwap(@Nullable ServerPlayer player) {
+        flushSwap();
+        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.far", getName()), true);
+    }
+
+    /** Puts every held swap piece back on the Wingman (into an empty slot), else home or on the ground. */
+    private void flushSwap() {
+        mio_icif_armory home = level() instanceof ServerLevel world ? loadedArmory(world) : null;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            for (ItemStack[] held : new ItemStack[][]{swapOut, swapIn}) {
+                ItemStack stack = held[i];
+                if (stack.isEmpty()) continue;
+                held[i] = ItemStack.EMPTY;
+                if (getItemBySlot(p.slot).isEmpty()) { setItemSlot(p.slot, stack); continue; }
+                ItemStack rest = home != null ? home.store(set, p, stack) : stack;
+                if (!rest.isEmpty()) spawnAtLocation(rest);
+            }
+        }
+        java.util.Arrays.fill(swapTake, false);
+        swapPhase = SWAP_NONE;
+        swapWait = 0;
+        swapOnly = null;
     }
 
     // ---- orders (0.1.10.2)
@@ -675,27 +1361,6 @@ public class WingmanEntity extends Mob {
             && !player.isAlliedTo(e) && !(e instanceof net.minecraft.world.entity.OwnableEntity own && player.getUUID().equals(own.getOwnerUUID()));
     }
 
-    @Nullable
-    private LivingEntity pickOffensive(ServerPlayer player) {
-        LivingEntity marked = player.getLastHurtMob();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 200 && valid(marked, player, LEASH)) return marked;
-        LivingEntity attacker = player.getLastHurtByMob();
-        if (attacker != null && player.tickCount - player.getLastHurtByMobTimestamp() < 200 && valid(attacker, player, LEASH)) return attacker;
-        return nearestHostile(player.position(), SCAN_RANGE, player);
-    }
-
-    @Nullable
-    private LivingEntity nearestHostile(Vec3 around, double range, ServerPlayer player) {
-        LivingEntity best = null;
-        double bestD = Double.MAX_VALUE;
-        for (Mob mob : level().getEntitiesOfClass(Mob.class, new AABB(around, around).inflate(range), m -> m instanceof Enemy)) {
-            if (!valid(mob, player, LEASH)) continue;
-            double d = mob.distanceToSqr(around);
-            if (d < bestD) { bestD = d; best = mob; }
-        }
-        return best;
-    }
-
     /** 0.1.10.8: the projectile scan runs every 2nd tick; in between the last threat is kept while it still flies at the owner. */
     @Nullable private Projectile lastThreat;
     private int threatScanAt = -10;
@@ -718,10 +1383,19 @@ public class WingmanEntity extends Mob {
         return best;
     }
 
-    /** A projectile of somebody else that passes within 2.2 blocks of the owner in the next 20 ticks. */
-    private static boolean incoming(Projectile p, ServerPlayer player) {
+    /**
+     * A hostile projectile that passes within 2.2 blocks of the owner in the next 20 ticks. 0.1.11.43 (G-8): hostile means
+     * from a hostile creature, a creature that hunts the owner, a player of another team (or none), or nobody (a
+     * dispenser). Potions and ender pearls are never stopped (a healing potion thrown to the owner, a teammate's pearl);
+     * before, every projectile of somebody else was destroyed.
+     */
+    static boolean incoming(Projectile p, ServerPlayer player) {
+        if (p instanceof net.minecraft.world.entity.projectile.ThrownPotion || p instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl) return false;
         Entity shooter = p.getOwner();
         if (shooter == player || shooter instanceof WingmanEntity) return false;
+        if (shooter instanceof Player other && player.isAlliedTo(other)) return false;
+        if (shooter instanceof Mob mob && !(mob instanceof Enemy) && mob.getTarget() != player) return false;
+        if (shooter != null && !(shooter instanceof Player) && !(shooter instanceof Mob)) return false;
         Vec3 c = player.getBoundingBox().getCenter();
         Vec3 v = p.getDeltaMovement();
         double v2 = v.lengthSqr();
@@ -730,26 +1404,6 @@ public class WingmanEntity extends Mob {
         double t = rel.dot(v) / v2;                                    // ticks to the closest approach
         if (t <= 0 || t > 20) return false;
         return p.position().add(v.scale(t)).distanceToSqr(c) <= 2.2 * 2.2;
-    }
-
-    private boolean fultonCandidate(@Nullable LivingEntity e, ServerPlayer player) {
-        if (e == null || !e.isAlive() || e.level() != level() || e instanceof Player || e instanceof WingmanEntity) return false;
-        if (e.isPassenger() || e.isVehicle() || e.getId() == lastFulton) return false;
-        if (e.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES) || e.getType().is(FULTON_IMMUNE)) return false;
-        if (e.getBbWidth() > 1.6F || e.getBbHeight() > 2.8F || e.distanceToSqr(player) > LEASH * LEASH) return false;
-        if (e instanceof net.minecraft.world.entity.OwnableEntity own && own.getOwnerUUID() != null && !player.getUUID().equals(own.getOwnerUUID())) return false;
-        return !(e instanceof Enemy) || e.getHealth() <= e.getMaxHealth() * 0.5F;   // a hostile mob must be weakened first
-    }
-
-    @Nullable
-    private LivingEntity pickFulton(ServerPlayer player) {
-        LivingEntity marked = player.getLastHurtMob();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 100 && fultonCandidate(marked, player)) return marked;
-        if (!player.isCrouching()) return null;
-        Vec3 eye = player.getEyePosition(), end = eye.add(player.getViewVector(1.0F).scale(24));
-        EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, player.getBoundingBox().expandTowards(end.subtract(eye)).inflate(1),
-            e -> e instanceof LivingEntity && !e.isSpectator(), 24 * 24);
-        return hit != null && hit.getEntity() instanceof LivingEntity l && fultonCandidate(l, player) ? l : null;
     }
 
     // ---- combat (0.1.8.4 rework)
@@ -774,9 +1428,27 @@ public class WingmanEntity extends Mob {
         return WingmanPose.ranged(w) ? WeaponKind.RANGED : WeaponKind.MELEE;
     }
 
+    /** 0.1.11.52 (P0): ticks of the stare at a newly locked enemy, the rest between two stares, the head turn in a fight. */
+    static final int GLARE = 6, GLARE_REST = 40;
+    static final float GAZE_TURN = 45.0F;
+    private int glareTicks, lastGlare = -GLARE_REST;
+
+    /** 0.1.11.52: ticks of the stare left (0 when none). */
+    int glareTicks() { return glareTicks; }
+
     private void engage(LivingEntity enemy, ServerPlayer player) {
+        if (glareTicks > 0) {
+            // the stare: brake to a hover, the head (and the body after it) on the enemy's eyes
+            glareTicks--;
+            faceSmooth(enemy.getEyePosition(), GAZE_TURN);
+            setDeltaMovement(getDeltaMovement().scale(0.6));
+            return;
+        }
         switch (weaponKind()) {
-            case RANGED -> engageRanged(enemy, player);
+            case RANGED -> {
+                if (tickCount < dryUntil) engageMelee(enemy, player);   // 0.1.11.42: an empty energy weapon: melee until it may fire again
+                else engageRanged(enemy, player);
+            }
             case BLADE -> engageBlade(enemy, player);
             default -> engageMelee(enemy, player);
         }
@@ -786,6 +1458,12 @@ public class WingmanEntity extends Mob {
     private void engageMelee(LivingEntity enemy, ServerPlayer player) {
         Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
         faceSmooth(enemy.getEyePosition(), 35);
+        // 0.1.11.46 (M2): after a hit the Wingman stays a moment (the follow-through of the cut), then boosts away
+        if (hitPause > 0) {
+            setDeltaMovement(getDeltaMovement().scale(0.45));
+            if (--hitPause == 0) boost(position().subtract(enemy.position()).add(sideOf(enemy).scale(0.8)));
+            return;
+        }
         if (retreatTicks > 0) {                                   // peel off: sideways and up, then return
             retreatTicks--;
             Vec3 side = sideOf(enemy).scale(3.2).add(0, 1.6, 0);
@@ -802,7 +1480,7 @@ public class WingmanEntity extends Mob {
         armElectric();                                          // 0.1.10.4: switch the nanosaber on
         if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) {
             swing(InteractionHand.MAIN_HAND);
-            doHurtTarget(enemy);
+            meleeImpact(enemy, doHurtTarget(enemy));
             double speed = Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED));
             attackCooldown = Mth.ceil(20.0 / speed);
             // a creeper is thrown away from the owner
@@ -811,11 +1489,58 @@ public class WingmanEntity extends Mob {
                 enemy.knockback(1.6, -away.x, -away.z);
             }
             // 0.1.9.1 hit and away: a thruster boost out of reach, then a new pass from the other side
-            boost(position().subtract(enemy.position()).add(sideOf(enemy).scale(0.8)));
+            hitPause = HIT_PAUSE;   // the boost away follows the pause (0.1.11.46; it was at once, in the tick of the hit)
             retreatTicks = 10;
             strafeSign = -strafeSign;
         }
     }
+
+    /** 0.1.11.61 (Q0): the weight class of a melee weapon, for its sounds. */
+    enum Heft { LIGHT, BLADE, HEAVY }
+
+    static Heft heftOf(ItemStack weapon) {
+        var item = weapon.getItem();
+        if (item instanceof net.minecraft.world.item.AxeItem || item instanceof net.minecraft.world.item.MaceItem) return Heft.HEAVY;
+        if (item instanceof net.minecraft.world.item.SwordItem || item instanceof net.minecraft.world.item.TridentItem) return Heft.BLADE;
+        return Heft.LIGHT;
+    }
+
+    /** 0.1.11.61 (Q0): a dive into the target (sinking faster than this, blocks per tick) is a critical hit. */
+    static final double CRIT_DIVE = 0.25;
+
+    /**
+     * 0.1.11.61 (Q0, decision one A): the sound and the sparks of a melee strike. A hit: the strike (a sweep for a blade, a
+     * low heavy blow for an axe or mace, a knock for the rest) under a deep thud, crit sparks and the crit sound in a dive,
+     * the sweep mark for a blade; a miss: the whiff. Before, a Wingman struck in silence.
+     */
+    private void meleeImpact(@Nullable LivingEntity enemy, boolean hit) {
+        if (!(level() instanceof ServerLevel world)) return;
+        Heft heft = heftOf(getMainHandItem());
+        Vec3 at = enemy != null ? enemy.position().add(0, enemy.getBbHeight() * 0.6, 0) : getEyePosition().add(getLookAngle().scale(2));
+        float pitch = 0.92F + getRandom().nextFloat() * 0.16F;
+        if (!hit) {
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.NEUTRAL, 0.8F, pitch);
+            return;
+        }
+        boolean crit = getDeltaMovement().y < -CRIT_DIVE;
+        switch (heft) {
+            case HEAVY -> world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.NEUTRAL, 1.1F, 0.62F);
+            case BLADE -> world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.NEUTRAL, 0.9F, pitch);
+            default -> world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.NEUTRAL, 0.9F, pitch);
+        }
+        world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.NEUTRAL, 0.7F, 0.55F);   // the deep thud under it
+        if (heft == Heft.BLADE) world.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        if (crit) {
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.NEUTRAL, 1.0F, 1.0F);
+            world.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 14, 0.3, 0.4, 0.3, 0.4);
+        } else {
+            world.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 4, 0.2, 0.3, 0.2, 0.2);
+        }
+    }
+
+    /** Ticks a melee Wingman stays at its target after a hit before it boosts away (0.1.11.46). */
+    static final int HIT_PAUSE = 3;
+    private int hitPause;
 
     // ---- electric weapons (0.1.10.4)
 
@@ -836,7 +1561,11 @@ public class WingmanEntity extends Mob {
     @Override
     public boolean doHurtTarget(Entity target) {
         ItemStack weapon = getMainHandItem();
-        if (!(weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc tool)) return super.doHurtTarget(target);
+        if (!(weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc tool)) {
+            boolean hit = super.doHurtTarget(target);
+            if (hit && !SlashBladeCombat.isBlade(weapon)) wear(weapon, EquipmentSlot.MAINHAND, 1);   // 0.1.11.42: as a player's hit
+            return hit;
+        }
         // the equipment check applies a changed weapon's modifiers only at the next tick: apply them now
         // (same ids as the held item's, so they replace what is there)
         weapon.forEachModifier(net.minecraft.world.entity.EquipmentSlot.MAINHAND, (attribute, modifier) -> {
@@ -851,11 +1580,12 @@ public class WingmanEntity extends Mob {
         if (hit) {
             float knock = getKnockback(target, source);
             if (knock > 0.0F && target instanceof LivingEntity living) {
-                living.knockback(knock * 0.5F, Mth.sin(getYRot() * Mth.DEG_TO_RAD), -Mth.cos(getYRot() * Mth.DEG_TO_RAD));
+                living.knockback(knock * 0.5F, Mth.sin(facing() * Mth.DEG_TO_RAD), -Mth.cos(facing() * Mth.DEG_TO_RAD));
                 setDeltaMovement(getDeltaMovement().multiply(0.6, 1.0, 0.6));
             }
             if (level() instanceof ServerLevel world) net.minecraft.world.item.enchantment.EnchantmentHelper.doPostAttackEffects(world, target, source);
             if (target instanceof LivingEntity living) tool.hurtEnemy(weapon, living, this);
+            wear(weapon, EquipmentSlot.MAINHAND, 1);                  // 0.1.11.42 (most SI electric tools have no durability)
             setLastHurtMob(target);
         }
         return hit;
@@ -870,6 +1600,10 @@ public class WingmanEntity extends Mob {
                 && saber.hasEnoughEnergy(weapon, com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.ACTIVATE_COST)) {
             com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.setActive(weapon, true);
             playSound(mio_icif_sounds.NANO_HF_SYNC.get(), 0.6F, 1.3F);
+            toldEmpty = false;
+        } else if (weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber
+                && !com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.isActive(weapon)) {
+            tellEmpty(weapon);   // 0.1.11.42: a nanosaber without its activation charge fights switched off
         }
     }
 
@@ -884,7 +1618,7 @@ public class WingmanEntity extends Mob {
         }
     }
 
-    /** 0.1.10.11: ticks between two combo inputs in reach, so each slash of the blade plays out. */
+    /** 0.1.10.11: ticks of the arm cut of one combo input (the client key frames; 0.1.11.53: the chains time the inputs). */
     static final int BLADE_COMBO_TICKS = 8;
 
     /**
@@ -905,45 +1639,174 @@ public class WingmanEntity extends Mob {
      * every 5 ticks cut each motion short), release a Slash Art every {@link #ARTS_INTERVAL} ticks
      * of contact. The blade's own tick actions do the cutting.
      */
+    // ---- SlashBlade combos (0.1.11.53, gaze and Iron Man phase P1, decision two A)
+    //
+    // The Wingman plays whole chains ({@link BladeChain}): in the air the aerial chains A and B by turns, opening a fight
+    // from above with the aerial cleave (a dive onto the target, the landing slash); against a target on the ground with
+    // room beside it, it lands there (onGround picks the ground chains) for the chains A (a4, or a4_ex and a5ex when
+    // powered), C and the B flurry, stays down until the finisher has played and takes off. During a chain it stays at
+    // the target (no circling, which took it out of reach and broke the chain), and a Slash Art comes only between chains.
+
+    /** Most blocks to the target at which a chain starts or goes on (SlashBlade's reach). */
+    static final double BLADE_REACH = 3.5;
+    /** Chance that a chain against a target on the ground is played on the ground. */
+    static final float GROUND_CHANCE = 0.6F;
+    /** Ticks a Wingman tries to reach its ground spot or the cleave perch before it plays an aerial chain instead. */
+    static final int SETUP_TICKS = 40;
+    /** Ticks after the kick of aerial_rave_b3 in which the Wingman does not steer (the blade lifts it). */
+    static final int KICK_TICKS = 6;
+
+    private final BladeChain chain = new BladeChain();
+    /** The chain chosen next and where it is set up (the ground spot or the cleave perch), and since when. */
+    @Nullable private BladeChain.Kind planned;
+    @Nullable private Vec3 setupAt;
+    private int setupTicks, kickTicks;
+    private boolean aerialB, firstChain = true;
+    @Nullable private LivingEntity chainTarget;
+
+    /** 0.1.11.53: the chain scheduler (tests). */
+    BladeChain bladeChain() { return chain; }
+
     private void engageBlade(LivingEntity enemy, ServerPlayer player) {
-        Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
-        faceSmooth(enemy.getEyePosition(), 45);
+        faceSmooth(enemy.getEyePosition(), GAZE_TURN);
+        long now = level().getGameTime();
+        if (enemy != chainTarget) { chainTarget = enemy; firstChain = true; planned = null; chain.end(now, 0); }
         double d = distanceTo(enemy);
-        if (dashTicks > 0) {                                      // rapid slash: a straight burst through the target
-            dashTicks--;
-            Vec3 to = aim.subtract(position());
-            if (to.lengthSqr() > 1.0E-4) setDeltaMovement(to.normalize().scale(1.6));
-        } else {
-            steer(aim.add(enemy.getDeltaMovement().scale(3)).add(sideOf(enemy).scale(0.8)), COMBAT, player);
+        BladeChain.Kind running = chain.running(now);
+        if (running != null) {
+            playChain(enemy, player, running, now, d);
+            return;
         }
-        if (attackCooldown > 0) return;
+        if (!chain.free(now)) { holdAtBlade(enemy, player, false); return; }
+        // between chains: a Slash Art when it is ready
         if (artsCooldown == 0 && d < 7 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
                 slash(SLASH_ARTS);
                 artsCooldown = ARTS_INTERVAL;
-                attackCooldown = 20;
+                chain.end(now, 20);
                 boost(position().subtract(enemy.position()));     // 0.1.9.1: break away after the art
                 return;
             }
         }
-        if (d > 3.5 && d < 9 && hasLineOfSight(enemy)) {
-            if (SlashBladeCombat.attack(this, enemy, SlashBladeCombat.Command.FORWARD, SlashBladeCombat.Command.SPRINT) != null) {
-                slash(SLASH_DASH);
-                dashTicks = 5;
-                attackCooldown = 12;
-                return;
+        if (planned == null) plan(enemy, now);
+        if (planned == null) { engageMelee(enemy, player); return; }   // the bridge went off: a plain sword
+        switch (planned) {
+            case CLEAVE -> {
+                // above the target, a little to the side; then the dive
+                if (setupAt == null || position().distanceTo(setupAt) > 1.2) {
+                    if (setupAt == null || ++setupTicks > SETUP_TICKS) { planned = BladeChain.Kind.AERIAL_A; setupAt = null; return; }
+                    steer(setupAt, COMBAT, player);
+                    return;
+                }
+                startChain(BladeChain.Kind.CLEAVE, now);
+                playChain(enemy, player, BladeChain.Kind.CLEAVE, now, d);
+            }
+            case GROUND_A, GROUND_B, GROUND_C -> {
+                if (setupAt == null || ++setupTicks > SETUP_TICKS || setupAt.distanceTo(enemy.position()) > BLADE_REACH) {
+                    planned = aerialB ? BladeChain.Kind.AERIAL_B : BladeChain.Kind.AERIAL_A;
+                    setupAt = null;
+                    return;
+                }
+                if (!descendTo(setupAt, player)) return;
+                BladeChain.Kind k = planned;
+                startChain(k, now);
+                playChain(enemy, player, k, now, d);
+            }
+            default -> {
+                if (d > BLADE_REACH) { steer(enemy.position().add(0, enemy.getBbHeight() * 0.5, 0).add(enemy.getDeltaMovement().scale(3)), COMBAT, player); return; }
+                BladeChain.Kind k = planned;
+                startChain(k, now);
+                playChain(enemy, player, k, now, d);
             }
         }
-        if (d <= 3.5) {
-            if (SlashBladeCombat.attack(this, enemy) != null) {
-                slash(SLASH_COMBO);
-                attackCooldown = BLADE_COMBO_TICKS;
-            } else if (isWithinMeleeAttackRange(enemy)) {        // bridge off: plain sword
-                swing(InteractionHand.MAIN_HAND);
-                doHurtTarget(enemy);
-                attackCooldown = Mth.ceil(20.0 / Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED)));
-            }
+    }
+
+    /** Chooses the next chain and where to set it up. */
+    private void plan(LivingEntity enemy, long now) {
+        if (!SlashBladeCombat.isBlade(getMainHandItem())) return;
+        setupTicks = 0;
+        setupAt = null;
+        Vec3 side = position().subtract(enemy.position()).multiply(1, 0, 1);
+        side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+        Vec3 spot = standsOnFloor(enemy) ? findLanding(enemy.position().add(side.scale(1.8)).add(0, 1.0, 0)) : null;
+        if (spot != null && Math.abs(spot.y - enemy.getY()) > 1.1) spot = null;
+        Vec3 perch = enemy.position().add(side.scale(1.2)).add(0, 4.0, 0);
+        if (firstChain && spot != null && level().noCollision(this, getBoundingBox().move(perch.subtract(position())).expandTowards(0, -3.0, 0))) {
+            planned = BladeChain.Kind.CLEAVE;   // the opener: up to the perch above the target, then the dive
+            setupAt = perch;
+        } else if (spot != null && getRandom().nextFloat() < GROUND_CHANCE) {
+            BladeChain.Kind[] ground = {BladeChain.Kind.GROUND_A, BladeChain.Kind.GROUND_C, BladeChain.Kind.GROUND_B};
+            planned = ground[getRandom().nextInt(ground.length)];
+            setupAt = spot;
+        } else {
+            planned = aerialB ? BladeChain.Kind.AERIAL_B : BladeChain.Kind.AERIAL_A;
         }
+        firstChain = false;
+    }
+
+    /** True when {@code e} stands on a floor (its onGround, or a solid block right under its feet: a still mob never updates onGround). */
+    private boolean standsOnFloor(LivingEntity e) {
+        if (e.onGround()) return true;
+        BlockPos under = BlockPos.containing(e.getX(), e.getY() - 0.05, e.getZ());
+        var shape = level().getBlockState(under).getCollisionShape(level(), under);
+        return !shape.isEmpty() && under.getY() + shape.max(net.minecraft.core.Direction.Axis.Y) >= e.getY() - 0.06;
+    }
+
+    private void startChain(BladeChain.Kind kind, long now) {
+        chain.start(kind, now);
+        planned = null;
+        setupAt = null;
+        if (kind == BladeChain.Kind.AERIAL_A || kind == BladeChain.Kind.AERIAL_B) aerialB = !aerialB;
+    }
+
+    /** Flies down onto {@code spot} (a floor point); true when the Wingman stands on it. */
+    private boolean descendTo(Vec3 spot, ServerPlayer player) {
+        Vec3 to = spot.subtract(position());
+        if (onGround() && to.horizontalDistanceSqr() < 0.6 * 0.6) return true;
+        if (to.horizontalDistanceSqr() > 0.5 * 0.5) steer(new Vec3(spot.x, Math.max(spot.y + 0.6, Math.min(getY(), spot.y + 2.5)), spot.z), COMBAT, player);
+        else setDeltaMovement(to.x * 0.4, Math.max(-0.4, Math.min(-0.08, to.y * 0.5)), to.z * 0.4);
+        return false;
+    }
+
+    /** One tick of a running chain: stay at the target (on the ground, or in the air), click when due. */
+    private void playChain(LivingEntity enemy, ServerPlayer player, BladeChain.Kind kind, long now, double d) {
+        if (kind.grounded) {
+            if (!onGround() && chain.clicks() > 0 && !chain.resting(now)) { chain.end(now, BladeChain.MISS_REST); return; }   // knocked off the ground: the chain is lost
+            setDeltaMovement(0, -0.1, 0);   // stand (the suit flies without gravity)
+            if (!chain.resting(now) && d > BLADE_REACH + 0.5) { chain.end(now, BladeChain.MISS_REST); return; }   // the target left
+        } else if (kind == BladeChain.Kind.CLEAVE) {
+            // the dive: the blade drives the Wingman down (3 blocks per tick) until it lands; no steering against it
+            if (chain.resting(now) && onGround()) setDeltaMovement(0, -0.1, 0);
+        } else if (kickTicks > 0) {
+            kickTicks--;
+        } else {
+            holdAtBlade(enemy, player, true);
+            if (onGround() && chain.clicks() == 0) return;   // an aerial chain starts in the air (onGround picks the chain)
+        }
+        if (!chain.due(now)) return;
+        if (kind != BladeChain.Kind.CLEAVE && d > BLADE_REACH + 0.5) return;   // wait for reach (the window may still hold)
+        net.minecraft.resources.ResourceLocation combo = kind == BladeChain.Kind.CLEAVE
+            ? SlashBladeCombat.input(this, enemy, SlashBladeCombat.Command.SNEAK, SlashBladeCombat.Command.BACK, SlashBladeCombat.Command.R_CLICK)
+            : SlashBladeCombat.attack(this, enemy);
+        String path = combo == null ? null : combo.getPath();
+        if (chain.clicked(now, path)) {
+            slash(SLASH_COMBO);
+            if ("aerial_rave_b3".equals(path)) kickTicks = KICK_TICKS;
+        }
+        if (BLADE_LOG) com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.info("Wingman {} blade {} click -> {} (chain {}, clicks {})", getId(), kind, path,
+            chain.running(now), chain.clicks());
+    }
+
+    /** Debug log of the blade clicks (-Dsi.wingman.bladeLog=true; the capture scene and the tests read it). */
+    static final boolean BLADE_LOG = Boolean.getBoolean("si.wingman.bladeLog") || "wingman_blade".equals(System.getProperty("si.capture.scene"));
+
+    /** Hover at the target within reach, on the side the Wingman is on (no circling). */
+    private void holdAtBlade(LivingEntity enemy, ServerPlayer player, boolean close) {
+        if (onGround() && chain.resting(level().getGameTime())) { setDeltaMovement(0, -0.1, 0); return; }
+        Vec3 side = position().subtract(enemy.position()).multiply(1, 0, 1);
+        side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+        Vec3 at = enemy.position().add(side.scale(close ? 2.0 : 2.6)).add(0, enemy.getBbHeight() * 0.35, 0);
+        steer(at, COMBAT, player);
     }
 
     /**
@@ -982,8 +1845,18 @@ public class WingmanEntity extends Mob {
         if (splash(weapon) && enemy.distanceToSqr(player) < 5.5 * 5.5) return;   // no blast next to the owner
         int cooldown = fire(weapon, aim.subtract(muzzle), enemy);
         if (cooldown >= 0) entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);   // muzzle flash on the clients
-        if (cooldown >= 0) attackCooldown = Math.max(2, cooldown);
-        else attackCooldown = 20;                                  // could not fire (no charge): try again later
+        if (cooldown >= 0) {
+            attackCooldown = Math.max(2, cooldown);
+            entityData.set(DATA_FIRE_CD, attackCooldown);           // 0.1.11.46: the clients time the draw and the reload by it
+            toldEmpty = false;
+            wear(weapon, EquipmentSlot.MAINHAND, 1);                // 0.1.11.42: a shot wears the weapon (arrows stay free)
+        } else {
+            // 0.1.11.42 (decision 2 C): could not fire (no charge): melee for 10 s, then try again; the owner is told once.
+            // Before, the Wingman hovered at its firing station and tried again every second without a word.
+            attackCooldown = 10;
+            dryUntil = tickCount + 200;
+            tellEmpty(weapon);
+        }
     }
 
     /** Fires the held ranged weapon along {@code dir}. Returns the cooldown, or -1. */
@@ -1069,7 +1942,7 @@ public class WingmanEntity extends Mob {
         Vec3 d = at.subtract(getEyePosition());
         float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
         float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
-        return Math.abs(Mth.wrapDegrees(yaw - getYRot())) + Math.abs(pitch - getXRot());
+        return Math.abs(Mth.wrapDegrees(yaw - facing())) + Math.abs(pitch - getXRot());
     }
 
     /** Turns toward {@code at} by at most {@code maxStep} degrees per tick (no snapping). */
@@ -1077,8 +1950,8 @@ public class WingmanEntity extends Mob {
         Vec3 d = at.subtract(getEyePosition());
         float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
         float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
-        float dy = Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -maxStep, maxStep);
-        setYaw(getYRot() + dy);
+        float dy = Mth.clamp(Mth.wrapDegrees(yaw - facing()), -maxStep, maxStep);
+        setYaw(facing() + dy);
         setXRot(getXRot() + Mth.clamp(pitch - getXRot(), -maxStep, maxStep));
     }
 
@@ -1086,10 +1959,13 @@ public class WingmanEntity extends Mob {
     @Nullable
     private LivingEntity ownerFocus(ServerPlayer player) {
         LivingEntity marked = player.getLastHurtMob();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, LEASH)) return marked;
+        double leash = WingmanConfig.leash();
+        // 0.1.11.43 (G-7): the owner's hit calls the squad only on a hostile creature (a stray hit on a villager, a golem or a
+        // friend's horse no longer turns every Wingman on it); a neutral one is a target when it fights the owner
+        if (marked != null && marked instanceof Enemy && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, leash)) return marked;
         // 0.1.10.1 Fleet Datalink synergy: the creature in the owner's sights
         LivingEntity sighted = com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(player);
-        return sighted != null && valid(sighted, player, LEASH * 2) ? sighted : null;
+        return sighted instanceof Enemy && valid(sighted, player, leash * 2) ? sighted : null;
     }
 
     /** Nearest hostile mob within {@code range} of the owner that hunts the owner. */
@@ -1128,17 +2004,14 @@ public class WingmanEntity extends Mob {
         return push;
     }
 
-    /** Escort place of this Wingman: behind and to the side of the owner, at shoulder height. */
+    /**
+     * Escort place of this Wingman: behind and to the side of the owner, at shoulder height; 0.1.11.51 (F2): with speed it
+     * follows the flight direction and opens into a V ({@link WingmanFlight#place}).
+     */
     private Vec3 formation(ServerPlayer player) {
-        double[][] offsets = {{-1.6, 1.2, -1.8}, {1.6, 1.2, -1.8}, {-2.9, 1.7, -0.6}, {2.9, 1.7, -0.6}};
-        double[] o = offsets[Math.floorMod(slot, offsets.length)];
         // 0.1.8.4: tighter guard when the owner is below 40 % health
         double k = player.getHealth() < player.getMaxHealth() * 0.4F ? 0.6 : 1.0;
-        o = new double[]{o[0] * k, o[1], o[2] * k};
-        double yaw = Math.toRadians(player.getYRot());
-        double fx = -Math.sin(yaw), fz = Math.cos(yaw);       // forward
-        double rx = -Math.cos(yaw), rz = -Math.sin(yaw);      // right
-        return player.position().add(rx * o[0] + fx * o[2], o[1], rz * o[0] + fz * o[2]);
+        return WingmanFlight.place(player.position(), player.getYRot(), speedStarved ? Vec3.ZERO : ownerVelocity, slot, k);
     }
 
     /** Steers the velocity to {@code goal} with a limited acceleration; climbs over obstacles. */
@@ -1153,10 +2026,14 @@ public class WingmanEntity extends Mob {
         v = v.add(dv);
         if (horizontalCollision) v = v.add(0, 0.3, 0);
         setDeltaMovement(v);
-        if (target == null) {
-            if (v.horizontalDistanceSqr() > 0.02) faceSmooth(getEyePosition().add(v.x, 0, v.z), 20);
-            else if (player != null) setYaw(getYRot() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - getYRot()), -15, 15));
-        }
+        faceFlight(v, player);
+    }
+
+    /** Without a target the Wingman looks where it flies, or slowly the way its owner looks when it hovers. */
+    private void faceFlight(Vec3 v, @Nullable ServerPlayer player) {
+        if (target != null) return;
+        if (v.horizontalDistanceSqr() > 0.02) faceSmooth(getEyePosition().add(v.x, 0, v.z), 20);
+        else if (player != null) setYaw(facing() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - facing()), -15, 15));
     }
 
     private void face(Vec3 at) {
@@ -1165,10 +2042,25 @@ public class WingmanEntity extends Mob {
         setXRot((float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z))));
     }
 
+    /**
+     * The way the Wingman looks and aims (its head). 0.1.11.47 (motion audit M4): the head turns first, the body follows at
+     * {@link #BODY_TURN} degrees per tick (before, both snapped together, up to 45 degrees in a tick of combat).
+     */
+    float facing() { return yHeadRot; }
+
+    /** Most degrees per tick the body turns after the head. */
+    static final float BODY_TURN = 18.0F;
+
+    /** 0.1.11.52 (P0): most degrees between the head and the body (the body is pulled along beyond it). */
+    static final float NECK = 75.0F;
+
     private void setYaw(float yaw) {
-        setYRot(yaw);
-        yBodyRot = yaw;
         yHeadRot = yaw;
+        float body = getYRot() + Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -BODY_TURN, BODY_TURN);
+        float neck = Mth.wrapDegrees(yaw - body);
+        if (Math.abs(neck) > NECK) body = yaw - Math.copySign(NECK, neck);
+        setYRot(body);
+        yBodyRot = body;
     }
 
     /**
@@ -1191,15 +2083,28 @@ public class WingmanEntity extends Mob {
     private void syncTarget(ServerLevel world) {
         int id = target != null && target.isAlive() && state() == ACTIVE ? target.getId() : -1;
         if (id == entityData.get(DATA_TARGET)) return;
+        boolean fresh = id >= 0 && tickCount - lastGlare >= GLARE_REST;
+        // 0.1.11.58 (P6): the kill of the last target and a new lock are called
+        int before = entityData.get(DATA_TARGET);
+        if (before >= 0 && world.getEntity(before) instanceof LivingEntity old && old.isDeadOrDying()) WingmanCallouts.say(this, WingmanCallouts.Kind.KILL, old.getName());
+        if (id >= 0 && target != null) WingmanCallouts.say(this, WingmanCallouts.Kind.LOCK, target.getName());
         entityData.set(DATA_TARGET, id);
+        // 0.1.11.52 (P0, decision one A): a new lock starts with a stare: the Wingman stops, turns its head on the enemy and
+        // holds it there for GLARE ticks before the first attack (at most once per GLARE_REST ticks, so a fight that
+        // switches targets does not stall)
+        if (fresh) { glareTicks = GLARE; lastGlare = tickCount; }
+        if (id < 0) glareTicks = 0;
         station = null;
+        hitPause = 0;   // 0.1.11.46: a new target starts without the pause of the last hit
         if (id >= 0) world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_LOCK.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
     }
 
     private void catchUp(ServerPlayer player) {
         Vec3 at = formation(player).add(0, 2, 0);
         teleportTo(at.x, at.y, at.z);
-        setDeltaMovement(Vec3.ZERO);
+        setDeltaMovement(ownerVelocity);   // 0.1.11.50: it arrives at the owner's speed (it stopped dead before and fell behind again)
+        stuckTicks = 0;
+        stuckBest = Double.MAX_VALUE;
     }
 
     // ---- return home
@@ -1255,6 +2160,7 @@ public class WingmanEntity extends Mob {
      */
     void secure() {
         if (secured || !(level() instanceof ServerLevel world)) return;
+        flushSwap();   // 0.1.11.54: pieces of a swap in flight go back to the suit (or home) with the rest
         secured = true;
         WingmanSorties ledger = WingmanSorties.get(world.getServer());
         if (ledger != null) ledger.close(sortie);
@@ -1284,7 +2190,15 @@ public class WingmanEntity extends Mob {
             }
             if (!rest.isEmpty()) spawnAtLocation(rest);
         }
-        if (home != null) home.markStorageChanged();
+        if (home != null && reserve > 0) {
+            // 0.1.11.41: the reserve that was not flown goes back (as far as the Armory has room; without the Armory it is lost)
+            home.getEnergyStorageInternal().generateEnergyInternal(reserve, false);
+        }
+        reserve = 0;
+        if (home != null) {
+            home.releaseDeployed(set, sortie);   // 0.1.11.39 (G-1)
+            home.markStorageChanged();
+        }
     }
 
     /**
@@ -1316,6 +2230,7 @@ public class WingmanEntity extends Mob {
     /** Empties a copy without a drop: its items exist elsewhere (the Armory, the first Wingman). */
     private void voidCopy(ServerLevel world, String reason) {
         secured = true;                 // remove() and die() must not send these items home
+        reserve = 0;                    // 0.1.11.41: nor its reserve (the real Wingman has it)
         setSilent(true);
         for (EquipmentSlot s : EquipmentSlot.values()) setItemSlot(s, ItemStack.EMPTY);
         com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn(
@@ -1406,7 +2321,7 @@ public class WingmanEntity extends Mob {
     public LivingEntity getControllingPassenger() { return null; }
 
     @Override
-    protected boolean canAddPassenger(Entity passenger) { return getPassengers().isEmpty() && state() == ACTIVE; }
+    protected boolean canAddPassenger(Entity passenger) { return false; }   // 0.1.11.43: no Fulton cargo any more
 
     @Override
     protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float scale) {
@@ -1445,27 +2360,130 @@ public class WingmanEntity extends Mob {
     // filtered per tick like the flight factor; the recoil holds while shots keep coming, so a fast gun
     // gives a steady braced pose instead of a kick every 2 ticks
     private float combat, combatO, recoil, recoilO;
-    private int seenShots = Integer.MIN_VALUE, lastShot = -100;
+    // 0.1.11.44 (motion audit M0, M-4): the smoothed horizontal velocity in the body frame (forward, right), for the lean
+    private float moveF, moveFO, moveR, moveRO;
+    // 0.1.11.45 (M1): the smoothed climb, turn rate and braking, and the tick of the last thruster boost (the leg tuck)
+    private float moveU, moveUO, turn, turnO, brake, brakeO;
+    private int seenBoosts = Integer.MIN_VALUE, boostAt = -100;
+    /** 0.1.11.51 (F2): the smoothed weight of the high-speed pose, and its smoothing per tick. */
+    private float prone, proneO;
+    static final float PRONE_SMOOTH = 0.12F;
+    // 0.1.11.47 (M4): the ticks of the last touchdown and take-off (the cushion, the push-off)
+    private boolean wasDown;
+    private int landedAt = -100, tookOffAt = -100;
+    /** Smoothing per tick of the turn rate and the braking (the attitude test checks them as the entity uses them). */
+    public static final float TURN_SMOOTH = 0.10F, BRAKE_SMOOTH = 0.15F;
+    private int seenShots = Integer.MIN_VALUE, lastShot = -100, shotCooldown = 20;
     /** The recoil holds this many ticks after a shot (a gun firing faster keeps a steady braced pose). */
     private static final int RECOIL_HOLD = 8;
+
+    // 0.1.11.52 (P0, decision three A): the idle glances of this Wingman (client), spaced from the other Wingmen's
+    private final WingmanGlance glance = new WingmanGlance();
+    private static final WingmanGlance.Shared GLANCES = new WingmanGlance.Shared();
+
+    /** Client: the idle glance as a head offset {yaw, pitch}, radians (0.1.11.52). */
+    public float[] glance(float partialTick) { return glance.offset(partialTick); }
+
+    /** Client: what an idle glance looks at: a creature just hurt, else the nearest one (not a Wingman), or null. */
+    @Nullable
+    private float[] glancePick() {
+        if (getRandom().nextFloat() < 0.3F) return null;   // now and then just a look round
+        LivingEntity best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(12),
+                e -> e != this && e.isAlive() && !(e instanceof WingmanEntity))) {
+            double score = distanceToSqr(e) - (e.hurtTime > 0 ? 1000 : 0);
+            if (score < bestScore) { bestScore = score; best = e; }
+        }
+        if (best == null) return null;
+        Vec3 d = best.getEyePosition().subtract(getEyePosition());
+        float yaw = Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(-d.x, d.z)) - yBodyRot);
+        float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
+        return new float[]{yaw * Mth.DEG_TO_RAD, pitch * Mth.DEG_TO_RAD};
+    }
+
+    // 0.1.11.58 (P6): battle damage on the client: sparks below half durability, smoke and an unsteady flight below a quarter
+    private int damageLevel;
+
+    /** Client: the damage level of the worst worn armour piece ({@link WingmanPose#damageLevel}). */
+    public int damageLevel() { return damageLevel; }
+
+    /** Client: the unsteady flight of a badly damaged suit, {pitch, roll} degrees. */
+    public float[] damageShake(float partialTick) {
+        return WingmanPose.damageShake(tickCount + partialTick, damageLevel, 1 - landBlend(partialTick));
+    }
+
+    /** 0.1.11.62: true when the client draws the classic flight effects (set by the client setup; the client option). */
+    public static java.util.function.BooleanSupplier CLASSIC_FX = () -> true;
+
+    private void tickDamageFx() {
+        if (tickCount % 10 == 0) {
+            float worst = 1;
+            for (ArmoryPiece p : ArmoryPiece.VALUES) {
+                ItemStack s = getItemBySlot(p.slot);
+                if (!p.isArmor() || !wears(s)) continue;
+                worst = Math.min(worst, (s.getMaxDamage() - s.getDamageValue()) / (float) s.getMaxDamage());
+            }
+            damageLevel = WingmanPose.damageLevel(worst);
+        }
+        if (damageLevel == 0) return;
+        var r = getRandom();
+        if (r.nextFloat() < (damageLevel == 2 ? 0.2F : 0.08F)) {
+            double x = getX() + (r.nextDouble() - 0.5) * 0.6, y = getY() + 0.6 + r.nextDouble(), z = getZ() + (r.nextDouble() - 0.5) * 0.6;
+            for (int i = 0; i < 3; i++)
+                level().addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, (r.nextDouble() - 0.5) * 0.3, r.nextDouble() * 0.2, (r.nextDouble() - 0.5) * 0.3);
+        }
+        if (damageLevel < 2) return;
+        Vec3 v = getDeltaMovement();
+        if (r.nextBoolean())
+            level().addParticle(ParticleTypes.SMOKE, getX() - v.x * 0.5, getY() + 1.1, getZ() - v.z * 0.5, -v.x * 0.1, 0.03, -v.z * 0.1);
+        if (r.nextFloat() < 0.03F) level().addParticle(ParticleTypes.FLAME, getX(), getY() + 0.1, getZ(), 0, -0.05, 0);   // a sputtering thruster
+    }
 
     private void tickAnimation() {
         flightO = flight;
         landO = land;
+        moveFO = moveF;
+        proneO = prone;
+        moveRO = moveR;
+        moveUO = moveU;
+        turnO = turn;
+        brakeO = brake;
         combatO = combat;
         recoilO = recoil;
         boolean down = landed();
+        if (down != wasDown) {
+            if (down) landedAt = tickCount;
+            else tookOffAt = tickCount;
+            wasDown = down;
+        }
         double dx = getX() - xo, dz = getZ() - zo;
         float want = down ? 0 : (float) Mth.clamp(Math.sqrt(dx * dx + dz * dz) * 1.6, 0, 1);
         flight += (want - flight) * 0.2F;
+        float[] frame = WingmanPose.bodyFrame(down ? 0 : dx, down ? 0 : dz, yBodyRot);
+        moveF += (frame[0] - moveF) * 0.2F;
+        moveR += (frame[1] - moveR) * 0.2F;
+        moveU += ((down ? 0 : (float) (getY() - yo)) - moveU) * 0.2F;
+        // 0.1.11.51 (F2): the high-speed pose comes and goes over about a second
+        prone += (WingmanPose.proneTarget(moveF, down ? 0 : 1) - prone) * PRONE_SMOOTH;
+        turn += (Mth.wrapDegrees(yBodyRot - yBodyRotO) - turn) * TURN_SMOOTH;   // slow: a snap turn in combat must not snap the bank
+        // lost forward speed per tick (moveF is smoothed by 0.2), at most a full brake: a reversal must not snap the flare
+        brake += (Math.min(WingmanPose.FULL_BRAKE, Math.max(0, moveFO - moveF) * 5) - brake) * BRAKE_SMOOTH;
+        int boosts = entityData.get(DATA_BOOSTS);
+        if (boosts != seenBoosts) {
+            if (seenBoosts != Integer.MIN_VALUE) boostAt = tickCount;
+            seenBoosts = boosts;
+        }
         land += ((down ? 1 : 0) - land) * 0.2F;
         combat += ((lockedTargetId() >= 0 ? 1 : 0) - combat) * 0.25F;
         int shots = entityData.get(DATA_SHOTS);
         if (shots != seenShots) {
             if (seenShots != Integer.MIN_VALUE) lastShot = tickCount;
             seenShots = shots;
+            shotCooldown = Math.max(2, entityData.get(DATA_FIRE_CD));
         }
         recoil += ((tickCount - lastShot <= RECOIL_HOLD ? 1 : 0) - recoil) * 0.35F;
+        glance.tick(level().getGameTime(), (1 - combat) * (1 - flight) * (1 - prone), getRandom(), GLANCES, this::glancePick);
         int s = entityData.get(DATA_SLASH);
         if (s != seenSlash) {
             if (seenSlash != Integer.MIN_VALUE) { slashStart = tickCount; slashKind = s & 3; }
@@ -1473,10 +2491,48 @@ public class WingmanEntity extends Mob {
         }
     }
 
+    /** Client: ticks since the last shot, with the partial tick (0.1.11.46: the draw, the reload, the throw). */
+    public float shotAge(float partialTick) { return tickCount - lastShot + partialTick; }
+    /** Client: the weapon's cooldown at the last shot, ticks. */
+    public int shotCooldown() { return shotCooldown; }
+
+    /** Client: the distance to the locked target, or a large value without one (0.1.11.46: the melee wind-up). */
+    public float targetDistance() {
+        int id = lockedTargetId();
+        Entity e = id < 0 ? null : level().getEntity(id);
+        return e == null ? 99 : distanceTo(e);
+    }
+
     /** Client: 0 (no target) .. 1 (target locked), smoothed (0.1.10.13). */
     public float combat(float partialTick) { return Mth.lerp(partialTick, combatO, combat); }
     /** Client: 0 .. 1 while firing, smoothed (0.1.10.13). */
     public float recoil(float partialTick) { return Mth.lerp(partialTick, recoilO, recoil); }
+
+    /** Client: the tilt {pitch, roll} in degrees from the smoothed flight direction (0.1.11.44, {@link WingmanPose#lean}). */
+    public float[] lean(float partialTick) {
+        // 0.1.11.45 (M1): with the bank of a turn, the climb or dive and the flare of a brake; 0.1.11.51 (F2): lying into
+        // the flight at high speed
+        return WingmanPose.prone(attitude(partialTick), proneBlend(partialTick));
+    }
+
+    /** Client: weight 0..1 of the high-speed pose (0.1.11.51), interpolated. */
+    public float proneBlend(float partialTick) { return Mth.lerp(partialTick, proneO, prone) * (1 - landBlend(partialTick)); }
+
+    private float[] attitude(float partialTick) {
+        return WingmanPose.attitude(Mth.lerp(partialTick, moveFO, moveF), Mth.lerp(partialTick, moveRO, moveR),
+            Mth.lerp(partialTick, moveUO, moveU), Mth.lerp(partialTick, turnO, turn), Mth.lerp(partialTick, brakeO, brake),
+            1 - landBlend(partialTick));
+    }
+
+    /** Client: ticks since the last touchdown, with the partial tick (0.1.11.47: the cushion). */
+    public float sinceLanding(float partialTick) { return tickCount - landedAt + partialTick; }
+    /** Client: ticks since the last take-off, with the partial tick (0.1.11.47: the push-off). */
+    public float sinceTakeoff(float partialTick) { return tickCount - tookOffAt + partialTick; }
+
+    /** Client: ticks since the last thruster boost (with the partial tick), for the leg tuck (0.1.11.45). */
+    public float boostAge(float partialTick) {
+        return tickCount - boostAt + partialTick;
+    }
 
     /** Client: 0 (hover) .. 1 (full speed), smoothed. */
     public float flight(float partialTick) { return Mth.lerp(partialTick, flightO, flight); }
@@ -1496,11 +2552,13 @@ public class WingmanEntity extends Mob {
         super.tick();
         if (level().isClientSide && isAlive()) {
             tickAnimation();
+            tickDamageFx();
             if (landed()) return;   // 0.1.10.11: thrusters off on the ground
             // boot thrusters: two jets, stronger when the drone climbs or moves fast
             Vec3 v = getDeltaMovement();
             double yaw = Math.toRadians(yBodyRot);
             double rx = -Math.cos(yaw) * 0.13, rz = -Math.sin(yaw) * 0.13;
+            if (!CLASSIC_FX.getAsBoolean()) return;   // 0.1.11.62: the constructivist wedges and bars are drawn by WingmanFx
             for (int side = -1; side <= 1; side += 2) {
                 level().addParticle(ArmoryRegistry.THRUST.get(), getX() + rx * side, getY() + 0.05, getZ() + rz * side,
                     -v.x * 0.3, -0.22 - Math.max(0, v.y) * 0.4, -v.z * 0.3);
@@ -1517,11 +2575,23 @@ public class WingmanEntity extends Mob {
         if (armory != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, armory).result().ifPresent(t -> tag.put("Armory", t));
         tag.putInt("Set", set);
         if (sortie != null) tag.putUUID("Sortie", sortie);   // 0.1.10.5
+        tag.putLong("Reserve", reserve);                       // 0.1.11.41
         tag.putByte("Mode", entityData.get(DATA_MODE));
         tag.putByte("State", state());
         tag.putBoolean("Protected", protectedReturn);
         // 0.1.10.2 (absent in older saves: squad mode, no order); a focus order is not saved
         tag.putBoolean("Individual", individual);
+        // 0.1.11.54: the pieces of a swap in flight (they go back to the suit when the Wingman loads)
+        if (swapPhase != SWAP_NONE) {
+            var provider = registryAccess();
+            net.minecraft.nbt.ListTag out = new net.minecraft.nbt.ListTag(), in = new net.minecraft.nbt.ListTag();
+            for (int i = 0; i < ArmoryPiece.VALUES.length; i++) {
+                out.add(swapOut[i].isEmpty() ? new CompoundTag() : swapOut[i].save(provider));
+                in.add(swapIn[i].isEmpty() ? new CompoundTag() : swapIn[i].save(provider));
+            }
+            tag.put("SwapOut", out);
+            tag.put("SwapIn", in);
+        }
         if (order.anchored() && orderPos != null) {
             tag.putByte("Order", (byte) order.ordinal());
             tag.putDouble("OrderX", orderPos.x);
@@ -1537,8 +2607,10 @@ public class WingmanEntity extends Mob {
         armory = tag.contains("Armory") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Armory")).result().orElse(null) : null;
         set = tag.getInt("Set");
         sortie = tag.hasUUID("Sortie") ? tag.getUUID("Sortie") : null;
-        entityData.set(DATA_MODE, tag.getByte("Mode"));
-        entityData.set(DATA_STATE, tag.getByte("State"));
+        reserve = Math.max(0, tag.getLong("Reserve"));   // 0.1.11.41 (absent in older saves: no reserve)
+        entityData.set(DATA_MODE, (byte) WingmanMode.byId(tag.getByte("Mode")).ordinal());   // 0.1.11.43: Fulton (3) loads as Escort
+        byte state = tag.getByte("State");
+        entityData.set(DATA_STATE, state == RETURNING ? RETURNING : ACTIVE);                   // 0.1.11.43: a Fulton lift (2) is over
         protectedReturn = tag.getBoolean("Protected");
         individual = tag.getBoolean("Individual");
         WingmanOrder saved = tag.contains("Order") ? WingmanOrder.byId(tag.getByte("Order")) : WingmanOrder.NONE;
@@ -1548,6 +2620,15 @@ public class WingmanEntity extends Mob {
         } else {
             order = WingmanOrder.NONE;
             orderPos = null;
+        }
+        if (tag.contains("SwapOut")) {
+            var provider = registryAccess();
+            net.minecraft.nbt.ListTag out = tag.getList("SwapOut", net.minecraft.nbt.Tag.TAG_COMPOUND), in = tag.getList("SwapIn", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < ArmoryPiece.VALUES.length; i++) {
+                swapOut[i] = i < out.size() ? ItemStack.parseOptional(provider, out.getCompound(i)) : ItemStack.EMPTY;
+                swapIn[i] = i < in.size() ? ItemStack.parseOptional(provider, in.getCompound(i)) : ItemStack.EMPTY;
+            }
+            swapPhase = SWAP_RESUME;   // flushed on the first tick
         }
         setNoGravity(true);
     }

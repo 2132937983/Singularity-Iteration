@@ -96,11 +96,12 @@ public final class Round1138GameTests {
         h.setBlock(REACTOR, BuiltInRegistries.BLOCK.get(id("generator/block_nuclear_reactor_generator")));
         h.setBlock(REACTOR.north(), BuiltInRegistries.BLOCK.get(id("reactor/block_reactor_chamber")));
         h.runAfterDelay(2, () -> {
+            // 0.1.11.4: the generator-mode liquid cooling is removed; the chamber forwards no coolant, as its reactor takes none
             IFluidHandler chamber = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(REACTOR.north()), Direction.NORTH);
-            h.assertTrue(chamber != null, "The reactor chamber has no fluid handler");
-            h.assertTrue(chamber.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE) == 1000, "The chamber refused coolant");
+            h.assertTrue(chamber == null || chamber.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.SIMULATE) == 0,
+                "A generator-mode reactor chamber takes no coolant");
             IFluidHandler core = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(REACTOR), null);
-            h.assertTrue(core != null && core.getFluidInTank(0).getAmount() == 1000, "The coolant did not reach the reactor");
+            h.assertTrue(core == null, "The reactor itself has no coolant tank");
             h.succeed();
         });
     }

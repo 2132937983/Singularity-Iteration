@@ -23,8 +23,8 @@ The machine sends EU to the blocks on all six faces.
 
 | Item | Value |
 |---|---|
-| Output voltage tier | HV (512 EU) |
-| Output | 512 EU/t |
+| Output voltage tier | IV (8,192 EU) |
+| Output | 8,192 EU/t |
 | Energy storage | 100,000,000 EU |
 
 The game measured these values from the block entity of this version.

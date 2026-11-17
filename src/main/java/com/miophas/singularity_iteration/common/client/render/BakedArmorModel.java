@@ -72,8 +72,15 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
     static final java.util.function.Predicate<float[]> PAULDRON = c -> c[1] < -1.0F;
     static final java.util.function.Predicate<float[]> ARM_REST = c -> c[1] >= -1.0F;
 
+    /**
+     * 0.1.11.27: models whose file says {@code "gimmicks": false} (the GeckoLib suits of 0.1.11.27: their vents and shoulder
+     * plates are not separate parts, and the quad filters below would tear them).
+     */
+    private static final java.util.Set<ResourceLocation> STILL = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     private boolean moving() {
-        return wearer != null && source.getPath().endsWith("/quantum_chestplate.json")
+        geometry();   // loads the file, and with it the gimmicks flag
+        return wearer != null && source.getPath().endsWith("/quantum_chestplate.json") && !STILL.contains(source)
             && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGimmicks();
     }
 
@@ -96,7 +103,9 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
             return parts;
         }
         try (Reader reader = resource.get().openAsReader()) {
-            parts.putAll(parse(JsonParser.parseReader(reader).getAsJsonObject()));
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            parts.putAll(parse(root));
+            if (root.has("gimmicks") && !root.get("gimmicks").getAsBoolean()) STILL.add(id); else STILL.remove(id);
         } catch (Exception e) {
             Singularity_Iteration.LOGGER.error("Cannot read baked armor model {}", id, e);
         }

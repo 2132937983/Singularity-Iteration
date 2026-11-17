@@ -191,7 +191,6 @@ neoForge.runs.register('addonGameTestServer') {
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
     // 0.1.8.0: the existing engine GameTests verify the IC2-style packet walk.
     // FairGridGameTests selects the fair distributor for its own batches.
-    systemProperty 'scex.independent.distribution', 'legacy'
     logLevel = org.slf4j.event.Level.INFO
 }
 
@@ -482,7 +481,6 @@ neoForge.runs.register('compatGameTestServer') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = file('build/compat-gametest')
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
-    systemProperty 'scex.independent.distribution', 'legacy'
     logLevel = org.slf4j.event.Level.INFO
 }
 tasks.matching { it.name == 'prepareCompatGameTestServerRun' }.configureEach { dependsOn syncCompatMods }
@@ -514,6 +512,10 @@ neoForge.runs.register('benchGameTestServer') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = file('build/bench-gametest')
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_bench'
+    // 0.1.11.23: -PsiBenchProfile samples the server thread during the network scenarios ("[profile]" lines)
+    if (project.hasProperty('siBenchProfile')) systemProperty 'si.bench.profile', 'true'
+    if (project.hasProperty('siBenchRows')) systemProperty 'si.bench.rows', project.property('siBenchRows')
+    if (project.hasProperty('siBenchCable')) systemProperty 'si.bench.cable', project.property('siBenchCable')
     logLevel = org.slf4j.event.Level.INFO
 }
 
@@ -533,7 +535,6 @@ neoForge.runs.register('compatClient') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = compatClientDir
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
-    systemProperty 'scex.independent.distribution', 'legacy'
     systemProperty 'si.compattest', new File(compatClientDir, 'result.txt').absolutePath
     // Only the GregTech tests: everything else already ran on the compat server.
     systemProperty 'si.compattests', ['sicablefeedsgtmachine', 'sistoragefeedsadjacentgtmachine', 'sineverovervoltsgtmachine', 'gtnetworkfeedssistorage']

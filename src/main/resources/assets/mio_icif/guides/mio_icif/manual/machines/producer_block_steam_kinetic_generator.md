@@ -19,6 +19,8 @@ item_ids:
 The Steam Kinetic Generator turns Steam or Superheated Steam into kinetic energy (KU). The machine outputs KU on its front face.
 The machine needs a Steam Turbine in the turbine slot. The turbine loses durability during operation.
 The machine sends the exhaust steam to an adjacent Condenser and keeps the condensed Distilled Water in a tank.
+When an adjacent Condenser takes all of the exhaust, the turbine expands to 0.1 bar instead of 1 bar: about 1.6 × the KU for Steam and 1.3 × for Superheated Steam.
+The screen is a plant mimic: inlet, turbine with its blade life, the shaft, condensate and the exhaust path.
 
 ## Power data
 

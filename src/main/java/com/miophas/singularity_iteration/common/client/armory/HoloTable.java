@@ -73,6 +73,8 @@ public final class HoloTable {
     static int[] heights = new int[0], colors = new int[0];
     static boolean[] water = new boolean[0];
     private static int sampleAge;
+    /** 0.1.11.40: counts the samples (a new one invalidates the terrain geometry cache). */
+    private static int sampleGen;
     /** Hover state from the screen: a column index or -1, a creature id or -1. */
     static int hoverCell = -1, hoverEntity = -1;
 
@@ -144,6 +146,7 @@ public final class HoloTable {
     /** Samples the surface around the wearer (client chunks only; a column out of the loaded area is empty). */
     static void resample() {
         sampleAge = 0;
+        sampleGen++;
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         LocalPlayer p = mc.player;
@@ -250,10 +253,117 @@ public final class HoloTable {
         FxDraw.disc(vc, m, base, new Vec3(0, 1, 0), (float) half * 1.1F, 0.2F, 0.6F, 0.8F, 0.08F * ease, 32);
     }
 
+    // 0.1.11.40 (Wingman audit W1, U-6): the geometry of the open table is computed once per sample, turn and zoom and
+    // reused in every frame; per frame only the colours of the scan line and the fringes change. Before, each frame
+    // projected every column again (2,401 columns by default, up to 4,225) with more than ten new vectors each.
+    private static final int QUAD = 12;                     // four corners x, y, z
+    private static double[] geo = new double[0];            // per column: up to 5 quads (top, 4 sides)
+    private static float[] tint = new float[0];             // per column: r, g, b, lx, lz, rise, quads
+    private static float[] sideShade = new float[0];        // per column and quad: the alpha factor of the face
+    private static long geoKey = Long.MIN_VALUE;
+
+    private static long geometryKey() {
+        long h = sampleGen;
+        h = h * 31 + Float.floatToIntBits(rot);
+        h = h * 31 + radius;
+        h = h * 31 + cells;
+        h = h * 31 + Double.hashCode(centre.x);
+        h = h * 31 + Double.hashCode(centre.y);
+        h = h * 31 + Double.hashCode(centre.z);
+        return h;
+    }
+
     private static void terrain(VertexConsumer vc, Matrix4f m, float t, float deployRaw) {
+        double sweep = ((t * 0.012) % 1.4 - 0.2) * 2 - 1;                      // -1.4 .. 1.4 across the table (local x)
+        if (deployRaw < 1F) {
+            terrainUnfolding(vc, m, t, deployRaw, sweep);
+            return;
+        }
+        long key = geometryKey();
+        if (key != geoKey) buildGeometry(key);
+        int n = cells * cells;
+        for (int k = 0; k < n; k++) {
+            int ti = k * 7;
+            int quads = (int) tint[ti + 6];
+            if (quads == 0) continue;
+            float lx = tint[ti + 3], lz = tint[ti + 4], rise = tint[ti + 5];
+            float fringe = 0.78F + 0.22F * (float) Math.sin((lx + lz) * 26 + t * 0.25);
+            float scan = (float) Math.max(0, 1 - Math.abs(lx - sweep) / 0.05);
+            float a = (0.11F + 0.25F * scan) * fringe * rise;
+            if (k == hoverCell) a = 0.5F;
+            float r = tint[ti], g = tint[ti + 1], b = tint[ti + 2];
+            int base = k * 5 * QUAD;
+            for (int q = 0; q < quads; q++) {
+                int o = base + q * QUAD;
+                float qa = a * sideShade[k * 5 + q];
+                for (int v = 0; v < 4; v++) {
+                    vc.addVertex(m, (float) geo[o + v * 3], (float) geo[o + v * 3 + 1], (float) geo[o + v * 3 + 2]).setColor(r, g, b, Mth.clamp(qa, 0, 1));
+                }
+            }
+        }
+    }
+
+    /** The geometry of the fully open table (see above). */
+    private static void buildGeometry(long key) {
+        geoKey = key;
+        int n = cells * cells;
+        if (geo.length != n * 5 * QUAD) { geo = new double[n * 5 * QUAD]; tint = new float[n * 7]; sideShade = new float[n * 5]; }
         int stride = stride(), half = cells / 2;
         double hs = stride / 2.0;
-        double sweep = ((t * 0.012) % 1.4 - 0.2) * 2 - 1;                      // -1.4 .. 1.4 across the table (local x)
+        for (int i = 0; i < cells; i++) {
+            for (int j = 0; j < cells; j++) {
+                int k = i * cells + j, ti = k * 7;
+                tint[ti + 6] = 0;
+                if (heights[k] == NONE) continue;
+                double wx = originX + (i - half) * stride + 0.5, wz = originZ + (j - half) * stride + 0.5;
+                double rn = Math.sqrt((i - half) * (i - half) + (j - half) * (j - half)) / Math.max(1, half);
+                float rise = Mth.clamp((float) (1.7 - rn * 0.7), 0, 1);
+                if (rise <= 0.01F) continue;
+                float[] rgb = columnTint(k);
+                Vec3 local = toTable(wx, 0, wz).subtract(centre);
+                tint[ti] = rgb[0]; tint[ti + 1] = rgb[1]; tint[ti + 2] = rgb[2];
+                tint[ti + 3] = (float) (local.x / (SIZE / 2)); tint[ti + 4] = (float) (local.z / (SIZE / 2)); tint[ti + 5] = rise;
+                double top = baseY + (heights[k] + 1 - baseY) * rise;
+                int quads = 0, base = k * 5 * QUAD;
+                quads = put(base, quads, k, 1F, toTable(wx - hs, top, wz - hs), toTable(wx + hs, top, wz - hs), toTable(wx + hs, top, wz + hs), toTable(wx - hs, top, wz + hs));
+                quads = sideGeo(base, quads, k, 0.55F, i + 1 < cells ? heights[k + cells] : NONE, heights[k], rise, wx + hs, wz - hs, wx + hs, wz + hs);
+                quads = sideGeo(base, quads, k, 0.55F, i > 0 ? heights[k - cells] : NONE, heights[k], rise, wx - hs, wz + hs, wx - hs, wz - hs);
+                quads = sideGeo(base, quads, k, 0.45F, j + 1 < cells ? heights[k + 1] : NONE, heights[k], rise, wx + hs, wz + hs, wx - hs, wz + hs);
+                quads = sideGeo(base, quads, k, 0.45F, j > 0 ? heights[k - 1] : NONE, heights[k], rise, wx - hs, wz - hs, wx + hs, wz - hs);
+                tint[ti + 6] = quads;
+            }
+        }
+    }
+
+    private static int sideGeo(int base, int quads, int k, float shade, int neighbour, int self, float rise, double x0, double z0, double x1, double z1) {
+        int low = neighbour == NONE ? Math.min(self, baseY - 8) : neighbour;
+        if (low >= self) return quads;
+        double topY = baseY + (self + 1 - baseY) * rise, lowY = baseY + (low + 1 - baseY) * rise;
+        return put(base, quads, k, shade, toTable(x0, topY, z0), toTable(x1, topY, z1), toTable(x1, lowY, z1), toTable(x0, lowY, z0));
+    }
+
+    private static int put(int base, int quads, int k, float shade, Vec3 a, Vec3 b, Vec3 c, Vec3 d) {
+        int o = base + quads * QUAD;
+        Vec3[] v = {a, b, c, d};
+        for (int i = 0; i < 4; i++) { geo[o + i * 3] = v[i].x; geo[o + i * 3 + 1] = v[i].y; geo[o + i * 3 + 2] = v[i].z; }
+        sideShade[k * 5 + quads] = shade;
+        return quads + 1;
+    }
+
+    /** Hologram tint of column {@code k}: towards cyan, water bluer. */
+    private static float[] columnTint(int k) {
+        int col = colors[k];
+        float cr = ((col >> 16) & 255) / 255F, cg = ((col >> 8) & 255) / 255F, cb = (col & 255) / 255F;
+        float mix = water[k] ? 0.4F : 0.62F;
+        float r = Mth.lerp(mix, cr, 0.3F), g = Mth.lerp(mix, cg, 0.85F), b = Mth.lerp(mix, cb, 1.0F);
+        if (water[k]) { r *= 0.6F; g *= 0.85F; }
+        return new float[]{r, g, b};
+    }
+
+    /** The table while it unfolds or folds (the columns rise and sink: computed per frame, as before). */
+    private static void terrainUnfolding(VertexConsumer vc, Matrix4f m, float t, float deployRaw, double sweep) {
+        int stride = stride(), half = cells / 2;
+        double hs = stride / 2.0;
         float fold = deployRaw * deployRaw * (3 - 2 * deployRaw);
         for (int i = 0; i < cells; i++) {
             for (int j = 0; j < cells; j++) {
@@ -264,12 +374,8 @@ public final class HoloTable {
                 float rise = Mth.clamp((float) (fold * 1.7 - rn * 0.7), 0, 1);
                 if (rise <= 0.01F) continue;
                 double top = baseY + (heights[k] + 1 - baseY) * rise;
-                int col = colors[k];
-                float cr = ((col >> 16) & 255) / 255F, cg = ((col >> 8) & 255) / 255F, cb = (col & 255) / 255F;
-                // hologram tint: towards cyan, water bluer
-                float mix = water[k] ? 0.4F : 0.62F;
-                float r = Mth.lerp(mix, cr, 0.3F), g = Mth.lerp(mix, cg, 0.85F), b = Mth.lerp(mix, cb, 1.0F);
-                if (water[k]) { r *= 0.6F; g *= 0.85F; }
+                float[] rgb = columnTint(k);
+                float r = rgb[0], g = rgb[1], b = rgb[2];
                 Vec3 local = toTable(wx, 0, wz).subtract(centre);
                 double lx = local.x / (SIZE / 2), lz = local.z / (SIZE / 2);
                 float fringe = 0.78F + 0.22F * (float) Math.sin((lx + lz) * 26 + t * 0.25);
@@ -279,7 +385,6 @@ public final class HoloTable {
                 Vec3 c00 = toTable(wx - hs, top, wz - hs), c10 = toTable(wx + hs, top, wz - hs);
                 Vec3 c11 = toTable(wx + hs, top, wz + hs), c01 = toTable(wx - hs, top, wz + hs);
                 quad(vc, m, c00, c10, c11, c01, r, g, b, a);
-                // sides down to a lower neighbour (or to the base at the table edge)
                 side(vc, m, i + 1 < cells ? heights[k + cells] : NONE, heights[k], rise, wx + hs, wz - hs, wx + hs, wz + hs, r, g, b, a * 0.55F);
                 side(vc, m, i > 0 ? heights[k - cells] : NONE, heights[k], rise, wx - hs, wz + hs, wx - hs, wz - hs, r, g, b, a * 0.55F);
                 side(vc, m, j + 1 < cells ? heights[k + 1] : NONE, heights[k], rise, wx + hs, wz + hs, wx - hs, wz + hs, r, g, b, a * 0.45F);
@@ -320,10 +425,10 @@ public final class HoloTable {
             Vec3 at = e.getPosition(partial);
             if (!onTable(at.x, at.z)) continue;
             boolean hostile = e instanceof Enemy, player = e instanceof Player, linked = seen.contains(e.getId());
-            if (!hostile && !player && !linked) continue;
             Vec3 head = toTable(at.x, at.y + e.getBbHeight() + 2, at.z), foot = toTable(at.x, at.y, at.z);
-            float[] c = player ? new float[]{1F, 0.8F, 0.3F} : new float[]{1F, 0.3F, 0.25F};
-            float al = (linked ? 1F : 0.65F) * a;
+            // 0.1.11.43: a neutral creature gets a faint grey marker (it can take a focus order, as in the command wheel)
+            float[] c = player ? new float[]{1F, 0.8F, 0.3F} : hostile || linked ? new float[]{1F, 0.3F, 0.25F} : new float[]{0.7F, 0.75F, 0.78F};
+            float al = (linked ? 1F : hostile || player ? 0.65F : 0.35F) * a;
             FxDraw.line(vc, m, foot, head, cam, 0.004F, c[0], c[1], c[2], al * 0.6F);
             diamond(vc, m, head, cam, pin * (linked ? 1.0F : 0.75F), c[0], c[1], c[2], al);
             if (linked) FxDraw.ring(vc, m, head, head.subtract(cam), pin * 1.6F, pin * 0.5F, 0.44F, 0.95F, 0.84F, 0.8F * a, 16);
@@ -337,7 +442,7 @@ public final class HoloTable {
             Vec3 w = toTable(at.x, at.y + 1, at.z);
             boolean sel = unit.id().equals(SquadClient.selected());
             diamond(vc, m, w, cam, pin * (sel ? 1.5F : 1.15F), 0.36F, 0.92F, 1F, a);
-            digit(vc, m, w.add(u.scale(pin * 2.6)), cam, l, u, pin * 1.1F, SquadClient.index(unit) + 1, a);
+            digit(vc, m, w.add(u.scale(pin * 2.6)), cam, l, u, pin * 1.1F, SquadClient.number(unit), a);   // 0.1.11.40 (U-5): the suit number, as on the chips and the keys
             WingmanOrder o = SquadClient.order(unit);
             Vec3 point = SquadClient.orderPoint(unit);
             if (point != null && onTable(point.x, point.z)) {
@@ -401,10 +506,12 @@ public final class HoloTable {
     static int pickCell(double mouseX, double mouseY) {
         int best = -1;
         double bestD = 14 * 14;
+        int half = cells / 2, stride = stride();
         for (int k = 0; k < heights.length; k++) {
             if (heights[k] == NONE) continue;
-            Vec3 top = columnTop(k);
-            float[] s = com.miophas.singularity_iteration.common.client.suit.FcsProjection.project(toTable(top.x, top.y, top.z));
+            int i = k / cells, j = k % cells;
+            float[] s = com.miophas.singularity_iteration.common.client.suit.FcsProjection.project(
+                toTable(originX + (i - half) * stride + 0.5, heights[k] + 1, originZ + (j - half) * stride + 0.5));
             if (s == null) continue;
             double d = (s[0] - mouseX) * (s[0] - mouseX) + (s[1] - mouseY) * (s[1] - mouseY);
             if (d < bestD) { bestD = d; best = k; }
@@ -412,7 +519,7 @@ public final class HoloTable {
         return best;
     }
 
-    /** The hostile creature marker nearest to a screen point (within 8 GUI pixels), or null. */
+    /** The creature marker nearest to a screen point (within 8 GUI pixels), or null (0.1.11.43: any creature, not only hostile ones). */
     @Nullable
     static LivingEntity pickEntity(double mouseX, double mouseY) {
         Minecraft mc = Minecraft.getInstance();
@@ -420,7 +527,9 @@ public final class HoloTable {
         AABB box = new AABB(originX - radius, baseY - 48, originZ - radius, originX + radius + 1, baseY + 48, originZ + radius + 1);
         LivingEntity best = null;
         double bestD = 8 * 8;
-        for (Entity e : mc.level.getEntities((Entity) null, box, e -> e instanceof LivingEntity && e instanceof Enemy && e.isAlive())) {
+        // 0.1.11.43 (G-7): any creature but a player or a Wingman takes a focus order, as in the command wheel
+        for (Entity e : mc.level.getEntities((Entity) null, box, e -> e instanceof LivingEntity && !(e instanceof Player) && !(e instanceof WingmanEntity)
+                && e != mc.player && e.isAlive())) {
             if (!onTable(e.getX(), e.getZ())) continue;
             float[] s = com.miophas.singularity_iteration.common.client.suit.FcsProjection.project(toTable(e.getX(), e.getY() + e.getBbHeight() + 2, e.getZ()));
             if (s == null) continue;

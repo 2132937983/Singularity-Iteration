@@ -353,10 +353,10 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
                     && !(state.getBlock() instanceof mio_icif_block_foam);
             case SCAFFOLD -> state.getBlock() instanceof mio_icif_block_scaffold
                     // cables laid through the scaffold are foamed with it (into reinforced foam)
-                    || state.getBlock() instanceof mio_icif_block_wire && !state.getValue(mio_icif_block_wire.FOAMLOGGED)
-                       && state.getValue(mio_icif_block_wire.FOAM_REINFORCED);
+                    || state.getBlock() instanceof mio_icif_block_wire && !mio_icif_block_wire.foamlogged(state)
+                       && mio_icif_block_wire.foamReinforced(state);
             case CABLE -> state.getBlock() instanceof mio_icif_block_wire
-                    && !state.getValue(mio_icif_block_wire.FOAMLOGGED);
+                    && !mio_icif_block_wire.foamlogged(state);
         };
     }
 
@@ -421,12 +421,12 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
             }
 
             if (state.getBlock() instanceof mio_icif_block_wire) {
-                if (state.getValue(mio_icif_block_wire.FOAMLOGGED)) {
+                if (mio_icif_block_wire.foamlogged(state)) {
                     failedPlacements++;
                 } else {
                     level.setBlockAndUpdate(targetPos, state
-                            .setValue(mio_icif_block_wire.FOAMLOGGED, true)
-                            .setValue(mio_icif_block_wire.FOAM_REINFORCED, state.getValue(mio_icif_block_wire.FOAM_REINFORCED)));
+                            .setValue(mio_icif_block_wire.CASING, com.miophas.singularity_iteration.common.block.wire.WireCasing.foamed(mio_icif_block_wire.foamReinforced(state)))
+                            .setValue(mio_icif_block_wire.WATERLOGGED, false));   // 0.1.11.29: foam drives the water out
                 }
                 continue;
             }

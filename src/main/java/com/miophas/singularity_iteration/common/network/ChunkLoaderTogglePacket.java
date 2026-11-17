@@ -33,6 +33,26 @@ public record ChunkLoaderTogglePacket(BlockPos pos, int dx, int dz) implements C
         return TYPE;
     }
 
+    /**
+     * 0.1.11.38: the loader of the open chunk loader menu at {@code pos} that {@code player} may edit, or null (the same
+     * checks as a toggle: the menu, the distance, ChunkLoaders.ownerOnlyEdit).
+     */
+    @org.jetbrains.annotations.Nullable
+    static mio_icif_chunk_loader editable(ServerPlayer serverPlayer, BlockPos pos) {
+        Level level = serverPlayer.level();
+        if (!level.isLoaded(pos) || serverPlayer.isSpectator()
+            || !(serverPlayer.containerMenu instanceof com.miophas.singularity_iteration.common.menu.producer.ChunkLoaderMenu menu)
+            || !pos.equals(menu.getBlockPos()) || !menu.stillValid(serverPlayer)) return null;
+        if (!(level.getBlockEntity(pos) instanceof mio_icif_chunk_loader loader) || menu.getBlockEntity() != loader
+            || serverPlayer.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0) return null;
+        if (!loader.mayEdit(serverPlayer)) {
+            serverPlayer.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                "message.mio_icif.chunk_loader.not_owner", loader.ownerName()), true);
+            return null;
+        }
+        return loader;
+    }
+
     public static void handle(ChunkLoaderTogglePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer serverPlayer) {

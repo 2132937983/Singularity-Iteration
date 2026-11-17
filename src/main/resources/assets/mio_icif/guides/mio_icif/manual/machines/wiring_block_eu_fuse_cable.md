@@ -16,7 +16,7 @@ item_ids:
 
 ## Function
 
-The EU Fuse Cable is a cheap one-time protection. It blows for an overload, a short circuit or an overvoltage like the breaker cable, but it stays open. Redstone does not open it.
+The EU Fuse Cable is a cheap one-time protection. It blows for an overload, a short circuit or an overvoltage like the breaker cable, but it stays open. Redstone does not open it. Like the other special cables it is an IV cable (packets up to 8,192 EU). A new fuse has no rated flow and an automatic rated voltage (the largest packet of the cables next to it), as the breaker cable.
 
 ## Power data
 

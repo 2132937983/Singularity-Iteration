@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * 数值对齐原版 IC2 半流质发电机（沼气 32 EU/mB、输出 16 EU/t、内部储能 32000 EU）
  */
 @SuppressWarnings("null")
-public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
+public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
 
     // 槽位数量：3个槽位
     public static final int SLOT_COUNT = 3;
@@ -111,6 +111,12 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
     protected SemifluidFuels.GeneratorValue fuelValue(net.minecraft.world.level.material.Fluid fluid) {
         return SemifluidFuels.generatorValue(fluid);
     }
+
+    /** 0.1.11.16: called before the fuel of a tick is planned (the steam turbine looks for its condenser). */
+    protected void beforeBurn() { }
+
+    /** 0.1.11.16: called with the mB of fuel burnt in a tick (the steam turbine sends its exhaust away). */
+    protected void afterBurn(int millibuckets) { }
 
     /** mB of fuel in one unit of {@link #fuelValue} (0.1.10.36: the steam turbine burns 2 mB for 1 EU). */
     protected int millibucketsPerUnit() {
@@ -207,12 +213,13 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         int filled = fuelTank.fill(content, IFluidHandler.FluidAction.EXECUTE);
         if (filled >= content.getAmount()) {
             // 消耗燃料桶/单元
-            fuelBucketStack.shrink(1);
+            // 0.1.11.11: written through the slots (changing the live stacks bypassed the handler)
+            itemHandler.setStackInSlot(FUEL_BUCKET_SLOT, fuelBucketStack.copyWithCount(fuelBucketStack.getCount() - 1));
             // 添加空桶/空单元到空桶输出槽
             if (emptyBucketStack.isEmpty()) {
                 itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyContainer);
             } else {
-                emptyBucketStack.grow(1);
+                itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyBucketStack.copyWithCount(emptyBucketStack.getCount() + 1));
             }
             setChanged();
             // 通知客户端更新方块实体数据
@@ -250,6 +257,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         }
 
         long room = energyStorage.getCapacity() - energyStorage.getAmount();
+        beforeBurn();
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : fuelValue(fuel.getFluid());
         long generated = 0;
@@ -259,6 +267,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
                 fuelTank.getFluidAmount() / unit, scexFuelCredit, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()), room, 0);   // 0.1.8.4
             if (plan.fuelConsumed() > 0) {
                 fuelTank.drain((int) plan.fuelConsumed() * unit, IFluidHandler.FluidAction.EXECUTE);
+                afterBurn((int) plan.fuelConsumed() * unit);
             }
             scexFuelCredit = plan.bufferedEnergy();
             generated = plan.generated();
@@ -325,9 +334,12 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
      * 独立电网路径与旧路径都改为 IC2 的连续耗液模型：储能满时暂停燃烧且不丢弃燃料。
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_Semifluid_generator blockEntity) {
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(blockEntity);   // 0.1.11.13
         if (level.isClientSide()) {
             return;
         }
+        // 0.1.11.15: the engine model, in both energy modes (the steam turbine keeps its own turbine behaviour)
+        if (!(blockEntity instanceof mio_icif_steam_turbine)) { blockEntity.engineTick(level, pos); return; }
         if (blockEntity.energyStorage.scexNetworkControlled()) { blockEntity.scexTickFuel(level, pos); return; }
         blockEntity.legacyTickFuel(level, pos);
     }
@@ -434,6 +446,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        engine.save(tag);   // 0.1.11.15
         if (energyStorage.scexNetworkControlled() || scexFuelCredit > 0) tag.putLong("scex_fuel_credit_eu", scexFuelCredit);
         // 保存燃料数据
         tag.put("FuelTank", fuelTank.writeToNBT(registries, new CompoundTag()));
@@ -451,6 +464,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         currentFuelBurning = tag.getInt("CurrentFuelBurning");
         currentFuelEnergyGenerated = tag.getInt("CurrentFuelEnergyGenerated");
         scexReadFuelCredit(tag);
+        engine.load(tag, scexFuelCredit);   // 0.1.11.15: older saves start cold with their fuel credit
     }
 
     @Nullable
@@ -490,7 +504,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.SemifluidGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.SemifluidEngineMenu(containerId, playerInventory, this);   // 0.1.11.15
     }
 
     // ==================== 流体能力注册 ====================
@@ -519,12 +533,14 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         boolean wasBurning = burnTime > 0;
         handleFuelBucketSlot();
         chargeItems();
+        beforeBurn();
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : fuelValue(fuel.getFluid());
         if (value != null && outputScale() > 0) {
             var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
                 scexFuelCredit, millibucketsPerUnit(), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()));   // 0.1.8.4 output multiplier
             scexFuelCredit = step.bufferedEnergy();
+            if (step.fuelConsumed() > 0) afterBurn((int) step.fuelConsumed() * millibucketsPerUnit());
             burnTime = step.generated() > 0 ? 1 : 0;
         } else {
             burnTime = 0;
@@ -548,7 +564,76 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         }
     }
 
-    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    /** 0.1.11.13: comparator by the fuel in the tank. */
     @Override
-    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(fuelTank.getFluidAmount(), fuelTank.getCapacity());
+    }
+
+    // ---- 0.1.11.15: the engine -----------------------------------------------------------------------------------------
+
+    protected final com.miophas.singularity_iteration.common.energy.EngineGovernor engine = new com.miophas.singularity_iteration.common.energy.EngineGovernor(4);
+
+    /** Full output in EU/t of the fuel in the tank (multiplier included); 0 without fuel. */
+    public double engineRated() {
+        SemifluidFuels.GeneratorValue v = fuelTank.isEmpty() ? null : fuelValue(fuelTank.getFluid().getFluid());
+        return v == null ? 0 : v.energyPerTick() * outputScale();
+    }
+
+    /** EU per mB of the fuel in the tank at full load (multiplier included). */
+    public double engineEuPerMb() {
+        SemifluidFuels.GeneratorValue v = fuelTank.isEmpty() ? null : fuelValue(fuelTank.getFluid().getFluid());
+        return v == null ? 0 : v.energyPerMb() * outputScale();
+    }
+
+    public com.miophas.singularity_iteration.common.energy.EngineGovernor getEngine() { return engine; }
+
+    private void engineTick(Level level, BlockPos pos) {
+        boolean wasBurning = burnTime > 0;
+        handleFuelBucketSlot();
+        chargeItems();
+        if (!energyStorage.scexNetworkControlled()) {
+            if (shouldDirectlyDistributeEnergy()) distributeEnergy();
+            else distributeEnergyToCompatSinks();
+        }
+        double made = engine.tick(energyStorage.getAmount(), energyStorage.getCapacity(), engineRated(), engineEuPerMb(),
+            n -> fuelTank.drain(n, IFluidHandler.FluidAction.EXECUTE).getAmount(), this::produce);
+        burnTime = made > 0 ? 1 : 0;
+        burnDuration = 1;
+        if (wasBurning != burnTime > 0) {
+            BlockState now = level.getBlockState(pos);
+            if (now.getBlock().getStateDefinition().getProperty("active") instanceof net.minecraft.world.level.block.state.properties.BooleanProperty active
+                    && now.getValue(active) != burnTime > 0)
+                level.setBlock(pos, now.setValue(active, burnTime > 0), 3);
+        }
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+    }
+
+    /** Menu data of the engine screen (see {@link com.miophas.singularity_iteration.common.energy.EngineGovernor#data}). */
+    public net.minecraft.world.inventory.ContainerData getEngineData() {
+        return new net.minecraft.world.inventory.ContainerData() {
+            @Override public int getCount() { return com.miophas.singularity_iteration.common.energy.EngineGovernor.DATA_COUNT; }
+            @Override public void set(int i, int v) { }
+            @Override public int get(int i) {
+                return switch (i) {
+                    case 9 -> fuelTank.getFluidAmount();
+                    case 10 -> fuelTank.getCapacity();
+                    case 11 -> fuelTank.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(fuelTank.getFluid().getFluid());
+                    default -> {
+                        // 0.1.11.22: the fuel lookups once per tick, not once per data slot (61 of 64 slots)
+                        long now = level == null ? 0 : level.getGameTime();
+                        if (now != dataTick) {
+                            dataTick = now;
+                            dataRated = engineRated();
+                            dataEuPerMb = engineEuPerMb();
+                        }
+                        yield engine.data(i, dataRated, dataEuPerMb, energyStorage.getAmount(), energyStorage.getCapacity());
+                    }
+                };
+            }
+        };
+    }
+
+    private long dataTick = Long.MIN_VALUE;
+    private double dataRated, dataEuPerMb;
 }

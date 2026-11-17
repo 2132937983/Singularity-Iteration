@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.armory;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import net.minecraft.resources.ResourceLocation;
 import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
 import com.miophas.singularity_iteration.core.api.energy.storage.EUApi;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
@@ -62,8 +63,12 @@ public final class ArmoryRegistry {
 
     public static final DeferredItem<ArmoryRemoteItem> REMOTE = ITEMS.register("normal/item_armory_remote",
         () -> new ArmoryRemoteItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
-    public static final DeferredItem<ArmoryConnectorItem> CONNECTOR = ITEMS.register("normal/item_armory_connector",
-        () -> new ArmoryConnectorItem(new Item.Properties()));
+    static {
+        // 0.1.11.49 (escort and open Armory phase F0, decision two A): the Connector Kit is gone, the Armory takes the gear
+        // of every mod. Old kits resolve to air (they are dropped from the save) instead of a missing registry entry.
+        ITEMS.addAlias(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "normal/item_armory_connector"),
+            ResourceLocation.withDefaultNamespace("air"));
+    }
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_armory>> ARMORY_ENTITY =
         BLOCK_ENTITIES.register("armory", () -> BlockEntityType.Builder.of(mio_icif_armory::new, ARMORY.get()).build(null));
@@ -79,9 +84,11 @@ public final class ArmoryRegistry {
             .sized(0.6F, 0.6F).clientTrackingRange(10).updateInterval(5).fireImmune().noSummon().build("armory_piece"));
 
     /** Wingman (0.1.8.0): a stored suit that flies as a drone. Player size; saved with the chunk. */
+    // 0.1.11.50 (F1): synced every tick (was every 2): at escort speed a Wingman moves up to 12 blocks in two ticks, past
+    // the 8 blocks of a relative move packet
     public static final DeferredHolder<EntityType<?>, EntityType<WingmanEntity>> WINGMAN = ENTITIES.register("wingman",
         () -> EntityType.Builder.<WingmanEntity>of(WingmanEntity::new, MobCategory.MISC)
-            .sized(0.6F, 1.8F).eyeHeight(1.62F).clientTrackingRange(10).updateInterval(2).noSummon().build("wingman"));
+            .sized(0.6F, 1.8F).eyeHeight(1.62F).clientTrackingRange(10).updateInterval(1).noSummon().build("wingman"));
 
     /** NeoForge data attachments of the Armory system (0.1.8.0). */
     public static final DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> ATTACHMENTS =

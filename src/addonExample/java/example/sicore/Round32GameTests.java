@@ -131,7 +131,7 @@ public final class Round32GameTests {
         stack.useOn(new net.minecraft.world.item.context.UseOnContext(player, net.minecraft.world.InteractionHand.MAIN_HAND, hit));
         var placed = h.getBlockState(cable);
         h.assertTrue(placed.getBlock().getClass().getSimpleName().equals("mio_icif_block_wire"), "cable not placed into the iron scaffold: " + placed);
-        h.assertTrue(placed.getValue(placed.getBlock().getStateDefinition().getProperty("foam_reinforced")).equals(true), "scaffold not kept around the cable");
+        h.assertTrue("scaffold".equals(Round33GameTests.casingOf(placed)), "scaffold not kept around the cable: " + placed);
         // spray it like a scaffold structure, then let it set
         Object sprayer = item("build/item_cf_sprayer").getItem();
         Class<?> target = common("item.build.CFSprayerItem$Target");

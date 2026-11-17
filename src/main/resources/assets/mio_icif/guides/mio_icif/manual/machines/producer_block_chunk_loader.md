@@ -17,7 +17,7 @@ item_ids:
 ## Function
 
 The Chunk Loader keeps selected chunks loaded. The machine loads up to 25 chunks in a 9 x 9 chunk area around itself.
-Each loaded chunk costs EU. The machine stops when the EU runs out.
+Each loaded chunk costs EU. When the EU runs out, the loader keeps only its own chunk, free, for a grace period (10 minutes by default) and takes all its chunks back as soon as energy returns. After the grace it stops, and its chunk unloads unless a player is near.
 
 ## Power data
 
@@ -32,8 +32,14 @@ The game measured these values from the block entity of this version.
 ## Procedure
 
 1. Connect an MV cable to the machine.
-2. Open the GUI and click the chunks to load.
+2. Open the GUI and click or drag over the chunks to load.
 3. Keep a steady EU supply to the machine.
+
+## Map
+
+- Green: the chunk is loading. Orange: selected but not loading now (a chunk limit, or no energy); the tooltip says why. Faint green: not selected, but running because a loading chunk is next to it. Dark: not selected. The yellow frame marks the loader's own chunk, which is always selected.
+- A loaded chunk also runs the chunks around it, as `/forceload` does: selecting the 5 × 5 in the middle runs 7 × 7. Only the selected chunks cost EU.
+- Click a chunk to select or remove it. Drag to select an area; right-click or right-drag to remove. **+** selects the whole grid, nearest first up to the limit; **−** clears all but the own chunk.
 
 ## Notes
 
@@ -55,6 +61,7 @@ The player who places the loader owns it. The server can limit loaders in the co
 | `euPerChunkPerTick` | 1.0 | EU per chunk and tick |
 | `randomTicks` | true | false: no random ticks and no natural spawning in loaded chunks; machines keep running |
 | `ownerOnlyEdit` | false | Only the owner and operators change the selection |
+| `noEnergyGraceMinutes` | 10 | Minutes a loader out of energy keeps its own chunk; 0: it stops at once |
 
 - Over a chunk limit the loader keeps its own chunk first, then the nearest selected chunks.
 - A red band over the map tells why the loader does not load (all) its chunks. The chunk count shows the details.

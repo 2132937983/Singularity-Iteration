@@ -58,6 +58,8 @@ public final class ChunkLoaderPolicy {
     private static volatile boolean randomTicks = true;
     private static volatile boolean ownerOnlyEdit;
     private static volatile int generation;
+    /** 0.1.11.37 (chunk loader audit D1): minutes a loader without energy keeps its own chunk; 0 = it stops at once. */
+    private static volatile int graceMinutes = 10;
 
     /** Applies the config values (any thread); loaders re-check their rules on their next tick. */
     public static void configure(boolean on, int perLoader, int perPlayer, int loadersPerPlayer, int offline,
@@ -88,6 +90,9 @@ public final class ChunkLoaderPolicy {
     public static double euPerChunk() { return euPerChunk; }
     public static boolean randomTicks() { return randomTicks; }
     public static boolean ownerOnlyEdit() { return ownerOnlyEdit; }
+    public static int graceMinutes() { return graceMinutes; }
+    /** 0.1.11.37: sets the no-energy grace (config {@code noEnergyGraceMinutes}). */
+    public static void setGraceMinutes(int minutes) { graceMinutes = Math.max(0, minutes); generation++; }
     /** Changes with every config load or reload. */
     public static int generation() { return generation; }
 

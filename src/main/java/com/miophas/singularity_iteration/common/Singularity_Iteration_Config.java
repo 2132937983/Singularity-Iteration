@@ -421,14 +421,7 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
                     "服务端配置重载后生效；COMMON 配置不会自动同步到客户端")
             .define("enableVoltageOverload", true);
 
-    // 0.1.8.0: native EU distribution algorithm.
-    public static final ModConfigSpec.ConfigValue<String> ENERGY_NET_DISTRIBUTION_MODE = ENERGY_NET_BUILDER
-            .comment("电网分配算法 / Native EU distribution algorithm",
-                    "fair = 确定性均等分配（智能电网）：负载与变压器优先于储电设备；同一阶段按最大最小公平（注水）分配，需求小的设备先被满足，大需求设备不能独占；为下游机器供电的储电设备在优先阶段获得其输出额度（0.1.10.12）。默认值。",
-                    "fair = deterministic fair share (smart grid). Loads and transformers first, storage last. Within a stage max-min fair (water-filling): small demands are met first, one huge demand cannot take everything; storage that feeds machines gets its output rate in the first stage (0.1.10.12). Default.",
-                    "legacy = 0.1.7.x 的 IC2 式数据包优先级分配 / the IC2-style packet priority walk of 0.1.7.x")
-            .define("distributionMode", "fair", value -> "fair".equals(value) || "legacy".equals(value));
-
+    // 0.1.11.32: distributionMode (fair / legacy) was removed; the fair share is the only distribution.
     public static final ModConfigSpec.ConfigValue<String> ENERGY_NET_LINE_LOSS = ENERGY_NET_BUILDER
             .comment("线路损耗模型（仅 fair 模式）/ Line loss model (fair mode only)",
                     "lossless = 无线损。默认值。/ No cable loss. Default.",
@@ -476,11 +469,14 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
 
     private static final ModConfigSpec.Builder REPRESSURIZER_BUILDER = BUILDER.push("SteamRepressurizer");
     public static final ModConfigSpec.IntValue REPRESSURIZER_STEAM_OUTPUT = REPRESSURIZER_BUILDER
-        .comment("Output ordinary steam (mB) per 10 mB steam + 1 HU; IC2 default: 16")
-        .defineInRange("steamPerSteam", 16, 1, 10000);
+        .comment("Output ordinary steam (mB) per 10 mB steam + 1 HU. At most 10 since 0.1.11.11: input and output are the same",
+                 "steam here, so more than went in multiplied steam (and energy) when repressurizers were chained (IC2 used 16",
+                 "because it converted into another mod's steam)")
+        .defineInRange("steamPerSteam", 10, 1, 10);
     public static final ModConfigSpec.IntValue REPRESSURIZER_SUPERHEATED_OUTPUT = REPRESSURIZER_BUILDER
-        .comment("Output ordinary steam (mB) per 10 mB superheated steam + 1 HU; IC2 default: 32")
-        .defineInRange("steamPerSuperSteam", 32, 1, 10000);
+        .comment("Output ordinary steam (mB) per 10 mB superheated steam + 1 HU. At most 20 since 0.1.11.11 (superheated steam",
+                 "costs twice the heat of steam; more made energy from nothing; IC2 used 32)")
+        .defineInRange("steamPerSuperSteam", 20, 1, 20);
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder REPRESSURIZER_POP = BUILDER.pop();
 
@@ -614,8 +610,24 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     public static final ModConfigSpec.BooleanValue CHUNK_LOADERS_OWNER_ONLY_EDIT = CHUNK_LOADER_BUILDER
         .comment("true = only the owner (and operators) may change the chunk selection. true = 仅所有者（及管理员）可修改区块选择。")
         .translation("mio_icif.configuration.chunk_loaders.ownerOnlyEdit").define("ownerOnlyEdit", false);
+    // 0.1.11.37 (chunk loader audit D1)
+    public static final ModConfigSpec.IntValue CHUNK_LOADERS_GRACE_MINUTES = CHUNK_LOADER_BUILDER
+        .comment("Minutes a loader out of energy keeps its own chunk (free) and comes back with all its chunks when energy returns;",
+                 "after that it stops and its chunk unloads. Also after a restart. 0 = stop at once (as before 0.1.11.37).",
+                 "加载器没电时免费保持自身区块的分钟数，期间来电即恢复全部区块；超时才停下，其区块随之卸载。重启后同样适用。0 = 立即停下（0.1.11.37 之前的行为）。")
+        .translation("mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes").defineInRange("noEnergyGraceMinutes", 10, 0, 1440);
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder CHUNK_LOADER_POP = BUILDER.pop();
+
+    // ==================== 0.1.11.39: Wingmen (Wingman audit W0) ====================
+    private static final ModConfigSpec.Builder WINGMEN_BUILDER = BUILDER
+        .comment("Wingmen (0.1.11.39): the limit, the upkeep and the target ranges. 僚机（0.1.11.39）：数量上限、维持费与目标范围。")
+        .translation("mio_icif.configuration.wingmen").push("Wingmen");
+    static {
+        com.miophas.singularity_iteration.common.armory.WingmanConfig.define(WINGMEN_BUILDER);
+    }
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder WINGMEN_POP = BUILDER.pop();
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -624,8 +636,11 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
         com.miophas.singularity_iteration.common.suit.nano.NanoConfig.bind(SPEC);
         com.miophas.singularity_iteration.common.suit.core.CoreConfig.bind(SPEC);
         com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.bind(SPEC);
+        com.miophas.singularity_iteration.common.armory.WingmanConfig.bind(SPEC);
         com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.OUTPUT_SCALE =
             com.miophas.singularity_iteration.common.energy.GeneratorOutput::multiplier;
+        com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.DISPATCH =
+            com.miophas.singularity_iteration.common.energy.GeneratorOutput::dispatchClass;   // 0.1.11.13
     }
 
     /**

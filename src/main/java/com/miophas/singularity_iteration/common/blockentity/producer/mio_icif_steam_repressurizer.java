@@ -34,8 +34,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * IC2 2.8.221 steam repressurizer: 10 mB input + 1 HU per batch, producing
- * 16 / 32 mB ordinary steam. Heat is drawn on demand from all six neighbours.
+ * IC2 2.8.221 steam repressurizer: 10 mB input + 1 HU per batch, producing ordinary steam. 0.1.11.11: at most
+ * 10 / 20 mB (was 16 / 32): IC2 converted into another mod's steam, but here the output is the same steam as the input,
+ * so a chain of repressurizers multiplied steam and made energy from nothing. Heat is drawn on demand from all six neighbours.
  * IC2's external registered "steam" output is mapped to this mod's ordinary steam.
  */
 @SuppressWarnings("null")
@@ -44,8 +45,8 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
     public static final int OUTPUT_TANK_CAPACITY = 10_000;
     public static final int INPUT_BATCH = 10;
     public static final int HEAT_PER_BATCH = 1;
-    public static final int NORMAL_OUTPUT_BATCH = 16;
-    public static final int SUPERHEATED_OUTPUT_BATCH = 32;
+    public static final int NORMAL_OUTPUT_BATCH = 10;   // 0.1.11.11: the config defaults (were 16 / 32)
+    public static final int SUPERHEATED_OUTPUT_BATCH = 20;
     public static final int DATA_COUNT = 8;
 
     // IC2 can retain < aim HU, then draw aim HU (not aim - currentHeat).

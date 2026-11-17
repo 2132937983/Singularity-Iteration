@@ -18,6 +18,7 @@ item_ids:
 
 The machine converts kinetic energy (KU) into EU.
 The machine takes KU from the block at its front face.
+The screen is a plant mimic: the KU source on the front, the shaft turning at its speed, the generator and the EU out, with the input load and the EU per KU.
 
 ## Power data
 

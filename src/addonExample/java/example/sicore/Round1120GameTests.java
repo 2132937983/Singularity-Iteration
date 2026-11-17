@@ -4,8 +4,6 @@ import java.lang.reflect.Proxy;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.AfterBatch;
-import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -127,14 +125,6 @@ public final class Round1120GameTests {
             if (now == 90) h.succeed();
         });
     }
-
-    // load priority, the early end of a full window and the replay of a steady plan exist only in the fair distribution;
-    // the addon test server runs the legacy walk (build.gradle), so this batch switches to fair as FairGridGameTests does
-    @BeforeBatch(batch = "round1120_steady")
-    public static void fairOnSteady(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
-
-    @AfterBatch(batch = "round1120_steady")
-    public static void fairOffSteady(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
 
     /**
      * A source feeding a drained sink is a steady window: its allocation is replayed instead of computed. 0.1.10.42: the circuit

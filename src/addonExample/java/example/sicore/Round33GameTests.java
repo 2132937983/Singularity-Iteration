@@ -479,4 +479,21 @@ public final class Round33GameTests {
         }
         return -1;
     }
+
+    /** 0.1.11.33 (cable audit W4): sets a cable's {@code casing} property by its serialized value (none, scaffold, foam, ...). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static net.minecraft.world.level.block.state.BlockState casing(net.minecraft.world.level.block.state.BlockState state, String value) {
+        var property = (net.minecraft.world.level.block.state.properties.Property) state.getBlock().getStateDefinition().getProperty("casing");
+        java.util.Optional<?> found = property.getValue(value);
+        if (found.isEmpty()) throw new IllegalArgumentException("casing " + value);
+        Object parsed = found.get();
+        return state.setValue(property, (Comparable) parsed);
+    }
+
+    /** The serialized value of a cable's {@code casing} property. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static String casingOf(net.minecraft.world.level.block.state.BlockState state) {
+        var property = (net.minecraft.world.level.block.state.properties.Property) state.getBlock().getStateDefinition().getProperty("casing");
+        return property.getName((Comparable) state.getValue(property));
+    }
 }

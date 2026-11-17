@@ -30,8 +30,6 @@ import net.minecraft.world.level.Level;
 @SuppressWarnings("null")
 public class mio_icif_WaterRotorRender implements BlockEntityRenderer<mio_icif_Water_Kinetic_Generator> {
 
-    private float accumulatedRotation = 0.0f;
-    private long lastRenderTime = 0;
 
     private static final float PIXEL_SCALE = 1.0f / 16.0f;
     private static final int TEXTURE_TOTAL_HEIGHT = 128;
@@ -67,14 +65,15 @@ public class mio_icif_WaterRotorRender implements BlockEntityRenderer<mio_icif_W
         int currentOutput = blockEntity.getCurrentKineticOutput();
         float rotationSpeed = currentOutput * 15.0f / 200.0f;
 
+        // 0.1.11.22: the angle is kept per machine (it was one angle on the renderer, shared by every rotor and advanced
+        // by each one's speed in turn)
         long currentTime = System.currentTimeMillis();
-        if (lastRenderTime == 0) lastRenderTime = currentTime;
-        float deltaTime = (currentTime - lastRenderTime) / 1000.0f;
-        lastRenderTime = currentTime;
+        if (blockEntity.rotorRenderTime == 0) blockEntity.rotorRenderTime = currentTime;
+        float deltaTime = Math.min(1.0f, (currentTime - blockEntity.rotorRenderTime) / 1000.0f);
+        blockEntity.rotorRenderTime = currentTime;
 
-        accumulatedRotation += rotationSpeed * deltaTime * 20.0f;
-        accumulatedRotation = accumulatedRotation % 360.0f;
-        float rotation = accumulatedRotation;
+        blockEntity.rotorAngle = (blockEntity.rotorAngle + rotationSpeed * deltaTime * 20.0f) % 360.0f;
+        float rotation = blockEntity.rotorAngle;
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
@@ -163,6 +162,15 @@ public class mio_icif_WaterRotorRender implements BlockEntityRenderer<mio_icif_W
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(packedLight)
                 .setNormal(pose, nx, ny, nz);
+    }
+
+    /** 0.1.11.22: the whole rotor (the default box is the machine's block, so a large rotor vanished at the screen's edge). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox(mio_icif_Water_Kinetic_Generator blockEntity) {
+        ItemStack stack = blockEntity.getRotorStack();
+        if (!(stack.getItem() instanceof IKineticRotor rotor)) return BlockEntityRenderer.super.getRenderBoundingBox(blockEntity);
+        double reach = Math.ceil(getTexturePixelHeight(rotor.getDiameter(stack)) / 3.0f * PIXEL_SCALE) + 1;
+        return new net.minecraft.world.phys.AABB(blockEntity.getBlockPos()).inflate(reach);
     }
 
     @Override

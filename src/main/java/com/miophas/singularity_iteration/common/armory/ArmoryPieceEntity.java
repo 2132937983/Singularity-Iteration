@@ -43,7 +43,7 @@ import java.util.UUID;
  */
 @SuppressWarnings("null")
 public class ArmoryPieceEntity extends Entity {
-    public static final byte MODE_DELIVER = 0, MODE_RETURN = 1;
+    public static final byte MODE_DELIVER = 0, MODE_RETURN = 1, MODE_STRAIGHT = 2;
     private static final int OWNER_GRACE_TICKS = 60;
     private static final int MAX_EXTRA_LIFETIME = 400;
 
@@ -102,6 +102,16 @@ public class ArmoryPieceEntity extends Entity {
         return e;
     }
 
+    /**
+     * 0.1.11.64 (hit feel and constructivist FX phase Q3): a visual echo flying in a straight line from {@code start} to
+     * {@code end} in {@code duration} ticks (the Clean Slate pieces going home).
+     */
+    public static ArmoryPieceEntity straight(ServerLevel level, Entity from, ItemStack copy, ArmoryPiece piece, Vec3 start, Vec3 end, int duration) {
+        ArmoryPieceEntity e = new ArmoryPieceEntity(ArmoryRegistry.PIECE_ENTITY.get(), level);
+        e.setup(copy, piece, MODE_STRAIGHT, from.getId(), start, end, level.getGameTime(), duration);
+        return e;
+    }
+
     public static ArmoryPieceEntity echo(ServerLevel level, Entity from, ItemStack copy, ArmoryPiece piece, Vec3 start, Vec3 end) {
         ArmoryPieceEntity e = new ArmoryPieceEntity(ArmoryRegistry.PIECE_ENTITY.get(), level);
         int duration = ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(start, end));
@@ -136,7 +146,10 @@ public class ArmoryPieceEntity extends Entity {
     // ------------------------------------------------------------------ accessors (renderer)
     public ItemStack item() { return entityData.get(DATA_ITEM); }
     public ArmoryPiece piece() { return ArmoryPiece.VALUES[Math.floorMod(entityData.get(DATA_PIECE), ArmoryPiece.VALUES.length)]; }
-    public boolean isReturn() { return entityData.get(DATA_MODE) == MODE_RETURN; }
+    public boolean isReturn() { return entityData.get(DATA_MODE) != MODE_DELIVER; }
+
+    /** 0.1.11.64: a visual echo that flies straight from its start to its end, faster and faster (no pop-off). */
+    public boolean isStraight() { return entityData.get(DATA_MODE) == MODE_STRAIGHT; }
     public Vec3 start() { return new Vec3(entityData.get(DATA_START)); }
     public long launchTime() { return entityData.get(DATA_LAUNCH); }
     public int duration() { return entityData.get(DATA_DURATION); }
@@ -190,7 +203,7 @@ public class ArmoryPieceEntity extends Entity {
 
     /** A return piece still popping off the body. */
     public boolean purging(float partialTick) {
-        return isReturn() && age(partialTick) < ArmoryFlight.PURGE_TICKS;
+        return isReturn() && !isStraight() && age(partialTick) < ArmoryFlight.PURGE_TICKS;
     }
 
     /** Where the piece is heading this frame. */
@@ -255,6 +268,10 @@ public class ArmoryPieceEntity extends Entity {
     /** Purge (pop off the body), then a hard boost towards home. */
     private Vec3 returnPosition(float partialTick) {
         float age = age(partialTick);
+        if (isStraight()) {
+            double u = net.minecraft.util.Mth.clamp(age / Math.max(1.0, duration()), 0, 1);
+            return start().add(destination(partialTick).subtract(start()).scale(u * u));   // straight, faster and faster
+        }
         Entity target = target();
         if (age < ArmoryFlight.PURGE_TICKS) {
             if (target == null) return start();
@@ -402,7 +419,7 @@ public class ArmoryPieceEntity extends Entity {
     }
 
     /** Fly-home target: the home block's top when close, else a point high up towards it. */
-    static Vec3 homeTarget(Level here, @Nullable GlobalPos armory, Vec3 from) {
+    public static Vec3 homeTarget(Level here, @Nullable GlobalPos armory, Vec3 from) {
         if (armory != null && armory.dimension() == here.dimension()) {
             Vec3 top = Vec3.atCenterOf(armory.pos()).add(0, here.getBlockEntity(armory.pos()) instanceof ArmorShowcaseBlockEntity ? 0.6 : 0.7, 0);
             if (top.distanceTo(from) <= ArmoryFlight.LOCAL_LAUNCH_RANGE) return top;

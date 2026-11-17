@@ -59,21 +59,23 @@ public final class WingmanCommandPackets {
      * not loaded; {@code where}: 0 with the owner, 1 in another dimension, 2 in an unloaded chunk
      * (roster); {@code order}: a {@link WingmanOrder} ordinal; {@code ox, oy, oz}: the order point;
      * {@code focus}: the focus entity id or -1; {@code health}, {@code energy}: 0..1 (energy -1
-     * without electric pieces); {@code x, y, z}: the position (the last known one when unloaded).
+     * without electric pieces); {@code x, y, z}: the position (the last known one when unloaded); {@code endurance} (0.1.11.41): seconds of upkeep the suit and
+     * the reserve pay for, -1 for free upkeep, -2 while the Armory pays, -3 unknown (unloaded).
      */
     public record Unit(UUID id, int entityId, byte set, byte mode, boolean individual, byte order, float ox, float oy, float oz, int focus,
-                       float health, float energy, byte state, byte where, float x, float y, float z) {
+                       float health, float energy, byte state, byte where, float x, float y, float z, int endurance) {
         void write(FriendlyByteBuf b) {
             b.writeUUID(id); b.writeVarInt(entityId + 1); b.writeByte(set); b.writeByte(mode); b.writeBoolean(individual); b.writeByte(order);
             b.writeFloat(ox); b.writeFloat(oy); b.writeFloat(oz); b.writeVarInt(focus + 1);
             b.writeFloat(health); b.writeFloat(energy); b.writeByte(state); b.writeByte(where);
             b.writeFloat(x); b.writeFloat(y); b.writeFloat(z);
+            b.writeVarInt(endurance + 3);   // 0.1.11.41: seconds, or -1 free, -2 the Armory pays, -3 unknown
         }
 
         static Unit read(FriendlyByteBuf b) {
             return new Unit(b.readUUID(), b.readVarInt() - 1, b.readByte(), b.readByte(), b.readBoolean(), b.readByte(),
                 b.readFloat(), b.readFloat(), b.readFloat(), b.readVarInt() - 1,
-                b.readFloat(), b.readFloat(), b.readByte(), b.readByte(), b.readFloat(), b.readFloat(), b.readFloat());
+                b.readFloat(), b.readFloat(), b.readByte(), b.readByte(), b.readFloat(), b.readFloat(), b.readFloat(), b.readVarInt() - 3);
         }
     }
 
@@ -81,27 +83,28 @@ public final class WingmanCommandPackets {
      * Server to client (the owner). {@code commander}: the command link works (an active
      * entanglement relay on a worn quantum piece); {@code datalink}: the data link setting;
      * {@code squadMode}: the squad mode ordinal or -1; {@code recallCooldown}: ticks until the next
-     * quantum recall; {@code holdRadius}, {@code suppressRadius}: the server's order radii (for the
-     * markers); {@code units}: at most {@link #MAX_UNITS}.
+     * quantum recall; {@code recallCooldownMax} (0.1.11.40): the configured cooldown; {@code holdRadius},
+     * {@code suppressRadius}: the server's order radii (for the markers); {@code units}: at most {@link #MAX_UNITS}.
      */
-    public record Squad(boolean commander, boolean datalink, byte squadMode, int recallCooldown, int holdRadius, int suppressRadius,
-                        List<Unit> units) implements CustomPacketPayload {
+    public record Squad(boolean commander, boolean datalink, byte squadMode, int recallCooldown, int recallCooldownMax, int holdRadius,
+                        int suppressRadius, List<Unit> units) implements CustomPacketPayload {
         public static final int MAX_UNITS = 12;
         public static final Type<Squad> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "wingman_squad"));
         public static final StreamCodec<FriendlyByteBuf, Squad> CODEC = StreamCodec.of((b, p) -> {
             b.writeBoolean(p.commander); b.writeBoolean(p.datalink); b.writeByte(p.squadMode); b.writeVarInt(Math.max(0, p.recallCooldown));
+            b.writeVarInt(Math.max(0, p.recallCooldownMax));
             b.writeVarInt(Math.max(0, p.holdRadius)); b.writeVarInt(Math.max(0, p.suppressRadius));
             int n = PacketLimits.writeCount(b, p.units.size(), MAX_UNITS);
             for (int i = 0; i < n; i++) p.units.get(i).write(b);
         }, b -> {
             boolean commander = b.readBoolean(), datalink = b.readBoolean();
             byte mode = b.readByte();
-            int cooldown = b.readVarInt();
+            int cooldown = b.readVarInt(), cooldownMax = b.readVarInt();
             int hold = Math.min(64, b.readVarInt()), suppress = Math.min(64, b.readVarInt());
             int n = PacketLimits.readCount(b, MAX_UNITS, "squad unit");
             List<Unit> units = new ArrayList<>(n);
             for (int i = 0; i < n; i++) units.add(Unit.read(b));
-            return new Squad(commander, datalink, mode, cooldown, hold, suppress, units);
+            return new Squad(commander, datalink, mode, cooldown, cooldownMax, hold, suppress, units);
         });
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
@@ -113,6 +116,24 @@ public final class WingmanCommandPackets {
         registrar.playToClient(Squad.TYPE, Squad.CODEC, (p, c) -> {
             if (FMLEnvironment.dist != Dist.CLIENT) return;
             c.enqueueWork(() -> { Consumer<Squad> hook = SQUAD_HOOK; if (hook != null) hook.accept(p); });
+        });
+        // 0.1.11.60 (P8): remote piloting (the controls every tick, the piloted Wingman)
+        registrar.playToServer(WingmanPilot.Input.TYPE, WingmanPilot.Input.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer player) WingmanPilot.input(player, p);
+        }));
+        registrar.playToClient(WingmanPilot.State.TYPE, WingmanPilot.State.CODEC, (p, c) -> {
+            if (FMLEnvironment.dist != Dist.CLIENT) return;
+            c.enqueueWork(() -> { Consumer<WingmanPilot.State> hook = WingmanPilot.HOOK; if (hook != null) hook.accept(p); });
+        });
+        // 0.1.11.59 (P7): the Clean Slate firework bursts
+        registrar.playToClient(WingmanCleanSlate.Burst.TYPE, WingmanCleanSlate.Burst.CODEC, (p, c) -> {
+            if (FMLEnvironment.dist != Dist.CLIENT) return;
+            c.enqueueWork(() -> { Consumer<WingmanCleanSlate.Burst> hook = WingmanCleanSlate.HOOK; if (hook != null) hook.accept(p); });
+        });
+        // 0.1.11.58 (P6): the Wingman callouts
+        registrar.playToClient(WingmanCallouts.Line.TYPE, WingmanCallouts.Line.CODEC, (p, c) -> {
+            if (FMLEnvironment.dist != Dist.CLIENT) return;
+            c.enqueueWork(() -> { Consumer<WingmanCallouts.Line> hook = WingmanCallouts.HOOK; if (hook != null) hook.accept(p); });
         });
     }
 }

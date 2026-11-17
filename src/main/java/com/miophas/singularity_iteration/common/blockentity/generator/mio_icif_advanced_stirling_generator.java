@@ -25,7 +25,8 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock {
+public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntity implements com.miophas.singularity_iteration.core.api.machine.IComparatorSource, com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock,
+        com.miophas.singularity_iteration.core.runtime.energy.DemandEnergySource {
 
     private boolean registered = false;
 
@@ -46,6 +47,17 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     private static final int EU_PER_CONVERSION = 85;
 
     private long heatBuffer = 0;
+    /** 0.1.11.17: the heater and cooler (StirlingPhysics); rated flow 150 HU/t (about 128 EU/t at the design point). */
+    public static final double RATED_HU = 150;
+    private final com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head = new com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head(RATED_HU);
+    private double euCarry;
+    private long lastHu;
+    public com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head() { return head; }
+    public long getLastHu() { return lastHu; }
+    /** EU per HU now: 0.85 at the design point, times the heater factor and the output multiplier. */
+    public double ratio() { return 0.85 * head.factor() * com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this); }
+    /** EU made by the last tick's conversion (shown as EU/t; was the EU value of all the buffered heat). */
+    private long lastEu;
     private boolean isWorking = false;
 
     private static final CableTier CABLE_TIER = CableTier.MV;
@@ -55,9 +67,32 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
                 BASE_TEMP, MAX_TEMP, LOSS_FACTOR);
 
         this.energyStorage = new CustomEUEnergyStorage(ENERGY_CAPACITY, MAX_ENERGY_RECEIVE, MAX_ENERGY_EXTRACT, CABLE_TIER);
+        // 0.1.11.11: an endpoint of the independent network when it runs (it was only ever on the old grid)
+        this.energyStorage.scexSetNetworkControlled(com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.controls(state));
+        this.energyStorage.setAsPowerSource(MAX_ENERGY_EXTRACT);
+    }
+
+    private boolean network() { return energyStorage.scexNetworkControlled(); }
+
+    // ---- independent network: the stored EU is the offer (heat is converted every tick, as before)
+    @Override public CustomEUEnergyStorage ownedEnergy() { return energyStorage; }
+    @Override public int outputFaces() { return 63 ^ (1 << front().get3DDataValue()); }
+    @Override public com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount potentialEnergy() { return energyStorage.scexExactAmount(); }
+    @Override public void prepareEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount requested) { }
+
+    /** The heat input face (the front: the old emitsEnergyTo excluded it). */
+    private Direction front() {
+        return getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING).getOpposite();
+    }
+
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        energyStorage.setBlockContext(level, worldPosition);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_advanced_stirling_generator blockEntity) {
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(blockEntity);   // 0.1.11.13
         if (level.isClientSide()) {
             return;
         }
@@ -67,10 +102,10 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         blockEntity.receiveHeatFromSides();
 
         blockEntity.convertHeatToEnergy();
+        blockEntity.head.tick(level, pos, blockEntity.lastHu, false);   // 0.1.11.17
 
         boolean wasWorking = blockEntity.isWorking;
-        blockEntity.isWorking = blockEntity.heatBuffer >= HU_PER_CONVERSION ||
-                blockEntity.heatStorage.getHeatStored() >= HU_PER_CONVERSION;
+        blockEntity.isWorking = blockEntity.lastEu > 0;
 
         if (wasWorking != blockEntity.isWorking) {
             blockEntity.updateBlockState(blockEntity.isWorking);
@@ -80,6 +115,10 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     @Override
     public void onLoad() {
         super.onLoad();
+        if (level != null && !level.isClientSide && network()) {
+            com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);
+            return;
+        }
         if (level != null && !level.isClientSide && !registered) {
             NeoForge.EVENT_BUS.post(new EnergyTileLoadEvent(this, level));
             registered = true;
@@ -88,6 +127,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
 
     @Override
     public void setRemoved() {
+        if (level != null && !level.isClientSide && network()) com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);
         if (level != null && !level.isClientSide && registered) {
             NeoForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this, level));
             registered = false;
@@ -98,6 +138,10 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     @Override
     public void clearRemoved() {
         super.clearRemoved();
+        if (level != null && !level.isClientSide && network()) {
+            com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);
+            return;
+        }
         if (level != null && !level.isClientSide && !registered) {
             NeoForge.EVENT_BUS.post(new EnergyTileLoadEvent(this, level));
             registered = true;
@@ -137,30 +181,34 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         }
     }
 
+    /**
+     * 0.1.11.11: heat goes into the conversion buffer only as far as the EU storage has room for it. The buffer used to
+     * take 2000 HU every tick whatever the room, so a full machine kept pulling heat (and burning fuel upstream) for
+     * nothing; now the heat storage fills up and the pull stops.
+     */
     private void convertHeatToEnergy() {
-        long heatInStorage = heatStorage.getHeatStored();
-        long maxExtract = heatStorage.getMaxExtract();
-
-        if (heatInStorage > 0) {
-            long heatToBuffer = Math.min(heatInStorage, maxExtract);
-            if (heatToBuffer > 0) {
-                long extracted = heatStorage.extractHeat(heatToBuffer, false);
-                heatBuffer += extracted;
-                setChanged();
-            }
+        long energySpace = energyStorage.getCapacity() - energyStorage.getAmount();
+        long convertibleHu = energySpace / EU_PER_CONVERSION * HU_PER_CONVERSION;
+        long take = Math.min(heatStorage.getHeatStored(), Math.min(heatStorage.getMaxExtract(), Math.max(0, convertibleHu - heatBuffer)));
+        if (take > 0) {
+            heatBuffer += heatStorage.extractHeat(take, false);
+            setChanged();
         }
-
-        if (heatBuffer >= HU_PER_CONVERSION) {
-            long energySpace = energyStorage.getCapacity() - energyStorage.getAmount();
-            if (energySpace >= EU_PER_CONVERSION) {
-                long conversions = Math.min(heatBuffer / HU_PER_CONVERSION, energySpace / EU_PER_CONVERSION);
-                long heatToConvert = conversions * HU_PER_CONVERSION;
-                long energyToGenerate = conversions * EU_PER_CONVERSION;
-
-                heatBuffer -= heatToConvert;
-                energyStorage.generateEnergyInternal(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(this, energyToGenerate), false);   // 0.1.8.4 output multiplier
-                setChanged();
-            }
+        lastEu = 0;
+        lastHu = 0;
+        if (heatBuffer >= HU_PER_CONVERSION && energySpace >= EU_PER_CONVERSION) {
+            long conversions = Math.min(heatBuffer / HU_PER_CONVERSION, energySpace / EU_PER_CONVERSION);
+            heatBuffer -= conversions * HU_PER_CONVERSION;
+            lastHu = conversions * HU_PER_CONVERSION;
+            // 0.1.11.17: 85 EU per 100 HU at the design point, times the heater factor (the fraction carried)
+            double made = conversions * EU_PER_CONVERSION * head.factor() + euCarry;
+            long whole = (long) Math.floor(made);
+            euCarry = made - whole;
+            long eu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(this, whole);   // 0.1.8.4 output multiplier
+            if (network()) energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(eu), false);
+            else energyStorage.generateEnergyInternal(eu, false);
+            lastEu = eu;
+            setChanged();
         }
     }
 
@@ -195,20 +243,19 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         if (!isWorking) {
             return 0;
         }
-        long availableHeat = heatBuffer + heatStorage.getHeatStored();
-        long conversions = availableHeat / HU_PER_CONVERSION;
-        return conversions * EU_PER_CONVERSION;
+        return lastEu;
     }
 
     @Override
     public double getOfferedEnergy() {
+        if (network()) return 0;
         long available = Math.min(energyStorage.getAmount(), energyStorage.getMaxExtract());
         return Math.min(available, CABLE_TIER.powerRating);
     }
 
     @Override
     public void drawEnergy(double amount) {
-        if (amount > 0.0D) {
+        if (!network() && amount > 0.0D) {
             long request = Math.min((long) amount, CABLE_TIER.powerRating);
             energyStorage.extract(request, false);
         }
@@ -226,6 +273,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
 
     @Override
     public boolean emitsEnergyTo(IEnergyAcceptor acceptor, Direction direction) {
+        if (network()) return false;
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         Direction front = facing.getOpposite();
         return direction != front;
@@ -267,11 +315,15 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         tag.putLong("HeatBuffer", heatBuffer);
         tag.putLong("Energy", energyStorage.getAmount());
         tag.putBoolean("IsWorking", isWorking);
+        head.save(tag);
+        tag.putDouble("scex_eu_carry", euCarry);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        head.load(tag);
+        euCarry = tag.getDouble("scex_eu_carry");
         if (tag.contains("HeatBuffer", net.minecraft.nbt.Tag.TAG_LONG)) {
             heatBuffer = tag.getLong("HeatBuffer");
         } else if (tag.contains("HeatBuffer", net.minecraft.nbt.Tag.TAG_INT)) {
@@ -294,7 +346,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.AdvancedStirlingGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.AdvancedStirlingGeneratorMenu(containerId, playerInventory, this);
     }
 
     @Override
@@ -415,4 +467,10 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
     @Override
     public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+
+    /** 0.1.11.13: comparator by the share of the energy storage filled. */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(energyStorage.getAmount(), energyStorage.getCapacity());
+    }
 }

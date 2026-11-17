@@ -42,6 +42,10 @@ public final class ArmoryRemoteService {
     public static final int WINGMAN_DEPLOY = 4, WINGMAN_MODE = 5, WINGMAN_RECALL = 6, ALL = 255;
     /** Remote equip onto a companion (0.1.8.0, {@link CompanionEquip}). index = set. */
     public static final int COMPANION_EQUIP = 7;
+    /** 0.1.11.39: recall one Wingman; index = its entity id ({@link WingmanService.View#entityId()}). */
+    public static final int WINGMAN_RECALL_ID = 8;
+    /** 0.1.11.57 (P5): call one piece ({@code index}: the {@link ArmoryPiece} ordinal), see {@link ArmoryPieceCall}. */
+    public static final int PIECE_CALL = 9;
     /**
      * Default ranges: showcases this close to the player, or to the paired Armory, belong to the
      * network. The live values come from {@code SiTuningValues.ARMORY_*_RANGE}
@@ -127,6 +131,7 @@ public final class ArmoryRemoteService {
         List<ArmorShowcaseBlockEntity> out = new ArrayList<>();
         collect(player.serverLevel(), player.blockPosition(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.ARMORY_PLAYER_RANGE.get(), out);
         if (armory != null && armory.getLevel() instanceof ServerLevel home) collect(home, armory.getBlockPos(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.ARMORY_ARMORY_RANGE.get(), out);
+        out.removeIf(showcase -> !showcase.remoteUsableBy(player));   // 0.1.11.3: only the player's own showcases
         out.sort(java.util.Comparator.comparingDouble(s -> s.getLevel() == player.level()
             ? s.getBlockPos().distSqr(player.blockPosition()) : Double.MAX_VALUE));
         return out;
@@ -168,6 +173,8 @@ public final class ArmoryRemoteService {
             case WINGMAN_MODE -> message = WingmanService.setMode(player, WingmanMode.byId(index));
             case WINGMAN_RECALL -> message = WingmanService.recall(player, index == ALL ? -1 : index);
             case COMPANION_EQUIP -> message = CompanionEquip.equip(player, armory, index);
+            case WINGMAN_RECALL_ID -> message = WingmanService.recallById(player, index);
+            case PIECE_CALL -> message = ArmoryPieceCall.call(player, armory, index);
             default -> { }
         }
         if (!message.getString().isEmpty()) player.displayClientMessage(message, true);
@@ -192,7 +199,7 @@ public final class ArmoryRemoteService {
         try {
             if (player.connection != null && player.connection.hasChannel(ArmoryConsoleSyncPacket.TYPE)) {
                 PacketDistributor.sendToPlayer(player, new ArmoryConsoleSyncPacket(hasRemote(player), snapshot, views,
-                    WingmanService.views(player), message));
+                    WingmanService.views(player), WingmanService.count(player), WingmanConfig.maxPerPlayer(), message));
             }
         } catch (RuntimeException ignored) {
             // detached / fake connections (automation, tests) have no client to update
@@ -207,6 +214,7 @@ public final class ArmoryRemoteService {
         if (armory == null) return Component.translatable("message.mio_icif.armory.missing");
         if (!armory.isOwner(player)) return Component.translatable("message.mio_icif.armory.not_owner");
         if (armory.isBusy()) return Component.translatable("message.mio_icif.armory.busy");
+        if (!showcase.remoteUsableBy(player)) return Component.translatable("message.mio_icif.armory.not_owner");
         if (!(showcase.getLevel() instanceof ServerLevel world) || !showcase.hasOwnOutfit())
             return Component.translatable("message.mio_icif.armory.failed");
         if (!player.isAlive() || player.isSpectator()) return Component.translatable("message.mio_icif.armory.failed");
@@ -266,8 +274,7 @@ public final class ArmoryRemoteService {
         // 0.1.8.0 auto return: a suit summoned from a holo projector goes back to that projector;
         // when every Armory suit position is in use, an empty docked projector takes it.
         ArmorShowcaseBlockEntity projector = originProjector(player);
-        int set = -1;
-        for (int s = 0; s < mio_icif_armory.SETS; s++) if (armory.pieceCount(s) == 0) { set = s; break; }
+        int set = armory.firstFreeSet();   // 0.1.11.39 (G-1): never a suit that flies as a Wingman
         if (projector == null && set < 0) projector = freeDockedProjector(armory);
         if (projector != null) return returnToProjector(player, armory, projector, worn);
         if (set < 0) set = 0;

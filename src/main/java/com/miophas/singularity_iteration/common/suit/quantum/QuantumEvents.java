@@ -115,9 +115,20 @@ public final class QuantumEvents {
         if (event.getEntity() instanceof ServerPlayer player) settle(player);
     }
 
+    /**
+     * 0.1.11.3: settles before the player leaves, while {@code player.serverLevel()} is still the level that holds the
+     * frozen projectiles and the slowed mobs. After the change (the event below) they were looked up in the new level,
+     * not found, and forgotten: projectiles kept NoGravity in mid-air for good, mobs kept the slow modifiers.
+     * Lowest priority, so a travel another mod cancels does not end the field.
+     */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void onTravelToDimension(net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) settle(player);
+    }
+
     @SubscribeEvent
     public static void onChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) settle(player);
+        if (event.getEntity() instanceof ServerPlayer player) settle(player);   // a travel without the event above
     }
 
     @SubscribeEvent

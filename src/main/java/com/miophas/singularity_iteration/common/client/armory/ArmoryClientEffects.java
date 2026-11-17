@@ -46,6 +46,8 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
     @Override
     public void tick(ArmoryPieceEntity piece) {
         if (piece.item().isEmpty() && !piece.isReturn()) return;
+        // 0.1.11.64 (Q3): the straight Clean Slate pieces fly home bare in the constructivist style (no sparks, ion trail or gate)
+        if (piece.isStraight() && !com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.classicFlightFx()) return;
         if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.record(piece);   // 0.1.10.31 ion trail
         GateFx.tick(piece);                                         // 0.1.10.32 transfer gates of far summons
         float age = piece.age(0);

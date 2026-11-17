@@ -51,13 +51,13 @@ public final class SteamRepressurizerGameTests {
         input.fill(steam("steam", 10000), IFluidHandler.FluidAction.EXECUTE);
         m.generateHeatInternal(100, false);
         tick(h, m);
-        check(h, input.getFluidAmount() == 9000 && output.getFluidAmount() == 1600 && m.getHeatStored() == 0,
+        check(h, input.getFluidAmount() == 9000 && output.getFluidAmount() == 1000 && m.getHeatStored() == 0,
             "100 HU must process 1000 mB in ONE tick; no 1-HU throttle");
         input.setFluid(steam("superheatedsteam", 10));
         m.generateHeatInternal(1, false);
         tick(h, m);
-        check(h, output.getFluidAmount() == 1632 && output.getFluid().is(steam("steam", 1).getFluid()),
-            "Superheated input must join existing ordinary-steam output (+32), not block or output superheated steam");
+        check(h, output.getFluidAmount() == 1020 && output.getFluid().is(steam("steam", 1).getFluid()),
+            "Superheated input must join existing ordinary-steam output (+20 since 0.1.11.11), not block or output superheated steam");
         check(h, input.getCapacity() == 10000 && output.getCapacity() == 10000, "Both tanks must be 10000 mB");
         h.succeed();
     }
@@ -99,7 +99,7 @@ public final class SteamRepressurizerGameTests {
             check(h, port.getHeatStored() == 100 && m.getHeatStored() == 0, "Empty tank drew heat on " + side);
             tank(m, "getInputTank").setFluid(steam("steam", 1000));
             tick(h, m);
-            check(h, tank(m, "getOutputTank").getFluidAmount() == 1600 && port.getHeatStored() == 0,
+            check(h, tank(m, "getOutputTank").getFluidAmount() == 1000 && port.getHeatStored() == 0,
                 "Failed to draw 100 HU through face " + side);
             h.setBlock(sourcePos, net.minecraft.world.level.block.Blocks.AIR);
         }
@@ -202,10 +202,10 @@ public final class SteamRepressurizerGameTests {
             final int currentDelay = delay;
             h.runAfterDelay(delay, () -> {
                 int produced = tank(m, "getOutputTank").getFluidAmount();
-                check(h, produced >= 1600, "Real source did not supply 100 HU/t");
-                if (last[0] >= 0) check(h, produced - last[0] == 1600,
+                check(h, produced >= 1000, "Real source did not supply 100 HU/t");
+                if (last[0] >= 0) check(h, produced - last[0] == 1000,
                     "Continuous source stalled: output delta " + (produced-last[0]));
-                check(h, tank(m, "getInputTank").getFluidAmount() == 10000 - produced / 16 * 10,
+                check(h, tank(m, "getInputTank").getFluidAmount() == 10000 - produced,
                     "Steam batch ratio drifted");
                 last[0] = produced;
                 if (currentDelay == 5) h.succeed();
@@ -221,12 +221,12 @@ public final class SteamRepressurizerGameTests {
             CommonConfigGameTests.config("REPRESSURIZER_SUPERHEATED_OUTPUT");
         int beforeNormal = normal.get(), beforeSuper = superheated.get();
         try {
-            normal.set(24); superheated.set(48);
+            normal.set(7); superheated.set(13);   // 0.1.11.11: at most 10 / 20
             var m = machine(h, new BlockPos(2, 1, 2));
             tank(m, "getInputTank").setFluid(steam("steam", 10)); m.generateHeatInternal(1, false); tick(h, m);
             tank(m, "getInputTank").setFluid(steam("superheatedsteam", 10)); m.generateHeatInternal(1, false); tick(h, m);
-            check(h, tank(m, "getOutputTank").getFluidAmount() == 72 && m.getHeatStored() == 0,
-                "Configured 24/48 mB conversion did not take effect");
+            check(h, tank(m, "getOutputTank").getFluidAmount() == 20 && m.getHeatStored() == 0,
+                "Configured 7/13 mB conversion did not take effect");
         } finally { normal.set(beforeNormal); superheated.set(beforeSuper); }
         h.succeed();
     }

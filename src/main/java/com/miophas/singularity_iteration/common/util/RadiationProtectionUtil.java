@@ -70,9 +70,29 @@ public final class RadiationProtectionUtil {
         return false;
     }
 
+    /**
+     * 0.1.11.4: a full nano suit whose toxin and radiation filter unit works (installed, switched on, powered).
+     * Without the unit the filter's partial protection of the radiation effect stays as it was.
+     */
+    public static boolean isWearingFilteredNanoSet(LivingEntity entity) {
+        if (!(entity instanceof Player player)) return false;
+        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.isNanoPiece(player.getItemBySlot(slot))) return false;
+        }
+        return com.miophas.singularity_iteration.common.suit.nano.NanoSuit.level(player,
+            com.miophas.singularity_iteration.common.suit.SuitModuleType.TOXIN_FILTER) > 0;
+    }
+
+    /**
+     * Radiation protection: a full hazmat suit, a full quantum suit, or (0.1.11.4) a full nano suit with a working toxin
+     * filter. Since 0.1.11.4 every radiation source asks this (the blast zones and the radioactive blocks asked for the
+     * hazmat suit only, so a quantum suit was still given weakness there, issue #31). Fire, lava and Tesla coil immunity
+     * stay with the hazmat suit.
+     */
     public static boolean isRadiationProtected(LivingEntity entity) {
         return isWearingFullHazmat(entity)
-            || isWearingFullQuantumSet(entity);
+            || isWearingFullQuantumSet(entity)
+            || isWearingFilteredNanoSet(entity);
     }
 
     public static int getRadiationProtectionLevel(LivingEntity entity) {

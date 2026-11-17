@@ -219,8 +219,6 @@ public class Singularity_Iteration {
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setVoltageOverload(Singularity_Iteration_Config.ENERGY_NET_ENABLE_VOLTAGE_OVERLOAD.get());
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
-            .setDistributionMode(Singularity_Iteration_Config.ENERGY_NET_DISTRIBUTION_MODE.get());
-        com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setLineLossModel(Singularity_Iteration_Config.ENERGY_NET_LINE_LOSS.get());
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setDispatchMode(Singularity_Iteration_Config.ENERGY_NET_DISPATCH_MODE.get());   // 0.1.10.22
@@ -239,6 +237,7 @@ public class Singularity_Iteration {
             Singularity_Iteration_Config.CHUNK_LOADERS_EU_PER_CHUNK.get(),
             Singularity_Iteration_Config.CHUNK_LOADERS_RANDOM_TICKS.get(),
             Singularity_Iteration_Config.CHUNK_LOADERS_OWNER_ONLY_EDIT.get());
+        com.miophas.singularity_iteration.common.energy.ChunkLoaderPolicy.setGraceMinutes(Singularity_Iteration_Config.CHUNK_LOADERS_GRACE_MINUTES.get());   // 0.1.11.37
     }
 
     private void onConfigReload(net.neoforged.fml.event.config.ModConfigEvent event) {
@@ -254,19 +253,23 @@ public class Singularity_Iteration {
         // 电动锄：自带时运 3（收获作物掉落受时运加成）
         NeoForge.EVENT_BUS.addListener(mio_icif_electric_hoe::onGetEnchantmentLevel);
 
-        // Register the dispenser behavior for scrap boxes.
-com.miophas.singularity_iteration.common.item.normal.mio_icif_scrapbox.registerDispenserBehavior();
-        com.miophas.singularity_iteration.common.item.normal.mio_icif_thorium_scrapbox.registerDispenserBehavior();
+        // 0.1.11.3: the vanilla dispenser and fire tables are plain maps; common setup runs mods in parallel, so they are
+        // written on the main thread (another mod writing them at the same time could drop entries or throw)
+        event.enqueueWork(() -> {
+            // Register the dispenser behavior for scrap boxes.
+            com.miophas.singularity_iteration.common.item.normal.mio_icif_scrapbox.registerDispenserBehavior();
+            com.miophas.singularity_iteration.common.item.normal.mio_icif_thorium_scrapbox.registerDispenserBehavior();
 
-        // Register the dispenser behavior for dynamite and sticky dynamite.
-com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.registerDispenserBehavior();
-        com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_sticky_dynamite_item.registerDispenserBehavior();
+            // Register the dispenser behavior for dynamite and sticky dynamite.
+            com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.registerDispenserBehavior();
+            com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_sticky_dynamite_item.registerDispenserBehavior();
 
-        // 注册流体单元的发射器行为
-        com.miophas.singularity_iteration.common.item.cell.mio_icif_cell.registerDispenserBehaviors();
+            // 注册流体单元的发射器行为
+            com.miophas.singularity_iteration.common.item.cell.mio_icif_cell.registerDispenserBehaviors();
 
-        // 注册橡胶木系列方块的燃烧属性
-        registerRubberWoodFlammability();
+            // 注册橡胶木系列方块的燃烧属性
+            registerRubberWoodFlammability();
+        });
     }
 
     private void registerRubberWoodFlammability() {
@@ -325,6 +328,7 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
         com.miophas.singularity_iteration.common.command.ToggleCommand.register(event.getDispatcher());
         com.miophas.singularity_iteration.common.processing.PipeRecoveryCommand.register(event.getDispatcher());
         com.miophas.singularity_iteration.common.command.PerfCommand.register(event.getDispatcher());   // 0.1.10.7
+        com.miophas.singularity_iteration.common.command.GridCommand.register(event.getDispatcher());   // 0.1.11.30
         com.miophas.singularity_iteration.common.command.ChunkLoaderCommand.register(event.getDispatcher());   // 0.1.10.11
         com.miophas.singularity_iteration.common.command.ReactorAuditCommand.register(event.getDispatcher());  // 0.1.10.12
         com.miophas.singularity_iteration.common.command.MarketAuditCommand.register(event.getDispatcher());   // 0.1.10.21

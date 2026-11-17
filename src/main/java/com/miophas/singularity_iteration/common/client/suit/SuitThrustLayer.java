@@ -7,7 +7,6 @@ import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
 import com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -33,8 +32,9 @@ import org.joml.Vector3f;
 /**
  * 0.1.10.31 (S-4): thrusters of the quantum suit in normal mode, drawn on the worn model (third person, other players).
  * <ul>
- *   <li><b>Jetpack flight</b> of the quantum chestplate: two jets from the thruster pods under the back unit (body pixels
- *       x = +-2.9, y = 12, z = 5.4, tilted 12 degrees back) and, with the quantum boots, from the soles. The thrust comes
+ *   <li><b>Jetpack flight</b> of the quantum chestplate: jets from the back ports of {@link com.miophas.singularity_iteration.common.suit.QuantumNozzles}
+ *       (0.1.11.66: the four pods, or the two propulsion boosters, and the tail port; graviton rings) and, with the quantum
+ *       boots, from the soles. The thrust comes
  *       from {@link JetpackSoundClient#throttle} (the own player continuous, other players the relayed three levels).</li>
  *   <li><b>Boost jump</b> of the quantum boots: the soles burn for a moment ({@link SuitMotionFx#soleBurst}).</li>
  * </ul>
@@ -46,8 +46,6 @@ import org.joml.Vector3f;
 public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     private static final ResourceLocation CHEST = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_chestplate");
     private static final ResourceLocation BOOTS = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_boots");
-    /** Back thruster pods of the quantum chestplate (body space, pixels). */
-    static final float POD_X = 2.92F, POD_Y = 12.0F, POD_Z = 5.4F, POD_TILT = 12F;
     private final ThrusterFlame.Strips strips = new ThrusterFlame.Strips();
     /** 0.1.10.32 (P-3): detail tier of the player being drawn. */
     private int lodTier;
@@ -82,36 +80,39 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         int id = player.getId();
         lodTier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player);                    // 0.1.10.32 (P-3)
         strips.clear();
+        flat = !FcsClientConfig.classicFlightFx();   // 0.1.11.70 (W0): phase cones instead of the glowing flames
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
-        if (jet > 0.02F) {
-            for (int side = -1; side <= 1; side += 2) {
-                pose.pushPose();
-                model.body.translateAndRotate(pose);
-                pose.translate(side * POD_X / 16F, POD_Y / 16F, POD_Z / 16F);
-                pose.mulPose(Axis.XP.rotationDegrees(POD_TILT));
-                nozzle(pose, vc, 0.085F, 0.18F + 0.5F * jet, jet, jet, seconds, id, 4 + (side + 1) / 2);
-                pose.popPose();
-            }
-        }
+        // 0.1.11.66 (R0): the jets leave the back ports of the worn chestplate (pods, boosters; a graviton core shows rings)
+        // and the soles of the boots (QuantumNozzles)
         float sole = Math.max(boots ? jet * 0.75F : 0F, burst);
-        if (sole > 0.02F) {
-            sole(pose, vc, model.rightLeg, sole, Math.max(jet, burst), seconds, id, 6);
-            sole(pose, vc, model.leftLeg, sole, Math.max(jet, burst), seconds, id, 7);
+        for (com.miophas.singularity_iteration.common.suit.QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
+            boolean back = n.part() == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Part.BODY;
+            boolean foot = n.name().startsWith("sole");
+            var kind = n.kind();
+            float p = back ? (kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.MAIN ? jet
+                : kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.LIFT ? jet * 0.6F
+                : kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD ? jet : 0F) : foot ? sole : 0F;
+            if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
+            if (kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD) {
+                if (flat) NozzleDraw.fieldPhase(vc, pose, n.size(), p, seconds); else NozzleDraw.field(vc, pose, n.size(), p, seconds, true);
+            }
+            else if (foot) nozzle(pose, vc, 0.07F * n.size(), 0.14F + 0.4F * p, p, Math.max(jet, burst), seconds, id, n.part().ordinal());
+            else nozzle(pose, vc, 0.085F * n.size(), (0.18F + 0.5F * p) * (0.6F + 0.4F * n.size()), p, jet, seconds, id, 4 + (n.name().hashCode() & 3));
+            pose.popPose();
         }
-        strips.draw(buffers);
+        if (!flat) strips.draw(buffers);
     }
 
-    private void sole(PoseStack pose, VertexConsumer vc, ModelPart leg, float power, float throttle, float seconds, int id, int seed) {
-        if (!leg.visible) return;
-        pose.pushPose();
-        leg.translateAndRotate(pose);
-        pose.translate(0, 12.2F / 16F, 0);
-        nozzle(pose, vc, 0.07F, 0.14F + 0.4F * power, power, throttle, seconds, id, seed);
-        pose.popPose();
-    }
+    private boolean flat;
 
     private void nozzle(PoseStack pose, VertexConsumer vc, float radius, float length, float power, float throttle, float seconds, int id, int seed) {
         Matrix4f m = pose.last().pose();
+        if (flat) {   // 0.1.11.70 (W0): a phase cone and a flare
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, m, length * 1.3F, radius * 2.4F, seconds + seed * 0.13F,
+                com.miophas.singularity_iteration.common.suit.PhaseRules.rate(throttle), 0F, 0.9F);
+            NozzleDraw.flare(vc, m, radius * 2.6F, 0.5F + 0.4F * power);
+            return;
+        }
         float flicker = 0.88F + 0.12F * (float) Math.sin(seconds * 37 + seed * 1.7) * (float) Math.sin(seconds * 23 + seed);
         ThrusterFlame.glow(vc, m, radius, length, power, throttle, flicker, seconds, id * 8 + seed,
             lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR ? null : strips, com.miophas.singularity_iteration.common.client.render.FxLodRules.segments(10, lodTier));
@@ -138,8 +139,16 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         float seconds = (player.tickCount + partial) / 20F;
         pose.pushPose();
         arm.translateAndRotate(pose);
-        pose.translate((right ? -1F : 1F) / 16F, 10.5F / 16F, 0);
+        pose.translate((right ? -1.2F : 1.2F) / 16F, 10.4F / 16F, 0);   // 0.1.11.66: the palm port of QuantumNozzles
         PALM.clear();
+        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.70 (W0): the phase palm cone, short (it runs off the screen)
+            VertexConsumer glow = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(glow, pose.last().pose(), 0.12F + 0.26F * power, 0.12F + 0.04F * power,
+                seconds, com.miophas.singularity_iteration.common.suit.PhaseRules.rate(thr), 0F, 0.9F);
+            NozzleDraw.flare(glow, pose.last().pose(), 0.1F, 0.5F + 0.4F * power);
+            pose.popPose();
+            return;
+        }
         float flicker = 0.88F + 0.12F * (float) Math.sin(seconds * 37) * (float) Math.sin(seconds * 23 + (right ? 1 : 0));
         // shorter than in third person: the flame runs past the bottom of the screen
         ThrusterFlame.glow(buffers.getBuffer(SiRenderTypes.FIELD_GLOW), pose.last().pose(), 0.05F + 0.03F * power, 0.1F + 0.22F * power,

@@ -198,7 +198,7 @@ public class MachineInfoImpl implements IMachineInfo {
     @Override
     public long getEnergyPerTick() {
         if (energyBlock instanceof IProducerBlock producer) {
-            return producer.getEffectiveEnergyPerTick();
+            return producer.getDisplayedEnergyPerTick();   // 0.1.11.35
         }
         return 0;
     }

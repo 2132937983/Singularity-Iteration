@@ -140,6 +140,10 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
     public int getStatus() { return data.getCount() > 8 ? data.get(8) : 0; }
     /** 0.1.10.11: chunks that hold a ticket now. */
     public int getForcedChunkCount() { return data.getCount() > 9 ? data.get(9) : 0; }
+    /** 0.1.11.36: the EU paid per tick now. */
+    public int getEnergyPerTick() { return data.getCount() > 10 ? data.get(10) : 0; }
+    /** 0.1.11.37: seconds of the no-energy grace left (0 outside it). */
+    public int getGraceSecondsLeft() { return data.getCount() > 11 ? data.get(11) : 0; }
 
     public boolean isChunkLoaded(int dx, int dz) {
         int radius = 4;
@@ -148,6 +152,15 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
         int bitIndex = idx % 32;
         if (wordIndex > 2 || data.getCount() <= 5 + wordIndex) return false;
         return (data.get(5 + wordIndex) & (1 << bitIndex)) != 0;
+    }
+
+    /** 0.1.11.38: true when the chunk at offset (dx, dz) holds a ticket of the loader now. */
+    public boolean isChunkHeld(int dx, int dz) {
+        if (Math.abs(dx) > 4 || Math.abs(dz) > 4) return false;
+        int idx = (dx + 4) * 9 + (dz + 4);
+        int word = idx / 32;
+        if (data.getCount() <= 12 + word) return false;
+        return (data.get(12 + word) & (1 << (idx % 32))) != 0;
     }
 
     public net.minecraft.world.level.ChunkPos getSelfChunkPos() {

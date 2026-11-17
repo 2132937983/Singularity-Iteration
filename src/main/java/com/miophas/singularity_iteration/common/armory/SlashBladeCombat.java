@@ -89,7 +89,7 @@ public final class SlashBladeCombat {
         if (s == null) return null;
         EnumSet<?> commands = commands(wielder);
         try {
-            setTarget.invoke(s, target);
+            if (target != null) setTarget.invoke(s, target);   // 0.1.11.60: a piloted Wingman may cut at the air
             if (commands != null) {
                 add(commands, Command.L_CLICK);
                 for (Command c : extra) add(commands, c);
@@ -103,6 +103,27 @@ public final class SlashBladeCombat {
                 remove(commands, Command.L_CLICK);
                 for (Command c : extra) remove(commands, c);
             }
+        }
+    }
+
+    /**
+     * 0.1.11.53 (P1): one input of exactly {@code commands} (no left click added), for example
+     * {@code SNEAK, BACK, R_CLICK} in the air for the aerial cleave. Returns the new combo id, or null.
+     */
+    public static ResourceLocation input(LivingEntity wielder, Entity target, Command... commands) {
+        ItemStack blade = wielder.getMainHandItem();
+        Object s = isBlade(blade) ? state(blade) : null;
+        if (s == null) return null;
+        EnumSet<?> set = commands(wielder);
+        try {
+            setTarget.invoke(s, target);
+            if (set != null) for (Command c : commands) add(set, c);
+            return (ResourceLocation) progressCombo.invoke(s, wielder);
+        } catch (Throwable t) {
+            fail(t);
+            return null;
+        } finally {
+            if (set != null) for (Command c : commands) remove(set, c);
         }
     }
 

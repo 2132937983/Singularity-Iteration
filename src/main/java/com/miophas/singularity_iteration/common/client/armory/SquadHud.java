@@ -34,7 +34,18 @@ import net.minecraft.world.phys.Vec3;
 public final class SquadHud {
     private SquadHud() {}
 
-    private static final String[] MODE_SHORT = {"OFF", "DSP", "ESC", "FUL"};
+    /** 0.1.11.40 (U-4): every text of the HUD comes from the language files (before: English abbreviations). */
+    private static String tr(String key, Object... args) {
+        return Component.translatable(key, args).getString();
+    }
+
+    /** Cuts {@code text} to {@code width} GUI pixels at {@code scale} (a long translation must not run into the next column). */
+    private static String fit(String text, float width, float scale) {
+        if (FcsDraw.width(text, scale) <= width) return text;
+        String t = text;
+        while (t.length() > 1 && FcsDraw.width(t + ".", scale) > width) t = t.substring(0, t.length() - 1);
+        return t + ".";
+    }
 
     public static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
@@ -50,14 +61,14 @@ public final class SquadHud {
     }
 
     private static void panel(GuiGraphics g, LocalPlayer player, List<Unit> units, int h, float t, float partial) {
-        int x = 10, rowH = 11, pw = 132;
+        int x = 10, rowH = 11, pw = 156;   // 0.1.11.41: one more column (flight time)
         int y = (int) (h * 0.38F);
         int ph = 14 + units.size() * rowH;
         FcsDraw.panel(g, x, y, pw, ph, Component.translatable("gui.mio_icif.command.squad").getString(), 0x5CEBFF);
         boolean dl = SquadClient.datalink();
-        FcsDraw.textRight(g, dl ? "DATALINK" : "DL OFF", x + pw - 4, y + 2, FcsDraw.argb(dl ? 0x6FF3D6 : 0x7A8A94, dl ? 0.8F + 0.2F * Mth.sin(t * 0.2F) : 0.7F), 0.45F);
+        FcsDraw.textRight(g, tr(dl ? "gui.mio_icif.command.hud.datalink_on" : "gui.mio_icif.command.hud.datalink_off"), x + pw - 4, y + 2, FcsDraw.argb(dl ? 0x6FF3D6 : 0x7A8A94, dl ? 0.8F + 0.2F * Mth.sin(t * 0.2F) : 0.7F), 0.45F);
         int cd = SquadClient.recallCooldown();
-        if (cd > 0) FcsDraw.textRight(g, String.format(Locale.ROOT, "QR %ds", (cd + 19) / 20), x + pw - 46, y + 2, FcsDraw.argb(0x9B7CFF, 0.8F), 0.45F);
+        if (cd > 0) FcsDraw.textRight(g, tr("gui.mio_icif.command.hud.recall_cd", (cd + 19) / 20), x + pw - 46, y + 2, FcsDraw.argb(0x9B7CFF, 0.8F), 0.45F);
         int ry = y + 13;
         Unit selected = SquadClient.selectedUnit();
         for (Unit u : units) {
@@ -66,32 +77,37 @@ public final class SquadHud {
             if (sel) g.fill(x + 1, ry - 1, x + pw - 1, ry + rowH - 2, FcsDraw.argb(col, 0.18F));
             FcsDraw.text(g, SquadClient.label(u), x + 4, ry + 1, FcsDraw.argb(col, 1F), 0.55F);
             if (u.where() != 0) {
-                FcsDraw.text(g, u.where() == 2 ? "UNLOADED" : "OTHER DIM", x + 22, ry + 1, FcsDraw.argb(0xFF9F4D, 0.9F), 0.5F);
+                FcsDraw.text(g, fit(SquadClient.whereText(u), 104, 0.5F), x + 22, ry + 1, FcsDraw.argb(0xFF9F4D, 0.9F), 0.5F);
                 ry += rowH;
                 continue;
             }
-            String mode = u.mode() >= 0 && u.mode() < MODE_SHORT.length ? MODE_SHORT[u.mode()] : "---";
-            FcsDraw.text(g, mode + (u.individual() ? "*" : ""), x + 22, ry + 1, FcsDraw.argb(col, 0.75F), 0.5F);
+            String mode = u.mode() >= 0 && u.mode() < WingmanMode.VALUES.length
+                ? tr("gui.mio_icif.wingman.mode_short." + WingmanMode.byId(u.mode()).name().toLowerCase(Locale.ROOT)) : "---";
+            FcsDraw.text(g, fit(mode, 18, 0.5F) + (u.individual() ? "*" : ""), x + 22, ry + 1, FcsDraw.argb(col, 0.75F), 0.5F);
             WingmanOrder o = SquadClient.order(u);
             Vec3 at = SquadClient.position(u, partial);
             String order = switch (o) {
-                case NONE -> u.state() == WingmanEntity.RETURNING ? "RTB" : "FORM";
-                case FOCUS -> "FOCUS";
+                case NONE -> tr(u.state() == WingmanEntity.RETURNING ? "gui.mio_icif.wingman.order.rtb" : o.key());
+                case FOCUS -> tr(o.key());
                 default -> {
                     Vec3 p = SquadClient.orderPoint(u);
                     double d = p == null ? 0 : at.distanceTo(p);
-                    yield d > 6 ? String.format(Locale.ROOT, "%s %.0fm", o.name(), d) : o.name();
+                    yield d > 6 ? String.format(Locale.ROOT, "%s %.0fm", tr(o.key()), d) : tr(o.key());
                 }
             };
             float[] oc = CommandFx.orderColor(o);
             int orderCol = o == WingmanOrder.NONE ? 0x9AA8B0 : ((int) (oc[0] * 255) << 16 | (int) (oc[1] * 255) << 8 | (int) (oc[2] * 255));
-            FcsDraw.text(g, order, x + 44, ry + 1, FcsDraw.argb(orderCol, 0.9F), 0.5F);
+            FcsDraw.text(g, fit(order, 46, 0.5F), x + 44, ry + 1, FcsDraw.argb(orderCol, 0.9F), 0.5F);
             // health bar and distance to the owner
             int bx = x + 92, bw = 18;
             g.fill(bx, ry + 3, bx + bw, ry + 6, 0x60000000);
             g.fill(bx, ry + 3, bx + (int) (bw * Mth.clamp(u.health(), 0, 1)), ry + 6, FcsDraw.argb(u.health() < 0.35F ? 0xFF5A4C : 0x5CFF9A, 0.9F));
-            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0f", at.distanceTo(player.position())), x + pw - 4, ry + 1,
+            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0f", at.distanceTo(player.position())), x + 128, ry + 1,
                 FcsDraw.argb(0xDFFBFF, 0.7F), 0.45F);
+            // 0.1.11.41 (decision 1 C): flight time left from the suit charge and the upkeep reserve
+            String left = SquadClient.enduranceText(u.endurance());
+            if (!left.isEmpty()) FcsDraw.textRight(g, fit(left, 24, 0.45F), x + pw - 4, ry + 1,
+                FcsDraw.argb(SquadClient.enduranceColor(u.endurance()), 0.85F), 0.45F);
             ry += rowH;
         }
     }

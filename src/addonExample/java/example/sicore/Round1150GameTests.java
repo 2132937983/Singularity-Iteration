@@ -10,12 +10,9 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.AfterBatch;
-import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,16 +48,6 @@ public final class Round1150GameTests {
     @GameTest(template = "reactor", batch = "round1150_catchup", timeoutTicks = 140)
     public static void catchUpGivesBackThePausedTick(GameTestHelper h) { catchUp(h); }
 
-    /** The same in the fair distribution (its own per-tick input budget, I-3). */
-    @GameTest(template = "reactor", batch = "round1150_catchup_fair", timeoutTicks = 140)
-    public static void catchUpGivesBackThePausedTickInFairMode(GameTestHelper h) { catchUp(h); }
-
-    // the addon test server runs the legacy walk (build.gradle); this batch switches to fair as Round1120GameTests does
-    @BeforeBatch(batch = "round1150_catchup_fair")
-    public static void fairOn(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
-
-    @AfterBatch(batch = "round1150_catchup_fair")
-    public static void fairOff(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
 
     private static void catchUp(GameTestHelper h) {
         var cable = cable();

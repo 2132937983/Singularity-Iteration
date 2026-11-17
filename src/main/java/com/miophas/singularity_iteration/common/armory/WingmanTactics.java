@@ -102,11 +102,13 @@ public final class WingmanTactics {
                                             Vec3 guard, Squad squad) {
         double score = 0;
         int now = owner.tickCount;
-        boolean called = e == owner.getLastHurtMob() && now - owner.getLastHurtMobTimestamp() < 60;
+        // 0.1.11.43 (G-7): the owner's call and the Fleet Datalink mark count for hostile creatures only; a neutral one
+        // is a target when it attacks or hunts the owner (or by an explicit focus order)
+        boolean called = e instanceof Enemy && e == owner.getLastHurtMob() && now - owner.getLastHurtMobTimestamp() < 60;
         boolean attacker = e == owner.getLastHurtByMob() && now - owner.getLastHurtByMobTimestamp() < 100;
         boolean hunter = e instanceof Mob mob && mob.getTarget() == owner;
         // 0.1.10.2: the Fleet Datalink mark (the creature in the owner's sights) counts as a call
-        boolean marked = e == com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(owner);
+        boolean marked = e instanceof Enemy && e == com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(owner);
         if (marked) called = true;
         double toOwner = Math.sqrt(e.distanceToSqr(guard));
         if (e instanceof Enemy) score += 20;
@@ -134,15 +136,6 @@ public final class WingmanTactics {
         if (e == current) score += 22;
         if (!called && !fusing && squad.engages(e)) score -= 28;
         return score;
-    }
-
-    /** True when another Wingman of the same owner fights {@code e}. */
-    static boolean engagedByOther(WingmanEntity self, ServerPlayer owner, LivingEntity e) {
-        for (WingmanEntity other : self.level().getEntitiesOfClass(WingmanEntity.class, self.getBoundingBox().inflate(48),
-                w -> w != self && owner.getUUID().equals(w.owner()))) {
-            if (other.currentTarget() == e) return true;
-        }
-        return false;
     }
 
     /** Best target among the mobs within {@code range} of {@code around}, or null. */
@@ -174,7 +167,7 @@ public final class WingmanTactics {
         double bestScore = top[0];
         // the owner's call may be outside the scan box (a long shot): keep it
         LivingEntity called = owner.getLastHurtMob();
-        if (called != null && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called)) {
+        if (called instanceof Enemy && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called)) {
             double s = withSight(self, owner, called, threatBeforeSight(self, owner, called, current, guard, squad));
             if (s > bestScore) best = called;
         }
@@ -358,14 +351,18 @@ public final class WingmanTactics {
         Level level = self.level();
         Vec3 from = self.position().add(0, self.getBbHeight() * 0.5, 0);
         Vec3 dir = want.normalize();
-        Vec3 ahead = from.add(dir.scale(Math.min(4.0, 1.5 + want.length() * 6)));
+        double speed = want.length();
+        // 0.1.11.50 (F1): the look-ahead covers about 4 ticks of flight at escort speed (it stopped at 4 blocks, one tick at
+        // 4 blocks per tick), and the ways round grow with the speed
+        double k = Math.max(1.0, speed / 0.9);
+        Vec3 ahead = from.add(dir.scale(Math.min(Math.max(4.0, speed * 4), 1.5 + speed * 6)));
         if (clear(level, from, ahead, self)) return want;
-        Vec3 up = from.add(0, 2.5, 0).add(dir.scale(2.5));
-        if (clear(level, from, up, self)) return want.add(0, 0.35, 0);
+        Vec3 up = from.add(0, 2.5 * k, 0).add(dir.scale(2.5 * k));
+        if (clear(level, from, up, self)) return want.add(0, 0.35 * k, 0);
         Vec3 side = new Vec3(-dir.z, 0, dir.x);
-        Vec3 left = from.add(side.scale(2.5)).add(dir.scale(1.5)), right = from.add(side.scale(-2.5)).add(dir.scale(1.5));
-        if (clear(level, from, left, self)) return want.add(side.scale(0.35));
-        if (clear(level, from, right, self)) return want.add(side.scale(-0.35));
+        Vec3 left = from.add(side.scale(2.5 * k)).add(dir.scale(1.5 * k)), right = from.add(side.scale(-2.5 * k)).add(dir.scale(1.5 * k));
+        if (clear(level, from, left, self)) return want.add(side.scale(0.35 * k));
+        if (clear(level, from, right, self)) return want.add(side.scale(-0.35 * k));
         return want.add(0, 0.3, 0).scale(0.5);
     }
 }

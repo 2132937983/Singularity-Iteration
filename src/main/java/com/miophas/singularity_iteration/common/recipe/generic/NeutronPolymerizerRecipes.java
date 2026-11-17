@@ -29,7 +29,7 @@ public class NeutronPolymerizerRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> NEUTRON_POLYMERIZER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("neutron_polymerizer", () -> new GenericSingleInputRecipeSerializer(NeutronPolymerizerRecipe::new));
+        RECIPE_SERIALIZERS.register("neutron_polymerizer", NeutronPolymerizerSerializer::new);   // 0.1.11.8: with the optional "process"
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

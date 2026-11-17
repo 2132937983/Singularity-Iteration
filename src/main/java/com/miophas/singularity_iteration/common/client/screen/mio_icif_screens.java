@@ -25,6 +25,39 @@ public class mio_icif_screens {
      * 注册菜单屏幕
      * @param event 注册菜单屏幕事件
      */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.SolarPanelMenu> void solar(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, SolarPanelScreen<M>>register(type, SolarPanelScreen::new);
+    }
+
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.EngineMenu> void engine(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, EngineScreen<M>>register(type, EngineScreen::new);
+    }
+
+    /** 0.1.11.19: the incinerator and experience recorders (basic and advanced). */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void incinerator(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, IncineratorScreen<M>>register(type, IncineratorScreen::new);
+    }
+
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void experience(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, ExperienceScreen<M>>register(type, ExperienceScreen::new);
+    }
+
+    /** 0.1.11.17: the Stirling mimic (basic and advanced). */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void stirling(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, StirlingScreen<M>>register(type, StirlingScreen::new);
+    }
+
+    /** 0.1.11.17: the shaft mimic of the kinetic generators. */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void shaft(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type, boolean turbo) {
+        event.<M, ShaftScreen<M>>register(type, (m, inv, title) -> new ShaftScreen<>(m, inv, title, turbo));
+    }
+
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         // 注册火力发电机的 GUI 界面
         // Toolbox: the menu was registered and opened by the item, but had no screen (0.1.7.36)
@@ -108,13 +141,13 @@ public class mio_icif_screens {
         // 注册蒸汽机的 GUI 界面
         event.register(
             mio_icif_menus.STEAM_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_steam_generator::new
+            BoilerScreen::new   // 0.1.11.16: plant mimic
         );
 
         // 注册蒸汽再加压机的GUI 界面
         event.register(
             mio_icif_menus.STEAM_REPRESSURIZER_MENU_TYPE.get(),
-            mio_icif_gui_steam_repressurizer::new
+            RepressurizerScreen::new
         );
 
         // 注册太阳能蒸馏机的GUI 界面
@@ -126,7 +159,7 @@ public class mio_icif_screens {
         // 注册冷凝机的 GUI 界面
         event.register(
             mio_icif_menus.CONDENSER_MENU_TYPE.get(),
-            mio_icif_gui_condenser::new
+            CondenserScreen::new
         );
 
         // 注册方块切割机的 GUI 界面
@@ -144,7 +177,7 @@ public class mio_icif_screens {
         // 注册蒸汽动能发生机的 GUI 界面
         event.register(
             mio_icif_menus.STEAM_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_steam_kinetic_generator::new
+            SteamKineticScreen::new
         );
 
         // 注册热能离心机的 GUI 界面
@@ -162,26 +195,20 @@ public class mio_icif_screens {
         // 注册地热发电机的 GUI 界面
         event.register(
             mio_icif_menus.GEO_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_geo_generator::new
+            GeoScreen::new   // 0.1.11.19: recorder
         );
 
         // 注册太阳能发电机的GUI 界面
-        event.register(
-            mio_icif_menus.SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_solar_generator::new
-        );
+        solar(event, mio_icif_menus.SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册地磁发电机的 GUI 界面
         event.register(
             mio_icif_menus.GEOMAGNETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_geomagnetic_generator::new
+            MagnetogramScreen::new   // 0.1.11.20
         );
 
         // 注册柴油发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.DIESEL_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_diesel_generator::new
-        );
+        engine(event, mio_icif_menus.DIESEL_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
 
         // 注册风力发电机的 GUI 界面
         event.register(
@@ -192,24 +219,21 @@ public class mio_icif_screens {
         // 注册水力发电机的 GUI 界面
         event.register(
             mio_icif_menus.WATER_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_water_generator::new
+            WaterGeneratorScreen::new   // 0.1.11.18
         );
 
         // 注册半流质发电机的GUI 界面
-        event.register(
-            mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_semifluid_generator::new
-        );
-        // 0.1.10.36: the steam turbine uses the semifluid generator screen
+        engine(event, mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
+        // 0.1.11.16: the steam turbine has its own mimic screen
         event.register(
             mio_icif_menus.STEAM_TURBINE_MENU_TYPE.get(),
-            mio_icif_gui_semifluid_generator::new
+            SteamTurbineScreen::new
         );
 
         // 注册核反应堆发电机的 GUI 界面
         event.register(
             mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_nuclear_reactor_generator::new
+            ReactorControlScreen::new   // 0.1.11.21: control room
         );
 
         // 注册电力发热机的 GUI 界面
@@ -233,60 +257,28 @@ public class mio_icif_screens {
         // 注册放射性同位素温差加热机的 GUI 界面
         event.register(
             mio_icif_menus.RT_HEAT_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_rt_heat_generator::new
+            RtHeatScreen::new   // 0.1.11.20
         );
 
         // 注册斯特林发电机的GUI 界面
-        event.register(
-            mio_icif_menus.STIRLING_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_stirling_generator::new
-        );
+        stirling(event, mio_icif_menus.STIRLING_GENERATOR_MENU_TYPE.get());   // 0.1.11.17: plant mimic
 
-        event.register(
-            mio_icif_menus.DROP_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_drop_generator::new
-        );
+        incinerator(event, mio_icif_menus.DROP_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
-        event.register(
-            mio_icif_menus.ADVANCED_DROP_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_drop_generator::new
-        );
+        incinerator(event, mio_icif_menus.ADVANCED_DROP_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
-        event.register(
-            mio_icif_menus.ADVANCED_STIRLING_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_stirling_generator::new
-        );
+        stirling(event, mio_icif_menus.ADVANCED_STIRLING_GENERATOR_MENU_TYPE.get());
 
-        event.register(
-            mio_icif_menus.ADVANCED_SEMIFLUID_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_semifluid_generator::new
-        );
+        engine(event, mio_icif_menus.ADVANCED_SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
 
-        event.register(
-            mio_icif_menus.EXPERIENCE_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_experience_generator::new
-        );
+        experience(event, mio_icif_menus.EXPERIENCE_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
-        event.register(
-            mio_icif_menus.ADVANCED_EXPERIENCE_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_experience_generator::new
-        );
+        experience(event, mio_icif_menus.ADVANCED_EXPERIENCE_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
         // 注册动能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_kinetic_generator::new
-        );
-
-        event.register(
-            mio_icif_menus.TURBO_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_turbo_kinetic_generator::new
-        );
-
-        event.register(
-            mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_twin_turbo_kinetic_generator::new
-        );
+        shaft(event, mio_icif_menus.KINETIC_GENERATOR_MENU_TYPE.get(), false);   // 0.1.11.17: shaft mimic
+        shaft(event, mio_icif_menus.TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), true);
+        shaft(event, mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), true);
 
         // 注册电力动能机的 GUI 界面
         event.register(
@@ -303,14 +295,11 @@ public class mio_icif_screens {
         // 注册水力动能发生机的 GUI 界面
         event.register(
             mio_icif_menus.WATER_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_water_kinetic_generator::new
+            WaterRotorScreen::new   // 0.1.11.18: rotor cross-section
         );
 
         // 注册斯特林动能发生机的GUI 界面
-        event.register(
-            mio_icif_menus.STIRLING_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_stirling_kinetic_generator::new
-        );
+        event.register(mio_icif_menus.STIRLING_KINETIC_GENERATOR_MENU_TYPE.get(), StirlingKineticScreen::new);   // 0.1.11.17
 
         // 注册变压器的 GUI 界面
         event.register(
@@ -446,50 +435,29 @@ public class mio_icif_screens {
         // 注册放射性同位素温差发电机的 GUI 界面
         event.register(
             mio_icif_menus.RT_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_rt_generator::new
+            RtgScreen::new   // 0.1.11.20
         );
 
         // 注册高级太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.ADVANCED_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_advanced_solar_panel::new
-        );
+        solar(event, mio_icif_menus.ADVANCED_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册混合太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.HYBRID_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_hybrid_solar_panel::new
-        );
+        solar(event, mio_icif_menus.HYBRID_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册终极混合太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.ULTIMATE_HYBRID_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_ultimate_hybrid_solar_panel::new
-        );
+        solar(event, mio_icif_menus.ULTIMATE_HYBRID_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册量子太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.QUANTUM_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_quantum_solar_panel::new
-        );
+        solar(event, mio_icif_menus.QUANTUM_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册METS进阶太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.METS_ADVANCED_SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_mets_advanced_solar_generator::new
-        );
+        solar(event, mio_icif_menus.METS_ADVANCED_SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册光子振谐太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_photon_resonance_solar_generator::new
-        );
+        solar(event, mio_icif_menus.PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册终极光子振谐太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_ultimate_photon_resonance_solar_generator::new
-        );
+        solar(event, mio_icif_menus.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册量子发电机的 GUI 界面
         event.register(

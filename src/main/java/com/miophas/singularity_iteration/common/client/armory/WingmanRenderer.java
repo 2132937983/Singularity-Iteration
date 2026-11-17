@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
 @OnlyIn(Dist.CLIENT)
 public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanRenderer.Model> {
     /** Forward lean at full speed, degrees. */
-    static final float MAX_LEAN = 62.0F;
+    static final float MAX_LEAN = WingmanPose.MAX_LEAN;
     private static final ResourceLocation UNUSED = ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
 
     public WingmanRenderer(EntityRendererProvider.Context context) {
@@ -67,11 +67,32 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
     @Override
     protected void setupRotations(WingmanEntity entity, PoseStack pose, float bob, float bodyYaw, float partialTick, float scale) {
         super.setupRotations(entity, pose, bob, bodyYaw, partialTick, scale);
-        float lean = MAX_LEAN * flightFactor(entity, partialTick);
-        if (lean <= 0.01F) return;
-        // pivot at the waist; negative x rotation tips the head forward (the model faces -z)
+        // 0.1.11.44 (motion audit M-4): the tilt follows the flight direction (pitch forward or back, roll to the side)
+        // 0.1.11.47 (M4): the hover float and the dip of a touchdown
+        float air = 1 - entity.landBlend(partialTick);
+        float drop = WingmanPose.hoverBob(entity.tickCount + partialTick, air, flightFactor(entity, partialTick))
+            - 0.12F * WingmanPose.landingCrouch(entity.sinceLanding(partialTick));
+        if (drop != 0) pose.translate(0, drop * scale, 0);
+        // 0.1.11.61 (Q0, decision two A): on the ground a blade combo moves the whole body as it moves a player
+        if (entity.onGround() && SlashBladeResharpedBridge.isBlade(entity.getMainHandItem())) {
+            float[] b = SlashBladeMotion.bodyTransform(SlashBladeMotion.update(entity), partialTick);
+            if (b != null) {
+                pose.translate(b[0], b[1] + 0.7F, b[2]);
+                pose.mulPose(Axis.ZP.rotation(b[5]));
+                pose.mulPose(Axis.YP.rotation(b[4]));
+                pose.mulPose(Axis.XP.rotation(b[3]));
+                pose.translate(0, -0.7F, 0);
+            }
+        }
+        float[] lean = entity.lean(partialTick);
+        // 0.1.11.58 (P6): a badly damaged suit flies unsteadily
+        float[] shake = entity.damageShake(partialTick);
+        lean = new float[]{lean[0] + shake[0], lean[1] + shake[1]};
+        if (Math.abs(lean[0]) + Math.abs(lean[1]) <= 0.01F) return;
+        // pivot at the waist; negative x rotation tips the head forward, negative z rotation tips it to the right
         pose.translate(0, 0.9F * scale, 0);
-        pose.mulPose(Axis.XP.rotationDegrees(-lean));
+        pose.mulPose(Axis.XP.rotationDegrees(-lean[0]));
+        pose.mulPose(Axis.ZP.rotationDegrees(-lean[1]));
         pose.translate(0, -0.9F * scale, 0);
     }
 
@@ -110,16 +131,36 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             boolean blade = SlashBladeResharpedBridge.isBlade(entity.getMainHandItem());
             WingmanPose.Hold hold = WingmanPose.holdOf(entity.getMainHandItem(), blade);
             float pitch = headPitch * Mth.DEG_TO_RAD, yaw = netHeadYaw * Mth.DEG_TO_RAD;
-            float[] pose = WingmanPose.base(hold, leftHanded, f, air, entity.combat(partial), sway, pitch, yaw,
-                f * MAX_LEAN * Mth.DEG_TO_RAD);
+            float leanPitch = entity.lean(partial)[0];
+            float combat = entity.combat(partial);
+            // 0.1.11.46 (motion audit M2): the melee wind-up grows as the target comes within 5.5 blocks; a shield in the
+            // off hand is raised in escort
+            float windup = hold == WingmanPose.Hold.HELD ? Mth.clamp((5.5F - entity.targetDistance()) / 3.0F, 0, 1) : 0;
+            float shield = entity.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem
+                && entity.mode() == com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT ? 1 : 0;
+            float[] pose = WingmanPose.base(hold, leftHanded, f, air, combat, sway, pitch, yaw,
+                Math.max(0, leanPitch) * Mth.DEG_TO_RAD, windup, shield);
             WingmanPose.smooth(poses.computeIfAbsent(entity, e -> new float[7]), pose, age);
+            WingmanPose.proneArms(pose, entity.proneBlend(partial), combat);   // 0.1.11.51 (F2): arms along the body at speed
             float twist = 0;
+            float shotAge = entity.shotAge(partial);
+            int cooldown = entity.shotCooldown();
             switch (hold) {
                 case BLADE -> WingmanPose.slash(pose, entity.slashKind(), entity.slashProgress(partial));
                 case RANGED -> {
                     WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
                     twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
                 }
+                case BOW -> {   // the release at the shot, then the draw over the cooldown
+                    WingmanPose.draw(pose, leftHanded, Mth.clamp((shotAge - 2) / Math.max(1, cooldown - 4), 0, 1), combat);
+                    WingmanPose.recoil(pose, leftHanded, entity.recoil(partial) * 0.4F);
+                }
+                case CROSSBOW -> {
+                    WingmanPose.reload(pose, leftHanded, shotAge / cooldown, combat);
+                    WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
+                }
+                case SPEAR -> WingmanPose.spearThrow(pose, leftHanded, shotAge, combat);
+                case HELD -> twist = WingmanPose.cut(pose, leftHanded, attack, windup);
                 default -> twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
             }
             rightArm.xRot = pose[WingmanPose.RX]; rightArm.yRot = pose[WingmanPose.RY]; rightArm.zRot = pose[WingmanPose.RZ];
@@ -135,15 +176,38 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             rightArm.x = -Mth.cos(twist) * 5.0F;
             leftArm.z = -Mth.sin(twist) * 5.0F;
             leftArm.x = Mth.cos(twist) * 5.0F;
-            // legs straight and together; a small hover sway; straight under the suit when landed
-            rightLeg.xRot = Mth.lerp(f, sway, 0.10F) * air;
-            leftLeg.xRot = Mth.lerp(f, -sway, 0.10F) * air;
+            // 0.1.11.45 (M1): the legs trail with speed, spread in a slide or bank, tuck in a boost; straight when landed
+            float[] legs = WingmanPose.proneLegs(WingmanPose.legs(f, air, sway, entity.lean(partial)[1], entity.boostAge(partial)),
+                entity.proneBlend(partial));
+            rightLeg.xRot = legs[WingmanPose.LEG_RX];
+            leftLeg.xRot = legs[WingmanPose.LEG_LX];
             rightLeg.yRot = 0;
             leftLeg.yRot = 0;
-            rightLeg.zRot = 0.03F * air + 0.01F;
-            leftLeg.zRot = -rightLeg.zRot;
+            rightLeg.zRot = legs[WingmanPose.LEG_RZ];
+            leftLeg.zRot = legs[WingmanPose.LEG_LZ];
+            // 0.1.11.48 (M3): with a SlashBlade blade, the arms and legs follow SlashBlade's own player motion of the combo
+            // (the blade layer draws the blade from the same combo); without the bridge the key frames above stay
+            if (hold == WingmanPose.Hold.BLADE) {
+                // 0.1.11.61 (Q0, decision two A): the torso bends with the blade; the legs follow it on the ground only
+                Object motion = SlashBladeMotion.update(entity);
+                if (motion != null) SlashBladeMotion.apply(motion, partial, rightArm, leftArm, rightLeg, leftLeg, body, entity.onGround());
+            }
             // the head looks forward in fast flight
-            head.xRot -= f * Mth.DEG_TO_RAD * MAX_LEAN * 0.6F;
+            head.xRot -= leanPitch * Mth.DEG_TO_RAD * 0.6F;   // 0.1.11.44: the head keeps looking ahead (forward and back)
+            // 0.1.11.47 (M4): a crouch on touchdown, a push-off at take-off, a slow look around when idle
+            float crouch = WingmanPose.landingCrouch(entity.sinceLanding(partial));
+            float push = WingmanPose.takeoffPush(entity.sinceTakeoff(partial));
+            if (crouch > 0 || push > 0) {
+                body.xRot += 0.35F * crouch - 0.08F * push;
+                rightArm.xRot += 0.25F * crouch - 0.35F * push;
+                leftArm.xRot += 0.25F * crouch - 0.35F * push;
+                rightLeg.xRot += -0.25F * crouch + 0.45F * push;
+                leftLeg.xRot += -0.20F * crouch + 0.40F * push;
+            }
+            // 0.1.11.52 (P0): idle glances, each Wingman on its own (they replaced the age-driven waves, which a squad shared)
+            float[] look = entity.glance(partial);
+            head.yRot += look[0];
+            head.xRot += look[1];
             hat.copyFrom(head);
         }
     }

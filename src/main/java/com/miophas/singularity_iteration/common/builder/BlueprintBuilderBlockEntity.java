@@ -240,17 +240,48 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     public static final int A_FILE_PREV = 0, A_FILE_NEXT = 1, A_LOAD = 2, A_ROTATE = 3, A_MIRROR = 4, A_OFFSET = 5,
         A_START = 6, A_PREVIEW = 7, A_REFRESH = 8, A_STOP = 9;
 
+    /**
+     * 0.1.11.3: a change of rotation, mirror or offset rebuilds the plan after a short pause (one read for a burst of
+     * clicks), a file list refresh runs at most once a second, and a load at most every half second. Each button packet
+     * used to read the blueprint (up to 16 MB of NBT) or list the folder on the server thread at once.
+     */
+    static final int REBUILD_DELAY = 5, REFRESH_GAP = 20, LOAD_GAP = 10;
+    private long rebuildAt = -1, lastRefresh = Long.MIN_VALUE / 2, lastLoad = Long.MIN_VALUE / 2;
+
+    private void scheduleRebuild() {
+        if (level != null) rebuildAt = level.getGameTime() + REBUILD_DELAY;
+    }
+
+    /** Runs a scheduled rebuild that is due (or any scheduled one when {@code now} is true). */
+    private void runScheduledRebuild(boolean now) {
+        if (rebuildAt < 0 || level == null || (!now && level.getGameTime() < rebuildAt)) return;
+        rebuildAt = -1;
+        rebuild();
+    }
+
+    private void refreshFilesLimited() {
+        if (level == null || level.getGameTime() - lastRefresh < REFRESH_GAP) return;
+        lastRefresh = level.getGameTime();
+        refreshFiles();
+    }
+
     public void action(Player player, int action, int index) {
         if (!(level instanceof ServerLevel)) return;
         switch (action) {
-            case A_REFRESH -> refreshFiles();
+            case A_REFRESH -> refreshFilesLimited();
             case A_FILE_PREV, A_FILE_NEXT -> {
-                if (files.isEmpty()) refreshFiles();
+                if (files.isEmpty()) refreshFilesLimited();
                 if (!files.isEmpty()) fileIndex = Math.floorMod(fileIndex + (action == A_FILE_NEXT ? 1 : -1), files.size());
             }
-            case A_LOAD -> { if (!running) load(player); }
-            case A_ROTATE -> { if (!running && !useCreate) { rotation = (rotation + 1) % 4; rebuild(); } }
-            case A_MIRROR -> { if (!running && !useCreate) { mirror = (mirror + 1) % 3; rebuild(); } }
+            case A_LOAD -> {
+                if (!running && level.getGameTime() - lastLoad >= LOAD_GAP) {
+                    lastLoad = level.getGameTime();
+                    rebuildAt = -1;
+                    load(player);
+                }
+            }
+            case A_ROTATE -> { if (!running && !useCreate) { rotation = (rotation + 1) % 4; scheduleRebuild(); } }
+            case A_MIRROR -> { if (!running && !useCreate) { mirror = (mirror + 1) % 3; scheduleRebuild(); } }
             case A_OFFSET -> {
                 if (running || useCreate) break;
                 int step = (index & 1) == 0 ? -1 : 1;
@@ -259,9 +290,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
                     case 1 -> offY = clampOffset(offY + step);
                     default -> offZ = clampOffset(offZ + step);
                 }
-                rebuild();
+                scheduleRebuild();
             }
             case A_START -> {
+                runScheduledRebuild(true);   // a start right after a change builds the new plan first
                 if (plan == null || status == TOO_FAR) break;
                 running = !running;
                 status = running ? RUNNING : PAUSED;
@@ -506,6 +538,12 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         if (plan == null || a.taskIndex >= a.tasks.length) { afterBatch(world, i, a); return; }
         int t = a.tasks[a.taskIndex];
         Blueprint.Entry e = plan.get(t);
+        if (!world.isLoaded(e.pos())) {
+            // 0.1.11.3: the chunk unloaded after the claim; the block waits for it (reading it here loaded the chunk)
+            claimed[t] = false;
+            a.taskIndex++;
+            return;
+        }
         BlockState target = target(e.state());
         BlockState here = world.getBlockState(e.pos());
         boolean finished = true;
@@ -665,9 +703,27 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     }
 
     // ------------------------------------------------------------------ material rules
-    /** The state to place: never a water source (waterlogged blocks are placed dry). */
+    /**
+     * The state to place: never a water source (waterlogged blocks are placed dry), and 0.1.11.3: never a state that
+     * holds more than its item. A full composter, a beehive with honey, a charged respawn anchor, a filled cauldron,
+     * a potted plant, a ripe crop or a bush with berries cost one plain item but gave bone meal, honey, a bucket of
+     * lava, the plant or the harvest when broken; they are placed empty (or unripe).
+     */
     static BlockState target(BlockState s) {
-        return s.hasProperty(BlockStateProperties.WATERLOGGED) ? s.setValue(BlockStateProperties.WATERLOGGED, false) : s;
+        if (s.getBlock() instanceof net.minecraft.world.level.block.AbstractCauldronBlock && !s.is(net.minecraft.world.level.block.Blocks.CAULDRON))
+            return net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState();
+        if (s.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock && !s.is(net.minecraft.world.level.block.Blocks.FLOWER_POT))
+            return net.minecraft.world.level.block.Blocks.FLOWER_POT.defaultBlockState();
+        if (s.hasProperty(BlockStateProperties.WATERLOGGED)) s = s.setValue(BlockStateProperties.WATERLOGGED, false);
+        if (s.hasProperty(BlockStateProperties.LEVEL_COMPOSTER)) s = s.setValue(BlockStateProperties.LEVEL_COMPOSTER, 0);
+        if (s.hasProperty(BlockStateProperties.LEVEL_HONEY)) s = s.setValue(BlockStateProperties.LEVEL_HONEY, 0);
+        if (s.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)) s = s.setValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES, 0);
+        if (s.hasProperty(BlockStateProperties.BERRIES)) s = s.setValue(BlockStateProperties.BERRIES, false);
+        for (net.minecraft.world.level.block.state.properties.Property<?> p : s.getProperties()) {
+            if (p instanceof net.minecraft.world.level.block.state.properties.IntegerProperty age && "age".equals(age.getName()))
+                s = s.setValue(age, java.util.Collections.min(age.getPossibleValues()));
+        }
+        return s;
     }
 
     /** The material item; {@link Items#AIR} for a free second half; null for a state that is not built (fluids, no item). */
@@ -680,8 +736,15 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         return item == Items.AIR ? null : item;
     }
 
+    /** Items one block costs: 0.1.11.3 counts the candles, pickles, eggs, petals and snow layers it holds (it was always one). */
     static int amount(BlockState s) {
-        return s.hasProperty(BlockStateProperties.SLAB_TYPE) && s.getValue(BlockStateProperties.SLAB_TYPE) == SlabType.DOUBLE ? 2 : 1;
+        if (s.hasProperty(BlockStateProperties.SLAB_TYPE)) return s.getValue(BlockStateProperties.SLAB_TYPE) == SlabType.DOUBLE ? 2 : 1;
+        if (s.hasProperty(BlockStateProperties.CANDLES)) return s.getValue(BlockStateProperties.CANDLES);
+        if (s.hasProperty(BlockStateProperties.PICKLES)) return s.getValue(BlockStateProperties.PICKLES);
+        if (s.hasProperty(BlockStateProperties.EGGS)) return s.getValue(BlockStateProperties.EGGS);
+        if (s.hasProperty(BlockStateProperties.FLOWER_AMOUNT)) return s.getValue(BlockStateProperties.FLOWER_AMOUNT);
+        if (s.getBlock() instanceof net.minecraft.world.level.block.SnowLayerBlock) return s.getValue(BlockStateProperties.LAYERS);
+        return 1;
     }
 
     /** Two-part blocks keep their exact shape: no neighbour update that would break the half placed first. */
@@ -727,6 +790,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, BlueprintBuilderBlockEntity be) {
+        if (!level.isClientSide) be.runScheduledRebuild(false);   // 0.1.11.3
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, be);
     }
 

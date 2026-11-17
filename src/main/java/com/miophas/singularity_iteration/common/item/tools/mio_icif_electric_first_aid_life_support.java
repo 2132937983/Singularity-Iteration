@@ -39,6 +39,10 @@ public class mio_icif_electric_first_aid_life_support extends mio_icif_tool_elc 
         if (level.isClientSide || !(entity instanceof Player player)) {
             return;
         }
+        // 0.1.11.3: a dead player's inventory still ticks (keepInventory); one health point made the respawn button do nothing
+        if (!player.isAlive() || player.isDeadOrDying()) {
+            return;
+        }
 
         if (!getAutoSupplement(stack)) {
             return;

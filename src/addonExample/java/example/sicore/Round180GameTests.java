@@ -134,8 +134,8 @@ public final class Round180GameTests {
     public static void quantumSuitUsesBakedModels(GameTestHelper h) {
         List<String> problems = new java.util.ArrayList<>();
         String[] pieces = {"helmet", "chestplate", "leggings", "boots"};
-        String[][] parts = {{"head"}, {"body", "right_arm", "left_arm", "right_hand", "left_hand"},
-            {"body", "right_leg", "left_leg"}, {"right_leg", "left_leg"}};
+        // 0.1.11.27: the GeckoLib suit has no crotch plate (leggings "body") and only small hand covers: both optional
+        String[][] parts = {{"head"}, {"body", "right_arm", "left_arm"}, {"right_leg", "left_leg"}, {"right_leg", "left_leg"}};
         EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
         for (int i = 0; i < 4; i++) {
             String json = Round33GameTests.resource("/assets/mio_icif/armor_models/quantum_" + pieces[i] + ".json");
@@ -161,7 +161,11 @@ public final class Round180GameTests {
             double minZ = Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
             for (String part : new String[]{"right_leg", "left_leg"}) for (var q : root.getAsJsonArray(part)) {
                 var v = q.getAsJsonObject().getAsJsonArray("v");
-                for (int k = 0; k < 4; k++) { double z = v.get(k * 5 + 2).getAsDouble(); minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
+                // 0.1.11.27: at the sole (leg space y > 10.5): an inflated heel plate higher up may reach further back
+                for (int k = 0; k < 4; k++) {
+                    if (v.get(k * 5 + 1).getAsDouble() <= 10.5) continue;
+                    double z = v.get(k * 5 + 2).getAsDouble(); minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+                }
             }
             if (-minZ <= maxZ) problems.add("quantum boots face backwards: " + minZ + " .. " + maxZ);
         }

@@ -23,7 +23,12 @@ import java.util.List;
  * 右键点击方块探测地磁强度
  */
 @SuppressWarnings("null")
-public class mio_icif_geomagnetic_detector extends mio_icif_bat {
+/**
+ * 0.1.11.35: an electric tool ({@link com.miophas.singularity_iteration.core.api.item.IElectricToolItem}), as the electric
+ * wireless manager: charging batteries and machines charge it, and it is no longer a source a machine or another mod
+ * drains (on the battery base alone it was a battery, so a charging battery skipped it).
+ */
+public class mio_icif_geomagnetic_detector extends mio_icif_bat implements com.miophas.singularity_iteration.core.api.item.IElectricToolItem {
 
     private static final int MAX_ENERGY = 50000;
     private static final int TRANSFER_SPEED = 128;
@@ -74,42 +79,18 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat {
 
         player.sendSystemMessage(Component.translatable("message.mio_icif.geomagnetic_detector.value",
             String.format("%.2f", ratio)));
+        // 0.1.11.20: the field's disturbance now (the daily variation and storms)
+        long seed = com.miophas.singularity_iteration.common.energy.GeomagPhysics.seed(level);
+        player.sendSystemMessage(Component.translatable("message.mio_icif.geomagnetic_detector.kp",
+            String.format("%.1f", com.miophas.singularity_iteration.common.energy.GeomagPhysics.kp(seed, level.getDayTime())),
+            String.format("%.2f", com.miophas.singularity_iteration.common.energy.GeomagPhysics.disturbance(seed, level.getDayTime()))));
 
         return InteractionResult.SUCCESS;
     }
 
-    /**
-     * 计算地磁强度
-     * 基于高度和周围方块计算
-     */
+    /** 0.1.11.20: the generator's rule (from the bottom of the world; the old one gave 0 or less below Y 0). */
     private float getMagneticSource(Level world, BlockPos pos) {
-        float source = 1.0F;
-        int seaLevel = world.getSeaLevel();
-        int seaLevelDelta = pos.getY() - seaLevel;
-
-        // 海平面以下，越低强度越低
-        if (seaLevelDelta < 0) {
-            source = (float) pos.getY() / (float) (seaLevel + 1);
-        }
-
-        // 计算下方实心方块比例
-        int baseDelta = pos.getY() >= 20 ? 20 : pos.getY();
-        int airBlockCount = 0;
-
-        for (int i = 0; i < baseDelta; i++) {
-            BlockState state = world.getBlockState(pos.below(i));
-            if (state.is(Blocks.AIR) || state.is(Blocks.WATER)) {
-                airBlockCount++;
-            }
-        }
-
-        if (baseDelta != 0) {
-            source *= (float) (baseDelta - airBlockCount) / (float) baseDelta;
-        } else {
-            source = 0;
-        }
-
-        return source;
+        return com.miophas.singularity_iteration.common.energy.GeomagPhysics.source(world, pos);
     }
 
     @Override
@@ -117,6 +98,12 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.geomagnetic_detector.desc"));
     }
+
+    @Override
+    public long getEnergyPerUse() { return ENERGY_COST; }
+
+    @Override
+    public int getToolTier() { return 1; }
 
     /** A tool on the battery base: right click keeps its tool action, no inventory auto-charge. */
     @Override

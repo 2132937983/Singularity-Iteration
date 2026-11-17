@@ -4,9 +4,6 @@ import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilitie
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.AfterBatch;
-import net.minecraft.gametest.framework.BeforeBatch;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -58,16 +55,22 @@ public final class Round1110GameTests {
 
     // ------------------------------------------------------------------ D1
 
-    /** A solar panel keeps its chunk marked for saving every tick, but no longer updates its neighbours. */
+    /**
+     * A solar panel keeps its chunk marked for saving every tick, but no longer updates its neighbours. 0.1.11.52: the
+     * neighbour updates are counted by a probe beside the panel (the global setChanged counter also counted every other
+     * SI block entity that ticked in the world, so the test failed with the batch order).
+     */
     @GameTest(batch = "round1110_marks", template = "empty", timeoutTicks = 60)
     public static void solarPanelMarksSaveWithoutNeighbourUpdates(GameTestHelper h) {
-        h.setBlock(new BlockPos(2, 1, 2), block("generator/block_solar_generator"));
+        BlockPos panel = new BlockPos(2, 1, 2), probe = panel.east();
+        h.setBlock(panel, block("generator/block_solar_generator"));
+        h.setBlock(probe, CoreExampleMod.NEIGHBOUR_PROBE.get());
         long[] before = new long[2];
-        h.runAfterDelay(5, () -> { before[0] = total("SET_CHANGED"); before[1] = total("SAVE_MARKS"); });
+        h.runAfterDelay(5, () -> { before[0] = NeighbourProbe.updates(h.absolutePos(probe)); before[1] = total("SAVE_MARKS"); });
         h.runAfterDelay(30, () -> {
-            long changed = total("SET_CHANGED") - before[0], marks = total("SAVE_MARKS") - before[1];
+            long changed = NeighbourProbe.updates(h.absolutePos(probe)) - before[0], marks = total("SAVE_MARKS") - before[1];
             h.assertTrue(marks >= 20, "the panel did not mark its chunk each tick: " + marks);
-            h.assertTrue(changed <= 3, "the panel still calls setChanged every tick: " + changed);
+            h.assertTrue(changed <= 3, "the panel still calls setChanged every tick: " + changed + " neighbour updates");
             h.succeed();
         });
     }
@@ -99,14 +102,6 @@ public final class Round1110GameTests {
     }
 
     // ------------------------------------------------------------------ E11
-
-    // load priority, the early end of a full window and the replay of a steady plan exist only in the fair distribution;
-    // the addon test server runs the legacy walk (build.gradle), so this batch switches to fair as FairGridGameTests does
-    @BeforeBatch(batch = "round1110_saturated")
-    public static void fairOnSaturated(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
-
-    @AfterBatch(batch = "round1110_saturated")
-    public static void fairOffSaturated(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
 
     /** A sink without room: the windows end early; with room again, energy arrives. */
     @GameTest(batch = "round1110_saturated", template = "reactor", timeoutTicks = 120)

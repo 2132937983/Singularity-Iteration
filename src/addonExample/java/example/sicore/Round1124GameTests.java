@@ -113,6 +113,12 @@ public final class Round1124GameTests {
             for (var entry : textures.entrySet())
                 h.assertTrue(entry.getValue().getAsString().equals("mio_icif:item/3d/" + id), id + ": texture " + entry.getValue());
             h.assertTrue(exists("assets/mio_icif/textures/item/3d/" + id + ".png"), id + ": texture file missing");
+            // 0.1.11.28: an OBJ model (the mining laser) keeps any angle; its geometry is the OBJ file next to the JSON
+            if (model.has("loader") && "neoforge:obj".equals(model.get("loader").getAsString())) {
+                String obj = model.get("model").getAsString().replace("mio_icif:", "assets/mio_icif/");
+                h.assertTrue(exists(obj) && exists(obj.replace(".obj", ".mtl")), id + ": OBJ or MTL missing " + obj);
+                continue;
+            }
             for (var element : model.getAsJsonArray("elements")) {
                 JsonObject rotation = element.getAsJsonObject().getAsJsonObject("rotation");
                 if (rotation == null) continue;

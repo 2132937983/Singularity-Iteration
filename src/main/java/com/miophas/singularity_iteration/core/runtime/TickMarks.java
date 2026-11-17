@@ -22,5 +22,6 @@ public final class TickMarks {
     public static void saved(BlockEntity tile) {
         ContainerToTank.markUnsaved(tile);
         if (tile.getLevel() != null && !tile.getLevel().isClientSide) PerfCounters.add(PerfCounters.Kind.SAVE_MARKS);
+        ComparatorSignals.refresh(tile);   // 0.1.11.13: comparator sources still tell their neighbours when the signal changes
     }
 }

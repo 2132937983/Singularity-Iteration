@@ -26,15 +26,19 @@ public final class FcsClientConfig {
     }
 
     public enum Panel {
-        STATUS("status", 0.13, 0.20),
-        TELEMETRY("telemetry", 0.86, 0.60),
-        HOLOMAP("holomap", 0.87, 0.20),
-        BALLISTIC("ballistic", 0.62, 0.72),
-        BLAST("blast", 0.38, 0.72);
+        // 0.1.11.5: the status, telemetry and blast panels are gone from the passive HUD (a status line, a card at the
+        // aim point, a message); their config entries stay so older files load, but the layout editor no longer lists them
+        STATUS("status", 0.13, 0.20, false),
+        TELEMETRY("telemetry", 0.86, 0.60, false),
+        HOLOMAP("holomap", 0.87, 0.20, true),
+        BALLISTIC("ballistic", 0.62, 0.72, true),
+        BLAST("blast", 0.38, 0.72, false);
         public final String id;
         public final double defaultX, defaultY;
+        /** 0.1.11.5: shown and movable in the HUD layout editor. */
+        public final boolean editable;
         ModConfigSpec.DoubleValue x, y;
-        Panel(String id, double x, double y) { this.id = id; this.defaultX = x; this.defaultY = y; }
+        Panel(String id, double x, double y, boolean editable) { this.id = id; this.defaultX = x; this.defaultY = y; this.editable = editable; }
         public double x() { return x == null ? defaultX : x.get(); }
         public double y() { return y == null ? defaultY : y.get(); }
         public void set(double nx, double ny) {
@@ -62,6 +66,16 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue PHOTON_FX;
     public static final ModConfigSpec.BooleanValue SCAN_FX;
     public static final ModConfigSpec.BooleanValue WINGMAN_FX;
+    /** 0.1.11.58: the Wingman callouts as subtitles (else in the action bar), and their chirp. */
+    public static final ModConfigSpec.BooleanValue WINGMAN_CALLOUTS, WINGMAN_CALLOUT_SOUND;
+    /** 0.1.11.62: the flight effects in the classic style (glow, particles) instead of the constructivist one. */
+    public static final ModConfigSpec.BooleanValue CLASSIC_FLIGHT_FX;
+    /** 0.1.11.65: the engine sound of flying Wingmen. */
+    public static final ModConfigSpec.BooleanValue WINGMAN_ENGINE_SOUND;
+    /** 0.1.11.68 (quantum flight phase R2): the camera shake of hard landings and wall hits, and the FOV kick of boost and brake. */
+    public static final ModConfigSpec.DoubleValue IMPACT_SHAKE, IMPACT_FOV;
+    /** 0.1.11.73 (phase warp W3): the screen effect of the own warp. */
+    public static final ModConfigSpec.BooleanValue WARP_POST;
     /** 0.1.8.3: flight visual effects (vapour cone, wake trails, boom rings) and their strength. */
     public static final ModConfigSpec.BooleanValue VAPOR_EFFECTS;
     public static final ModConfigSpec.DoubleValue VAPOR_INTENSITY;
@@ -151,9 +165,22 @@ public final class FcsClientConfig {
         PHOTON_FX = b.comment("Quantum suit photon effects: the geodesic photon barrier of the deflector and the photon afterglow",
                 "(spatial distortion wake and afterimages) of fast Special Maneuver flight.")
             .define("photon_fx", true);
-        SCAN_FX = b.comment("Active scan: a scan sphere expands from you every 3 s while an entity sensor unit runs.").define("scan_fx", true);
+        SCAN_FX = b.comment("Active scan: a radar ring sweeps out from your feet when an entity sensor unit comes on, when a new hostile comes into range, and when you hold the detail key.").define("scan_fx", true);
         WINGMAN_FX = b.comment("Wingman effects: lock-on scan laser and hologram marker, muzzle flashes, thruster boosts, attitude jets, slash arcs.")
             .define("wingman_fx", true);
+        WINGMAN_CALLOUTS = b.comment("Wingman callouts (lock-on, kills, damage, power, rescues...) as a subtitle line beside the squad HUD;",
+                "off: in the action bar.").define("wingman_callouts", true);
+        WINGMAN_CALLOUT_SOUND = b.comment("A short chirp with each Wingman callout.").define("wingman_callout_sound", true);
+        CLASSIC_FLIGHT_FX = b.comment("Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the",
+                "phase warp one (cones of light, star streams, the warp at the sound barrier).").define("classic_flight_fx", false);
+        WINGMAN_ENGINE_SOUND = b.comment("The engine of a flying Wingman: a turbine drone that rises with its speed.")
+            .define("wingman_engine_sound", true);
+        IMPACT_SHAKE = b.comment("Camera shake of a hard landing, a wall hit and a take-off in quantum flight (0 = off, 1 = default, 2 = strong).")
+            .defineInRange("impact_shake", 1.0, 0.0, 2.0);
+        IMPACT_FOV = b.comment("FOV kick of a boost (wider) and a hard brake (narrower) in quantum flight (0 = off, 1 = default, 2 = strong).")
+            .defineInRange("impact_fov", 1.0, 0.0, 2.0);
+        WARP_POST = b.comment("Screen effect of the own phase warp at the sound barrier: a radial blur, split colours at the edge and a dark",
+                "edge. Off by itself while a shader pack is in use.").define("warp_post", true);
         SUIT_GLOW = b.comment("Nano and quantum suits glow: their lights and circuit lines shine in the light colour (palette accent),",
                 "amber and red as the charge falls, with breathing, an energy band and a power-on sweep. Players, Wingmen, armour stands.")
             .define("suit_glow", true);
@@ -234,6 +261,17 @@ public final class FcsClientConfig {
     public static boolean photonFx() { return !loaded() || PHOTON_FX.get(); }
     public static boolean scanFx() { return !loaded() || SCAN_FX.get(); }
     public static boolean wingmanFx() { return !loaded() || WINGMAN_FX.get(); }
+    public static boolean wingmanCallouts() { return !loaded() || WINGMAN_CALLOUTS.get(); }
+    /** 0.1.11.62: true for the classic flight effects, false (default) for the constructivist ones. */
+    public static boolean classicFlightFx() { return loaded() && CLASSIC_FLIGHT_FX.get(); }
+    public static boolean wingmanEngineSound() { return !loaded() || WINGMAN_ENGINE_SOUND.get(); }
+    /** 0.1.11.73: the screen effect of the own warp is on. */
+    public static boolean warpPost() { return !loaded() || WARP_POST.get(); }
+    /** 0.1.11.68: the scale of the impact camera shake, 0..2. */
+    public static float impactShake() { return loaded() ? IMPACT_SHAKE.get().floatValue() : 1.0F; }
+    /** 0.1.11.68: the scale of the boost and brake FOV kick, 0..2. */
+    public static float impactFov() { return loaded() ? IMPACT_FOV.get().floatValue() : 1.0F; }
+    public static boolean wingmanCalloutSound() { return !loaded() || WINGMAN_CALLOUT_SOUND.get(); }
     public static void setCoreAttachments(boolean on) {
         if (!loaded()) return;
         CORE_ATTACHMENTS.set(on);

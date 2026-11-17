@@ -35,12 +35,14 @@ import org.joml.Matrix4f;
  *       passes, with a prism fringe (a violet and a gold copy of the edges just outside the cyan
  *       one). A lens star marks the impact point and photon motes stream into it. A crystalline
  *       chime plays. The existing hex patch at the impact stays.</li>
- *   <li><b>Photon afterglow.</b> Special Maneuver flight above 1.1 blocks per tick leaves the
+ *   <li><b>Photon afterglow.</b> Special Maneuver flight past the shock barrier (0.1.11.5; was 1.1 blocks per tick) leaves the
  *       spatial distortion wake and photon afterimages ({@link com.miophas.singularity_iteration.common.client.suit.nano.NanoFx#photonWake}).</li>
- *   <li><b>Active scan.</b> While an entity sensor (ESP, threat sensor, behaviour predictor,
- *       holomap) runs, a scan sphere expands from the wearer every 3 s: latitude rings and
- *       meridians in the HUD colour. Where the front passes a creature, corner brackets flash
- *       around it.</li>
+ *   <li><b>Active scan.</b> 0.1.11.5: passive. With an entity sensor (ESP, threat sensor, behaviour predictor,
+ *       holomap) on, one sweep runs when a sensor comes on, when a hostile creature comes into range that was not
+ *       seen in the last 10 s, and when the detail key goes down; at most one every 4 s, none in Special Maneuver
+ *       flight. The sweep is a thin horizontal radar ring at the feet with a soft trail inside, in the HUD colour.
+ *       Where the front passes a hostile creature, corner brackets flash around it. (Up to 0.1.11.5 a full wire
+ *       sphere with turning meridians expanded every 3 s for as long as any sensor ran.)</li>
  * </ul>
  * <p>0.1.10.30 (S-7): the barrier and the cells shine brighter where the view grazes the hull (Fresnel rim), dimmer where it
  * looks straight through; the cells at the impact flash full for the first moment of the hit.
@@ -56,9 +58,13 @@ public final class QuantumFx {
     static { buildGeodesic(); }
 
     private static final Set<Long> SEEN = new HashSet<>();
-    private static final int SCAN_PERIOD = 60, SCAN_TICKS = 28;
+    /** 0.1.11.5: minimum ticks between two sweeps, the sweep life, and the time a hostile stays known. */
+    private static final int SCAN_COOLDOWN = 80, SCAN_TICKS = 30, HOSTILE_MEMORY = 200;
     private static final float SCAN_RADIUS = 24;
     private static int ticks, scanStart = -1000;
+    private static boolean wasScanning, wasDetail;
+    /** Hostile entity id → last tick it was in range. */
+    private static final it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap KNOWN_HOSTILES = new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap();
 
     // ------------------------------------------------------------------ tick
 
@@ -84,16 +90,38 @@ public final class QuantumFx {
             }
             if (SEEN.size() > 256) SEEN.clear();
             // photon afterglow of fast maneuver flight (all players near)
-            if (ticks % 6 == 0) {
+            // 0.1.11.5: only past the shock barrier and half as often (it used to start at 1.1 blocks/t every 6 ticks and
+            // buried the flyer in afterimages in third person)
+            if (ticks % 12 == 0 && FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): no afterimages in the constructivist style
                 for (Player p : mc.level.getEntitiesOfClass(Player.class, mc.player.getBoundingBox().inflate(128))) {
-                    if (!ManeuverModeClient.inManeuver(p)) continue;
+                    if (!ManeuverModeClient.inManeuver(p) || !ManeuverModeClient.supersonic(p)) continue;
                     Vec3 v = p.position().subtract(p.xo, p.yo, p.zo);
-                    if (v.length() < 1.1) continue;
                     com.miophas.singularity_iteration.common.client.suit.nano.NanoFx.photonWake(p.getId(), p.position(), v.normalize());
                 }
             }
         }
-        if (FcsClientConfig.scanFx() && ticks - scanStart >= SCAN_PERIOD && scanning()) scanStart = ticks;
+        scanTriggers(mc);
+    }
+
+    /** 0.1.11.5: starts a sweep on a sensor switch-on, a new hostile in range or the detail key (see the class notes). */
+    private static void scanTriggers(Minecraft mc) {
+        boolean on = scanning();
+        boolean detail = FcsClient.detailHeld();
+        boolean want = on && !wasScanning || on && detail && !wasDetail;
+        wasScanning = on;
+        wasDetail = detail;
+        if (on && ticks % 5 == 0) {
+            Vec3 c = mc.player.position();
+            for (LivingEntity e : mc.level.getEntitiesOfClass(LivingEntity.class, mc.player.getBoundingBox().inflate(SCAN_RADIUS),
+                    x -> x instanceof net.minecraft.world.entity.monster.Enemy && x.isAlive() && x.distanceToSqr(c) < SCAN_RADIUS * SCAN_RADIUS)) {
+                int last = KNOWN_HOSTILES.getOrDefault(e.getId(), Integer.MIN_VALUE);
+                if (ticks - last > HOSTILE_MEMORY) want = true;
+                KNOWN_HOSTILES.put(e.getId(), ticks);
+            }
+            if (KNOWN_HOSTILES.size() > 64) KNOWN_HOSTILES.int2IntEntrySet().removeIf(en -> ticks - en.getIntValue() > HOSTILE_MEMORY);
+        }
+        if (!on) KNOWN_HOSTILES.clear();
+        if (want && FcsClientConfig.scanFx() && !ManeuverModeClient.isFlying() && ticks - scanStart >= SCAN_COOLDOWN) scanStart = ticks;
     }
 
     private static boolean scanning() {
@@ -326,38 +354,46 @@ public final class QuantumFx {
         return v.size() - 1;
     }
 
-    /** Expanding scan sphere around the local player; brackets flash on the creatures the front passes. */
+    /**
+     * 0.1.11.5: the sweep, a thin horizontal radar ring at the feet. The front runs out to {@link #SCAN_RADIUS} with an
+     * ease-out; a soft trail 1.2 blocks wide lies inside it. Brackets flash on hostile creatures the front passes.
+     */
     private static void scanSphere(VertexConsumer vc, Matrix4f m, Minecraft mc, float k, Vec3 cam, float partial, RenderLevelStageEvent event) {
         Player p = mc.player;
-        Vec3 c = p.getPosition(partial).add(0, 1.0, 0);
-        float r = 1.5F + SCAN_RADIUS * (1 - (1 - k) * (1 - k));   // ease out
-        float a = (1 - k) * 0.42F;
+        Vec3 c = p.getPosition(partial).add(0, 0.08, 0);
+        float r = 1.0F + SCAN_RADIUS * (1 - (1 - k) * (1 - k));   // ease out
+        float a = (float) Math.pow(1 - k, 1.4) * 0.38F;
         float[] col = FxDraw.rgb(FcsClientConfig.primary());
-        // latitude rings
-        for (int i = -3; i <= 3; i++) {
-            double lat = i * Math.PI / 8;
-            float ringR = (float) (r * Math.cos(lat));
-            FxDraw.ring(vc, m, c.add(0, r * Math.sin(lat), 0), new Vec3(0, 1, 0), ringR, 0.18F + 0.02F * r, col[0], col[1], col[2],
-                a * (i == 0 ? 1F : 0.55F), 64);
+        int seg = 96;
+        float trail = 1.2F, edge = 0.07F;
+        for (int i = 0; i < seg; i++) {
+            double a0 = i * Math.PI * 2 / seg, a1 = (i + 1) * Math.PI * 2 / seg;
+            float c0 = (float) Math.cos(a0), s0 = (float) Math.sin(a0), c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
+            float ri = Math.max(0, r - trail);
+            // trail: transparent inside, rising to the front
+            sweepVertex(vc, m, c, c0 * ri, s0 * ri, col, 0);
+            sweepVertex(vc, m, c, c1 * ri, s1 * ri, col, 0);
+            sweepVertex(vc, m, c, c1 * r, s1 * r, col, a * 0.35F);
+            sweepVertex(vc, m, c, c0 * r, s0 * r, col, a * 0.35F);
+            // the crisp front line
+            sweepVertex(vc, m, c, c0 * r, s0 * r, col, a);
+            sweepVertex(vc, m, c, c1 * r, s1 * r, col, a);
+            sweepVertex(vc, m, c, c1 * (r + edge), s1 * (r + edge), col, a);
+            sweepVertex(vc, m, c, c0 * (r + edge), s0 * (r + edge), col, a);
         }
-        // meridians
-        for (int j = 0; j < 8; j++) {
-            double lon = j * Math.PI / 4 + k * 0.6;
-            Vec3 prev = null;
-            for (int i = 0; i <= 16; i++) {
-                double lat = -Math.PI / 2 + i * Math.PI / 16;
-                Vec3 pt = c.add(Math.cos(lat) * Math.cos(lon) * r, Math.sin(lat) * r, Math.cos(lat) * Math.sin(lon) * r);
-                if (prev != null) FxDraw.line(vc, m, prev, pt, cam, 0.04F + 0.004F * r, col[0], col[1], col[2], a * 0.45F);
-                prev = pt;
-            }
-        }
-        // creatures at the wave front
-        for (LivingEntity e : mc.level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(SCAN_RADIUS + 2), x -> x != p && x.isAlive())) {
-            double d = e.getPosition(partial).add(0, e.getBbHeight() * 0.5, 0).distanceTo(c);
+        // hostile creatures at the wave front (horizontal distance)
+        for (LivingEntity e : mc.level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(SCAN_RADIUS + 2, 8, SCAN_RADIUS + 2),
+                x -> x != p && x.isAlive() && x instanceof net.minecraft.world.entity.monster.Enemy)) {
+            Vec3 ep = e.getPosition(partial);
+            double d = Math.hypot(ep.x - c.x, ep.z - c.z);
             float near = Mth.clamp(1 - (float) Math.abs(d - r) / 1.6F, 0, 1);
             if (near <= 0) continue;
             brackets(vc, m, e, partial, cam, col, near * 0.9F);
         }
+    }
+
+    private static void sweepVertex(VertexConsumer vc, Matrix4f m, Vec3 c, float dx, float dz, float[] col, float alpha) {
+        vc.addVertex(m, (float) (c.x + dx), (float) c.y, (float) (c.z + dz)).setColor(col[0], col[1], col[2], Math.max(0, Math.min(1, alpha)));
     }
 
     /** Corner brackets around an entity's box, facing the camera. */

@@ -87,10 +87,36 @@ public final class IndependentSpecialCableBlockEntity extends BlockEntity {
 
     /** 0.1.10.22 (G5): true when a packet of {@code packet} EU opens this protective cable at once. */
     public boolean voltageExceeded(double packet) {
-        return relay != null && relay.voltageExceeded(packet);
+        if (relay == null) return false;
+        refreshLineVoltage();
+        return relay.voltageExceeded(packet);
     }
 
-    /** 0.1.10.22 (G5): opens the cable for an overvoltage (after the engine committed the delivery). */
+    private long lineVoltageAt = Long.MIN_VALUE;
+
+    /**
+     * 0.1.11.34 (cable audit W5): the largest packet of the line this cable sits in, for an automatic rated voltage: the
+     * lowest packet limit of the plain cables next to it (special cables do not count; a superconductor has no limit).
+     * 0 when no plain cable touches it. Worked out again at most once a second; either side (the screen shows it).
+     */
+    public long refreshLineVoltage() {
+        if (relay == null || level == null) return 0;
+        long now = level.getGameTime();
+        if (now - lineVoltageAt < 20 && lineVoltageAt != Long.MIN_VALUE) return relay.lineVoltage();
+        lineVoltageAt = now;
+        long limit = Long.MAX_VALUE;
+        for (var side : net.minecraft.core.Direction.values()) {
+            var at = worldPosition.relative(side);
+            if (!level.isLoaded(at)) continue;
+            if (!(level.getBlockState(at).getBlock() instanceof com.miophas.singularity_iteration.core.api.energy.ICableBlock cable)) continue;
+            if (level.getBlockEntity(at) instanceof IndependentSpecialCableBlockEntity) continue;
+            limit = Math.min(limit, cable.getCableTier().getPowerRating());
+        }
+        relay.setLineVoltage(limit == Long.MAX_VALUE || limit >= ProtectionRelay.MAX_FLOW ? 0 : limit);
+        return relay.lineVoltage();
+    }
+
+    /** 0.1.10.22 (G5): opens the cable for an overvoltage. 0.1.11.34: before the engine commits the delivery. */
     public void tripForVoltage() {
         if (relay == null) return;
         var world = serverLevel();

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "特高压变压器"
+  title: "IV–LuV 变压器"
   icon: mio_icif:wiring/transformer_iv_luv
   parent: power.md
   position: 33
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/transformer_iv_luv
 ---
 
-# 特高压变压器
+# IV–LuV 变压器
 
 <Row>
   <BlockImage id="mio_icif:wiring/transformer_iv_luv" scale="3" />

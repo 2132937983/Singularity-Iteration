@@ -6,9 +6,6 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.AfterBatch;
-import net.minecraft.gametest.framework.BeforeBatch;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -180,14 +177,6 @@ public final class Round1122GameTests {
     }
 
     // ------------------------------------------------------------------ G4 load priority
-
-    // load priority, the early end of a full window and the replay of a steady plan exist only in the fair distribution;
-    // the addon test server runs the legacy walk (build.gradle), so this batch switches to fair as FairGridGameTests does
-    @BeforeBatch(batch = "round1122_priority")
-    public static void fairOnPriority(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
-
-    @AfterBatch(batch = "round1122_priority")
-    public static void fairOffPriority(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
 
     /**
      * 32 EU/t for two loads of 32 EU/t: both normal share it; a critical load then takes it all and the deferrable one

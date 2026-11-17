@@ -41,12 +41,13 @@ public class QuantumGeneratorMenu extends mio_icif_generator_menu {
         return data.get(2) == 1;
     }
 
+    /** 0.1.11.11: the synced values (the client menu has no block entity, so this showed 0 EU/t, tier 1). */
     public int getProduction() {
-        return blockEntity != null ? blockEntity.getProduction() : 0;
+        return data.get(3);
     }
 
     public int getTier() {
-        return blockEntity != null ? blockEntity.getTier() : 1;
+        return Math.max(1, data.get(4));
     }
 
     @Override

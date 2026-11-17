@@ -47,4 +47,18 @@ public class SteamRepressurizerMenu extends mio_icif_machine_menu {
         slot.onTake(player, stack);
         return original;
     }
+
+    // 0.1.11.16: the 248 x 204 mimic screen
+    @Override
+    protected int getPlayerInventoryY() { return 122; }
+
+    @Override
+    protected int getPlayerHotbarY() { return 180; }
+
+    @Override
+    protected void addPlayerInventory(net.minecraft.world.entity.player.Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 44 + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 44 + i * 18, hotbarY));
+    }
 }

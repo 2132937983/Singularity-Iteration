@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "超高压变压器"
+  title: "超高压–IV 变压器"
   icon: mio_icif:wiring/transformer_ev_sc
   parent: power.md
   position: 31
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/transformer_ev_sc
 ---
 
-# 超高压变压器
+# 超高压–IV 变压器
 
 <Row>
   <BlockImage id="mio_icif:wiring/transformer_ev_sc" scale="3" />

@@ -8,5 +8,10 @@
     "id": "minecraft:gold_ingot"
   },
   "eu_cost": 500000,
-  "duration": 1
+  "duration": 1,
+  "process": {
+    "kind": "nuclear",
+    "from": "Ag",
+    "to": "Au"
+  }
 }

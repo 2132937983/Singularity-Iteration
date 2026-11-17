@@ -27,8 +27,12 @@ public final class EnergyPackCharging {
     private static final EquipmentSlot[] ARMOR_SLOTS = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
-    /** Item in hand -> user. The key is the ItemStack identity. There is no strong reference. */
-    private static final Map<ItemStack, ServerPlayer> HOLDERS = Collections.synchronizedMap(new WeakHashMap<>());
+    /**
+     * Item in hand -> user. The key is the ItemStack identity. 0.1.11.3: the user is held weakly too. A strong value
+     * kept the player, whose inventory holds the key, so the entry never cleared: a player who logged out (or a
+     * single-player world that was closed) with an electric tool in hand stayed in memory with the whole level.
+     */
+    private static final Map<ItemStack, java.lang.ref.WeakReference<ServerPlayer>> HOLDERS = Collections.synchronizedMap(new WeakHashMap<>());
     /** Item in hand -> game tick of the last charge. It limits the charge to "one time per tick at most". */
     private static final Map<ItemStack, Long> LAST_PULL_TICK = Collections.synchronizedMap(new WeakHashMap<>());
     /** During a charge, an energy read on the target item starts a charge again. This guard stops the recursion. */
@@ -43,7 +47,8 @@ public final class EnergyPackCharging {
     public static void trackHolder(ItemStack stack, Entity entity) {
         if (!(entity instanceof ServerPlayer player) || stack.getCount() != 1) return;
         if (player.getMainHandItem() == stack || player.getOffhandItem() == stack) {
-            HOLDERS.put(stack, player);
+            var known = HOLDERS.get(stack);
+            if (known == null || known.get() != player) HOLDERS.put(stack, new java.lang.ref.WeakReference<>(player));
         } else {
             HOLDERS.remove(stack);
         }
@@ -59,8 +64,9 @@ public final class EnergyPackCharging {
      * It makes sure that the subsequent reads in one operation have no side effects.
      */
     public static void pullFromArmor(ItemStack stack) {
-        ServerPlayer holder = HOLDERS.get(stack);
-        if (holder == null) return;
+        var ref = HOLDERS.get(stack);
+        ServerPlayer holder = ref == null ? null : ref.get();
+        if (holder == null || holder.isRemoved()) return;
         long tick = holder.level().getGameTime();
         Long previous = LAST_PULL_TICK.get(stack);
         if (previous != null && previous == tick) return;

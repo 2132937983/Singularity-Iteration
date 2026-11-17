@@ -64,12 +64,26 @@ public final class CommandWheelClient {
         @SubscribeEvent
         static void setup(FMLClientSetupEvent event) {
             WingmanCommandPackets.SQUAD_HOOK = SquadClient::accept;
+            com.miophas.singularity_iteration.common.armory.WingmanCallouts.HOOK = CalloutHud::accept;   // 0.1.11.58 (P6)
+            com.miophas.singularity_iteration.common.armory.WingmanEntity.CLASSIC_FX =
+                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig::classicFlightFx;   // 0.1.11.62 (Q1)
+            // 0.1.11.59 (P7): a Clean Slate burst is drawn as a firework explosion (no rocket entity, no damage)
+            com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.HOOK = b -> {
+                var level = net.minecraft.client.Minecraft.getInstance().level;
+                if (level == null) return;
+                // 0.1.11.74 (W4): the phase burst (0.1.11.64: constructivist); the classic style keeps the firework
+                if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.classicFlightFx())
+                    level.createFireworks(b.at().x, b.at().y, b.at().z, 0, 0, 0, b.explosions());
+                else com.miophas.singularity_iteration.common.client.render.PhaseBursts.cleanSlate(b.at());
+            };
         }
 
         @SubscribeEvent
         static void layers(RegisterGuiLayersEvent event) {
             event.registerAbove(VanillaGuiLayers.CROSSHAIR, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
                 "squad_hud"), SquadHud::render);
+            event.registerAbove(VanillaGuiLayers.CROSSHAIR, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
+                "wingman_callouts"), CalloutHud::render);   // 0.1.11.58 (P6)
         }
     }
 
@@ -79,11 +93,14 @@ public final class CommandWheelClient {
         static void tick(ClientTickEvent.Post event) {
             SquadClient.ticks++;
             CommandFx.tick();
+            WingmanEngineSound.tick(Minecraft.getInstance());   // 0.1.11.65 (Q4)
             HoloTable.tick();
             Minecraft mc = Minecraft.getInstance();
+            if (waitRelease && !HeldKeys.down(KEY)) waitRelease = false;
             while (KEY != null && KEY.consumeClick()) {
                 LocalPlayer player = mc.player;
                 if (player == null || mc.screen != null) continue;
+                if (waitRelease) continue;   // 0.1.11.40 (U-1): a repeat of the key that just closed the wheel
                 if (sharesWithTool() && holdsToggleTool(player)) continue;    // the tool toggle takes this press
                 if (!SquadClient.commander()) {
                     if (wearsQuantum(player)) player.displayClientMessage(Component.translatable("message.mio_icif.command.no_relay"), true);
@@ -98,7 +115,17 @@ public final class CommandWheelClient {
             SquadClient.clear();
             CommandFx.clear();
             HoloTable.close(true);
+            ArmoryToastOverlay.clear();   // 0.1.11.40 (U-9)
+            waitRelease = false;
         }
+    }
+
+    /** 0.1.11.40: set when a quantum command screen closes while the wheel key is held; cleared at its release. */
+    private static boolean waitRelease;
+
+    /** Called when the wheel or the holo table closes: a still held wheel key must not reopen the wheel. */
+    static void waitForRelease() {
+        waitRelease = HeldKeys.down(KEY);
     }
 
     /** True when the wheel key and the tool toggle key are bound to the same key. */

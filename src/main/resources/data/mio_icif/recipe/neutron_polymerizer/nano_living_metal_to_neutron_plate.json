@@ -8,5 +8,12 @@
     "count": 1
   },
   "processingtime": 1500,
-  "energyPerTick": 1536
+  "energyPerTick": 1536,
+  "process": {
+    "kind": "densify",
+    "density_from": 19000,
+    "density_to": 400000000000000.0,
+    "real": false,
+    "radiation": true
+  }
 }

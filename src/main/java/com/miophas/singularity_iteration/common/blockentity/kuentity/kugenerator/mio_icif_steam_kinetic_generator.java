@@ -373,11 +373,17 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
      * @return 本 tick 的原始 KU 产出（未节流）
      */
     private int handleSteam(boolean hotSteam) {
-        int amount = steamTank.getFluidAmount();
+        double perMb = kuPerMb(hotSteam);   // 0.1.11.16: more with a condenser taking the exhaust (enthalpy model)
+        // 0.1.11.11: only the steam whose work the front can take this tick (the KU nobody takes is lost, as in IC2,
+        // so draining the whole tank threw most of a large flow away)
+        long accept = AUX_AUTOMATION_ENABLED ? Long.MAX_VALUE : frontAcceptance();
+        int amount = accept == Long.MAX_VALUE ? steamTank.getFluidAmount() : (int) Math.min(steamTank.getFluidAmount(), Math.ceil(accept / perMb));
         if (amount <= 0) return 0;
         steamTank.drain(amount, IFluidHandler.FluidAction.EXECUTE);
 
-        int kuWorkBuffer = amount * (hotSteam ? KU_PER_MB_SUPERHEATED : KU_PER_MB_STEAM);
+        double ku = amount * perMb + kuCarry;
+        int kuWorkBuffer = (int) Math.floor(ku);
+        kuCarry = ku - kuWorkBuffer;
         if (hotSteam) {
             outputSteam(amount, true);
         } else {
@@ -427,6 +433,25 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
      * 蒸汽动能机），并且<b>无论输入是蒸汽还是过热蒸汽，一律以普通蒸汽形式排出</b>（原版行为）。
      * 排不完的蒸汽触发 {@code ventingSteam}，并有 1/10 概率产生威力 1 的热爆炸。
      */
+    // ---- 0.1.11.16: the enthalpy model ---------------------------------------------------------------------------------
+
+    /** Isentropic efficiency of this turbine. */
+    public static final double KINETIC_TURBINE_EFFICIENCY = 0.7;
+    private boolean exhaustCondensed;
+    private double kuCarry;
+
+    /** KU per mB: the vented value (2 steam, 4 superheated, as before) times the gain of a condenser's vacuum. */
+    public double kuPerMb(boolean hotSteam) {
+        var state = hotSteam ? com.miophas.singularity_iteration.common.energy.SteamPhysics.SUPERHEATED : com.miophas.singularity_iteration.common.energy.SteamPhysics.STEAM;
+        double gain = exhaustCondensed
+            ? com.miophas.singularity_iteration.common.energy.SteamPhysics.work(state, com.miophas.singularity_iteration.common.energy.SteamPhysics.VACUUM, KINETIC_TURBINE_EFFICIENCY)
+              / com.miophas.singularity_iteration.common.energy.SteamPhysics.work(state, com.miophas.singularity_iteration.common.energy.SteamPhysics.ATMOSPHERE, KINETIC_TURBINE_EFFICIENCY)
+            : 1;
+        return (hotSteam ? KU_PER_MB_SUPERHEATED : KU_PER_MB_STEAM) * gain;
+    }
+
+    public boolean isExhaustCondensed() { return exhaustCondensed; }
+
     private void outputSteam(int amount, boolean hotSteam) {
         int remaining = amount;
         for (Direction dir : Direction.values()) {
@@ -447,6 +472,7 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
             if (filled > 0) remaining -= filled;
         }
 
+        exhaustCondensed = remaining <= 0 && amount > 0;   // 0.1.11.16: the next tick expands to the condenser's vacuum
         if (remaining > 0) {
             ventingSteam = true;
             if (level != null && level.random.nextInt(10) == 0) {
@@ -492,30 +518,41 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
     private void outputKineticToFront() {
         if (level == null || level.isClientSide()) return;
         if (kineticStorage.getKineticStored() <= 0) return;
+        IMioIcifCapabilities.IKineticStorage frontKinetic = frontKinetic();
+        if (frontKinetic != null && frontKinetic.canReceiveKinetic()) {
+            // 0.1.11.11: sized by what the receiver really takes (a simulated receive: its per-tick limit too, not only
+            // its free space), and what it did not take goes back to the buffer
+            long toTransfer = Math.min(kineticStorage.getKineticStored(),
+                Math.min(kineticStorage.getMaxExtract(), frontKinetic.receiveKinetic(kineticStorage.getKineticStored(), true)));
+            if (toTransfer > 0) {
+                long extracted = kineticStorage.extractKinetic(toTransfer, false);
+                if (extracted > 0) {
+                    long accepted = frontKinetic.receiveKinetic(extracted, false);
+                    if (accepted < extracted) kineticStorage.receiveKinetic(extracted - accepted, false);
+                }
+            }
+        }
+    }
 
+    private IMioIcifCapabilities.IKineticStorage frontKinetic() {
         Direction facing = getBlockState().getValue(
             net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
-
         IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK,
-            frontPos, facing.getOpposite());
+            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
         if (frontKinetic == null) {
             BlockEntity be = level.getBlockEntity(frontPos);
             frontKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(be);
         }
+        return frontKinetic;
+    }
 
-        if (frontKinetic != null && frontKinetic.canReceiveKinetic()) {
-            long toTransfer = Math.min(kineticStorage.getKineticStored(),
-                                      Math.min(kineticStorage.getMaxExtract(),
-                                               frontKinetic.getMaxKineticStored() - frontKinetic.getKineticStored()));
-            if (toTransfer > 0) {
-                long extracted = kineticStorage.extractKinetic(toTransfer, false);
-                if (extracted > 0) {
-                    frontKinetic.receiveKinetic(extracted, false);
-                }
-            }
-        }
+    /** 0.1.11.11: KU the front can take this tick (0 without a receiver). */
+    private long frontAcceptance() {
+        if (level == null) return 0;
+        IMioIcifCapabilities.IKineticStorage front = frontKinetic();
+        if (front == null || !front.canReceiveKinetic()) return 0;
+        return Math.min(kineticStorage.getMaxExtract(), front.receiveKinetic(kineticStorage.getMaxExtract(), true));
     }
 
     /** 雪藏：原版 IC2 没有蒸汽单元槽，蒸汽只能从管道/容器进入蒸汽槽。 */

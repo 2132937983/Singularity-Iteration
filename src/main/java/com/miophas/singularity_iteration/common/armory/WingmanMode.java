@@ -17,16 +17,17 @@ public enum WingmanMode {
      * Stays close behind the owner, destroys projectiles that fly at the owner and attacks the
      * mobs that hurt the owner.
      */
-    ESCORT,
-    /**
-     * Fulton recovery: takes the marked mob (the last mob that the owner hit, or the mob that the
-     * owner looks at while crouching) up and to the paired Armory.
-     */
-    FULTON;
+    ESCORT;
+    // 0.1.11.43 (Wingman audit W4, user decision): FULTON (ordinal 3, take a mob to the Armory) is gone; a saved
+    // Wingman or squad mode 3 loads as ESCORT (see byId).
 
     public static final WingmanMode[] VALUES = values();
 
+    /** The ordinal of the removed Fulton mode in saves before 0.1.11.43. */
+    public static final int REMOVED_FULTON = 3;
+
     public static WingmanMode byId(int id) {
+        if (id == REMOVED_FULTON) return ESCORT;
         return VALUES[Math.floorMod(id, VALUES.length)];
     }
 

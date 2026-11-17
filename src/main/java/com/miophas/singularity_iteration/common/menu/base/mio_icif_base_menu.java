@@ -289,7 +289,7 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
                 case OC_ACTIVE -> m.getActiveOverclockers();
                 case OC_PER_TICK -> m.getDisplayProgressPerTick();
                 case OC_TICKS -> m.getTicksPerOperation();
-                default -> (int) Math.min(Integer.MAX_VALUE, m.getEffectiveEnergyPerTick());
+                default -> (int) Math.min(Integer.MAX_VALUE, m.getDisplayedEnergyPerTick());   // 0.1.11.35
             };
         }
         @Override public void set(int index, int value) {

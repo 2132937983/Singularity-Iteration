@@ -176,6 +176,38 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         drawFittedRight(guiGraphics, this.font, outputLine, PANEL_X1 - 2, INFO_TEXT_Y, outputMax, statusKey != null ? 0xFFFF7A6A : OUTPUT_INK, true);
         drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.nuclear_reactor.heat", heat, maxHeat),
             INFO_TEXT_X, INFO_TEXT_Y, PANEL_X1 - 2 - outputWidth - 8 - INFO_TEXT_X, heatInk(heatFraction), true);
+        drawScramRow(guiGraphics);
+    }
+
+    // ---- 0.1.11.21: SCRAM, reset and the trip setpoint (the same controls as the generator's control room) -------------
+    private static final int SCRAM_Y = 149;
+    private static final int[][] SCRAM_BUTTONS = {{7, SCRAM_Y, 40, 10, 10}, {50, SCRAM_Y, 40, 10, 11}, {120, SCRAM_Y, 10, 10, 12}, {195, SCRAM_Y, 10, 10, 13}};
+
+    private void drawScramRow(GuiGraphics g) {
+        String[] text = {"SCRAM", Component.translatable("gui.mio_icif.reactor.control.reset").getString(), "-", "+"};
+        for (int i = 0; i < SCRAM_BUTTONS.length; i++) {
+            int[] b = SCRAM_BUTTONS[i];
+            g.fill(b[0] - 1, b[1] - 1, b[0] + b[2] + 1, b[1] + b[3] + 1, 0xFF5E6670);
+            g.fill(b[0], b[1], b[0] + b[2], b[1] + b[3], i == 0 ? 0xFFC0392B : 0xFFD9DDE1);
+            drawFitted(g, this.font, Component.literal(text[i]), b[0] + 1, b[1] + 1, b[2] - 2, i == 0 ? 0xFFFFFFFF : 0xFF2A2E33, false);
+        }
+        int sp = menu.getScramSetpoint();
+        Component spText = sp >= com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator.MAX_SETPOINT
+            ? Component.translatable("gui.mio_icif.reactor.control.setpoint_off") : Component.translatable("gui.mio_icif.reactor.control.setpoint", sp + "%");
+        drawFitted(g, this.font, spText, 133, SCRAM_Y + 1, 60, menu.isTripped() ? 0xFFC0392B : 0xFF2A2E33, false);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && this.minecraft != null && this.minecraft.gameMode != null) {
+            int left = (this.width - this.imageWidth) / 2, top = (this.height - this.imageHeight) / 2;
+            for (int[] b : SCRAM_BUTTONS)
+                if (mouseX >= left + b[0] && mouseX < left + b[0] + b[2] && mouseY >= top + b[1] && mouseY < top + b[1] + b[3]) {
+                    this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, b[4]);
+                    return true;
+                }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     /** 热量文字颜色：低于 50 % 为浅绿，低于 85 % 为琥珀色，其余为红色。 */

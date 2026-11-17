@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "2x Insulated HV Iron Cable"
+  title: "Double-Insulated Extra-High-Voltage Cable"
   icon: mio_icif:wiring/cable/block_iron_cable_2
   parent: power.md
   position: 1
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_iron_cable_2
 ---
 
-# 2x Insulated HV Iron Cable
+# Double-Insulated Extra-High-Voltage Cable
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_iron_cable_2" scale="3" />
@@ -16,7 +16,7 @@ item_ids:
 
 ## Function
 
-The 2x Insulated HV Iron Cable is an EV cable with two insulation layers.
+The Double-Insulated Extra-High-Voltage Cable is an EV cable with two insulation layers.
 The insulation stops shocks only below the full EV voltage.
 A packet above the cable limit burns the cable.
 
@@ -30,9 +30,9 @@ The game measured these values from the block entity of this version.
 
 ## Procedure
 
-1. Connect the generator to the machine with the 2x Insulated HV Iron Cable.
+1. Connect the generator to the machine with the Double-Insulated Extra-High-Voltage Cable.
 2. Right-click the cable with Rubber to add an insulation layer.
-3. Shift-right-click the cable with a Cable Cutter to remove one insulation layer.
+3. Right-click the cable with a Cable Cutter to remove one insulation layer (the rubber comes back).
 4. Right-click the cable with a dye to give the cable a colour.
 
 ## Notes

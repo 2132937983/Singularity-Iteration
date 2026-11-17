@@ -127,44 +127,20 @@ public final class Round20GameTests {
         h.succeed();
     }
 
-    @GameTest(batch = "round20", template = "empty", timeoutTicks = 60)
-    public static void reactorLiquidCoolingStopsComponentWear(GameTestHelper h) {
+    /** 0.1.11.4: the generator-mode liquid cooling is removed: the reactor takes no coolant, an old save still loads. */
+    @GameTest(batch = "round20", template = "empty", timeoutTicks = 20)
+    public static void generatorReactorTakesNoCoolant(GameTestHelper h) {
         var pos = new BlockPos(2, 1, 2);
         h.setBlock(pos, block("generator/block_nuclear_reactor_generator"));
         IReactorController reactor = (IReactorController) h.getBlockEntity(pos);
-        h.assertTrue(reactor.getItemHandler().insertItem(10, item("reactor/item_reactor_uranium_simple"), false).isEmpty(), "Fuel");
-        h.assertTrue(reactor.getItemHandler().insertItem(11, item("reactor/item_reactor_collant_simple"), false).isEmpty(), "Coolant cell");
         IFluidHandler tank = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(pos), null);
-        h.assertTrue(tank != null, "Generator-mode reactor accepts coolant");
-        var coolant = BuiltInRegistries.FLUID.get(id("coolant"));
-        h.assertTrue(tank.fill(new FluidStack(coolant, 4000), IFluidHandler.FluidAction.EXECUTE) == 4000, "Coolant fills the cooling tank");
-        h.assertTrue(tank.fill(new FluidStack(net.minecraft.world.level.material.Fluids.LAVA, 1000), IFluidHandler.FluidAction.SIMULATE) == 0,
-            "Lava is not a coolant");
-        h.setBlock(pos.above(), Blocks.REDSTONE_BLOCK);
-        h.runAfterDelay(45, () -> {
-            ItemStack cell = reactor.getItemHandler().getStackInSlot(11);
-            int stored = ((CompoundTag) cell.save(h.getLevel().registryAccess())).getCompound("components")
-                .getCompound("mio_icif:reactor_component_data").getInt("stored_value");
-            h.assertTrue(stored == 0, "Coolant drains component heat (no wear), stored " + stored);
-            h.assertTrue(reactor.getCurrentHeat() == 0, "Hull stays cold, heat " + reactor.getCurrentHeat());
-            int left = tank.getFluidInTank(0).getAmount(), hot = tank.getFluidInTank(1).getAmount();
-            h.assertTrue(left < 4000 && hot > 0 && left + hot == 4000, "Coolant circulates to hot coolant: " + left + " / " + hot);
-            h.assertTrue(reactor.getCurrentEnergyGeneration() > 0, "Reactor still generates");
-            h.succeed();
-        });
-    }
-
-    @GameTest(batch = "round20", template = "empty")
-    public static void coolantTableCoversForeignFluids(GameTestHelper h) {
-        Class<?> cooling = null;
-        try {
-            cooling = Class.forName("com.miophas.singularity_iteration" + ".common.blockentity.generator.ReactorLiquidCooling");
-        } catch (ClassNotFoundException e) { throw new AssertionError(e); }
-        var water = call(cooling, "coolant", net.minecraft.world.level.material.Fluids.WATER);
-        var lava = call(cooling, "coolant", net.minecraft.world.level.material.Fluids.LAVA);
-        var si = call(cooling, "coolant", BuiltInRegistries.FLUID.get(id("coolant")));
-        h.assertTrue(water != null && lava == null && si != null, "Water and SI coolant are coolants, lava is not");
-        h.assertTrue((int) call(si, "huPerMB") > (int) call(water, "huPerMB"), "Coolant carries more heat per mB than water");
+        h.assertTrue(tank == null, "A generator-mode reactor has no coolant tank");
+        CompoundTag saved = ((net.minecraft.world.level.block.entity.BlockEntity) reactor).saveWithFullMetadata(h.getLevel().registryAccess());
+        CompoundTag oldTank = new CompoundTag();
+        oldTank.putInt("Amount", 4000);
+        saved.put("LiquidCooling", oldTank);   // as saved before 0.1.11.4
+        ((net.minecraft.world.level.block.entity.BlockEntity) reactor).loadWithComponents(saved, h.getLevel().registryAccess());
+        h.assertTrue(reactor.getCurrentHeat() == 0, "An old save with a coolant tank still loads");
         h.succeed();
     }
 }

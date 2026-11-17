@@ -111,9 +111,11 @@ public class mio_icif_Manual_KineticU_Generator extends AbstractKineticGenerator
         // 手摇发电机使用固定的高转速，确保能向任何机器传输动能
         int myRPM = MAX_RPM;
         boolean anyTransferred = false;
+        // 0.1.11.13: one click is 400 KU shared by the six faces (each face got the full 400 before)
+        long budget = KINETIC_PER_CLICK;
 
-        // 向所有六个方向输出动能（每个方向独立发送）
         for (Direction direction : Direction.values()) {
+            if (budget <= 0) break;
             BlockPos adjacentPos = worldPosition.relative(direction);
             IMioIcifCapabilities.IKineticStorage adjacentKinetic = level.getCapability(
                 IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, adjacentPos, direction.getOpposite());
@@ -127,11 +129,12 @@ public class mio_icif_Manual_KineticU_Generator extends AbstractKineticGenerator
                 // 只要有转速差就可以传输（手摇发电机转速固定为 MAX_RPM
                 if (myRPM > adjacentRPM) {
                     long maxReceive = adjacentKinetic.getMaxKineticStored() - adjacentKinetic.getKineticStored();
-                    long kineticToTransfer = Math.min(KINETIC_PER_CLICK, maxReceive);
+                    long kineticToTransfer = Math.min(budget, maxReceive);
                     if (kineticToTransfer > 0) {
                         long received = adjacentKinetic.receiveKinetic(kineticToTransfer, false);
                         if (received > 0) {
                             anyTransferred = true;
+                            budget -= received;
                         }
                     }
                 }

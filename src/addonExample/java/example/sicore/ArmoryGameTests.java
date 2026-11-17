@@ -26,7 +26,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * Armory: power-gated owner binding, suit-slot rules (native vs. Connector-Kit gear),
+ * Armory: power-gated owner binding, suit-slot rules (the gear of every mod, 0.1.11.49),
  * paid summons that fly every piece onto the owner and swap the old gear home, the
  * in-flight safety net and remote pairing.
  *
@@ -101,7 +101,7 @@ public final class ArmoryGameTests {
     }
 
     @GameTest(template = "reactor_loop", batch = "armory", timeoutTicks = 40)
-    public static void suitSlotsAcceptNativeGearAndConnectedForeignGear(GameTestHelper h) {
+    public static void suitSlotsAcceptGearOfEveryMod(GameTestHelper h) {
         var armory = armory(h, 5_000);
         var inv = armory.getItemHandler();
         h.assertTrue(inv.getSlots() == 37, "Battery + 6 suits x 6 pieces, got " + inv.getSlots());
@@ -111,19 +111,10 @@ public final class ArmoryGameTests {
         h.assertTrue(inv.isItemValid(MAIN_0, new ItemStack(Items.DIAMOND_SWORD)), "Main hand takes weapons");
         h.assertTrue(!inv.isItemValid(MAIN_0, new ItemStack(Items.DIAMOND_CHESTPLATE)), "Hands never take body armour");
 
+        // 0.1.11.49 (F0): the Connector Kit is gone; the gear of every mod is accepted as it is
         ItemStack foreign = new ItemStack(CoreExampleMod.FOREIGN_CROP_SEED.get());
-        h.assertTrue(!inv.isItemValid(MAIN_0, foreign), "Foreign gear needs a Connector Kit first");
-        ServerPlayer p = player(h);
-        ItemStack kit = si("normal/item_armory_connector");
-        kit.setCount(2);
-        p.setItemInHand(InteractionHand.MAIN_HAND, kit);
-        p.setItemInHand(InteractionHand.OFF_HAND, foreign);
-        kit.use(h.getLevel(), p, InteractionHand.MAIN_HAND);
-        ItemStack linked = p.getOffhandItem();
-        h.assertTrue(p.getMainHandItem().getCount() == 1, "Connecting consumes one kit");
-        h.assertTrue(inv.isItemValid(MAIN_0, linked), "Connected foreign gear is accepted");
-        h.assertTrue(!inv.isItemValid(HEAD_0, linked), "Connected hand gear stays out of armour columns");
-        p.discard();
+        h.assertTrue(inv.isItemValid(MAIN_0, foreign), "Foreign gear is accepted without a kit");
+        h.assertTrue(!inv.isItemValid(HEAD_0, foreign), "Foreign hand gear stays out of armour columns");
         h.succeed();
     }
 

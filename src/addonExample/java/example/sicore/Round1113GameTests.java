@@ -148,7 +148,9 @@ public final class Round1113GameTests {
             String kind = String.valueOf(call(entity, "kindOf", stack));
             String hold = String.valueOf(call(pose, "holdOf", stack, false));
             if (isRanged != kind.equals("RANGED") && !kind.equals("BLADE")) problems.add(BuiltInRegistries.ITEM.getKey(item) + " " + kind + "/" + isRanged);
-            if (!stack.isEmpty() && hold.equals("RANGED") != isRanged) problems.add(BuiltInRegistries.ITEM.getKey(item) + " hold " + hold);
+            // 0.1.11.46: BOW, CROSSBOW and SPEAR are ranged hold kinds too
+            if (!stack.isEmpty() && java.util.Set.of("RANGED", "BOW", "CROSSBOW", "SPEAR").contains(hold) != isRanged)
+                problems.add(BuiltInRegistries.ITEM.getKey(item) + " hold " + hold);
             items++;
             if (isRanged) ranged++;
         }

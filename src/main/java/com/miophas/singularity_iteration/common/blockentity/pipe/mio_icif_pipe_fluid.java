@@ -46,7 +46,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
     protected FluidStack bufferFluid = FluidStack.EMPTY;
 
     private final com.miophas.singularity_iteration.core.runtime.processing.FluidTransferBuffer[] transfers = java.util.stream.IntStream.range(0, 6)
-        .mapToObj(i -> new com.miophas.singularity_iteration.core.runtime.processing.FluidTransferBuffer(this::setChanged))
+        .mapToObj(i -> new com.miophas.singularity_iteration.core.runtime.processing.FluidTransferBuffer(this::markSaved))
         .toArray(com.miophas.singularity_iteration.core.runtime.processing.FluidTransferBuffer[]::new);
     private final IFluidHandler[] sidedHandlers = new IFluidHandler[6];
     /** 0.1.10.7: neighbour fluid capabilities per side (was: a capability lookup per side every tick). */
@@ -83,9 +83,9 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
     @Override
     protected void doTransfer() {
         if (transferring || !liveOwner()) return;
+        if (shownEmpty == null) shownEmpty = bufferFluid.isEmpty();   // the look before this pipe's first move
 
-        if (level.getGameTime() < retryAfter) return;
-        boolean wasEmpty = bufferFluid.isEmpty();
+        if (level.getGameTime() < retryAfter) { syncVisual(); return; }
         externalBudget.begin(level.getGameTime());
 
         extractDirections.clear();
@@ -115,13 +115,35 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
         }
 
         if (!liveOwner()) return;
-        boolean isEmptyNow = bufferFluid.isEmpty();
-        if (wasEmpty != isEmptyNow) {
-            updateBlockState();
-            setChanged();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        syncVisual();
     }
+
+    /**
+     * 0.1.11.23: the pipe's moves only mark the chunk for saving (it has no comparator output); a full setChanged told every
+     * neighbour up to four times per face per tick.
+     */
+    private void markSaved() { com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this); }
+
+    /** 0.1.11.23: the empty / full look as last sent, and the earliest tick of the next change (null: not sent yet). */
+    @org.jetbrains.annotations.Nullable private Boolean shownEmpty;
+    private long nextVisual;
+
+    /**
+     * 0.1.11.23: sends the empty / full look when it differs from what was sent, at most once per {@code VISUAL_TICKS}
+     * (at a low flow the pipe went empty and full every few ticks, each time a block state change and an update packet).
+     */
+    private void syncVisual() {
+        boolean empty = bufferFluid.isEmpty();
+        if (shownEmpty == null) { shownEmpty = empty; return; }
+        if (empty == shownEmpty.booleanValue() || level.getGameTime() < nextVisual) return;
+        shownEmpty = empty;
+        nextVisual = level.getGameTime() + VISUAL_TICKS;
+        updateBlockState();
+        setChanged();
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+    }
+
+    private static final int VISUAL_TICKS = 10;
 
     /** 0.1.10.7: the fluid capability of the neighbour on {@code side}, through a capability cache. */
     @Nullable
@@ -365,7 +387,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
             if (bufferFluid.isEmpty()) {
                 bufferFluid = FluidStack.EMPTY;
             }
-            setChanged();
+            markSaved();
         }
 
         return result;
@@ -391,7 +413,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
             } else {
                 bufferFluid.grow(canFill);
             }
-            setChanged();
+            markSaved();
         }
 
         return canFill;

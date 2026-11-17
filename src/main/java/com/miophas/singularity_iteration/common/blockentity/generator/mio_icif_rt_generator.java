@@ -53,7 +53,8 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
     private long currentGenerationRate = 0;
 
     // 旧 SI 扩展的发电量表；不是受控路径的成品行为规格。
-    private static final long[] GENERATION_RATES = {0L, 2L, 4L, 8L, 16L, 32L, 64L};
+    // 0.1.11.12: the old grid uses the IC2 table as well (it gave twice as much as the independent network)
+    private static final long[] GENERATION_RATES = {0L, 1L, 2L, 4L, 8L, 16L, 32L};
     // R29 ordinary placement/inventory/save observations, 0..6 occupied fuel slots.
     private static final long[] INDEPENDENT_GENERATION_RATES = {0L, 1L, 2L, 4L, 8L, 16L, 32L};
     private static final long INDEPENDENT_CAPACITY = 20000L;
@@ -103,10 +104,14 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
         }
 
         // 如果有靶丸且能量未满，生成能量
+        blockEntity.lastEu = 0;
+        blockEntity.coldSide();
         if (blockEntity.currentGenerationRate > 0 &&
             blockEntity.getEnergyStorage().getAmount() < blockEntity.getEnergyStorage().getCapacity()) {
             blockEntity.generateEnergyInternal();
         }
+
+        blockEntity.chart.tick(level.getGameTime(), blockEntity.lastEu * 10);   // x10: tenths of an EU/t
 
         // 分配能量到相邻方块
         if (!blockEntity.energyStorage.scexNetworkControlled()) blockEntity.distributeEnergy();
@@ -125,13 +130,34 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
 
     /**
      * 生成能量（内部方法）
+     * <p>0.1.11.20: the pellet table times the cold side (RtgPhysics: water, ice, a hot biome, the Nether, lava).
      */
     private void generateEnergyInternal() {
         if (currentGenerationRate > 0) {
-            if (energyStorage.scexNetworkControlled()) energyStorage.scexGenerateEnergy(scaleOutput(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(currentGenerationRate)), false);   // 0.1.8.4
-            else apiGenerateEnergy(scaleOutput(currentGenerationRate), false);
+            double eu = currentGenerationRate * coldSide().factor() * outputScale();
+            produce(eu);   // 0.1.8.4 multiplier; 0.1.11.13: the framework's sink
+            lastEu = eu;
         }
     }
+
+    /** 0.1.11.20: the cold side, looked at every 20 ticks; the EU of the last tick; the chart for the screen. */
+    private com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide cold;
+    private double lastEu;
+    private long coldTick = Long.MIN_VALUE;
+    private final com.miophas.singularity_iteration.common.energy.Recorder chart = new com.miophas.singularity_iteration.common.energy.Recorder();
+    public com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide coldSide() {
+        // 0.1.11.22: once per 20 ticks, spread by position (it was worked out 2 to 3 times on every 20th tick)
+        long now = level == null ? 0 : level.getGameTime();
+        if (cold == null || level != null && now != coldTick && com.miophas.singularity_iteration.common.energy.TickPhase.every(level, worldPosition, 20)) {
+            coldTick = now;
+            cold = level == null ? new com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide(1, 18, 0, false)
+                : com.miophas.singularity_iteration.common.energy.RtgPhysics.coldSide(level, worldPosition);
+        }
+        return cold;
+    }
+    public double getLastEu() { return lastEu; }
+    public int getBaseRate() { return (int) currentGenerationRate; }
+    public com.miophas.singularity_iteration.common.energy.Recorder getChart() { return chart; }
 
     /**
      * 统计放入的RTG靶丸数量
@@ -220,12 +246,10 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
         super.loadAdditional(tag, registries);
         this.cachedPelletCount = tag.getInt("CachedPelletCount");
         this.currentGenerationRate = tag.getLong("CurrentGenerationRate");
-        if (energyStorage.scexNetworkControlled()) {
-            // Inventory is authoritative after loading, including older SI caches.
-            // Recompute on the next server tick without consuming or replacing fuel.
-            this.cachedPelletCount = -1;
-            this.currentGenerationRate = 0;
-        }
+        // Inventory is authoritative after loading, including older SI caches: recompute on the next server tick without
+        // consuming or replacing fuel. 0.1.11.11: in both energy modes (a save from the other mode kept its rate table).
+        this.cachedPelletCount = -1;
+        this.currentGenerationRate = 0;
     }
 
     // ==================== MenuProvider 接口实现 ====================
@@ -238,6 +262,12 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu(containerId, playerInventory, this);
+    }
+
+    /** 0.1.11.13: rated output = the rate of the pellets in it (the nameplate rate is 0). */
+    @Override
+    public long ratedOutput() {
+        return Math.round(Math.max(0, currentGenerationRate) * outputScale());
     }
 }

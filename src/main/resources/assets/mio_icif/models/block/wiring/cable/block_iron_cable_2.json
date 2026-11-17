@@ -1,8 +1,8 @@
 {
   "parent": "block/block",
   "textures": {
-    "particle": "mio_icif:block/wiring/cable/block_iron_cable_1",
-    "texture": "mio_icif:block/wiring/cable/block_iron_cable_1",
+    "particle": "mio_icif:block/wiring/cable/block_iron_cable_2",
+    "texture": "mio_icif:block/wiring/cable/block_iron_cable_2",
     "color_band": "minecraft:block/white_concrete"
   },
   "elements": [
@@ -21,55 +21,55 @@
       "faces": {
         "north": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            4,
+            4,
+            12,
+            12
           ],
           "texture": "#texture"
         },
         "east": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            4,
+            4,
+            12,
+            12
           ],
           "texture": "#texture"
         },
         "south": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            4,
+            4,
+            12,
+            12
           ],
           "texture": "#texture"
         },
         "west": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            4,
+            4,
+            12,
+            12
           ],
           "texture": "#texture"
         },
         "up": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            4,
+            4,
+            12,
+            12
           ],
           "texture": "#texture"
         },
         "down": {
           "uv": [
-            5,
-            5,
-            11,
-            11
+            4,
+            4,
+            12,
+            12
           ],
           "texture": "#texture"
         }

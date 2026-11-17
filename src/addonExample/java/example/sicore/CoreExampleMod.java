@@ -37,6 +37,8 @@ public final class CoreExampleMod {
     public static final DeferredBlock<Block> SOURCE = BLOCKS.register("source", () -> new ExampleBlock(InheritedSource::new));
     public static final DeferredBlock<Block> STORAGE = BLOCKS.register("storage", () -> new ExampleBlock(ComposedStorage::new));
     public static final DeferredBlock<Block> SINK = BLOCKS.register("sink", () -> new ExampleBlock(InheritedSink::new));
+    /** 0.1.11.52: counts the neighbour updates it gets (see {@link NeighbourProbe}). */
+    public static final DeferredBlock<Block> NEIGHBOUR_PROBE = BLOCKS.register("neighbour_probe", NeighbourProbe::new);
     public static final DeferredBlock<Block> MULTI_SOURCE = BLOCKS.register("multi_source", () -> new ExampleBlock(InheritedMultiSource::new));
     public static final DeferredBlock<Block> PACKET_SOURCE = BLOCKS.register("packet_source", () -> new ExampleBlock(ComposedPacketSource::new));
     public static final DeferredBlock<Block> FOREIGN_BATTERY = BLOCKS.register("foreign_battery", () -> new ExampleBlock(ForeignBattery::new));
@@ -71,6 +73,7 @@ public final class CoreExampleMod {
         BLOCKS.register(bus);
         ENTITIES.register(bus);
         bus.addListener(CoreExampleMod::capabilities);
+        GameTestIsolation.register();
     }
 
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(ID, path); }

@@ -158,7 +158,7 @@ public class ObscuratorItem extends mio_icif_tool_elc {
 
         BlockState currentState = level.getBlockState(pos);
         boolean isFoamBlock = clickedBlock instanceof mio_icif_block_foam;
-        boolean isFoamloggedWire = clickedBlock instanceof mio_icif_block_wire && currentState.getValue(mio_icif_block_wire.FOAMLOGGED);
+        boolean isFoamloggedWire = clickedBlock instanceof mio_icif_block_wire && mio_icif_block_wire.foamlogged(currentState);
 
         if (!isFoamBlock && !isFoamloggedWire) {
             player.displayClientMessage(Component.translatable("message.mio_icif.obscurator.not_applicable"), false);
@@ -180,7 +180,7 @@ public class ObscuratorItem extends mio_icif_tool_elc {
                 newFoamEntity.setDisguisedBlockId(scannedBlockId);
             }
         } else {
-            level.setBlockAndUpdate(pos, currentState.setValue(mio_icif_block_wire.DISGUISED, true));
+            level.setBlockAndUpdate(pos, mio_icif_block_wire.withCasing(currentState, mio_icif_block_wire.casing(currentState).withDisguise(true)));
             BlockEntity newBlockEntity = level.getBlockEntity(pos);
             if (newBlockEntity instanceof mio_icif_wire wireEntity) {
                 wireEntity.setDisguisedBlockId(scannedBlockId);

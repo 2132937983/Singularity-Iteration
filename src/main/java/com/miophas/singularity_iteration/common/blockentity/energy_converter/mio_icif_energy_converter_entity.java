@@ -205,8 +205,35 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity
      * Moves FE across the front once per tick: export hands out what the buffer holds, import takes in what the buffer
      * has room for, bidirectional moves the buffer back to its band. Nothing toward an SI node (the grid reaches it).
      */
+    /** 0.1.11.3: ticks the front waits after a foreign failure (an exception, or a receipt out of range). */
+    static final int FRONT_FAULT_PAUSE = 200;
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+    /** Game time until which the front rests after a failure (not saved: a reload tries again at once). */
+    private long frontFaultUntil = Long.MIN_VALUE;
+    private boolean frontFaultLogged;
+
     public void tick() {
         if (!(level instanceof ServerLevel server) || isRemoved()) return;
+        long now = server.getGameTime();
+        if (now < frontFaultUntil) return;
+        // 0.1.11.3: an output whose receipt never came (the foreign block threw or answered out of range) stays debited
+        // but stops blocking output after the pause; before, it latched all output of the interface for good
+        if (scexFeBridge().uncertainOutput() != 0) scexFeBridge().writeOffUncertainOutput();
+        try {
+            tickFront(server);
+            if (scexFeBridge().uncertainOutput() != 0) frontFaultUntil = now + FRONT_FAULT_PAUSE;   // a receipt out of range
+        } catch (RuntimeException e) {
+            // 0.1.11.3: a broken foreign energy block in front took the server down ("Ticking block entity")
+            frontFaultUntil = now + FRONT_FAULT_PAUSE;
+            if (!frontFaultLogged) {
+                frontFaultLogged = true;
+                LOGGER.warn("Grid-tie interface at {} in {}: the block in front failed an FE transfer; the front pauses {} ticks after each failure",
+                    worldPosition, server.dimension().location(), FRONT_FAULT_PAUSE, e);
+            }
+        }
+    }
+
+    private void tickFront(ServerLevel server) {
         Direction front = getFrontFacing();
         BlockPos at = worldPosition.relative(front);
         if (server.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4) == null

@@ -94,6 +94,13 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     private Automation automation = Automation.LOCKED;
     private int mana;
     private final ArmoryMaintenance maintenance = new ArmoryMaintenance(this);
+    /**
+     * 0.1.11.39 (Wingman audit W0, G-1): the sortie token of each suit that flies as a Wingman, null for a suit at home.
+     * A suit out on a sortie keeps its positions: "send home", the free-position fallback of {@link #store} and automation
+     * leave them alone, so the Wingman finds its places free when it comes back. A token whose sortie has closed (or that the
+     * ledger never saw) no longer reserves anything, so a lost Wingman cannot block a suit forever.
+     */
+    private final UUID[] sorties = new UUID[SETS];
 
     private final ContainerData data = new ContainerData() {
         @Override public int get(int index) {
@@ -196,6 +203,44 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         return level != null && level.getGameTime() < busyUntil;
     }
 
+    /** 0.1.11.39: true while suit {@code set} flies as a Wingman (an open sortie, see {@link #sorties}). */
+    public boolean deployed(int set) {
+        if (set < 0 || set >= SETS || sorties[set] == null) return false;
+        if (level == null || level.isClientSide || level.getServer() == null) return true;
+        WingmanSorties ledger = WingmanSorties.get(level.getServer());
+        if (ledger == null || ledger.status(sorties[set]) == WingmanSorties.Status.OPEN) return true;
+        sorties[set] = null;   // the sortie closed elsewhere (or was lost): the suit positions are free again
+        setChanged();
+        return false;
+    }
+
+    /** 0.1.11.39: bit {@code set} is on while that suit flies as a Wingman. */
+    public int deployedMask() {
+        int mask = 0;
+        for (int set = 0; set < SETS; set++) if (deployed(set)) mask |= 1 << set;
+        return mask;
+    }
+
+    /** 0.1.11.39: suit {@code set} leaves as the Wingman of sortie {@code token}. */
+    void markDeployed(int set, @Nullable UUID token) {
+        if (set < 0 || set >= SETS || token == null) return;
+        sorties[set] = token;
+        setChanged();
+    }
+
+    /** 0.1.11.39: the Wingman of sortie {@code token} is home (or its items went elsewhere): suit {@code set} is free again. */
+    void releaseDeployed(int set, @Nullable UUID token) {
+        if (set < 0 || set >= SETS || token == null || !token.equals(sorties[set])) return;
+        sorties[set] = null;
+        setChanged();
+    }
+
+    /** 0.1.11.39: the first suit with no piece that is not out on a sortie, or -1. */
+    public int firstFreeSet() {
+        for (int s = 0; s < SETS; s++) if (pieceCount(s) == 0 && !deployed(s)) return s;
+        return -1;
+    }
+
     public List<ArmoryLogEntry> log() { return List.copyOf(log); }
 
     // ------------------------------------------------------------------ automation access
@@ -251,7 +296,10 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     }
 
     /** Fly suit {@code set} to the player. Server side only. */
-    public SummonResult summon(ServerPlayer player, int set) {
+    public SummonResult summon(ServerPlayer player, int set) { return summon(player, set, null); }
+
+    /** 0.1.11.57 (P5): {@link #summon} of one piece of suit {@code set} ({@code only}; null: the whole suit). */
+    public SummonResult summon(ServerPlayer player, int set, @Nullable ArmoryPiece only) {
         if (!(level instanceof ServerLevel world)) return SummonResult.fail("message.mio_icif.armory.failed");
         if (set < 0 || set >= SETS) return SummonResult.fail("message.mio_icif.armory.failed");
         if (!isOwner(player)) return SummonResult.fail("message.mio_icif.armory.not_owner");
@@ -260,6 +308,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
 
         List<ArmoryPiece> flying = new ArrayList<>();
         for (ArmoryPiece p : ArmoryFlight.SEQUENCE) {
+            if (only != null && p != only) continue;
             ItemStack stored = piece(set, p);
             if (stored.isEmpty()) continue;
             ItemStack worn = player.getItemBySlot(p.slot);
@@ -401,17 +450,21 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         if (stack.isEmpty() || !ArmoryRules.isSummonable(stack)) return stack;
         var handler = getItemHandler();
         int slot = slotOf(set, preferred);
-        if (handler.getStackInSlot(slot).isEmpty() && ArmoryRules.fits(stack, preferred)) {
+        if (!deployed(set) && handler.getStackInSlot(slot).isEmpty() && ArmoryRules.fits(stack, preferred)) {
             ItemStack rest = handler.insertItem(slot, stack, false);
             if (rest.isEmpty()) { setChanged(); return ItemStack.EMPTY; }
             stack = rest;
         }
-        for (int s = 0; s < SETS; s++) {
-            for (ArmoryPiece p : ArmoryPiece.VALUES) {
-                int i = slotOf(s, p);
-                if (handler.getStackInSlot(i).isEmpty() && ArmoryRules.fits(stack, p)) {
-                    stack = handler.insertItem(i, stack, false);
-                    if (stack.isEmpty()) { setChanged(); return ItemStack.EMPTY; }
+        // 0.1.11.39 (G-1): the positions of a suit that flies as a Wingman come last (its Wingman needs them back)
+        for (int pass = 0; pass < 2; pass++) {
+            for (int s = 0; s < SETS; s++) {
+                if (deployed(s) != (pass == 1)) continue;
+                for (ArmoryPiece p : ArmoryPiece.VALUES) {
+                    int i = slotOf(s, p);
+                    if (handler.getStackInSlot(i).isEmpty() && ArmoryRules.fits(stack, p)) {
+                        stack = handler.insertItem(i, stack, false);
+                        if (stack.isEmpty()) { setChanged(); return ItemStack.EMPTY; }
+                    }
                 }
             }
         }
@@ -498,6 +551,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
         if (slot == BATTERY_SLOT) return super.canInsertItem(slot, stack, side);
         if (automation == Automation.LOCKED || slot < FIRST_SUIT_SLOT || slot >= SLOT_COUNT) return false;
+        if (deployed((slot - FIRST_SUIT_SLOT) / PIECES)) return false;   // 0.1.11.39 (G-1): kept for its Wingman
         return getItemHandler().getStackInSlot(slot).isEmpty() && isItemValidForSlot(slot, stack);
     }
 
@@ -575,6 +629,15 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         tag.putLong("ArmoryBusyUntil", busyUntil);
         tag.putString("ArmoryAutomation", automation.name());
         tag.putInt("ArmoryMana", mana);
+        ListTag out = new ListTag();   // 0.1.11.39
+        for (int set = 0; set < SETS; set++) {
+            if (sorties[set] == null) continue;
+            CompoundTag t = new CompoundTag();
+            t.putInt("Set", set);
+            t.putUUID("Sortie", sorties[set]);
+            out.add(t);
+        }
+        if (!out.isEmpty()) tag.put("ArmorySorties", out);
     }
 
     @Override
@@ -591,6 +654,10 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
             automation = Automation.LOCKED;
         }
         mana = Math.max(0, Math.min(MANA_CAPACITY, tag.getInt("ArmoryMana")));
+        java.util.Arrays.fill(sorties, null);   // 0.1.11.39 (absent in older saves: no suit out)
+        for (Tag raw : tag.getList("ArmorySorties", Tag.TAG_COMPOUND)) {
+            if (raw instanceof CompoundTag t && t.hasUUID("Sortie") && t.getInt("Set") >= 0 && t.getInt("Set") < SETS) sorties[t.getInt("Set")] = t.getUUID("Sortie");
+        }
         if (tag.contains("ArmoryIcons")) readIcons(tag, registries);
     }
 

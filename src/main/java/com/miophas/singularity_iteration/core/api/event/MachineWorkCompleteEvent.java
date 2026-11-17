@@ -23,26 +23,19 @@ import java.util.List;
  * <p><b>Frequency</b>: the event fires one time for each completed recipe.
  * The frequency depends on the machine speed and the recipe time.
  *
- * <p><b>Scope</b>: all machine types that implement the IProducerBlock interface, including:
- * <ul>
- *   <li>Basic machines such as compressors, extractors, macerators and centrifuges</li>
- *   <li>Machines with more than one ingredient, such as welders and precision assemblers</li>
- *   <li>Nuclear reactors (at the end of each cycle)</li>
- * </ul>
+ * <p><b>Scope</b> (0.1.11.3): the prefab processing machines, after each operation that made an output (see API guide
+ * §27.2 and §28.1). Machines that replace {@code tickProduction} and do not report their cycles do not post it.
  *
- * <p><b>Note</b>: you cannot cancel this event. Use it to change the output item or to do more operations.
+ * <p><b>Note</b>: you cannot cancel this event. In the prefab machines {@link #getOutput()} is an empty stack and
+ * {@link #setOutput} has no effect: the output is already in the slots. For additional outputs use
+ * {@code IWorkCycleUpgrade} and its {@code BonusOutputs}.
  *
  * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onMachineWorkComplete(MachineWorkCompleteEvent event) {
  *     IMachineInfo info = event.getMachineInfo();
- *     ItemStack output = event.getOutput();
- *     if (output.getItem() == Items.IRON_INGOT) {
- *         if (event.getLevel().random.nextFloat() < 0.1f) {
- *             output.grow(1);
- *         }
- *     }
+ *     // count operations, play an effect, update statistics ...
  * }
  * }</pre>
  */

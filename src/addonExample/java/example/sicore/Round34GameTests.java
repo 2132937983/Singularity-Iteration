@@ -64,6 +64,13 @@ public final class Round34GameTests {
         h.assertTrue(Math.abs(full - 342) < 1, "full throttle cost " + full + " (manual says 342 EU/t with the deflection field)");
         double cruise = (double) call(common("suit.ManeuverMode"), "costPerTick", 1.1);
         h.assertTrue(Math.abs(cruise - 42.3) < 1, "slow cruise cost " + cruise + " (manual says 42 EU/t)");
+        // 0.1.11.5: the barrier follows the measured Mach number with hysteresis (on at M 1, off below M 0.9)
+        Class<?> mm = common("suit.ManeuverMode");
+        h.assertTrue(Math.abs((double) call(mm, "mach", 2.4) - 1.0) < 1e-6, "Mach 1 at 2.4 blocks/t");
+        h.assertTrue(!(boolean) call(mm, "supersonic", false, 0.99), "M 0.99 is not past the barrier");
+        h.assertTrue((boolean) call(mm, "supersonic", false, 1.0), "M 1.0 crosses the barrier");
+        h.assertTrue((boolean) call(mm, "supersonic", true, 0.92), "M 0.92 stays supersonic (no second boom)");
+        h.assertTrue(!(boolean) call(mm, "supersonic", true, 0.89), "below M 0.9 the barrier re-arms");
         h.succeed();
     }
 
@@ -103,7 +110,8 @@ public final class Round34GameTests {
     @GameTest(batch = "round34_nano", template = "empty", timeoutTicks = 20)
     public static void nanoSuitModelsAndTextures(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
-        String[][] expected = {{"head"}, {"body", "right_arm", "left_arm"}, {"body", "right_leg", "left_leg"}, {"right_leg", "left_leg"}};
+        // 0.1.11.27: the GeckoLib suit's leggings have no crotch plate ("body"): allowed, not required
+        String[][] expected = {{"head"}, {"body", "right_arm", "left_arm"}, {"right_leg", "left_leg"}, {"right_leg", "left_leg"}};
         EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
         for (int i = 0; i < NANO.length; i++) {
             String piece = NANO[i];
@@ -126,6 +134,7 @@ public final class Round34GameTests {
             // 0.1.8.0: the chestplate also carries the optional hand cover parts.
             Set<String> allowed = new java.util.HashSet<>(Set.of(expected[i]));
             if (piece.equals("chestplate")) allowed.addAll(Set.of("right_hand", "left_hand"));
+            if (piece.equals("leggings")) allowed.add("body");
             for (String k : keys) if (!allowed.contains(k)) problems.add(piece + " has unexpected part " + k);
             if (bytes("/assets/mio_icif/textures/models/armor/nano_" + piece + ".png") == null)
                 problems.add("texture missing: " + piece);

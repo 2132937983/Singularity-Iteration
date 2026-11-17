@@ -8,5 +8,8 @@
     "id": "minecraft:coal"
   },
   "eu_cost": 60000,
-  "duration": 1
+  "duration": 1,
+  "process": {
+    "kind": "lattice"
+  }
 }

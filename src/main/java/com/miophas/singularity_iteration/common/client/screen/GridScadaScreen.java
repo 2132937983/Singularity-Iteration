@@ -437,7 +437,8 @@ public class GridScadaScreen extends AbstractContainerScreen<EnergyTerminalMenu>
             PanelCharts.bar(g, 10, y + 13, barW, 4, Math.min(1F, ratio / 2F), ratio > 1 ? PanelCharts.down() : PanelCharts.up(), false);
             g.fill(10 + barW / 2, y + 12, 11 + barW / 2, y + 18, PanelCharts.TEXT);   // the rated flow mark (scale 0..2x)
             if (b.heat() > 0) PanelCharts.bar(g, 10, y + 18, barW, 1, b.heat(), PanelCharts.WARN, false);
-            String settings = Component.translatable(K + "settings", rate(b.flow()), rate(b.ratedFlow()),
+            String settings = Component.translatable(K + "settings", rate(b.flow()),
+                b.ratedFlow() > 0 ? rate(b.ratedFlow()) : Component.translatable("gui.mio_icif.protection.not_set").getString(),
                 b.ratedVoltage() > 0 ? DspUi.compact(b.ratedVoltage()) + " EU" : "-", String.format(Locale.ROOT, "%.2f", b.delay() / 20.0)).getString();
             DspUi.small(g, font, font.plainSubstrByWidth(settings, (int) ((half - 70) / 0.75F)), 10, y + 21, PanelCharts.DIM);
             if (b.kind() == 0 && b.state() != 0) {
@@ -455,12 +456,13 @@ public class GridScadaScreen extends AbstractContainerScreen<EnergyTerminalMenu>
         g.drawString(font, Component.translatable(K + "alarms", s.alarms.size()), x + 4, top + 4, PanelCharts.ACCENT, false);
         int lineH = 20, lines = (bottom - top - 18) / lineH;
         alarmScroll = Math.min(alarmScroll, Math.max(0, s.alarms.size() - lines));
-        String[] types = {"trip", "reclose", "lockout", "reset", "fuse", "melt", "insulation", "explosion", "shortfall"};
+        String[] types = {"trip", "reclose", "lockout", "reset", "fuse", "melt", "insulation", "explosion", "shortfall",
+            "loader_grace", "loader_stopped", "loader_restored"};   // 0.1.11.37
         for (int i = 0; i < lines && i + alarmScroll < s.alarms.size(); i++) {
             var a = s.alarms.get(i + alarmScroll);
             int y = top + 16 + i * lineH;
             String type = types[Math.min(types.length - 1, a.type())];
-            int colour = switch (type) { case "reclose", "reset" -> PanelCharts.up(); case "trip", "fuse", "shortfall" -> PanelCharts.WARN; default -> PanelCharts.down(); };
+            int colour = switch (type) { case "reclose", "reset", "loader_restored" -> PanelCharts.up(); case "trip", "fuse", "shortfall", "loader_grace" -> PanelCharts.WARN; default -> PanelCharts.down(); };
             long ago = Math.max(0, s.gameTime - a.time()) / 20;
             g.drawString(font, font.plainSubstrByWidth(Component.translatable(K + "alarm." + type).getString(), half - 70), x + 4, y, colour, false);
             PanelCharts.right(g, font, Component.translatable(K + "ago", DspUi.duration(ago)).getString(), x + half - 4, y, PanelCharts.DIM);

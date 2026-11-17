@@ -17,12 +17,13 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
     public static final int MAX_REACTOR_SLOT_COUNT = 54;
     public static final int TOTAL_SLOT_COUNT = 54;
 
-    private static final int REACTOR_SLOTS_X = 26;
-    private static final int REACTOR_SLOTS_Y = 25;
+    // 0.1.11.21: the 300 x 284 control-room screen
+    public static final int REACTOR_SLOTS_X = 14;
+    public static final int REACTOR_SLOTS_Y = 20;
     private static final int REACTOR_SLOTS_ROWS = 6;
     private static final int SLOT_SIZE = 18;
 
-    private static final int PLAYER_INV_START_X = 26;
+    private static final int PLAYER_INV_START_X = 69;
 
     public NuclearReactorGeneratorMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null, null);
@@ -33,14 +34,14 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
                                         @Nullable IItemHandler itemHandler,
                                         @Nullable ContainerData data) {
         super(mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(), containerId, TOTAL_SLOT_COUNT,
-              playerInventory, itemHandler, data, 12, blockEntity);
+              playerInventory, itemHandler, data, mio_icif_nuclear_reactor_generator.CONTROL_DATA, blockEntity);
     }
 
     @Override
-    protected int getPlayerInventoryY() { return 161; }
+    protected int getPlayerInventoryY() { return 200; }
 
     @Override
-    protected int getPlayerHotbarY() { return 219; }
+    protected int getPlayerHotbarY() { return 258; }
 
     @Override
     protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
@@ -84,15 +85,11 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
     public int getOutputPower() { return data.get(4); }
     public int getAvailableColumns() { return data.get(5); }
     public int getFeedRate() { return Math.max(1, data.get(6)); }
-    public int getCoolantAmount() { return data.get(7); }
-    public int getHotCoolantAmount() { return data.get(8); }
-    public int getCoolingAbsorbed() { return data.get(9); }
-    public int getCoolantHuPerMB() { return data.get(10); }
+    // 0.1.11.4: data 7..10 (the removed liquid cooling) stay in the layout and are always 0
     /** 0.1.10.39: why the reactor makes nothing ({@code mio_icif_nuclear_reactor_generator.STATUS_*}). */
     public int getStatus() { return data.get(11); }
-    public net.neoforged.neoforge.fluids.FluidStack coolantFluid() {
-        return blockEntity instanceof mio_icif_nuclear_reactor_generator gen ? gen.getLiquidCooling().coldFluid() : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-    }
+    /** 0.1.11.21: the control-room values (see the reactor's container data). */
+    public int value(int i) { return data.get(i); }
 
     /** Feed-rate buttons: 0 = slower, 1 = faster, 2 = reset to 1x (shift = by 4). */
     @Override
@@ -100,6 +97,10 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
         if (!(blockEntity instanceof mio_icif_nuclear_reactor_generator gen)) return false;
         int rate = gen.getFeedRate();
         switch (id) {
+            case 10 -> gen.scram();                                            // 0.1.11.21: SCRAM, reset, setpoint
+            case 11 -> gen.resetTrip();
+            case 12 -> gen.setScramSetpoint(gen.getScramSetpoint() - 5);
+            case 13 -> gen.setScramSetpoint(gen.getScramSetpoint() + 5);
             case 0 -> gen.setFeedRate(rate - 1);
             case 1 -> gen.setFeedRate(rate + 1);
             case 2 -> gen.setFeedRate(1);
@@ -124,10 +125,6 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
             setSyncData(4, gen.getCurrentOutput());
             setSyncData(5, gen.getAvailableColumns());
             setSyncData(6, gen.getFeedRate());
-            setSyncData(7, gen.getLiquidCooling().coldFluid().getAmount());
-            setSyncData(8, gen.getLiquidCooling().hotFluid().getAmount());
-            setSyncData(9, gen.getLiquidCooling().lastAbsorbed());
-            setSyncData(10, gen.getLiquidCooling().active() == null ? 0 : gen.getLiquidCooling().active().huPerMB());
         }
     }
 }

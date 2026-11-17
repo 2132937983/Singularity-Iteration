@@ -69,7 +69,8 @@ public final class WingmanCommands {
     private WingmanCommands() {}
 
     public static final byte A_MOVE = 0, A_HOLD = 1, A_SUPPRESS = 2, A_FOCUS = 3, A_FORM_UP = 4, A_MODE = 5, A_SQUAD = 6,
-        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10;
+        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11, A_EJECT = 12, A_CLEAN_SLATE = 13,
+        A_PILOT = 14, A_PILOT_EXIT = 15;
     /** Cooldown key of the quantum recall in the nano core cooldown map. */
     public static final String RECALL_KEY = "mio_icif:quantum_recall";
     /** Ticks of the chunk ticket of an unloaded Wingman's recall. */
@@ -99,6 +100,10 @@ public final class WingmanCommands {
     /** Handles one command of the owner (rate limited by the payload handler). */
     static void handle(ServerPlayer player, WingmanCommandPackets.Command c) {
         if (!player.isAlive() || player.isSpectator()) return;
+        if (c.action() == A_PILOT_EXIT) {   // 0.1.11.60 (P8): leaving the flight needs no link
+            WingmanPilot.stop(player, Component.translatable("message.mio_icif.wingman.pilot.off"));
+            return;
+        }
         if (!commander(player)) {
             refuse(player, "message.mio_icif.command.no_relay");
             return;
@@ -119,6 +124,21 @@ public final class WingmanCommands {
             }
             case A_QUANTUM_RECALL -> {
                 quantumRecall(player);
+                return;
+            }
+            case A_CLEAN_SLATE -> {
+                // 0.1.11.59 (P7): asked twice within 3 s, every loaded Wingman bursts into a firework, the suits go home
+                player.displayClientMessage(WingmanCleanSlate.request(player), false);
+                player.playNotifySound(mio_icif_sounds.ORDER_ACK.get(), SoundSource.PLAYERS, 0.7F, 0.8F);
+                state.syncTimer = 100;
+                return;
+            }
+            case A_EJECT -> {
+                // 0.1.11.55 (P3): the worn suit flies on as a Wingman (no unit selection: it makes one)
+                Component result = WingmanService.eject(player);
+                player.displayClientMessage(result, false);
+                player.playNotifySound(mio_icif_sounds.ORDER_ACK.get(), SoundSource.PLAYERS, 0.7F, 1.0F);
+                state.syncTimer = 100;
                 return;
             }
             default -> { }
@@ -160,6 +180,21 @@ public final class WingmanCommands {
             }
             case A_SQUAD -> name = "SQUAD";
             case A_RETURN -> name = "RETURN";
+            case A_PILOT -> {
+                // 0.1.11.60 (P8): the owner flies one Wingman: the selected one, or with "all" the nearest
+                WingmanEntity one = units.stream().min(java.util.Comparator.comparingDouble(w -> w.distanceToSqr(player))).orElse(null);
+                Component refused = WingmanPilot.start(player, one);
+                if (refused != null) player.displayClientMessage(refused, true);
+                else player.displayClientMessage(Component.translatable("message.mio_icif.wingman.pilot.on", one.getName()), true);
+                player.playNotifySound(mio_icif_sounds.ORDER_ACK.get(), SoundSource.PLAYERS, 0.7F, 1.2F);
+                return;
+            }
+            case A_SUIT_UP -> {
+                // 0.1.11.54 (P2): one Wingman swaps suits with the owner: the selected one, or with "all" the nearest
+                WingmanEntity nearest = units.stream().min(java.util.Comparator.comparingDouble(w -> w.distanceToSqr(player))).orElse(null);
+                units = List.of(nearest);
+                name = "SUIT_UP";
+            }
             default -> { return; }
         }
         if (NeoForge.EVENT_BUS.post(new com.miophas.singularity_iteration.core.api.armory.ArmoryEvent.WingmanCommand(player, name, units.size(),
@@ -180,14 +215,20 @@ public final class WingmanCommands {
                 }
                 case A_FORM_UP -> w.clearOrder();
                 case A_MODE -> {
-                    WingmanMode mode = WingmanMode.byId(c.arg());
-                    w.setMode(mode, !all);
+                    // 0.1.11.39 (G-12): a squad mode leaves an individual mode alone, as the panel's squad mode does
+                    // (before, the wheel's "all" cleared it); "follow squad" ends an individual mode
+                    if (all && w.individual()) continue;
+                    w.setMode(WingmanMode.byId(c.arg()), !all);
                 }
                 case A_SQUAD -> {
                     WingmanMode squad = state.squadMode >= 0 ? WingmanMode.byId(state.squadMode) : w.mode();
                     w.setMode(squad, false);
                 }
                 case A_RETURN -> w.startReturn(null);
+                case A_SUIT_UP -> {
+                    String refused = w.suitUp(player);
+                    if (refused != null) { refuse(player, refused); return; }
+                }
                 default -> { }
             }
             done++;
@@ -257,15 +298,7 @@ public final class WingmanCommands {
             return 0;
         }
         for (WingmanEntity w : loaded) dematerialize(w);
-        int requested = 0;
-        for (WingmanRoster.Entry e : far) {
-            ServerLevel level = player.server.getLevel(e.dimension());
-            if (level == null) continue;
-            ChunkPos chunk = new ChunkPos(BlockPos.containing(e.pos()));
-            level.getChunkSource().addRegionTicket(RECALL_TICKET, chunk, 2, chunk);
-            PENDING.put(e.wingman(), new Pending(e.dimension(), player.getUUID(), player.server.getTickCount() + RECALL_TICKET_TICKS / 2));
-            requested++;
-        }
+        int requested = recallUnloaded(player.server, player.getUUID(), far);
         QuantumCore.spend(player, s, cost);
         keys.cooldown.put(RECALL_KEY, QuantumConfig.recallCooldown());
         keys.dirty();
@@ -273,6 +306,24 @@ public final class WingmanCommands {
         player.displayClientMessage(Component.translatable("message.mio_icif.command.recall", loaded.size() + requested, requested), true);
         player.getData(SuitRegistry.WINGMAN_COMMAND).syncTimer = 100;
         return loaded.size() + requested;
+    }
+
+    /**
+     * Sends the unloaded Wingmen {@code far} home: each chunk loads for a moment with a ticket and the suit goes home as
+     * soon as the entity appears (see {@link #onServerTick}). Returns the number of requests. 0.1.11.39: shared by the
+     * quantum recall, the console's "recall all" and the owner's logout.
+     */
+    static int recallUnloaded(MinecraftServer server, UUID owner, List<WingmanRoster.Entry> far) {
+        int requested = 0;
+        for (WingmanRoster.Entry e : far) {
+            ServerLevel level = server.getLevel(e.dimension());
+            if (level == null) continue;
+            ChunkPos chunk = new ChunkPos(BlockPos.containing(e.pos()));
+            level.getChunkSource().addRegionTicket(RECALL_TICKET, chunk, 2, chunk);
+            PENDING.put(e.wingman(), new Pending(e.dimension(), owner, server.getTickCount() + RECALL_TICKET_TICKS / 2));
+            requested++;
+        }
+        return requested;
     }
 
     /** The suit of {@code w} folds into the Armory: the effect for the players near, then the items go home. */
@@ -320,16 +371,16 @@ public final class WingmanCommands {
     static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         WingmanCommandState st = player.getData(SuitRegistry.WINGMAN_COMMAND);
-        boolean commander = commander(player);
-        if (!commander) {
+        // 0.1.11.39 (G-15): the link is checked every 10 ticks, not in every tick of every player
+        if (++st.syncTimer < 10) return;
+        st.syncTimer = 0;
+        if (!commander(player)) {
             if (st.sentActive) {
-                SuitPackets.send(player, new WingmanCommandPackets.Squad(false, st.datalink, (byte) st.squadMode, 0, 0, 0, List.of()));
+                SuitPackets.send(player, new WingmanCommandPackets.Squad(false, st.datalink, (byte) st.squadMode, 0, 0, 0, 0, List.of()));
                 st.sentActive = false;
             }
             return;
         }
-        if (++st.syncTimer < 10) return;
-        st.syncTimer = 0;
         // always sent while the link works (a few bytes without Wingmen): the client takes a silent link as lost
         st.sentActive = true;
         SuitPackets.send(player, squad(player, st));
@@ -344,18 +395,18 @@ public final class WingmanCommands {
             units.add(new WingmanCommandPackets.Unit(w.getUUID(), here ? w.getId() : -1, (byte) w.set(), (byte) w.mode().ordinal(), w.individual(),
                 (byte) w.order().ordinal(), o == null ? 0 : (float) o.x, o == null ? 0 : (float) o.y, o == null ? 0 : (float) o.z,
                 w.orderTargetId(), w.getHealth() / Math.max(1, w.getMaxHealth()), w.energyFraction(), w.state(), (byte) (here ? 0 : 1),
-                (float) w.getX(), (float) w.getY(), (float) w.getZ()));
+                (float) w.getX(), (float) w.getY(), (float) w.getZ(), w.enduranceSeconds()));
         }
         WingmanRoster roster = WingmanRoster.get(player.server);
         if (roster != null) {
             for (WingmanRoster.Entry e : roster.of(player.getUUID())) {
                 if (units.size() >= WingmanCommandPackets.Squad.MAX_UNITS) break;
                 units.add(new WingmanCommandPackets.Unit(e.wingman(), -1, (byte) e.set(), (byte) -1, false, (byte) 0, 0, 0, 0, -1, 1, -1,
-                    WingmanEntity.ACTIVE, (byte) 2, (float) e.pos().x, (float) e.pos().y, (float) e.pos().z));
+                    WingmanEntity.ACTIVE, (byte) 2, (float) e.pos().x, (float) e.pos().y, (float) e.pos().z, -3));
             }
         }
         int cooldown = NanoSuit.state(player).cooldown(RECALL_KEY);
-        return new WingmanCommandPackets.Squad(true, st.datalink, (byte) st.squadMode, cooldown, QuantumConfig.holdRadius(),
+        return new WingmanCommandPackets.Squad(true, st.datalink, (byte) st.squadMode, cooldown, QuantumConfig.recallCooldown(), QuantumConfig.holdRadius(),
             QuantumConfig.suppressRadius(), units);
     }
 }

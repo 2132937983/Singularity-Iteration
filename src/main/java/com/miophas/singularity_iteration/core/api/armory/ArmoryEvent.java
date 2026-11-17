@@ -111,7 +111,7 @@ public abstract class ArmoryEvent extends Event {
         public BlockPos getArmory() { return armory; }
         /** EN: Suit set index (0..5). ZH: 套装编号（0..5）。JA: スーツ番号（0..5）。 */
         public int getSet() { return set; }
-        /** EN: Tactical mode: OFFENSIVE, DISPERSAL, ESCORT or FULTON. ZH: 战术模式：OFFENSIVE、DISPERSAL、ESCORT 或 FULTON。JA: 戦術モード：OFFENSIVE、DISPERSAL、ESCORT、FULTON。 */
+        /** EN: Tactical mode: OFFENSIVE, DISPERSAL or ESCORT (FULTON until 0.1.11.42). ZH: 战术模式：OFFENSIVE、DISPERSAL 或 ESCORT（0.1.11.42 及之前还有 FULTON）。JA: 戦術モード：OFFENSIVE、DISPERSAL、ESCORT（0.1.11.42 までは FULTON も）。 */
         public String getMode() { return mode; }
     }
 

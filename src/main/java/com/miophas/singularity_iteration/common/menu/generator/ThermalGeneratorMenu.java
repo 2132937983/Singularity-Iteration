@@ -25,15 +25,34 @@ import org.jetbrains.annotations.Nullable;
                                  @Nullable IItemHandler itemHandler,
                                  @Nullable ContainerData data) {
         super(mio_icif_menus.THERMAL_GENERATOR_MENU_TYPE.get(), id, SLOT_COUNT,
-              playerInventory, itemHandler, data, 6, blockEntity);
+              playerInventory, itemHandler, data, mio_icif_Thermal_Generator.DATA_COUNT, blockEntity);
+    }
+
+    /** 0.1.11.10: 248 x 204 with the chart recorder; fuel and battery slots on the left. */
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int SLOT_X = 10, FUEL_Y = 30, BATTERY_Y = 76;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+
+    /** Synced value {@code i} (see the block entity's getContainerData). */
+    public int value(int i) { return data.get(i); }
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
     }
 
     @Override
     protected void addMachineSlots() {
-        // 燃料槽在上方（火焰图标上方）
-        addFuelSlot(FUEL_SLOT, 65, 17);
-        // 电池槽在下方（火焰图标下方）
-        addBatterySlot(BATTERY_SLOT, 65, 53);
+        addFuelSlot(FUEL_SLOT, SLOT_X, FUEL_Y);
+        addBatterySlot(BATTERY_SLOT, SLOT_X, BATTERY_Y);
     }
 
     @Override
@@ -54,46 +73,21 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected boolean isBattery(ItemStack stack) {
-        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+        return com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI().isBattery(stack);   // 0.1.11.11: any chargeable item, as the block takes
     }
 
-    public int getBurnProgressPixels() {
-        if (data.getCount() > 1) return data.get(1);
-        return 0;
-    }
 
-    public int getEnergyProgressPixels() {
-        if (data.getCount() > 3) {
-            int energy = data.get(2);
-            int maxEnergy = data.get(3);
-            if (maxEnergy > 0) return (int) ((float) energy / maxEnergy * ENERGY_BAR_WIDTH);
-        }
-        return 0;
-    }
 
-    public int getEnergy() {
-        if (data.getCount() > 2) return data.get(2);
-        return 0;
-    }
 
-    public int getMaxEnergy() {
-        if (data.getCount() > 3) return data.get(3);
-        return 100000;
-    }
 
-    public boolean isBurning() {
-        return data.get(0) == 1;
-    }
 
-    public int getBurnTime() {
-        if (data.getCount() > 4) return data.get(4);
-        return 0;
-    }
 
-    public int getBurnDuration() {
-        if (data.getCount() > 5) return data.get(5);
-        return 0;
-    }
+
+    public int getEnergy() { return data.get(3); }
+
+    public int getMaxEnergy() { return data.get(4); }
+
+    public boolean isBurning() { return data.get(0) == 1; }
 
     public mio_icif_Thermal_Generator getBlockEntity() {
         return blockEntity instanceof mio_icif_Thermal_Generator ? (mio_icif_Thermal_Generator) blockEntity : null;
@@ -132,22 +126,6 @@ import org.jetbrains.annotations.Nullable;
         return itemstack;
     }
 
-    @Override
-    public void broadcastChanges() {
-        super.broadcastChanges();
-        if (blockEntity instanceof mio_icif_Thermal_Generator gen) {
-            this.setSyncData(0, gen.isBurning() ? 1 : 0);
-            int burnPixels = 0;
-            if (gen.isBurning() && gen.burnDuration > 0) {
-                burnPixels = Math.max(0, Math.min(13, (int)((float)gen.burnTime / (float)gen.burnDuration * 13)));
-            }
-            this.setSyncData(1, burnPixels);
-            this.setSyncData(2, (int) gen.getEnergyStorage().getAmount());
-            this.setSyncData(3, (int) gen.getEnergyStorage().getCapacity());
-            this.setSyncData(4, gen.burnTime);
-            this.setSyncData(5, gen.burnDuration);
-        }
-    }
 
     @Override
     public boolean stillValid(Player player) {

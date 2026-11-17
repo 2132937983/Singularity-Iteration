@@ -18,7 +18,8 @@ item_ids:
 
 The machine converts lava into EU.
 The machine moves lava from lava buckets and lava cells into an internal tank.
-Each lava block next to the machine adds extra EU output.
+Lava within 2 blocks of the machine adds EU output: a lava block touching a face 1 EU/t, any other within 2 blocks 0.5 EU/t, flowing lava half. The deeper the machine the more: times 1 at Y 64 and above up to 2 at Y −64; times 1.5 in the Nether. At most 12 EU/t from the lava around.
+The screen is a recorder: a borehole log with the depth factor, the lava around as a sum and the tank.
 
 ## Power data
 
@@ -28,7 +29,7 @@ Each lava block next to the machine adds extra EU output.
 | Output | 20 EU/t |
 | Energy storage | 2,400 EU |
 | Fuel: Lava | 2 mB/t → 20 EU/t (10 EU/mB) |
-| Adjacent lava blocks | +1 EU/t each, up to 6 |
+| Lava around (2 blocks) | 1 EU/t touching, 0.5 EU/t further, × depth, at most 12 EU/t |
 
 The game measured these values from the block entity of this version.
 

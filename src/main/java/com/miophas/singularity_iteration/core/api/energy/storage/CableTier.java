@@ -74,10 +74,14 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
 
     // ============ Voltage tier instances ============
     // SCEX clean-room: base cable losses calibrated against 2.8.222-ex112
+    // 0.1.11.29: the losses only apply with lineLossModel=proportional (legacy mode was removed in 0.1.11.32); the default
+    // (lossless) uses them to choose routes only. electricDamage is the old per-touch damage of the non-grid path:
+    // on the independent grid a bare cable hurts within 1.5 blocks by ceil((packet - absorption) / 64) (ShockAccumulator).
+    // Metals since 0.1.11.4: LV tin, MV iron, HV copper, EV gold (the block ids keep the old names).
     // normal placement and saved-energy traces; see R3 grid fixtures/evidence.
     // Insulation does not change the measured loss of the corresponding metal.
 
-    /** LV (Low Voltage): 32 EU/t. Shock damage is 4 points. */
+    /** LV (Low Voltage): packets up to 32 EU. Tin. */
     public static CableTier LV = new CableTier(
         "lv", "LV", "Low Voltage",
         32, 0, 4.0f,
@@ -89,37 +93,37 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.2        // insulatedConductionLoss
     );
 
-    /** MV (Medium Voltage): 128 EU/t. Shock damage is 8 points. */
+    /** MV (Medium Voltage): packets up to 128 EU. Iron (id block_cable / block_cable_o). */
     public static CableTier MV = new CableTier(
         "mv", "MV", "Medium Voltage",
         128, 1, 8.0f,
         129L,
         9001L,
-        32.0,      // bare copper
+        32.0,      // bare MV (iron since 0.1.11.4)
         0.2,
         128.0,
         0.2
     );
 
-    /** HV (High Voltage): 512 EU/t. Shock damage is 18 points. */
+    /** HV (High Voltage): packets up to 512 EU. Copper (id block_gold_cable). */
     public static CableTier HV = new CableTier(
         "hv", "HV", "High Voltage",
         512, 2, 18.0f,
         513L,
         9001L,
-        32.0,      // bare gold
+        32.0,      // bare HV (copper since 0.1.11.4)
         0.4,
         128.0,     // one layer; two layers absorb 512 EU
         0.4
     );
 
-    /** EV (Extreme Voltage): 2048 EU/t. Shock damage is 40 points. */
+    /** EV (Extreme Voltage): packets up to 2048 EU. Gold (id block_iron_cable). */
     public static CableTier EV = new CableTier(
         "ev", "EV", "Extreme Voltage",
         2048, 3, 40.0f,
         2049L,
         9001L,
-        32.0,      // bare iron
+        32.0,      // bare EV (gold since 0.1.11.4)
         0.8,
         128.0,     // one layer; two/three layers absorb 512/2048 EU
         0.8

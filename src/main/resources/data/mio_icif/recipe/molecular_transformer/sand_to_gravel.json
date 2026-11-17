@@ -8,5 +8,8 @@
     "id": "minecraft:gravel"
   },
   "eu_cost": 50000,
-  "duration": 1
+  "duration": 1,
+  "process": {
+    "kind": "lattice"
+  }
 }

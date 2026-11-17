@@ -93,6 +93,11 @@ public final class VoltageHud {
                 lines.add(new String[]{tier + "  " + (r.voltage() > 0 ? DspUi.compact(r.voltage()) + " V" : "0 V") + "   " + String.format("%.2f A", amps), "o"});
                 lines.add(new String[]{DspUi.compact(r.throughput()) + " EU/t  ·  " + Component.translatable("hud.mio_icif.voltage.nodes",
                     r.conductors(), r.endpoints()).getString(), "c"});
+                // 0.1.11.30: the cable in the crosshair itself (the lines above are its whole network)
+                if (r.cableFlow() >= 0) lines.add(new String[]{Component.translatable("hud.mio_icif.voltage.here",
+                    DspUi.compact(r.cableFlow()), DspUi.compact(r.cablePeak())).getString(), r.cableFlow() > 0 ? "o" : "d"});
+                if (r.idleConductors() > 0) lines.add(new String[]{Component.translatable("hud.mio_icif.voltage.idle",
+                    r.idleConductors()).getString(), "r"});
                 if (r.ratedPacket() > 0) lines.add(new String[]{Component.translatable("hud.mio_icif.voltage.rated",
                     com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.tierName(r.ratedPacket()),
                     DspUi.compact(r.ratedPacket())).getString(), r.voltage() > r.ratedPacket() ? "r" : "d"});

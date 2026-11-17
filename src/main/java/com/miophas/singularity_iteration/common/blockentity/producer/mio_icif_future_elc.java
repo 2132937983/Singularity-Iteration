@@ -60,7 +60,9 @@ public class mio_icif_future_elc extends AbstractEnergyBlockEntity implements co
     }
 
     // 数据槽位定义
-    public static final int DATA_COUNT = 126;  // 0.1.10.20: + buy cost, sale payout, market room (121..125)
+    public static final int DATA_COUNT = 127;  // 0.1.10.20: + buy cost, sale payout, market room (121..125); 0.1.11.3: + 126
+    /** 0.1.11.3: the server's commodities per page. The client paged with its own config value and showed others. */
+    public static final int DATA_ITEMS_PER_PAGE = 126;
 public static final int DATA_ENERGY = 0;
     public static final int DATA_MAX_ENERGY = 1;
     public static final int DATA_CURRENT_DAY = 2;
@@ -157,8 +159,10 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         // 检查并执行每日更新
         blockEntity.checkDayUpdate(level);
         
- // 每tick都更新价格历史缓存，确保 GUI 折线图实时显示最新数据
-    blockEntity.updatePriceHistoryCache();
+        // 0.1.11.3: the chart cache is refreshed once a second, or at once when the selection changes. It was rebuilt
+        // every tick, and each rebuild marked the block changed and sent a block update to every tracking player
+        // (the client never used it: the chart reads the menu data).
+        if (level.getGameTime() % 20 == 0 || blockEntity.selectionChanged()) blockEntity.updatePriceHistoryCache();
     }
 
     // ========== 数据同步 ==========
@@ -184,6 +188,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
                 case DATA_SELL_PAYOUT_LOW -> (int) (Math.max(0, quote(false)) & 0xFFFF);
                 case DATA_SELL_PAYOUT_HIGH -> (int) ((Math.max(0, quote(false)) >>> 16) & 0xFFFF);
                 case DATA_MARKET_ROOM -> marketRoom();
+                case DATA_ITEMS_PER_PAGE -> Singularity_Iteration_Config.FUTURE_ITEMS_PER_PAGE.get();
             default -> {
                     // 价格历史数据 (11-50) - 每个价格拆分为高16位和低16位
                 if (index >= DATA_HISTORY_START && index <= DATA_HISTORY_END) {
@@ -466,9 +471,13 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         for (int i = 0; i < Math.min(history.size(), cachedPriceHistory.length); i++) {
             cachedPriceHistory[i] = history.get(i);
         }
-        
-        setChanged();
-        syncToClient();
+        // 0.1.11.3: no setChanged() / block update: the cache is not saved and reaches the client through the menu data
+    }
+
+    /** 0.1.11.3: true when the selected commodity is not the one the chart cache was built for. */
+    private boolean selectionChanged() {
+        FutureCommodity commodity = getSelectedCommodity();
+        return commodity != null && !commodity.getItemId().equals(lastSelectedCommodityId);
     }
     
     // ========== 业务逻辑 - 天数更新 ==========

@@ -256,21 +256,30 @@ public final class Round1141FixGameTests {
         }
         expected.get("hugenerator_block_fluid_heat_generator").add("| " + n(num("huentity.hugenerator.mio_icif_fluid_heat_generator", "FUEL_CAPACITY")) + " mB |");
         String adv = "generator.mio_icif_advanced_semifluid_generator";
-        double advPerMb = num(adv, "ENERGY_PER_BUCKET") / num(adv, "FUEL_PER_BUCKET"), advTick = num(adv, "ENERGY_GENERATION_RATE");
-        expected.put("generator_block_advanced_semifluid_generator", List.of(n(advTick / advPerMb) + " mB/t → " + n(advTick) + " EU/t (" + n(advPerMb) + " EU/mB)"));
+        double advTick = num(adv, "ENERGY_GENERATION_RATE");
+        for (String fluid : List.of("biogas", "biomass", "crudeoil", "dieseloil")) {   // 0.1.11.12: every semifluid fuel, 1.25 x the basic value
+            double advPerMb = ((Number) call(Round33GameTests.common("blockentity." + adv), "euPerMb", BuiltInRegistries.FLUID.get(id(fluid)))).doubleValue();
+            expected.computeIfAbsent("generator_block_advanced_semifluid_generator", k -> new java.util.ArrayList<>())
+                .add(n(advTick / advPerMb) + " mB/t → " + n(advTick) + " EU/t (" + n(advPerMb) + " EU/mB)");
+        }
         String geo = "generator.mio_icif_geo_generator";
         expected.put("generator_block_geo_generator", List.of(n(num(geo, "LAVA_MB_PER_TICK")) + " mB/t → " + n(num(geo, "ENERGY_GENERATION_RATE"))
-            + " EU/t (" + n(num(geo, "EU_PER_MB")) + " EU/mB)", "+" + n(num(geo, "LAVA_BLOCK_ENERGY_RATE")) + " EU/t each, up to 6"));
+            + " EU/t (" + n(num(geo, "EU_PER_MB")) + " EU/mB)",
+            // 0.1.11.19: the lava around it (GeoPhysics)
+            geoRates()));
         String diesel = "generator.mio_icif_diesel_generator";
         double dieselMb = num(diesel, "FUEL_CONSUME_PER_TICK"), dieselEu = num(diesel, "ENERGY_GENERATION_RATE");
         expected.put("generator_block_diesel_generator", List.of(n(dieselMb) + " mB/t → " + n(dieselEu) + " EU/t (" + n(dieselEu / dieselMb) + " EU/mB)"));
         String water = "generator.mio_icif_water_generator";
-        double tank = num(water, "ENERGY_PER_BUCKET") / num(water, "WATER_PER_BUCKET"), face = num(water, "WATER_FACE_GENERATION");
-        expected.put("generator_block_water_generator", List.of("1 mB/t → " + n(tank) + " EU/t (" + n(tank) + " EU/mB)", "+" + n(face) + " EU/t",
-            "up to " + n(tank + face) + " EU/t"));
+        double tank = num(water, "ENERGY_PER_BUCKET") / num(water, "WATER_PER_BUCKET"), face = num(water, "WATER_FACE_GENERATION"),
+            faceMax = num(water, "MAX_FACE_GENERATION");
+        // 0.1.11.18: the water in front gives 2 EU/t at an average current, up to 4 (WaterPhysics)
+        expected.put("generator_block_water_generator", List.of("1 mB/t → " + n(tank) + " EU/t (" + n(tank) + " EU/mB)",
+            n(face) + " EU/t at an average current, up to " + n(faceMax) + " EU/t", "up to " + n(tank + faceMax) + " EU/t"));
         String turbine = "generator.mio_icif_steam_turbine";
         double steamPerEu = num(turbine, "STEAM_PER_EU"), turbineEu = num(turbine, "MAX_OUTPUT");
-        expected.put("generator_block_steam_turbine", List.of(n(steamPerEu * turbineEu) + " mB/t → " + n(turbineEu) + " EU/t (" + n(steamPerEu) + " mB per EU)"));
+        expected.put("generator_block_steam_turbine", List.of(n(steamPerEu * turbineEu) + " mB/t → " + n(turbineEu) + " EU/t (" + n(steamPerEu) + " mB per EU)",
+            n(steamPerEu / 2 * turbineEu) + " mB/t → " + n(turbineEu) + " EU/t (" + n(steamPerEu / 2) + " mB per EU)"));   // 0.1.11.12: superheated
         String exchanger = "huentity.hugenerator.mio_icif_heat_source_fluid";
         double perConductor = num(exchanger, "HEAT_PER_CONDUCTOR"), maxHeat = num(exchanger, "MAX_HEAT_OUTPUT"), huPerMb = num(exchanger, "HU_PER_MB");
         expected.put("hugenerator_block_heat_source_fluid", List.of(n(huPerMb) + " HU per mB", n(perConductor) + " HU/t per Heat Conductor, up to " + n(maxHeat) + " HU/t",
@@ -304,7 +313,7 @@ public final class Round1141FixGameTests {
             String type = "generator.mio_icif_" + turbo;
             var full = BigDecimal.valueOf(num(type, "EU_PER_KU"));
             expected.put("generator_block_" + turbo, List.of(n(full.doubleValue()) + " EU per KU from wind or water kinetic generators, "
-                + n(full.multiply(BigDecimal.valueOf(num(type, "EFFECTIVE_PERCENT_ARTIFICIAL"))).doubleValue()) + " EU per KU from other sources"));
+                + n(num(type, "ARTIFICIAL_EU_PER_KU")) + " EU per KU from other sources"));   // 0.1.11.12
         }
         String boiler = "producer.mio_icif_steam_generator";
         expected.put("producer_block_steam_generator", List.of("1 mB → " + n(num(boiler, "STEAM_EXPANSION")) + " mB", "up to " + n(num(boiler, "MAX_HU_PER_TICK")) + " HU/t",
@@ -393,5 +402,14 @@ public final class Round1141FixGameTests {
             h.assertTrue(biogas == 0, "without power the 5 EU/t recipe made " + biogas + " mB");
             h.succeed();
         });
+    }
+
+    /** 0.1.11.19: the geothermal generator's lava-around line from GeoPhysics (common/energy, outside blockentity). */
+    private static String geoRates() {
+        try {
+            Class<?> gp = Round33GameTests.common("energy.GeoPhysics");
+            double face = gp.getField("FACE").getDouble(null), near = gp.getField("NEAR").getDouble(null), cap = gp.getField("CAP").getDouble(null);
+            return n(face) + " EU/t touching, " + near + " EU/t further, × depth, at most " + n(cap) + " EU/t";
+        } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
     }
 }

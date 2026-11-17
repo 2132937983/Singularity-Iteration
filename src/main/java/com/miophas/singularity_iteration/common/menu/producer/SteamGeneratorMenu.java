@@ -41,14 +41,9 @@ import org.jetbrains.annotations.Nullable;
 
     // The GUI height is 220. The player inventory position follows the original IC2 logic.
     // Inventory Y = 220 - 82 = 138, hotbar Y = 220 - 24 = 196
-    @Override
-    protected int getPlayerInventoryY() { return 138; }
 
     @Override
-    protected int getPlayerHotbarY() { return 196; }
-
-    @Override
-    protected boolean shouldAddPlayerInventory() { return false; }
+    protected boolean shouldAddPlayerInventory() { return true; }   // 0.1.11.16: the mimic screen shows it
 
     @Override
     protected int getDataSlotCount() { return 13; }
@@ -64,7 +59,6 @@ import org.jetbrains.annotations.Nullable;
     public int getOutputMB() { return data.get(8); }
     public int getGaugeHeatScaled76() { return data.get(9); }
     public int getGaugeCalcificationScaled58() { return data.get(10); }
-    public int getGaugeLiquidScaled47() { return data.get(11); }
 
     /** 水槽内实际流体的注册表 ID（0 = 空），供 GUI 渲染真实流体材质。 */
     public int getWaterFluidId() { return data.get(12); }
@@ -84,18 +78,21 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(8, generator.getOutputMB());
             setSyncData(9, generator.gaugeHeatScaled(76));
             setSyncData(10, generator.gaugeCalcificationScaled(58));
-            setSyncData(11, generator.gaugeLiquidScaled(47, 0));
+            setSyncData(11, generator.getOutputTypeOrdinal());
             setSyncData(12, generator.getWaterTank().isEmpty() ? 0
                 : net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(generator.getWaterTank().getFluid().getFluid()));
         }
     }
 
     public String getOutputFluidTranslationKey() {
-        var be = getBlockEntity();
-        if (be != null) {
-            return be.getOutputFluidTranslationKey();
-        }
-        return "";
+        // 0.1.11.16: from the synced data (the client block entity does not know it)
+        return switch (data.get(11)) {
+            case 1 -> "gui.mio_icif.steam_generator.output.water";
+            case 2 -> "gui.mio_icif.steam_generator.output.destiwater";
+            case 3 -> "gui.mio_icif.steam_generator.output.steam";
+            case 4 -> "gui.mio_icif.steam_generator.output.hotsteam";
+            default -> "";
+        };
     }
 
     @Override
@@ -124,4 +121,18 @@ import org.jetbrains.annotations.Nullable;
 
     /** 0.1.10.6: index 0 of the synced data is not a progress. */
     @Override protected int progressDataIndex() { return -1; }
+
+    // 0.1.11.16: the 248 x 204 mimic screen
+    @Override
+    protected int getPlayerInventoryY() { return 122; }
+
+    @Override
+    protected int getPlayerHotbarY() { return 180; }
+
+    @Override
+    protected void addPlayerInventory(net.minecraft.world.entity.player.Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 44 + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 44 + i * 18, hotbarY));
+    }
 }

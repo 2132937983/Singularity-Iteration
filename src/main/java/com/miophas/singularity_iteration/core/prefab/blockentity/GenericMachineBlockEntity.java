@@ -364,6 +364,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
             progress = 0;
             isWorking = true;
             onWorkComplete();
+            countFinishedOperation();   // 0.1.11.3: the work cycle closes and onCycleComplete runs (it never did here)
         } else {
             isWorking = true;
         }

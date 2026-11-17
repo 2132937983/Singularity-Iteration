@@ -113,31 +113,28 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
         return false;
     }
 
+    /** 0.1.11.11: EU made on the last tick (the screen and the energy terminal showed the 30720 rating). */
+    private long lastGenerated;
+
+    @Override
+    public long getPowerOutput() {
+        return lastGenerated;
+    }
+
+    /** 0.1.11.20: the field's disturbance and Kp of the last tick (GeomagPhysics). */
+    private double disturbance, kp;
+    public double getDisturbance() { return disturbance; }
+    public double getKp() { return kp; }
+    public float getSiteRatio() { return level == null ? 0 : getMagneticSource() * cachedBiomeMultiplier(); }
+
     private float getMagneticSource() {
         // 0.1.10.7: a field of 0 is cached as well (before, a generator with no field read up to
         // 20 blocks below it every tick)
         if (sourceValid && currentTick % SOURCE_RECHECK != 0) {
             return lastSourceValue;
         }
-        float source = 1.0f;
-        int seaLevelDelta = getBlockPos().getY() - level.getSeaLevel();
-        if (seaLevelDelta < 0) {
-            source = (float) getBlockPos().getY() / (float) (level.getSeaLevel() + 1);
-        }
-
-        int baseDelta = (getBlockPos().getY() >= 20) ? 20 : getBlockPos().getY();
-        int airBlockCount = 0;
-        for (int i = 0; i < baseDelta; i++) {
-            BlockState tempState = level.getBlockState(getBlockPos().below(i));
-            if (tempState.isAir() || tempState.getBlock() == Blocks.WATER) {
-                airBlockCount++;
-            }
-        }
-        if (baseDelta != 0) {
-            source *= (baseDelta - airBlockCount) / (float) baseDelta;
-        } else {
-            source = 0;
-        }
+        // 0.1.11.11: measured from the bottom of the world; 0.1.11.20: shared with the detector (GeomagPhysics)
+        float source = com.miophas.singularity_iteration.common.energy.GeomagPhysics.source(level, getBlockPos());
         lastSourceValue = source;
         sourceValid = true;
         return source;
@@ -202,6 +199,7 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_geomagnetic_generator blockEntity) {
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(blockEntity);   // 0.1.11.13
         if (level.isClientSide()) return;
 
         boolean wasWorking = blockEntity.shouldMachineWork;
@@ -226,16 +224,27 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
         IEnergyStorageAccess storage = blockEntity.getEnergyStorage();
         boolean isEnergyFull = storage.getAmount() >= storage.getCapacity();
 
+        // 0.1.11.11: "running" only on a tick that made energy (burnTime stayed 1 for good after the first one)
+        blockEntity.burnTime = 0;
+        blockEntity.lastGenerated = 0;
+        long seed = com.miophas.singularity_iteration.common.energy.GeomagPhysics.seed(level);
+        long dayTime = level.getDayTime();
+        double sq = com.miophas.singularity_iteration.common.energy.GeomagPhysics.sq(dayTime);
+        double stormKp = com.miophas.singularity_iteration.common.energy.GeomagPhysics.stormKp(seed, dayTime);
+        blockEntity.disturbance = com.miophas.singularity_iteration.common.energy.GeomagPhysics.disturbanceOf(sq, stormKp);
+        blockEntity.kp = com.miophas.singularity_iteration.common.energy.GeomagPhysics.kpOf(sq, stormKp);
         if (blockEntity.shouldMachineWork && !isEnergyFull) {
             float ratio = blockEntity.getMagneticSource();
             ratio *= blockEntity.cachedBiomeMultiplier();
 
             if ((int)(ratio * 6) > 0) {
-                long scaledGeneration = (long)(ENERGY_GENERATION_RATE * ratio);
+                // 0.1.11.20: times the field's disturbance (the daily variation and storms; it was a constant 1)
+                long scaledGeneration = (long)(ENERGY_GENERATION_RATE * ratio * blockEntity.disturbance);
                 scaledGeneration = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, Math.max(1, scaledGeneration));   // 0.1.8.4 output multiplier
                 long energyToGenerate = Math.min(scaledGeneration, storage.getCapacity() - storage.getAmount());
                 if (energyToGenerate > 0) {
                     storage.generateEnergy(energyToGenerate, false);
+                    blockEntity.lastGenerated = energyToGenerate;
                 }
                 blockEntity.burnTime = 1;
                 blockEntity.burnDuration = 1;
@@ -412,5 +421,11 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
 
     public boolean isStructureComplete() {
         return shouldMachineWork;
+    }
+
+    /** 0.1.11.13: rated output only with the structure complete (an incomplete one counted 30720 EU/t of capacity). */
+    @Override
+    public long ratedOutput() {
+        return shouldMachineWork ? super.ratedOutput() : 0;
     }
 }

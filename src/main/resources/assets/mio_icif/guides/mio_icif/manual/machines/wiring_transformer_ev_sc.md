@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Transformer EV→SC"
+  title: "Transformer EV→IV"
   icon: mio_icif:wiring/transformer_ev_sc
   parent: power.md
   position: 31
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/transformer_ev_sc
 ---
 
-# Transformer EV→SC
+# Transformer EV→IV
 
 <Row>
   <BlockImage id="mio_icif:wiring/transformer_ev_sc" scale="3" />

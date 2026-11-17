@@ -92,8 +92,8 @@ public class mio_icif_block_foam extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // 有伪装时由BER渲染伪装方块，无伪装时用默认模型渲染泡沫
-        return state.getValue(DISGUISED) ? RenderShape.ENTITYBLOCK_ANIMATED : RenderShape.MODEL;
+        // 0.1.11.24: a disguise is drawn by the chunk mesh too (DisguiseModels), not by a block entity renderer
+        return RenderShape.MODEL;
     }
 
     @Nullable
@@ -231,11 +231,12 @@ public class mio_icif_block_foam extends BaseEntityBlock {
         BlockState replacedState = level.getBlockState(pos);
 
         if (replacedState.getBlock() instanceof mio_icif_block_wire) {
-            if (!replacedState.getValue(mio_icif_block_wire.FOAMLOGGED)) {
-                boolean reinforced = this.defaultBlockState().getValue(REINFORCED);
+            if (!mio_icif_block_wire.foamlogged(replacedState)) {
+                // 0.1.11.29: a scaffolded cable keeps its scaffold, and the foam drives the water out
+                boolean reinforced = this.defaultBlockState().getValue(REINFORCED) || mio_icif_block_wire.foamReinforced(replacedState);
                 BlockState newWireState = replacedState
-                    .setValue(mio_icif_block_wire.FOAMLOGGED, true)
-                    .setValue(mio_icif_block_wire.FOAM_REINFORCED, reinforced);
+                    .setValue(mio_icif_block_wire.CASING, com.miophas.singularity_iteration.common.block.wire.WireCasing.foamed(reinforced))
+                    .setValue(mio_icif_block_wire.WATERLOGGED, false);
                 if (!level.isClientSide) {
                     level.setBlockAndUpdate(pos, newWireState);
                     level.playSound(null, pos, SoundEvents.SLIME_BLOCK_PLACE, SoundSource.BLOCKS, 0.8F, 1.2F);

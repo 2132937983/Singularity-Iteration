@@ -238,7 +238,7 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 
 ## 6. 能量（`core.api.energy`）
 
-0.1.8.0 没有改变能量 API 的约定。EU 网络默认使用公平分配（`config/core.ini` 中的 `distributionMode=fair`，或通用配置）。
+0.1.8.0 没有改变能量 API 的约定。EU 网络使用公平分配（0.1.11.32 起是唯一的分配方式，`distributionMode` 已移除）。
 
 1. 用 `EnergyNodeRegistry.register(id, profile)` 注册每个方块的角色。使用 `EnergyNodeProfile.generator(packet)`、`storage(packet)` 或 `consumer()`。
 2. 提供方块能力 `EUApi.SIDED`。对于预制方块实体，调用 `CoreCapabilityRegistration.registerEntity(event, type)`。
@@ -767,7 +767,7 @@ ReactorTransformationRegistry.register(ReactorTransformation.of(
 * 系数：各升级的系数相乘，乘积钳制到 0.25..4。耗时系数乘周期刻数，耗电系数乘每刻 EU，叠加在超频等升级之上；只作用于当前周期，下一周期重新询问。存档保留进行中周期的系数（标签 `scex_work_cycle`，只在系数不为 1 时写入）。
 * `baseTicks` 与 `baseEnergyPerTick` 计入已装升级、不含周期系数。
 * `recipeId`：预制基类新增 `protected @Nullable ResourceLocation currentRecipeId()`（默认空）。打粉机、压缩机、提取机、电炉返回所用配方的标识。周期结束时上下文中是周期开始时取得的标识（周期中途重新加载、或升级在周期中途装入时：结束时机器报告的标识，可能为空）。
-* 结束：每次经 `finishWork()` 完成的操作（奇点迭代所有配方机器）之后，对每个物品堆调用 `onCycleComplete`。超频机器一个周期产出多次时，每次产出各调用一次。
+* 结束：每次经 `finishWork()`（0.1.11.3 起也包括 `countFinishedOperation()`，见 28.1）完成的操作之后，对每个物品堆调用 `onCycleComplete`。超频机器一个周期产出多次时，每次产出各调用一次。（0.1.11.2 写的是“奇点迭代所有配方机器”；机器构建器的通用机器、高炉、炼油厂、分子重组仪、电解机、采矿机并不经 `finishWork()` 完成，周期从不结束。0.1.11.3 修正，见 28.1。）
 * 追加产物在正常产物之后放进输出槽：先叠到相同物品上，再放进空的输出槽。放不下的部分丢弃，追加产物不会让机器等待。若唯一的输出槽被另一种追加物品占据，下一次正常产出会像遇到其他任何物品一样受阻（弹出升级可以把它移走）。
 * 限制：替换了 `tickProduction` 的机器（如泵、复制机、扫描仪）不回调，除非自己调用新增的 `beginWorkCycle()` / `completeWorkCycles(n)`。周期中途重新设定 `maxProgress` 的机器不受耗时系数影响；覆盖 `getEffectiveEnergyPerTick` 且不使用预制值的机器不受耗电系数影响。
 * `IUpgradeItem.onProcessEnd` 标为弃用：没有机器调用它，请改用 `onCycleComplete`。`IUpgradeItem.onTick` 仍没有机器调用。
@@ -810,3 +810,26 @@ public final class SlowCleanUpgrade extends Item implements IWorkCycleUpgrade {
 * 客户端经常规的核心同步得到变化。
 * 奇点迭代自身单元、行动、爆发的花费与行为不变。
 * 实现经现有的 `View` 挂钩装入：`View.trySpendCoherence`、`View.trySpendReserve` 与 `View.addHeat` 是新增的默认方法（不改动、返回假），`View` 的其他实现仍可编译。
+
+## 28. 工作周期修正与奇点迭代实际提供的 API（0.1.11.3）
+
+### 28.1 每台机器的工作周期都会结束
+
+0.1.11.2 中周期只经 `finishWork()` 结束。自己把进度设回 0 来结束一次操作的机器（`GenericMachineBlockEntity`，即 `IMachineBuilderAPI` 的所有机器、高炉与炼油厂，以及分子重组仪、电解机、采矿机）第一个周期永远不关：第一次 `onCycleStart` 的系数作用于之后每次操作并随存档保存，`onCycleComplete` 与 `MachineWorkCompleteEvent` 从不到来，`hold()` 也不会再被询问。
+
+* `AbstractProcessingMachineBlockEntity` 新增 `protected final void countFinishedOperation()`：不调用 `finishWork()` 的机器用它记一次产出了物品的完成。默认调度随后以 `onCycleComplete` 与 `MachineWorkCompleteEvent` 结束周期。`finishWork()` 也调用它。上面列出的奇点迭代机器现在都会调用。
+* 兜底：一次 `doWork()` 中打开的周期进度从大于 0 回到 0、却没有记到完成时，周期结束但不发完成回调（无法确定是否有产出）。基于预制类的附属机器因此不会永远保留系数；要得到完成回调请调用 `countFinishedOperation()`。
+* 机器停止工作（无输入、无配方）以及周期结束时，hold 状态一并结束，空闲机器重新进入休眠（以前 hold 之后一直醒着，直到下一个周期开始）。
+* `IMachineAPI` 的强制启停：强制启动像普通启动一样打开周期（询问升级并投递 `MachineWorkStartEvent`，hold 时机器保持停止）；强制停止结束当前周期。
+* 新增 `protected final void refreshCycleRecipe()`：为当前周期重新取 `currentRecipeId()`。标准机器（`AbstractStandardMachineBlockEntity`）在输入换成另一个有效配方时保留进度；它们在完成前调用此方法，使 `onCycleComplete` 报告实际产出的配方。周期系数不变。
+
+### 28.2 `MachineWorkCompleteEvent`
+
+类文档改为与 27.2 一致：在预制机器中 `getOutput()` 为空，`setOutput` 无效果。原来那个“增加产物数量”的示例实际不起作用，已删除。
+
+### 28.3 已声明但未提供
+
+以下部分只有声明，奇点迭代并不提供。为兼容而保留：查询返回空，监听器永远不会被调用。附属可以为自己的内容注册或投递它们。
+
+* 奇点迭代没有注册提供者的 `IMioIcifCapabilities` 能力：`EU_STORAGE_BLOCK`、`MACHINE_BLOCK`、`GENERATOR_BLOCK`、`EU_STORAGE_ITEM`、`ELECTRIC_ITEM`、`UPGRADE_ITEM`、`REACTOR_COMPONENT`、`TRANSFORMER_BLOCK`、`PIPE_BLOCK`、`ENERGY_CONVERTER_BLOCK`、`WEAPON_ITEM`、`SOLAR_HELMET_ITEM`、`JETPACK_ITEM`、`FLUID_CELL_ITEM`。奇点迭代注册的是 `HEAT_STORAGE_BLOCK` 与 `KINETIC_STORAGE_BLOCK`。替代做法：方块的 EU 用 `EUApi.SIDED`，EU 物品用 `core.api.item` 的物品接口，机器与发电机用 `MioIcifAPI.getMachineAPI()`；机器按 `instanceof IUpgradeItem` 识别升级，不用 `UPGRADE_ITEM`。
+* 从不投递的事件：`GeneratorStartEvent`、`GeneratorStopEvent`、`EnergyGenerationEvent`、`EnergyTransferEvent`，以及（如 27.2 所述）`MachineUpgradeInsertEvent`、`MachineUpgradeRemoveEvent`。

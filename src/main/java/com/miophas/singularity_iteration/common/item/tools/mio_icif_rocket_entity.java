@@ -43,7 +43,7 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
         this.damage = damage;
     }
 
-    /** 0.1.8.4: false for AI shooters (Wingman): the blast breaks no blocks. Not saved. */
+    /** 0.1.8.4: false for AI shooters (Wingman): the blast breaks no blocks. Saved since 0.1.11.3. */
     private boolean terrainDamage = true;
 
     public void setTerrainDamage(boolean terrain) {
@@ -56,21 +56,17 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
 
     @Override
     public void tick() {
-        super.tick();
-        this.life++;
-        if (this.life > this.maxLife) {
-            this.discard();
-            return;
-        }
-
-        if (!this.level().isClientSide) {
+        // 0.1.11.3: the collision check runs before the move. It used to run after super.tick() had already moved the
+        // rocket, and then moved it again (setPos(end)): twice the velocity per tick, with every other segment never
+        // checked, so rockets went through walls and mobs; the client, which moved it once, drifted.
+        if (!this.level().isClientSide && this.life < this.maxLife) {
             Vec3 start = this.position();
             Vec3 velocity = this.getDeltaMovement();
             Vec3 end = start.add(velocity);
 
             BlockHitResult blockHit = this.level().clip(
-                new net.minecraft.world.level.ClipContext(start, end, 
-                    net.minecraft.world.level.ClipContext.Block.COLLIDER, 
+                new net.minecraft.world.level.ClipContext(start, end,
+                    net.minecraft.world.level.ClipContext.Block.COLLIDER,
                     net.minecraft.world.level.ClipContext.Fluid.NONE, this)
             );
 
@@ -111,9 +107,14 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
                 onEntityHit(closestHitEntity);
                 this.discard();
                 return;
-            } else {
-                this.setPos(end);
             }
+        }
+
+        super.tick();   // the one move of this tick
+        this.life++;
+        if (this.life > this.maxLife) {
+            this.discard();
+            return;
         }
 
         if (this.level().isClientSide) {
@@ -124,6 +125,28 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
                 -this.getDeltaMovement().y * velocity * 0.5,
                 -this.getDeltaMovement().z * velocity * 0.5);
         }
+    }
+
+    // 0.1.11.3: the shot's settings are saved. A rocket in a chunk that unloaded came back with the defaults: terrain
+    // damage on and power 5, so a Wingman rocket (no terrain damage) made a TNT-class blast; its life started again.
+    @Override
+    public void addAdditionalSaveData(net.minecraft.nbt.CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putFloat("Damage", damage);
+        tag.putFloat("ExplosionPower", explosionPower);
+        tag.putInt("MaxLife", maxLife);
+        tag.putInt("Life", life);
+        tag.putBoolean("TerrainDamage", terrainDamage);
+    }
+
+    @Override
+    public void readAdditionalSaveData(net.minecraft.nbt.CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (tag.contains("Damage")) damage = tag.getFloat("Damage");
+        if (tag.contains("ExplosionPower")) explosionPower = tag.getFloat("ExplosionPower");
+        if (tag.contains("MaxLife")) maxLife = tag.getInt("MaxLife");
+        if (tag.contains("Life")) life = tag.getInt("Life");
+        if (tag.contains("TerrainDamage")) terrainDamage = tag.getBoolean("TerrainDamage");
     }
 
     protected void onEntityHit(Entity entity) {

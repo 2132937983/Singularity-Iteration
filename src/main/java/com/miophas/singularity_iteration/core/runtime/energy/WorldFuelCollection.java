@@ -45,13 +45,35 @@ public final class WorldFuelCollection {
         return result;
     }
     public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value) {
+        return items(level, pos, range, fuel, value, Integer.MAX_VALUE);
+    }
+    /**
+     * 0.1.11.11: with a fuel limit. At or above it nothing more is taken (the items still drift in and wait), so a
+     * generator with a full storage no longer eats the drops around it for nothing.
+     */
+    public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value, int limit) {
+        return items(level, pos, range, fuel, value, limit, stack -> false, stack -> {});
+    }
+
+    /**
+     * 0.1.11.19: with an incinerator's hooks. An item worth nothing is taken too when {@code takeWorthless} says so (it
+     * burns no fuel), and {@code eaten} hears of every item taken (before the stack shrinks).
+     */
+    public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value, int limit,
+                     java.util.function.Predicate<ItemStack> takeWorthless, java.util.function.Consumer<ItemStack> eaten) {
+        // 0.1.11.22: at the limit nothing would be taken; do not search the world for entities only to skip them all
+        // (the drops then stay where they are instead of being drawn in to wait)
+        if (fuel >= limit) return fuel;
         for (var item : next(level, pos, range, ItemEntity.class)) {
             if (item.isRemoved()) continue;
             if (pos.distToCenterSqr(item.getX(), item.getY(), item.getZ()) <= 1) {
+                if (fuel >= limit) continue;
                 var stack = item.getItem();
                 if (stack.isEmpty()) continue;
-                int credit = FuelAdmission.accepted(fuel, value.applyAsInt(stack), 1);
-                if (credit == 0) continue;
+                int worth = value.applyAsInt(stack);
+                int credit = FuelAdmission.accepted(fuel, worth, 1);
+                if (credit == 0 && !(worth <= 0 && takeWorthless.test(stack))) continue;
+                eaten.accept(stack);
                 var remaining = stack.copy();
                 remaining.shrink(1);
                 item.setItem(remaining);
@@ -62,9 +84,15 @@ public final class WorldFuelCollection {
         return fuel;
     }
     public int experience(ServerLevel level, BlockPos pos, int range, int fuel) {
+        return experience(level, pos, range, fuel, Integer.MAX_VALUE);
+    }
+    /** 0.1.11.11: with a fuel limit, as {@link #items(ServerLevel, BlockPos, int, int, ToIntFunction, int)}. */
+    public int experience(ServerLevel level, BlockPos pos, int range, int fuel, int limit) {
+        if (fuel >= limit) return fuel;   // 0.1.11.22, as items
         for (var orb : next(level, pos, range, ExperienceOrb.class)) {
             if (orb.isRemoved()) continue;
             if (pos.distToCenterSqr(orb.getX(), orb.getY(), orb.getZ()) <= 1) {
+                if (fuel >= limit) continue;
                 // 1.21.1's ordinary public save data stores the merged count separately from getValue().
                 var saved = new CompoundTag();
                 orb.addAdditionalSaveData(saved);

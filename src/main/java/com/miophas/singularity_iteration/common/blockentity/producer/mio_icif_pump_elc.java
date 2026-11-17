@@ -87,7 +87,23 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
     private boolean changing;
     private CompoundTag unmappedLegacy, uncertainRemoval;
     private MachineActionOwner actionOwner = MachineActionOwner.legacy(LEGACY_ACTOR);
-    private final int[] clientData = new int[7];
+    private final int[] clientData = new int[DATA_COUNT];
+
+    // ---- 0.1.11.7: survey, discharge, keep level, waterlogged switch, comparator
+    public static final int MODE_PUMP = 0, MODE_DISCHARGE = 1;
+    public static final int TARGET_MIN = -24, TARGET_MAX = 8;
+    /** Menu data slots (see {@link #getContainerData()}). */
+    public static final int DATA_COUNT = 35;
+    public static final int FLAG_INFINITE = 1, FLAG_CAPPED = 2, FLAG_SCANNING = 4, FLAG_HOLD = 8, FLAG_NO_BUCKET = 16,
+        FLAG_NO_PLACE = 32, FLAG_BASIN_FULL = 64, FLAG_TANK_FULL = 128, FLAG_NO_BODY = 256;
+    /** Ticks between two surveys of the same body. */
+    public static final int SURVEY_PERIOD = 100;
+    private int mode = MODE_PUMP, keepBuckets, targetOffset;
+    private boolean includeWaterlogged = true;
+    private final PumpSurvey survey = new PumpSurvey();
+    private long surveyRetryAt;
+    private int peak, lastSignal = -1, statusFlags;
+    @Nullable private BlockPos activeCell;
 
     public mio_icif_pump_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.PUMP_ELC_ENTITY_TYPE.get());
@@ -100,13 +116,19 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
             @Override public int getTanks() { return 1; }
             @Override public FluidStack getFluidInTank(int index) { check(index); return tank.getFluid().copy(); }
             @Override public int getTankCapacity(int index) { check(index); return FLUID_CAPACITY; }
-            @Override public boolean isFluidValid(int index, FluidStack fluid) { check(index); return false; }
-            @Override public int fill(FluidStack fluid, FluidAction action) { return 0; }
+            @Override public boolean isFluidValid(int index, FluidStack fluid) { check(index); return discharging(); }
+            // 0.1.11.7: when discharging, pipes fill the tank and nothing drains it
+            @Override public int fill(FluidStack fluid, FluidAction action) {
+                if (!discharging() || !mayTransfer() || fluid.isEmpty()) return 0;
+                int accepted = tank.fill(fluid, action);
+                if (accepted > 0 && action.execute()) ContainerToTank.markUnsaved(mio_icif_pump_elc.this);
+                return accepted;
+            }
             @Override public FluidStack drain(FluidStack fluid, FluidAction action) {
-                return mayTransfer() ? tank.drain(fluid, action) : FluidStack.EMPTY;
+                return mayTransfer() && !discharging() ? tank.drain(fluid, action) : FluidStack.EMPTY;
             }
             @Override public FluidStack drain(int amount, FluidAction action) {
-                return mayTransfer() ? tank.drain(amount, action) : FluidStack.EMPTY;
+                return mayTransfer() && !discharging() ? tank.drain(amount, action) : FluidStack.EMPTY;
             }
         };
     }
@@ -139,18 +161,23 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
      * <p>注意：这里只做“类型”判定，<b>是否水源</b>由调用方用 {@code getFluidState().isSource()} 单独判断，
      * 否则流动水会被误判为不可通行，搜索将无法沿水流爬向水源。
      */
-    private static Fluid sourceFluid(BlockState state) {
-        if (!(state.getBlock() instanceof BucketPickup)) return Fluids.EMPTY;
+    private Fluid sourceFluid(BlockState state) {
+        if (!(state.getBlock() instanceof BucketPickup) || !fluidBlockAllowed(state)) return Fluids.EMPTY;
         var fluidState = state.getFluidState();
         if (fluidState.isEmpty()) return Fluids.EMPTY;
         return fluidState.getType();
+    }
+    /** 0.1.11.7: waterlogged blocks (stairs, slabs, ...) count only while the switch allows them. */
+    private boolean fluidBlockAllowed(BlockState state) {
+        return includeWaterlogged || state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock
+            || !state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
     }
     /**
      * 复刻 IC2 {@code PumpUtil.getFlowDecay}：水源/可抽取流体方块 = 0，流动液按液位换算为 1..7，
      * 非流体方块 = -1。
      */
     private int flowDecay(BlockState state, BlockPos pos) {
-        if (!(state.getBlock() instanceof BucketPickup)) return -1;
+        if (!(state.getBlock() instanceof BucketPickup) || !fluidBlockAllowed(state)) return -1;
         var fluidState = state.getFluidState();
         if (fluidState.isEmpty()) return -1;
         if (fluidState.isSource()) return 0;
@@ -326,12 +353,23 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
             && tank.fill(new FluidStack(fluid, amount), IFluidHandler.FluidAction.SIMULATE) == amount;
     }
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_pump_elc pump) {
+        // 0.1.11.3: a removal left open by an exception (or saved in the middle of one) is closed without a credit
+        // instead of holding the pump for good, across reloads and when wrenched
+        if (pump.uncertainRemoval != null && !pump.changing) { pump.uncertainRemoval = null; ContainerToTank.markUnsaved(pump); }
         if (!pump.operational() || pump.hasHeldState() || !pump.actionOwner.canAct()) return;
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, pump);
         pump.setLit(pump.isWorking);
+        pump.surveyTick();
+        if (level.getGameTime() % 10 == 0) {
+            int signal = pump.comparatorSignal();
+            if (signal != pump.lastSignal) { pump.lastSignal = signal; level.updateNeighbourForOutputSignal(pos, state.getBlock()); }
+        }
     }
     @Override protected void tickProduction() {
         stopWork();
+        if (discharging()) { dischargeTick(); return; }
+        statusFlags &= ~(FLAG_HOLD | FLAG_TANK_FULL);
+        if (tank.getFluidAmount() > FLUID_CAPACITY - FLUID_PER_OPERATION) statusFlags |= FLAG_TANK_FULL;
         if (!mayTransfer() || lastCompletion == currentTick()
                 || tank.getFluidAmount() > FLUID_CAPACITY - FLUID_PER_OPERATION) return;
         long cost = getEffectiveEnergyPerTick();
@@ -341,9 +379,14 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         if (!handlerSource) {
             if (!findSource()) return;
             if (!room(cachedFluid, FLUID_PER_OPERATION)) { forgetSearch(true); return; }
+            // 0.1.11.7: keep a set number of buckets in a pool that does not refill itself
+            if (keepBuckets > 0 && survey.hasResult() && survey.resultKind() == PumpSurvey.Kind.POOL && !survey.infinite()
+                    && !survey.capped() && survey.count() <= keepBuckets) { statusFlags |= FLAG_HOLD; return; }
         }
         if (paidWork >= DEFAULT_WORK_TIME) {
+            BlockPos taken = cachedSource;
             boolean done = handlerSource ? collectFromFrontHandler() : collect(cachedSource, cachedFluid);
+            if (done && !handlerSource) { survey.tookOne(); activeCell = taken; }
             forgetSearch(!done); return;
         }
         changing = true;
@@ -396,7 +439,7 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
 
     /** The pump owns removal and output together; callers must never remove the source again. */
     public boolean tryCollectForMiner(mio_icif_miner_elc miner, BlockPos pos) {
-        if (!mayTransfer() || !(level instanceof ServerLevel server) || miner.getLevel() != server
+        if (discharging() || !mayTransfer() || !(level instanceof ServerLevel server) || miner.getLevel() != server
                 || !actionOwner.canShareAutomationWith(miner.getActionOwner())
                 || !available(server, miner.getBlockPos()) || server.getBlockEntity(miner.getBlockPos()) != miner
                 || worldPosition.distManhattan(miner.getBlockPos()) != 1 || !canWorkRedstone()
@@ -446,7 +489,10 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
             if (result.getItem() instanceof BucketItem bucket && bucket.content == fluid && result.getCount() == 1) {
                 return available(server, pos) && sourceState(pos) != expected;
             }
-            if (result.isEmpty() && available(server, pos) && sourceState(pos) == expected) uncertainRemoval = null;
+            // 0.1.11.3: the pickup has returned, so nothing is uncertain any more. Either the source is still there
+            // (nothing happened) or another mod's pickup took it without the matching bucket; no fluid is credited for
+            // that. The flag used to stay set when the result was not empty, and a pump with the flag never ticked again.
+            uncertainRemoval = null;
             ContainerToTank.markUnsaved(this); return false;
         } finally {
             actor.setItemInHand(InteractionHand.MAIN_HAND, oldHand);
@@ -472,7 +518,8 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
     @Override protected boolean canExtractItem(int slot, @Nullable Direction side) { return slot == SLOT_OUTPUT; }
     @Override public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (slot == SLOT_EMPTY_CONTAINER) return stack.is(Items.BUCKET) || mio_icif_cells.isEmptyCell(stack);
+        if (slot == SLOT_EMPTY_CONTAINER) return discharging() ? filledContent(stack) != null
+            : stack.is(Items.BUCKET) || mio_icif_cells.isEmptyCell(stack);
         if (slot == SLOT_BATTERY) return isBattery(stack);
         if (slot >= SLOT_UPGRADE_START && slot < SLOT_UPGRADE_END) {
             var type = getItemAPI().getUpgradeType(stack); return type != null && !type.isEmpty();
@@ -480,6 +527,7 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         return false;
     }
     @Override protected void onTick() {
+        if (discharging()) { emptyContainerIntoTank(); return; }
         if (!mayTransfer() || tank.getFluidAmount() < FLUID_PER_OPERATION) return;
         var input = itemHandler.getStackInSlot(SLOT_EMPTY_CONTAINER);
         if (input.isEmpty()) return;
@@ -513,8 +561,8 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
     @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) { return new PumpElcMenu(id, inventory, this); }
     public ContainerData getContainerData() {
         return new ContainerData() {
-            private void check(int i) { if (i < 0 || i >= 7) throw new IndexOutOfBoundsException(i); }
-            @Override public int getCount() { return 7; }
+            private void check(int i) { if (i < 0 || i >= DATA_COUNT) throw new IndexOutOfBoundsException(i); }
+            @Override public int getCount() { return DATA_COUNT; }
             @Override public int get(int i) {
                 check(i); if (level != null && level.isClientSide()) return clientData[i];
                 return switch (i) {
@@ -522,17 +570,230 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
                     case 2 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getAmount());
                     case 3 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getCapacity());
                     case 4 -> getFluidAmount(); case 5 -> FLUID_CAPACITY;
-                    default -> tank.isEmpty() ? -1 : BuiltInRegistries.FLUID.getId(tank.getFluid().getFluid());
+                    case 6 -> tank.isEmpty() ? -1 : BuiltInRegistries.FLUID.getId(tank.getFluid().getFluid());
+                    case 7 -> mode; case 8 -> keepBuckets; case 9 -> includeWaterlogged ? 1 : 0; case 10 -> targetOffset;
+                    case 11 -> survey.hasResult() ? survey.count() : -1;
+                    case 12 -> currentFlags();
+                    case 13 -> activeCell == null ? Integer.MIN_VALUE : activeCell.getY() - worldPosition.getY();
+                    case 14 -> Math.max(1, getProgressPerTick());
+                    case 15 -> peak;
+                    case 16 -> survey.hasResult() ? survey.filled() : 0;
+                    case 17 -> survey.pumpColumn() | (activeCell == null || !survey.hasResult() ? 0xFF00 : survey.columnOf(activeCell) << 8);
+                    case 18 -> surveyFluidId();
+                    // 19..26: the 32 lowest-block bytes, 27..34: the 32 highest-block bytes (4 per int)
+                    default -> packed(i < 27 ? survey.low() : survey.high(), (i < 27 ? i - 19 : i - 27) * 4);
                 };
             }
             @Override public void set(int i, int value) { check(i); clientData[i] = value; }
         };
     }
+    private static int packed(byte[] bytes, int from) {
+        int v = 0;
+        for (int k = 0; k < 4; k++) v |= (bytes[from + k] & 0xFF) << (8 * k);
+        return v;
+    }
+    private int surveyFluidId() {
+        // discharging: the tank's fluid, or the one last poured once the tank is dry (the basin stays in view)
+        if (discharging() && !tank.isEmpty()) return BuiltInRegistries.FLUID.getId(tank.getFluid().getFluid());
+        return surveyFluid == Fluids.EMPTY ? -1 : BuiltInRegistries.FLUID.getId(surveyFluid);
+    }
+    private int currentFlags() {
+        int f = statusFlags;
+        if (!survey.hasResult()) f |= survey.running() ? FLAG_SCANNING : FLAG_NO_BODY;
+        else {
+            if (survey.infinite()) f |= FLAG_INFINITE;
+            if (survey.capped()) f |= FLAG_CAPPED;
+        }
+        return f;
+    }
+
+    // ------------------------------------------------------------------ 0.1.11.7: survey, discharge, settings
+
+    private Fluid surveyFluid = Fluids.EMPTY;
+
+    public boolean discharging() { return mode == MODE_DISCHARGE; }
+
+    /** Starts or advances the survey of the pool (pumping) or the basin (discharging). */
+    private void surveyTick() {
+        if (!(level instanceof ServerLevel server)) return;
+        long now = server.getGameTime();
+        if (survey.running()) {
+            if (survey.step(server, now)) afterSurvey();
+            return;
+        }
+        // an empty result (a pool caught while it changed) is checked again after a second, a full one every five
+        if (survey.hasResult() && now - survey.finishedAt() < (survey.count() == 0 && survey.filled() == 0 ? 20 : SURVEY_PERIOD)) return;
+        if (now < surveyRetryAt) return;
+        Direction facing = getFacing();
+        if (discharging()) {
+            // the basin stays in view after the tank runs dry (with the fluid it last held)
+            Fluid poured = tank.isEmpty() ? surveyFluid : tank.getFluid().getFluid();
+            if (poured == Fluids.EMPTY) { survey.clear(); surveyRetryAt = now + 20; return; }
+            var box = forwardRangeBox();
+            int target = worldPosition.getY() + targetOffset;
+            survey.startBasin(worldPosition, facing, worldPosition.relative(facing), poured, target,
+                worldPosition.getY() - 32, (int) box.minX, (int) box.maxX - 1, (int) box.minZ, (int) box.maxZ - 1);
+            surveyFluid = poured;
+            return;
+        }
+        BlockPos seed = cachedSource != null ? cachedSource : findSourceInRange();
+        Fluid fluid = seed == null ? Fluids.EMPTY : sourceFluid(sourceState(seed));
+        if (fluid == Fluids.EMPTY) {
+            survey.clear(); surveyFluid = Fluids.EMPTY; peak = 0;
+            surveyRetryAt = now + 40 + Math.floorMod(worldPosition.asLong(), 7);
+            return;
+        }
+        if (fluid != surveyFluid) peak = 0;
+        surveyFluid = fluid;
+        survey.startPool(worldPosition, facing, seed, fluid, this::fluidBlockAllowed);
+    }
+
+    private void afterSurvey() {
+        if (survey.resultKind() == PumpSurvey.Kind.POOL) {
+            if (survey.count() == 0) peak = 0;
+            else peak = Math.max(peak, survey.count());
+        } else {
+            peak = survey.count() + survey.filled();
+            statusFlags = survey.count() == 0 ? statusFlags | FLAG_BASIN_FULL : statusFlags & ~FLAG_BASIN_FULL;
+        }
+    }
+
+    /** Discharge: pays the work like pumping, then pours one bucket into the lowest free cell of the basin. */
+    private void dischargeTick() {
+        statusFlags &= ~(FLAG_NO_BUCKET | FLAG_HOLD | FLAG_TANK_FULL);
+        if (!mayTransfer() || lastCompletion == currentTick() || tank.getFluidAmount() < FLUID_PER_OPERATION) return;
+        Fluid fluid = tank.getFluid().getFluid();
+        if (!(fluid.getBucket() instanceof BucketItem)) { statusFlags |= FLAG_NO_BUCKET; return; }
+        if (!survey.hasResult() || survey.resultKind() != PumpSurvey.Kind.BASIN) return;
+        int target = worldPosition.getY() + targetOffset;
+        BlockPos cell = survey.nextFree(p -> freeCell(p, fluid, target));
+        if (cell == null) { statusFlags |= FLAG_BASIN_FULL; return; }
+        statusFlags &= ~FLAG_BASIN_FULL;
+        long cost = getEffectiveEnergyPerTick();
+        if (paidWork < DEFAULT_WORK_TIME) {
+            if (cost <= 0 || energyStorage.consumeEnergyInternal(cost, true) != cost) return;
+            changing = true;
+            try {
+                if (energyStorage.consumeEnergyInternal(cost, false) != cost) return;
+                paidWork += Math.min(DEFAULT_WORK_TIME - paidWork, Math.max(1, getProgressPerTick()));
+                progress = paidWork; isWorking = true; ContainerToTank.markUnsaved(this);
+            } finally { changing = false; }
+            return;
+        }
+        changing = true;
+        try {
+            if (!pour(cell, fluid)) { survey.usedFree(); statusFlags |= FLAG_NO_PLACE; return; }
+            statusFlags &= ~FLAG_NO_PLACE;
+            tank.drain(FLUID_PER_OPERATION, IFluidHandler.FluidAction.EXECUTE);
+            survey.usedFree(); survey.filledOne(); activeCell = cell;
+            paidWork -= DEFAULT_WORK_TIME; progress = paidWork; lastCompletion = currentTick();
+            ContainerToTank.markUnsaved(this);
+        } finally { changing = false; }
+    }
+
+    private boolean freeCell(BlockPos p, Fluid fluid, int target) {
+        if (!(level instanceof ServerLevel server) || !available(server, p) || p.getY() > target) return false;
+        BlockState state = server.getBlockState(p);
+        var fs = state.getFluidState();
+        if (!fs.isEmpty()) return fs.getType().isSame(fluid) && !fs.isSource();
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) return false;
+        return state.isAir() || state.canBeReplaced(fluid);
+    }
+
+    /** Pours one bucket at {@code cell} as a player emptying a bucket would, after the claim and protection checks. */
+    protected boolean pour(BlockPos cell, Fluid fluid) {
+        if (!(level instanceof ServerLevel server) || !(fluid.getBucket() instanceof BucketItem bucket)) return false;
+        var actor = FakePlayerFactory.get(server, actionOwner.actorProfile());
+        if (server.getServer().isUnderSpawnProtection(server, cell, actor)) return false;
+        var snapshot = net.neoforged.neoforge.common.util.BlockSnapshot.create(server.dimension(), server, cell);
+        var event = new BlockEvent.EntityPlaceEvent(snapshot, server.getBlockState(cell.below()), actor);
+        if (NeoForge.EVENT_BUS.post(event).isCanceled()) return false;
+        var oldPosition = actor.position();
+        try {
+            actor.setPos(cell.getX() + .5, cell.getY() + .5, cell.getZ() + .5);
+            return bucket.emptyContents(actor, server, cell, null, new ItemStack(bucket));
+        } finally {
+            actor.setPos(oldPosition.x, oldPosition.y, oldPosition.z);
+        }
+    }
+
+    /** The fluid in a filled bucket or cell (1 bucket), or null. */
+    @Nullable
+    private static FluidStack filledContent(ItemStack stack) {
+        if (stack.getItem() instanceof BucketItem bucket && bucket.content != Fluids.EMPTY) return new FluidStack(bucket.content, FLUID_PER_OPERATION);
+        if (!stack.isEmpty() && !mio_icif_cells.isEmptyCell(stack)) {
+            var content = mio_icif_cells.getCellFluid(stack.copyWithCount(1));
+            if (!content.isEmpty()) return content;
+        }
+        return null;
+    }
+
+    /** Discharge: a filled bucket or cell in the container slot is emptied into the tank; the empty one goes out. */
+    private void emptyContainerIntoTank() {
+        if (!mayTransfer()) return;
+        var input = itemHandler.getStackInSlot(SLOT_EMPTY_CONTAINER);
+        FluidStack content = filledContent(input);
+        if (content == null) return;
+        ItemStack empty = input.getItem() instanceof BucketItem ? new ItemStack(Items.BUCKET) : new ItemStack(mio_icif_cells.CELL_EMPTY.get());
+        changing = true;
+        try { ContainerToTank.transfer(itemHandler, SLOT_EMPTY_CONTAINER, SLOT_OUTPUT, tank, content, empty); }
+        finally { changing = false; }
+    }
+
+    /**
+     * Redstone comparator: pumping, the share of the pool still there (15 for a pool that refills or is too large to
+     * count, 0 when there is none); discharging, the share of the basin already full.
+     */
+    public int comparatorSignal() {
+        if (!survey.hasResult()) return 0;
+        if (survey.resultKind() == PumpSurvey.Kind.BASIN) {
+            int total = survey.count() + survey.filled();
+            return total <= 0 ? 15 : (int) Math.ceil(15.0 * survey.filled() / total);
+        }
+        if (survey.infinite() || survey.capped()) return 15;
+        if (survey.count() <= 0 || peak <= 0) return 0;
+        return Math.max(1, (int) Math.ceil(15.0 * survey.count() / peak));
+    }
+
+    /** Menu buttons: 0 mode, 1 waterlogged switch, 2/3 keep -/+1, 4/5 keep -/+10, 6/7 keep -/+100, 8/9 target -/+1. */
+    public boolean handleButton(int id) {
+        switch (id) {
+            case 0 -> { mode = discharging() ? MODE_PUMP : MODE_DISCHARGE; restartWork(); }
+            case 1 -> { includeWaterlogged = !includeWaterlogged; restartWork(); }
+            case 2, 3, 4, 5, 6, 7 -> {
+                int step = id < 4 ? 1 : id < 6 ? 10 : 100;
+                keepBuckets = Math.max(0, Math.min(PumpSurvey.CAP, keepBuckets + (id % 2 == 0 ? -step : step)));
+            }
+            case 8, 9 -> { targetOffset = Math.max(TARGET_MIN, Math.min(TARGET_MAX, targetOffset + (id == 8 ? -1 : 1))); survey.clear(); }
+            default -> { return false; }
+        }
+        ContainerToTank.markUnsaved(this);
+        setChanged();
+        return true;
+    }
+
+    private void restartWork() {
+        forgetSearch(false);
+        survey.clear();
+        surveyFluid = Fluids.EMPTY;
+        peak = 0;
+        activeCell = null;
+        statusFlags = 0;
+        surveyRetryAt = 0;
+    }
+
+    public int getMode() { return mode; }
+    public int getKeepBuckets() { return keepBuckets; }
+    public int getTargetOffset() { return targetOffset; }
+    public boolean includesWaterlogged() { return includeWaterlogged; }
+    public PumpSurvey getSurvey() { return survey; }
     @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         var own = new CompoundTag(); own.putInt("PaidWork", paidWork);
         own.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
         own.put("ActionOwner", actionOwner.save());
+        own.putInt("Mode", mode); own.putInt("Keep", keepBuckets); own.putInt("Target", targetOffset);
+        own.putBoolean("Waterlogged", includeWaterlogged);
         if (unmappedLegacy != null) own.put("UnmappedLegacy", unmappedLegacy.copy());
         if (uncertainRemoval != null) own.put("UncertainRemoval", uncertainRemoval.copy());
         tag.put(SAVE_KEY, own);
@@ -545,6 +806,11 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         if (tag.contains(SAVE_KEY, Tag.TAG_COMPOUND)) {
             var own = tag.getCompound(SAVE_KEY);
             actionOwner = MachineActionOwner.load(own, "ActionOwner", LEGACY_ACTOR);
+            mode = own.getInt("Mode") == MODE_DISCHARGE ? MODE_DISCHARGE : MODE_PUMP;
+            keepBuckets = Math.max(0, Math.min(PumpSurvey.CAP, own.getInt("Keep")));
+            targetOffset = Math.max(TARGET_MIN, Math.min(TARGET_MAX, own.getInt("Target")));
+            includeWaterlogged = !own.contains("Waterlogged") || own.getBoolean("Waterlogged");
+            survey.clear(); peak = 0; activeCell = null; statusFlags = 0;
             if (!own.contains("PaidWork", Tag.TAG_INT) || own.getInt("PaidWork") < 0 || own.getInt("PaidWork") > DEFAULT_WORK_TIME
                     || !own.contains("Tank", Tag.TAG_COMPOUND)
                     || own.contains("UnmappedLegacy") && !own.contains("UnmappedLegacy", Tag.TAG_COMPOUND)

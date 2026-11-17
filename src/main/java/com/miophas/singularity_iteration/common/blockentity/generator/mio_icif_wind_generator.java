@@ -95,44 +95,53 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implem
      * - 当21≤s≤30时，有(30-s)%的概率使强度+1
      */
     private void updateWindStrength() {
-        int s = windStrength;
-        
-        // 计算概率（使用1~1000的整数表示0.0%~100.0%，精确0.1%）
-        // 使用level的随机数生成器（线程安全）
-        int rand = level != null ? level.random.nextInt(1000) : 0;
-        
-        // 当0≤s≤20时，有10%的概率使强度+1
-        if (s >= 0 && s <= 20) {
-            if (rand < 100) { // 10% = 100/1000
-                windStrength = Math.min(MAX_WIND_STRENGTH, s + 1);
-                return;
+        // 0.1.11.9: the dimension's wind field (the same as the kinetic wind generator and the wind meter); this machine
+        // used to walk its own random wind, so two generators side by side showed different winds
+        if (!(level instanceof net.minecraft.server.level.ServerLevel server)) return;
+        var sim = com.miophas.singularity_iteration.core.runtime.world.WindSim.get(server);
+        windStrength = Math.max(MIN_WIND_STRENGTH, sim.getWindStrength());
+        windBearing = sim.getWindDirection();
+        rose.add(windBearing, (int) sim.getWindAt(worldPosition.getY() + 0.5));
+    }
+
+    // ---- 0.1.11.9: the wind rose and the menu data
+    private int windBearing;
+    private final com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindRoseBuffer rose =
+        new com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindRoseBuffer();
+    public static final int DATA_COUNT = 18;
+
+    /** The height where output starts: one block above the dimension's sea level (64 in the overworld). */
+    public int baseHeight() {
+        return level == null ? MIN_Y_FOR_GENERATION : level.getSeaLevel() + 1;
+    }
+
+    /** Weather factor of the wind field: rain 1.25, thunder 1.5. */
+    private double weather() {
+        if (level == null) return 1.0;
+        return level.isThundering() ? 1.5 : level.isRaining() ? 1.25 : 1.0;
+    }
+
+    /** Menu data: generating, output, wind, bearing, effective height, obstacles, base height, weather x100, rose (10..17). */
+    public net.minecraft.world.inventory.ContainerData getContainerData() {
+        return new net.minecraft.world.inventory.ContainerData() {
+            @Override public int getCount() { return DATA_COUNT; }
+            @Override public void set(int i, int v) { }
+            @Override public int get(int i) {
+                return switch (i) {
+                    case 0 -> isGenerating ? 1 : 0;
+                    case 1 -> (int) currentEnergyOutput;
+                    case 2 -> windStrength;
+                    case 3 -> windBearing;
+                    case 4 -> effectiveHeight;
+                    case 5 -> obstacleCount;
+                    case 6 -> baseHeight();
+                    case 7 -> (int) Math.round(weather() * 100);
+                    case 8 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getAmount());
+                    case 9 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getCapacity());
+                    default -> rose.data(i - 10);
+                };
             }
-        }
-        
-        // 当20≤s≤30时，有10%的概率使强度-1
-        if (s >= 20 && s <= 30) {
-            if (rand < 100) { // 10% = 100/1000
-                windStrength = Math.max(MIN_WIND_STRENGTH, s - 1);
-                return;
-            }
-        }
-        
-        // 当0≤s≤9时，有s%的概率使强度-1
-        if (s >= 0 && s <= 9) {
-            if (rand < s * 10) { // s% = s*10/1000
-                windStrength = Math.max(MIN_WIND_STRENGTH, s - 1);
-                return;
-            }
-        }
-        
-        // 当21≤s≤30时，有(30-s)%的概率使强度+1
-        if (s >= 21 && s <= 30) {
-            int prob = (30 - s) * 10; // (30-s)% = (30-s)*10/1000
-            if (rand < prob) {
-                windStrength = Math.min(MAX_WIND_STRENGTH, s + 1);
-                return;
-            }
-        }
+        };
     }
 
     /**
@@ -180,9 +189,8 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implem
      */
     private int calculateEnergyOutput(Level level, BlockPos pos) {
         int y = pos.getY();
-        
-        // y<64时无法发电
-        if (y < MIN_Y_FOR_GENERATION) {
+        int base = baseHeight();   // 0.1.11.9: the dimension's sea level + 1 (was always 64)
+        if (y < base) {
             this.effectiveHeight = 0;
             return 0;
         }
@@ -194,22 +202,15 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implem
         this.effectiveHeight = y - obstacleCount;
         
         // 有效高度小于64时无法发电
-        if (effectiveHeight < MIN_Y_FOR_GENERATION) {
+        if (effectiveHeight < base) {
             return 0;
         }
         
         // 获取天气系数
-        double weatherFactor;
-        if (level.isThundering()) {
-            weatherFactor = 1.5; // 雷雨天
-        } else if (level.isRaining()) {
-            weatherFactor = 1.2; // 雨天
-        } else {
-            weatherFactor = 1.0; // 晴天
-        }
+        double weatherFactor = weather();   // 0.1.11.9: rain 1.25 like the wind field (was 1.2)
         
         // 计算发电量：p = w * s * (h - 64) / 750
-        double output = weatherFactor * windStrength * (effectiveHeight - MIN_Y_FOR_GENERATION) / 750.0;
+        double output = weatherFactor * windStrength * (effectiveHeight - base) / 750.0;
         
         // 返回整数发电量，负数视为0
         return Math.max(0, (int) Math.round(output));

@@ -37,8 +37,10 @@ import net.neoforged.bus.api.ICancellableEvent;
  *     }
  * }
  * }</pre>
+ *
+ * <p><b>0.1.11.3: not posted.</b> SI declares this event but no SI code posts it, so a listener is never called. It is
+ * kept for compatibility; an addon may post it for its own blocks. (API guide §28.3.)
  */
-
 public class GeneratorStartEvent extends Event implements ICancellableEvent {
 
     private final Level world;

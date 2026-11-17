@@ -93,6 +93,7 @@ public class ArmorShowcaseBlock extends BaseEntityBlock {
         if (stack.isEmpty() || !(level.getBlockEntity(pos) instanceof ArmorShowcaseBlockEntity showcase))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (level.isClientSide) return ItemInteractionResult.SUCCESS;
+        showcase.claim(player);
         return showcase.useItem(player, hand, stack) ? ItemInteractionResult.CONSUME : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
@@ -100,10 +101,17 @@ public class ArmorShowcaseBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof ArmorShowcaseBlockEntity showcase)) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
+        showcase.claim(player);
         // 0.1.10.31 (A-3): a side of the base plate switches the display mode; the top keeps turning the mannequin
         if (sideSwitches(hit.getDirection(), player.isShiftKeyDown())) showcase.toggleDisplay(player);
         else showcase.useEmptyHand(player);
         return InteractionResult.CONSUME;
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @org.jetbrains.annotations.Nullable net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.isClientSide && placer instanceof Player player && level.getBlockEntity(pos) instanceof ArmorShowcaseBlockEntity showcase) showcase.claim(player);
     }
 
     /** 0.1.10.31: an empty-hand use on a side face (not sneaking) switches the display mode. */

@@ -69,6 +69,26 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
     public static final int STATUS_WEAK_WIND = 2;
     public static final int STATUS_GENERATING = 3;
     public static final int STATUS_OVERLOAD = 4;
+    /** 0.1.11.9: storm protection has feathered the rotor (wind above its maximum; no output, no wear). */
+    public static final int STATUS_FEATHERED = 5;
+
+    // ---- 0.1.11.9: wind direction, wake, storm protection, the wind rose
+    /** Menu data slots (see {@link #getContainerData()}). */
+    public static final int DATA_COUNT = 19;
+    private int windBearing, rawWind;
+    private double facingFactor = 1, wakeFactor = 1, obstructionFactor = 1;
+    /** Distance in blocks to the nearest turbine in front of this rotor (-1 none). */
+    private int nearestTurbine = -1;
+    /** 0.1.11.22: updates between full space scans (4 × 32 ticks), and the cached result of the last scan. */
+    static final int RESCAN_UPDATES = 3;
+    private int scanUpdatesLeft = 0;
+    private int scanDiameter = -1;
+    private int scannedObstruction = 0;
+    @Nullable private Direction scanFacing;
+    private boolean phased;
+    /** New machines start protected; machines saved before 0.1.11.9 keep running in storms as they did. */
+    private boolean stormProtection = true;
+    private final WindRoseBuffer rose = new WindRoseBuffer();
 
     // 当前有效风力强度（经全局风场、高度系数与遮挡比例修正后的 MCU 值）
     private int windStrength = 0;
@@ -76,6 +96,9 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
     private int lastObstruction = 0;
     // 距离下次刷新的刻数
     private int ticksUntilUpdate = UPDATE_INTERVAL;
+    /** 0.1.11.22: client only, the rotor's drawn angle and the time it was last drawn (kept per machine). */
+    public float rotorAngle;
+    public long rotorRenderTime;
     // 距离下次转子损伤的刻数
     private int ticksUntilRotorDamage = ROTOR_DAMAGE_INTERVAL;
     // 当前是否正在产生动能
@@ -98,7 +121,15 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
                 case 0 -> generatorStatus;
                 case 1 -> currentKineticOutput;
                 case 2 -> getRotorHealthPercent();
-                default -> 0;
+                case 3 -> windStrength;
+                case 4 -> rawWind;
+                case 5 -> windBearing;
+                case 6 -> WindPhysics.bearing(facing());
+                case 7 -> (int) Math.round(facingFactor * 1000);
+                case 8 -> (int) Math.round(wakeFactor * 1000);
+                case 9 -> (int) Math.round(obstructionFactor * 1000);
+                case 10 -> stormProtection ? 1 : 0;
+                default -> rose.data(index - 11);
             };
         }
 
@@ -109,7 +140,7 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
 
         @Override
         public int getCount() {
-            return 3;
+            return DATA_COUNT;
         }
     };
 
@@ -186,18 +217,26 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
         };
 
         int ret = 0;
+        if (!onlyRotor) nearestTurbine = -1;
+        // 0.1.11.22: one mutable cursor instead of three BlockPos per cell, and the block entity is only looked up when
+        // the block is a wind kinetic generator (0.1.11.9 looked it up on every cell, ~15,000 for a diameter-11 rotor)
+        net.minecraft.world.level.block.Block turbineBlock = com.miophas.singularity_iteration.common.registry.mio_icif_blocks.WIND_KINETIC_GENERATOR.get();
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
+        int fx = facing.getStepX(), fy = facing.getStepY(), fz = facing.getStepZ();
+        int ux = upDir.getStepX(), uy = upDir.getStepY(), uz = upDir.getStepZ();
+        int rx = rightDir.getStepX(), ry = rightDir.getStepY(), rz = rightDir.getStepZ();
+        int ox = worldPosition.getX(), oy = worldPosition.getY(), oz = worldPosition.getZ();
 
         for (int up = -box; up <= box; up++) {
 
             for (int right = -box; right <= box; right++) {
                 boolean occupied = false;
+                int cx = ox + ux * up + rx * right, cy = oy + uy * up + ry * right, cz = oz + uz * up + rz * right;
 
                 for (int fwd = 0; fwd <= length; fwd++) {
                     if (up == 0 && right == 0 && fwd == 0) continue;
 
-                    BlockPos checkPos = worldPosition.relative(facing, fwd)
-                            .relative(upDir, up)
-                            .relative(rightDir, right);
+                    checkPos.set(cx + fx * fwd, cy + fy * fwd, cz + fz * fwd);
 
                     // Do not force-load adjacent chunks during the rotor scan. An unloaded
                     // slice is conservatively treated as blocked until it is loaded.
@@ -206,12 +245,16 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
                         continue;
                     }
                     BlockState checkState = level.getBlockState(checkPos);
-                    if (!checkState.isAir() && checkState.isSolidRender(level, checkPos)) {
+                    // 0.1.11.9: another turbine further on puts this rotor in its wake (see updateWindStrength) instead of
+                    // blocking it; only one in the rotor's own plane (one block on) still blocks it
+                    if (!onlyRotor && checkState.is(turbineBlock)
+                            && level.getBlockEntity(checkPos) instanceof mio_icif_Wind_Kinetic_Generator) {
+                        if (fwd <= 1) return -1;
+                        if (nearestTurbine < 0 || fwd < nearestTurbine) nearestTurbine = fwd;
+                        continue;
+                    }
+                    if (!occupied && !checkState.isAir() && checkState.isSolidRender(level, checkPos)) {
                         occupied = true;
-
-                        if (!onlyRotor && level.getBlockEntity(checkPos) instanceof mio_icif_Wind_Kinetic_Generator) {
-                            return -1;
-                        }
                     }
                 }
 
@@ -243,34 +286,79 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
             lastObstruction = 0;
             return;
         }
+        WindSim sim = WindSim.get(server);
+        double simWind = sim.getWindAt(worldPosition.getY() + 0.5);
+        windBearing = sim.getWindDirection();
+        rawWind = (int) simWind;
 
         IKineticRotor rotor = getRotor();
         if (rotor == null) {
             windStrength = 0;
             lastObstruction = 0;
+            facingFactor = wakeFactor = obstructionFactor = 1;
             return;
         }
 
-        double simWind = WindSim.get(server).getWindAt(worldPosition.getY() + 0.5);
         int diameter = rotor.getDiameter(getRotorStack());
-        int obstruction = checkSpace(false);
+        // 0.1.11.22: the full space scan (up to ~15,000 cells) runs every RESCAN_UPDATES-th update, or at once when the
+        // rotor size or facing changes; in between the obstruction and wake of the last scan are reused
+        Direction face = facing();
+        if (scanUpdatesLeft <= 0 || scanDiameter != diameter || scanFacing != face) {
+            scannedObstruction = checkSpace(false);
+            scanUpdatesLeft = RESCAN_UPDATES;
+            scanDiameter = diameter;
+            scanFacing = face;
+        } else {
+            scanUpdatesLeft--;
+        }
+        int obstruction = scannedObstruction;
         lastObstruction = obstruction;
 
         if (obstruction < 0) {
-            // 前方扫描范围内发现了其它风力动能发生机，完全阻塞
             windStrength = 0;
             return;
         }
 
-        // IC2：小遮挡直接忽略
         if (obstruction > 0 && obstruction <= (diameter + 1) / 2) {
             obstruction = 0;
         }
 
-        // IC2 的转子总截面：(2*直径 + 1)^2
         int crossSection = (diameter * 2 + 1) * (diameter * 2 + 1);
-        double obstructionFactor = Math.max(0.0, 1.0 - Math.pow((double) obstruction / crossSection, 2.0));
-        windStrength = (int) (simWind * obstructionFactor);
+        obstructionFactor = Math.max(0.0, 1.0 - Math.pow((double) obstruction / crossSection, 2.0));
+        facingFactor = WindPhysics.facingFactor(windBearing, WindPhysics.bearing(facing()));
+        wakeFactor = nearestTurbine > 0 ? 1 - WindPhysics.wakeDeficit(nearestTurbine, diameter) : 1;
+        // gusts: a little turbulence on each update (±8 %)
+        double gust = 1 + (server.random.nextDouble() - 0.5) * 0.16;
+        windStrength = (int) (simWind * obstructionFactor * facingFactor * wakeFactor * gust);
+    }
+
+    private Direction facing() {
+        return getBlockState().hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
+            ? getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING) : Direction.NORTH;
+    }
+
+    private void sampleRose() {
+        rose.add(windBearing, rawWind);
+    }
+
+    /** Menu button 0: storm protection on / off. */
+    public void toggleStormProtection() {
+        stormProtection = !stormProtection;
+        currentKineticOutput = calculateKineticOutput();
+        setChanged();
+    }
+
+    public boolean hasStormProtection() { return stormProtection; }
+    public double getFacingFactor() { return facingFactor; }
+    public double getWakeFactor() { return wakeFactor; }
+    public int getWindBearing() { return windBearing; }
+
+    /** Comparator: the output as a share of what the rotor gives at its maximum wind. */
+    public int comparatorSignal() {
+        IKineticRotor rotor = getRotor();
+        if (rotor == null || currentKineticOutput <= 0) return 0;
+        int max = WindPhysics.output(rotor.getMaxWindStrength(getRotorStack()), 0, Integer.MAX_VALUE, rotor.getEfficiency(getRotorStack()), false);
+        return Math.max(1, Math.min(15, (int) Math.ceil(15.0 * currentKineticOutput / Math.max(1, max))));
     }
 
     /**
@@ -298,27 +386,16 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
 
         int minWind = rotor.getMinWindStrength(rotorStack);
         int maxWind = rotor.getMaxWindStrength(rotorStack);
-
-        // 检查最小风力需求
-        if (windStrength < minWind) {
-            currentMCU = 0;
-            generatorStatus = STATUS_WEAK_WIND;
-            return 0;
-        }
-
-        // 当前有效MCU值（用于显示）
-        this.currentMCU = windStrength;
-
-        // 检查是否过载
-        if (windStrength > maxWind) {
-            generatorStatus = STATUS_OVERLOAD;
-        } else {
-            generatorStatus = STATUS_GENERATING;
-        }
-
-        // IC2风格输出：windStrength * efficiency * outputModifier
-        int kineticOutput = (int)(windStrength * rotor.getEfficiency(rotorStack) * OUTPUT_MODIFIER);
-        return Math.max(0, kineticOutput);
+        // 0.1.11.9: the rotor's power curve (WindPhysics): cut-in, linear up to cut-out, then feathered or overloaded
+        WindPhysics.State state = WindPhysics.state(windStrength, minWind, maxWind, stormProtection);
+        currentMCU = state == WindPhysics.State.WEAK ? 0 : windStrength;
+        generatorStatus = switch (state) {
+            case WEAK -> STATUS_WEAK_WIND;
+            case GENERATING -> STATUS_GENERATING;
+            case FEATHERED -> STATUS_FEATHERED;
+            case OVERLOAD -> STATUS_OVERLOAD;
+        };
+        return WindPhysics.output(windStrength, minWind, maxWind, rotor.getEfficiency(rotorStack), stormProtection);
     }
 
     /**
@@ -354,6 +431,12 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
 
         blockEntity.applyFrictionLoss();
 
+        // 0.1.11.22: spread the turbines' updates over the interval by position, so they do not all scan on one tick
+        if (!blockEntity.phased) {
+            blockEntity.phased = true;
+            blockEntity.ticksUntilUpdate = Math.min(blockEntity.ticksUntilUpdate,
+                1 + com.miophas.singularity_iteration.common.energy.TickPhase.of(pos, UPDATE_INTERVAL));
+        }
         blockEntity.ticksUntilUpdate--;
 
         // 每UPDATE_INTERVAL刻更新一次风力强度和动能输出
@@ -361,6 +444,8 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
             blockEntity.ticksUntilUpdate = UPDATE_INTERVAL;
             blockEntity.updateWindStrength();
             blockEntity.currentKineticOutput = blockEntity.calculateKineticOutput();
+            blockEntity.sampleRose();
+            level.updateNeighbourForOutputSignal(pos, state.getBlock());
         }
 
         // 每ROTOR_DAMAGE_INTERVAL刻（1秒）对转子造成一次损伤
@@ -432,6 +517,7 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
         tag.putInt("CurrentKineticOutput", currentKineticOutput);
         tag.putInt("CurrentMCU", currentMCU);
         tag.putBoolean("IsGenerating", isGenerating);
+        tag.putBoolean("StormProtection", stormProtection);
     }
 
     @Override
@@ -445,6 +531,8 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
         currentKineticOutput = tag.getInt("CurrentKineticOutput");
         currentMCU = tag.getInt("CurrentMCU");
         isGenerating = tag.getBoolean("IsGenerating");
+        // machines saved before 0.1.11.9 have no switch and keep their old behaviour (no protection)
+        stormProtection = tag.contains("StormProtection") && tag.getBoolean("StormProtection");
     }
 
     @Override

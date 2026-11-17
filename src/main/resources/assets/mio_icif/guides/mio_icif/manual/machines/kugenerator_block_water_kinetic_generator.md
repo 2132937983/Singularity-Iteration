@@ -17,8 +17,14 @@ item_ids:
 ## Function
 
 The machine converts water flow into kinetic energy (KU) with a rotor.
-The machine works only in river, ocean and beach biomes with water at its front face.
-The output changes with the time of day. The machine sends KU only through its back face.
+The block at its front face must be water. The machine sends KU only through its back face.
+The rotor turns in a disc of its diameter centred on the block in front, square to the facing. The output is the power of the water flowing through that disc: it grows with the cube of the speed, and only the cells of the disc that are water count, so sink the rotor fully.
+- River biomes: a steady current, about 30 % more power in rain and 60 % more in a thunderstorm.
+- Ocean and beach biomes: a tidal current that turns twice a day (slack water at 0, 6,000, 12,000 and 18,000 ticks). Full and new moon bring spring tides (1.3 times the power), the quarters neap tides (0.7 times).
+- Flowing water anywhere (a canal) moves along its flow; the part along the rotor's axis counts. Falling water counts too.
+- A disc full of water in an average current gives (diameter − 3) × 25 + 100 KU/t (+150 at sea instead of +100), the old mean.
+- A water rotor in line in front of this one, facing the same way within 16 blocks, slows the water (a wake).
+The screen shows the disc seen from upstream (moving water, still water, air, solid blocks), the speed, the share of the disc that is water and a day of the current with the time now.
 
 ## Power data
 
@@ -32,7 +38,7 @@ This block uses no EU.
 
 ## Notes
 
-- The water block at the front face must touch at least two other water blocks.
+- Still water outside rivers and oceans does not move: the rotor stands still there.
 - The rotor wears during operation. Replace the rotor before it breaks.
 
 ## Recipe

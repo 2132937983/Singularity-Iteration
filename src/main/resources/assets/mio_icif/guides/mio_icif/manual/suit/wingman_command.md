@@ -25,12 +25,12 @@ When the wheel opens, it takes the point and the creature in your crosshair (up 
 | FOCUS | Attack the creature in your crosshair until it is down (up to 128 blocks from the Wingman), then form up. |
 | VOLLEY | The Entangled Volley (as on the action key). |
 | FORM UP | End the orders: back to formation and the tactical mode. |
-| MODE | A fan: the four tactical modes, "follow squad" and "return home". A mode for one Wingman is its own; the squad mode no longer changes it until "follow squad". |
+| MODE | A fan: the three tactical modes, "follow squad" and "return home". A mode for one Wingman is its own; the squad mode no longer changes it until "follow squad". |
 | DATA LINK | On or off (see below). |
 | HOLO TABLE | Project the 3D holo table (holomap Mk.II). |
 | Q-RECALL | Quantum recall (see below). |
 
-A Wingman on an order no longer follows you: it guards its point instead of staying within 28 blocks of you. A Wingman in an unloaded chunk cannot move; the squad list shows it as UNLOADED, and only the quantum recall reaches it.
+A Wingman on an order no longer follows you: it guards its point instead of staying within 28 blocks of you. A Wingman in an unloaded chunk cannot move; the squad list shows it as unloaded, and the quantum recall or "Recall all" in the console reaches it.
 
 ## Data link
 
@@ -42,7 +42,7 @@ Every Wingman you own folds back into its Armory at once: in any dimension, load
 
 ## Squad HUD
 
-While the command link works, a squad panel on the left lists each Wingman with its mode (* = an individual mode), its order and distance, its health and its distance from you. Wingmen out of view get a chevron on the screen edge. In the world, hold points, suppression rings and focus targets are marked for you alone.
+While the command link works, a squad panel on the left lists each Wingman by its number (W1 to W6: the Armory suit it came from, so the number stays when other Wingmen come and go) with its mode (* = an individual mode), its order and distance, its health and its distance from you. Wingmen out of view get a chevron on the screen edge. In the world, hold points, suppression rings and focus targets are marked for you alone.
 
 ## 3D holo table
 
@@ -50,4 +50,4 @@ With a <ItemLink id="mio_icif:module/item_module_holomap_mk2" />, hold the tacti
 
 - Drag: turn the table. Mouse wheel: 24, 48 or 96 blocks.
 - Left click on the terrain: MOVE there. Right click: SUPPRESS there. Left click on a creature: FOCUS.
-- H: HOLD. F: FORM UP. 0 to 9: choose all or one Wingman.
+- H: HOLD. F: FORM UP. 1 to 6: choose the Wingman with that number. 0: all Wingmen. A held key acts once.

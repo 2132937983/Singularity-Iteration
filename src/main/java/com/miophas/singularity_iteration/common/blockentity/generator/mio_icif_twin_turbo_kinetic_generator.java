@@ -40,7 +40,12 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
     private static final double EU_PER_KU = 1.2D;
 
     private static final double EFFECTIVE_PERCENT_NATURAL = 1.0D;
-    private static final double EFFECTIVE_PERCENT_ARTIFICIAL = 0.1D;
+    /**
+     * 0.1.11.12: EU per KU from any other kinetic source (steam, Stirling, electric). It was a tenth of the wind and
+     * water rate, below the basic kinetic generator's 0.25; now always above it.
+     */
+    private static final double ARTIFICIAL_EU_PER_KU = 0.45D;
+    private static final double EFFECTIVE_PERCENT_ARTIFICIAL = ARTIFICIAL_EU_PER_KU / EU_PER_KU;
 
     private final KineticReceiverStorage kineticStorage;
 
@@ -74,6 +79,9 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
         }
 
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
+        // 0.1.11.11: the old grid only reaches this mod's machines; other mods' storages beside it are fed here, as the
+        // other generators do (the independent network does its own transfers)
+        if (!blockEntity.getEnergyStorageInternal().scexNetworkControlled()) blockEntity.distributeEnergyToCompatSinks();
 
         blockEntity.lastEnergyOutput = 0;
         blockEntity.lastProduction = 0;
@@ -222,6 +230,9 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
         return lastProduction;
     }
 
+    /** 0.1.11.17: KU received in the last tick (the mimic screen). */
+    public int getLastKuInput() { return lastKuInputRate; }
+
     public double getEffectivePercent() {
         return effectivePercent;
     }
@@ -260,7 +271,7 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.TwinTurboKineticGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.TwinTurboKineticGeneratorMenu(containerId, playerInventory, this);
     }
 
     @Override

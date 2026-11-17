@@ -11,6 +11,26 @@ navigation:
 Cables move EU between blocks. Transformers change the voltage tier.
 Storage blocks keep EU and charge items.
 
+## Cables
+
+| Cable | Tier | Largest packet | Insulation for no shock | Line loss* |
+|---|---|---|---|---|
+| Tin (Low-Voltage) | LV | 32 EU | 1 layer | 0.2 EU |
+| Iron (Medium-Voltage) | MV | 128 EU | 1 layer | 0.2 EU |
+| Copper (High-Voltage) | HV | 512 EU | 2 layers | 0.4 EU |
+| Gold (Extra-High-Voltage) | EV | 2,048 EU | 3 layers | 0.8 EU |
+| Glass fibre (IV) | IV | 8,192 EU | never shocks | 0.025 EU |
+| Superconducting | any | no limit | never shocks | none |
+| Detector, splitter, breaker, fuse | IV | 8,192 EU | never shock | 0.5 EU |
+
+- **The rating is the largest packet, not a flow limit.** A tin cable carries any number of packets of up to 32 EU each tick. A larger packet melts the cable, and a machine explodes on a packet above its input tier. Use a transformer between tiers.
+- **No line loss by default.** *With the server option `lineLossModel = proportional` each packet loses the amount in the table per block; a packet that would lose all of it on the way is not sent. Without it the loss values only choose between two routes.
+- **Shock.** A bare or partly insulated cable hurts living things within 1.5 blocks while it carries a packet above what its insulation absorbs: bare tin 8 EU, bare iron, copper and gold 32 EU, each layer four times more (1 layer 32 / 128, 2 layers 512, 3 layers 2,048). The damage is (packet − absorption) / 64, rounded up, per tick. The item tooltip of each cable says when it shocks.
+- **Insulation.** Rubber on a cable adds a layer; the Cable Cutter takes one off and gives the rubber back. Neither works through construction foam or a wall.
+- **Colours.** Dye an insulated cable to keep two lines apart: two dyed cables connect only when they have the same colour; an undyed (black) cable connects to every colour.
+- **Long lines.** A line is cut where it crosses a chunk that does not tick (outside the loaded area); both sides keep working. Keep the whole route chunk-loaded. The meter's HUD warns about cables in such chunks.
+- **Measuring.** The EU Meter on a cable shows the EU that went through that cable this tick and its largest packet. `/mio_icif grid` (operators) shows the health of the grid: rebuilds, quarantined chunks, cables in chunks that do not tick.
+
 ## Server load of the energy network
 
 - An operator can type /mio_icif perf to see the server tick, and for each dimension the time that the energy network takes per tick (median, 95th percentile, maximum of the last 256 ticks).

@@ -16,7 +16,7 @@ item_ids:
 
 ## Function
 
-The IV Cable carries EU at the IV voltage tier.
+The IV Cable is a glass fibre cable. It carries EU at the IV voltage tier.
 The cable does not shock living entities.
 A packet above the cable limit burns the cable.
 

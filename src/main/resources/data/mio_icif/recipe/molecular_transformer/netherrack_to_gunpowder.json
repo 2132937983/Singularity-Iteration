@@ -8,5 +8,8 @@
     "id": "minecraft:gunpowder"
   },
   "eu_cost": 70000,
-  "duration": 1
+  "duration": 1,
+  "process": {
+    "kind": "molecular"
+  }
 }

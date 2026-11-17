@@ -73,8 +73,19 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
     /** 热量缓冲上限（IC2: maxHeatbuffer = 1000）。 */
     public static final int MAX_HEATBUFFER = 1000;
 
-    /** KU 缓冲上限 / 输出带宽（IC2: maxkUBuffer = 2000）。 */
+    /** 输出带宽：飞轮满速时每 tick 最多给出的 KU（IC2: maxkUBuffer = 2000）。 */
     public static final int MAX_KU_BUFFER = 2000;
+    /**
+     * 0.1.11.17: the flywheel. The KU buffer is the rotor's stored energy (speed squared): it gives at most
+     * {@link #MAX_KU_BUFFER} x stored / {@link #FLYWHEEL_CAPACITY} KU a tick, so the shaft spins up until what it gives
+     * equals what the engine makes, and slows down when the load falls. Nothing is lost; a full flywheel (overspeed)
+     * stops the engine taking heat, as a full buffer did.
+     */
+    public static final int FLYWHEEL_CAPACITY = 20000;
+    /** Shaft speed at 80 % of the flywheel's energy. */
+    public static final int RATED_RPM = 1500;
+    /** 0.1.11.17: rated heat flow of the heater (1,500 KU/t at the design point). */
+    public static final double RATED_HU = 500;
 
     /** IC2: PARTS_KU = 3。 */
     public static final int PARTS_KU = 3;
@@ -128,6 +139,19 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
     private long kuBuffer = 0;
     /** 已累计、尚未转化为热水的液热（HU·mB 等价）。 */
     private int liquidHeatStored = 0;
+    private final com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head = new com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head(RATED_HU);
+    private double kuCarry;
+    private long lastHu, lastKu, lastDelivered, deliveredThisTick;
+    public com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head() { return head; }
+    /** HU through the engine, KU made and KU given to the front in the last tick. */
+    public long getLastHu() { return lastHu; }
+    public long getLastKu() { return lastKu; }
+    public long getLastDelivered() { return lastDelivered; }
+    /** KU the flywheel can give this tick. */
+    public long deliverable() {
+        if (kuBuffer <= 0) return 0;
+        return Math.min(kuBuffer, Math.max(1, (long) Math.ceil(MAX_KU_BUFFER * (double) kuBuffer / FLYWHEEL_CAPACITY)));
+    }
 
     private MachineUpgradeStats upgradeStats = MachineUpgradeStats.empty();
     private boolean active = false;
@@ -354,8 +378,8 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
     private boolean convertHeat() {
         this.active = false;
 
-        if (kuBuffer >= MAX_KU_BUFFER) {
-            return false; // 缓冲满则停机，避免浪费热与水
+        if (kuBuffer >= FLYWHEEL_CAPACITY) {
+            return false; // 飞轮满（超速）则停机，避免浪费热与水
         }
         if (inputTank().getFluidAmount() <= 0) {
             return false;
@@ -371,13 +395,19 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
         if (liquidRoom < use) {
             use = Math.max(0, liquidRoom);
         }
-        int kuRoom = (int) ((MAX_KU_BUFFER - kuBuffer) / PARTS_KU);
+        int kuRoom = (int) ((FLYWHEEL_CAPACITY - kuBuffer) / PARTS_KU);
         if (kuRoom < use) {
             use = Math.max(0, kuRoom);
         }
 
         if (use > 0) {
-            kuBuffer += (long) use * PARTS_KU * PARTS_TOTAL;
+            // 0.1.11.17: 12 KU per 4 HU at the design point, times the heater factor (the fraction carried)
+            double made = (double) use * PARTS_KU * PARTS_TOTAL * head.factor() + kuCarry;
+            long whole = (long) Math.floor(made);
+            kuCarry = made - whole;
+            kuBuffer = Math.min(FLYWHEEL_CAPACITY, kuBuffer + whole);
+            lastHu = (long) use * PARTS_TOTAL;
+            lastKu = whole;
             liquidHeatStored += use * PARTS_LIQUID;
             heatBuffer -= use * PARTS_TOTAL;
             this.active = true;
@@ -586,7 +616,12 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
         // 吸热 → 换算
         blockEntity.receiveHeatFromSides();
+        blockEntity.lastHu = 0;
+        blockEntity.lastKu = 0;
         blockEntity.convertHeat();
+        blockEntity.head.tick(level, pos, blockEntity.lastHu, true);   // 0.1.11.17: cooled by its water
+        blockEntity.lastDelivered = blockEntity.deliveredThisTick;
+        blockEntity.deliveredThisTick = 0;
 
         // 升级自动化
         blockEntity.handleAutomation();
@@ -623,7 +658,9 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         heatBuffer = Math.max(0, Math.min(MAX_HEATBUFFER, tag.getInt("HeatBuffer")));
-        kuBuffer = Math.max(0, Math.min(MAX_KU_BUFFER, tag.getLong("KUBuffer")));
+        kuBuffer = Math.max(0, Math.min(FLYWHEEL_CAPACITY, tag.getLong("KUBuffer")));
+        head.load(tag);
+        kuCarry = tag.getDouble("scex_ku_carry");
         liquidHeatStored = Math.max(0, tag.getInt("LiquidHeatStored"));
         progress = tag.getInt("Progress");
         waterTank.readFromNBT(registries, tag.getCompound("WaterTank"));
@@ -636,6 +673,8 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
         super.saveAdditional(tag, registries);
         tag.putInt("HeatBuffer", heatBuffer);
         tag.putLong("KUBuffer", kuBuffer);
+        head.save(tag);
+        tag.putDouble("scex_ku_carry", kuCarry);
         tag.putInt("LiquidHeatStored", liquidHeatStored);
         tag.putInt("Progress", progress);
         tag.put("WaterTank", waterTank.writeToNBT(registries, new CompoundTag()));
@@ -718,9 +757,10 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     @Override
     public long extractKinetic(long toExtract, boolean simulate) {
-        long extracted = Math.min(Math.max(0, toExtract), Math.min(kuBuffer, MAX_KU_BUFFER));
+        long extracted = Math.min(Math.max(0, toExtract), Math.max(0, deliverable() - deliveredThisTick));   // 0.1.11.17: the flywheel
         if (!simulate && extracted > 0) {
             kuBuffer -= extracted;
+            deliveredThisTick += extracted;
             setChanged();
         }
         return extracted;
@@ -733,7 +773,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     @Override
     public long getMaxKineticStored() {
-        return MAX_KU_BUFFER;
+        return FLYWHEEL_CAPACITY;
     }
 
     @Override
@@ -758,12 +798,12 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     @Override
     public int getRPM() {
-        return BoundedUnits.gauge(kuBuffer, MAX_KU_BUFFER, 0, 10000);
+        return (int) Math.round(RATED_RPM * Math.sqrt(kuBuffer / (0.8 * FLYWHEEL_CAPACITY)));   // 0.1.11.17: the flywheel
     }
 
     @Override
     public boolean isOverspeed() {
-        return false; // IC2 动能系统没有转速/超速概念
+        return kuBuffer >= FLYWHEEL_CAPACITY;
     }
 
     @Override
@@ -773,7 +813,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     @Override
     public void setKinetic(long kinetic) {
-        this.kuBuffer = BoundedUnits.clamp(kinetic, MAX_KU_BUFFER);
+        this.kuBuffer = BoundedUnits.clamp(kinetic, FLYWHEEL_CAPACITY);
         setChanged();
     }
 
@@ -784,7 +824,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     @Override
     public long generateKineticInternal(long amount, boolean simulate) {
-        long generated = Math.min(Math.max(0, amount), MAX_KU_BUFFER - kuBuffer);
+        long generated = Math.min(Math.max(0, amount), FLYWHEEL_CAPACITY - kuBuffer);
         if (!simulate && generated > 0) {
             kuBuffer += generated;
             setChanged();

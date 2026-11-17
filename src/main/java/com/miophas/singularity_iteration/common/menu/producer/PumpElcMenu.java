@@ -5,6 +5,7 @@ import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pu
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_machine_menu;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -30,15 +31,14 @@ import org.jetbrains.annotations.Nullable;
     public static final int SLOT_OUTPUT = 6;           // 填充容器输出
     public static final int SLOT_COUNT = 7;
 
-    // GUI位置
-    private static final int BATTERY_X = 8;
-    private static final int BATTERY_Y = 44;
-    private static final int UPGRADE_START_X = 152;
-    private static final int UPGRADE_START_Y = 8;
-    private static final int CONTAINER_INPUT_X = 99;
-    private static final int CONTAINER_INPUT_Y = 17;
-    private static final int OUTPUT_X = 132;
-    private static final int OUTPUT_Y = 34;
+    /** 0.1.11.7: 248 x 222 screen with the cross-section view; machine slots in one row under the controls. */
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 222;
+    public static final int SLOT_ROW_Y = 119;
+    public static final int BATTERY_X = 9;
+    public static final int CONTAINER_INPUT_X = 99;
+    public static final int OUTPUT_X = 131;
+    public static final int UPGRADE_START_X = 167;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 140, HOTBAR_Y = 198;
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_MAX_PROGRESS = 1;
@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
     private static final int DATA_FLUID_AMOUNT = 4;
     private static final int DATA_FLUID_CAPACITY = 5;
     private static final int DATA_FLUID_ID = 6;
-    private static final int DATA_COUNT = 7;
+    private static final int DATA_COUNT = com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc.DATA_COUNT;
 
     public PumpElcMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -109,21 +109,45 @@ import org.jetbrains.annotations.Nullable;
         return this.data.get(DATA_MAX_ENERGY);
     }
 
+    /** Synced value {@code i} (see {@code mio_icif_pump_elc.getContainerData}). */
+    public int value(int i) {
+        return this.data.get(i);
+    }
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (!(getBlockEntity() instanceof mio_icif_pump_elc pump) || !stillValid(player)) return false;
+        return pump.handleButton(id);
+    }
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
     @Override
     protected void addMachineSlots() {
         // 电池槽 (152, 62)
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_BATTERY, BATTERY_X, BATTERY_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_BATTERY, BATTERY_X, SLOT_ROW_Y));
         
         // 4个升级槽 (152, 8) 开始，垂直排列
         for (int i = 0; i < SLOT_UPGRADE_COUNT; i++) {
-            addUpgradeSlot(itemHandler, SLOT_UPGRADE_START + i, UPGRADE_START_X, UPGRADE_START_Y + i * 18);
+            addUpgradeSlot(itemHandler, SLOT_UPGRADE_START + i, UPGRADE_START_X + i * 18, SLOT_ROW_Y);
         }
         
         // 空容器输入槽 (44, 35) - 顶部位置
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_CONTAINER_INPUT, CONTAINER_INPUT_X, CONTAINER_INPUT_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_CONTAINER_INPUT, CONTAINER_INPUT_X, SLOT_ROW_Y));
         
         // 填充容器输出槽 (116, 35) - 侧面位置
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_OUTPUT, OUTPUT_X, OUTPUT_Y) {
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_OUTPUT, OUTPUT_X, SLOT_ROW_Y) {
             @Override
             public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 return false;

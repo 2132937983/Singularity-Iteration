@@ -58,7 +58,10 @@ public class mio_icif_windmeter extends mio_icif_tool_elc implements IWindMeterI
             );
             return InteractionResult.SUCCESS;
         }
-        if (!generator.isGenerating()) {
+        if (!generator.isGenerating() && generator.getContainerData().get(0)
+                != com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_FEATHERED
+                && generator.getContainerData().get(0)
+                != com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_WEAK_WIND) {
             player.displayClientMessage(
                 Component.translatable("message.mio_icif.windmeter.rotor.blocked")
                     .withStyle(ChatFormatting.YELLOW),
@@ -117,6 +120,14 @@ public class mio_icif_windmeter extends mio_icif_tool_elc implements IWindMeterI
             Component.translatable("message.mio_icif.windmeter.info", formatted)
                 .withStyle(ChatFormatting.AQUA)
         );
+        // 0.1.11.9: the bearing the wind comes from, and the weather factor
+        if (player.level() instanceof ServerLevel server) {
+            int bearing = WindSim.get(server).getWindDirection();
+            String weather = server.isThundering() ? "×1.50" : server.isRaining() ? "×1.25" : "×1.00";
+            player.sendSystemMessage(Component.translatable("message.mio_icif.windmeter.direction", bearing,
+                Component.translatable("gui.mio_icif.wind.point." + com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindPhysics.point(bearing)),
+                weather).withStyle(ChatFormatting.DARK_AQUA));
+        }
     }
 
     @Override

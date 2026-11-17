@@ -195,6 +195,17 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
             return;
         }
 
+        // 0.1.11.29: a cable inside foam or a wall is hit on the block's outer face: the clicked face toggles (the arms
+        // cannot be told apart there, so a blocked face could not be opened again)
+        if (mio_icif_block_wire.foamlogged(state)) {
+            boolean blocked = wireEntity.isDirectionBlocked(clickedFace);
+            if (blocked) wireEntity.unblockDirection(clickedFace); else wireEntity.blockDirection(clickedFace);
+            ((mio_icif_block_wire) state.getBlock()).refreshConnections(level, pos);
+            if (player != null) player.displayClientMessage(
+                Component.translatable(blocked ? "message.mio_icif.cable.unblock" : "message.mio_icif.cable.block", clickedFace.getName()), true);
+            consumeEnergy(stack, WRENCH_ELC_PIPE_WIRE_ENERGY);
+            return;
+        }
         boolean inCenter = mio_icif_block_wire.isHitInCenter(hitVec, pos, state);   // 0.1.10.3: the cable's own thickness
 
         if (inCenter) {

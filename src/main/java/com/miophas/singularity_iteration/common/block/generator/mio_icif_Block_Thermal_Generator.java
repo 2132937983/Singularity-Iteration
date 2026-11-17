@@ -65,7 +65,10 @@ public class mio_icif_Block_Thermal_Generator extends mio_icif_entity_block {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return type == mio_icif_block_entities.THERMAL_GENERATOR_ENTITY_TYPE.get() ? 
             (l, p, s, be) -> {
-                if (be instanceof AbstractGeneratorBlockEntity generator) {
+                // 0.1.11.10: the furnace's own tick (temperature, damper, chart recorder, comparator)
+                if (be instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator generator) {
+                    com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator.tickThermal(l, p, s, generator);
+                } else if (be instanceof AbstractGeneratorBlockEntity generator) {
                     AbstractGeneratorBlockEntity.tick(l, p, s, generator);
                 }
             } : null;
@@ -110,4 +113,3 @@ public class mio_icif_Block_Thermal_Generator extends mio_icif_entity_block {
 
     */
 }
-

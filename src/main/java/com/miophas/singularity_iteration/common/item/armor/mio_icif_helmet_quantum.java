@@ -123,8 +123,11 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
                     if (foodProperties != null) {
                         // 消耗食物并恢复饱食度
                         player.getFoodData().eat(foodProperties.nutrition(), foodProperties.saturation());
+                        // 0.1.11.3: the container (a stew's bowl) comes back; it used to be deleted
+                        ItemStack container = foodProperties.usingConvertsTo().map(ItemStack::copy).orElse(ItemStack.EMPTY);
                         // 减少物品数量
                         foodStack.shrink(1);
+                        if (!container.isEmpty() && !player.getInventory().add(container)) player.drop(container, false);
                     }
                 }
             }
@@ -151,11 +154,23 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
      * @param player 玩家
      * @return 找到的食物物品堆，如果没有则返回null
      */
+    /**
+     * 0.1.11.3: food the helmet may eat for the player: food without effects. The helmet applies nutrition and
+     * saturation only, so it used to waste golden apples, enchanted golden apples and suspicious stew (their effects
+     * were lost) and ate rotten flesh, spider eyes or pufferfish without their harm; chorus fruit is left alone too.
+     */
+    static boolean plainFood(ItemStack stack, Player player) {
+        FoodProperties food = stack.getFoodProperties(player);
+        if (food == null || !food.effects().isEmpty()) return false;
+        if (stack.is(net.minecraft.world.item.Items.CHORUS_FRUIT) || stack.has(net.minecraft.core.component.DataComponents.SUSPICIOUS_STEW_EFFECTS)) return false;
+        return !stack.is(net.minecraft.world.item.Items.GOLDEN_APPLE) && !stack.is(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE);
+    }
+
     private static ItemStack findFoodInInventory(Player player) {
         // 遍历主背包（0-35槽位）
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack itemStack = player.getInventory().getItem(i);
-            if (!itemStack.isEmpty() && itemStack.getFoodProperties(player) != null) {
+            if (!itemStack.isEmpty() && plainFood(itemStack, player)) {
                 return itemStack;
             }
         }

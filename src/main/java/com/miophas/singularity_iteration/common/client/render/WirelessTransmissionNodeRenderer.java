@@ -21,7 +21,6 @@ public class WirelessTransmissionNodeRenderer implements BlockEntityRenderer<mio
     private static final float COLOR_B = 1.0f;
     private static final float COLOR_A = 0.7f;
 
-    private int tickCounter = 0;
 
     public WirelessTransmissionNodeRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -49,12 +48,15 @@ public class WirelessTransmissionNodeRenderer implements BlockEntityRenderer<mio
         double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (dist < 0.1) return;
 
-        tickCounter++;
+        // 0.1.11.22: game time, not a counter bumped on each frame (the beam ran faster at a higher frame rate); three
+        // steps a tick keeps the speed it had at 60 frames a second
+        float tickCounter = blockEntity.getLevel() == null ? 0
+            : (float) ((blockEntity.getLevel().getGameTime() % 72000L) + partialTick) * 3.0f;
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.debugQuads());
 
         for (int i = 0; i < PARTICLES_PER_TICK; i++) {
-            float progress = ((tickCounter + i * 7) % 60) / 60.0f;
+            float progress = ((tickCounter + i * 7) % 60f) / 60.0f;
 
             double px = sourceX + dx * progress - sourcePos.getX();
             double py = sourceY + dy * progress - sourcePos.getY();

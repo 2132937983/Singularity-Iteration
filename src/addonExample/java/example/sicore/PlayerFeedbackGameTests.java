@@ -316,7 +316,7 @@ public final class PlayerFeedbackGameTests {
             throw new AssertionError(e);
         }
         var slots = (IItemHandlerModifiable) call(machine, "getItemHandler");
-        slots.setStackInSlot(0, new ItemStack(Items.COPPER_INGOT));
+        slots.setStackInSlot(0, new ItemStack(Items.IRON_INGOT));   // 0.1.11.4: medium-voltage cable is iron
         h.setBlock(cable, block("wiring/cable/block_cable_o"));
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(!slots.getStackInSlot(2).isEmpty(), "the Metal Former made nothing yet"))
@@ -354,7 +354,9 @@ public final class PlayerFeedbackGameTests {
             .value().getResultItem(h.getLevel().registryAccess());
         var player = h.makeMockServerPlayerInLevel();
         player.gameMode.changeGameModeForPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        BlockPos byHand = new BlockPos(1, 1, 1), byWrench = new BlockPos(5, 1, 1), dismantled = new BlockPos(9, 1, 1);
+        // inside the 5 x 5 "empty" structure, far enough apart that the drops of one are not counted at another (until
+        // 0.1.11.52 at x 5 and 9, outside the structure: the next test of the batch stands 5 blocks after it)
+        BlockPos byHand = new BlockPos(0, 1, 0), byWrench = new BlockPos(4, 1, 0), dismantled = new BlockPos(2, 1, 4);
         for (BlockPos p : new BlockPos[] {byHand, byWrench, dismantled}) h.setBlock(p, block("wiring/cable/block_cable_o"));
         h.startSequence()
             .thenIdle(2)

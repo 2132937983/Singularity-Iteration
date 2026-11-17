@@ -58,9 +58,10 @@ public final class NanoHud {
         if (Math.abs(s.reserve() - lastReserve) > 0.2F || Math.abs(s.heat() - lastHeat) > 0.2F) lastChange = NanoClient.ticks;
         lastReserve = s.reserve();
         lastHeat = s.heat();
-        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0.38F;
+        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0F;   // 0.1.11.5 passive HUD: hidden when idle (was 0.38)
         alpha += (target - alpha) * 0.08F;
         float a = alpha;
+        if (a < 0.02F) { g.flush(); return; }   // 0.1.11.5: nothing to show
 
         // ---- reserve arc (left), heat arc (right)
         float r = 17;
@@ -99,9 +100,10 @@ public final class NanoHud {
                 cx + (float) Math.sin(ang) * (r + 3), cy - (float) Math.cos(ang) * (r + 3), 1F, FcsDraw.argb(0xFFFFFF, 0.9F * a));
         }
         // read-outs
-        FcsDraw.textRight(g, String.format(Locale.ROOT, "RSV %02d", Math.round(shownReserve)), cx - r - 5, cy + 9, FcsDraw.argb(CYAN, 0.85F * a), 0.5F);
-        String heatText = s.overheated() ? "VENT" : String.format(Locale.ROOT, "HEAT %02d", Math.round(shownHeat));
-        FcsDraw.text(g, heatText, cx + r + 5, cy + 9, FcsDraw.argb(heatCol, 0.85F * a * pulse), 0.5F);
+        // 0.1.11.5: translated read-outs in the HUD font
+        com.miophas.singularity_iteration.common.client.suit.AsciiHud.right(g, "hud.mio_icif.nano.reserve", cx - r - 5, cy + 9, FcsDraw.argb(CYAN, 0.85F * a), 0.55F, String.format(Locale.ROOT, "%02d", Math.round(shownReserve)));
+        com.miophas.singularity_iteration.common.client.suit.AsciiHud.left(g, s.overheated() ? "hud.mio_icif.nano.vent" : "hud.mio_icif.nano.heat", cx + r + 5, cy + 9,
+            FcsDraw.argb(heatCol, 0.85F * a * pulse), 0.55F, String.format(Locale.ROOT, "%02d", Math.round(shownHeat)));
 
         // ---- burst chips
         chip(g, cx - 30, cy + 22, 0, s.primaryKey(), s.primaryCooldown(), s.primaryCooldownMax(), s, t, a, vk);
@@ -114,7 +116,7 @@ public final class NanoHud {
         if (s.reconTicks() > 0) {
             float k = s.reconTicks() / (float) Math.max(1, s.reconMax());
             float y = cy - 40;
-            FcsDraw.textCentered(g, String.format(Locale.ROOT, "RECON  %d CONTACTS", NanoFx.reconCount()), cx, y - 6, FcsDraw.argb(0x64FFDA, 0.9F * a), 0.5F);
+            com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.nano.recon", cx, y - 7, FcsDraw.argb(0x64FFDA, 0.9F * a), 0.55F, NanoFx.reconCount());
             g.fill((int) (cx - 22), (int) y, (int) (cx + 22), (int) y + 1, FcsDraw.argb(0x061016, 0.5F));
             g.fill((int) (cx - 22), (int) y, (int) (cx - 22 + 44 * k), (int) y + 1, FcsDraw.argb(0x64FFDA, 0.85F * a));
         }
@@ -242,20 +244,20 @@ public final class NanoHud {
             FcsDraw.line(g, x0 + 1, y0 + 1, x0 + w - 1, y0 + hgt - 1, 1F, FcsDraw.argb(RED, 0.8F * k * a));
             FcsDraw.line(g, x0 + 1, y0 + hgt - 1, x0 + w - 1, y0 + 1, 1F, FcsDraw.argb(RED, 0.8F * k * a));
             String why = switch (NanoClient.deniedReason[slot]) {
-                case NanoBursts.DENY_OVERHEAT -> "OVERHEAT";
-                case NanoBursts.DENY_COOLDOWN -> "COOLDOWN";
-                case NanoBursts.DENY_RESERVE -> "LOW RSV";
-                case NanoBursts.DENY_OFF -> "OFFLINE";
-                case NanoBursts.DENY_CONFLICT -> "CONFLICT";
+                case NanoBursts.DENY_OVERHEAT -> "hud.mio_icif.deny.overheat";
+                case NanoBursts.DENY_COOLDOWN -> "hud.mio_icif.deny.cooldown";
+                case NanoBursts.DENY_RESERVE -> "hud.mio_icif.deny.reserve";
+                case NanoBursts.DENY_OFF -> "hud.mio_icif.deny.offline";
+                case NanoBursts.DENY_CONFLICT -> "hud.mio_icif.deny.conflict";
                 // 0.1.10.0 quantum actions
-                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_DECOHERENT -> "DECOHERENT";
-                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_COHERENCE -> "LOW COH";
-                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_BLOCKED -> "NO PATH";
-                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_NO_TARGET -> "NO TARGET";
-                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_NO_WINGMAN -> "NO WINGMAN";
-                default -> "NO UNIT";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_DECOHERENT -> "hud.mio_icif.deny.decoherent";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_COHERENCE -> "hud.mio_icif.deny.coherence";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_BLOCKED -> "hud.mio_icif.deny.blocked";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_NO_TARGET -> "hud.mio_icif.deny.no_target";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_NO_WINGMAN -> "hud.mio_icif.deny.no_wingman";
+                default -> "hud.mio_icif.deny.no_unit";
             };
-            FcsDraw.textCentered(g, why, x + shake, y0 + hgt + 2, FcsDraw.argb(RED, k * a), 0.45F);
+            com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, why, x + shake, y0 + hgt + 2, FcsDraw.argb(RED, k * a), 0.5F);   // 0.1.11.5: translated
         }
     }
 
@@ -354,8 +356,8 @@ public final class NanoHud {
             float cx = w / 2F, y = h / 2F + 34;
             g.fill((int) (cx - 24), (int) y, (int) (cx + 24), (int) y + 2, FcsDraw.argb(0x061016, 0.5F));
             g.fill((int) (cx - 24), (int) y, (int) (cx - 24 + 48 * left), (int) y + 2, FcsDraw.argb(0xBFF6FF, 0.85F));
-            FcsDraw.textCentered(g, String.format(Locale.ROOT, "OPTICAL CAMO  %.1fs", (s.camoMax() - s.camoTicks()) / 20F), cx, y + 4,
-                FcsDraw.argb(0xBFF6FF, 0.85F), 0.5F);
+            com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.nano.camo", cx, y + 4, FcsDraw.argb(0xBFF6FF, 0.85F), 0.55F,
+                String.format(Locale.ROOT, "%.1f", (s.camoMax() - s.camoTicks()) / 20F));
         }
         // kinetic armor mesh: amber timer and a faint hex edge
         if (s.meshTicks() > 0) {
@@ -363,7 +365,7 @@ public final class NanoHud {
             float cx = w / 2F, y = h / 2F + 38;
             g.fill((int) (cx - 24), (int) y, (int) (cx + 24), (int) y + 2, FcsDraw.argb(0x161006, 0.5F));
             g.fill((int) (cx - 24), (int) y, (int) (cx - 24 + 48 * left), (int) y + 2, FcsDraw.argb(0xFFB300, 0.9F));
-            FcsDraw.textCentered(g, String.format(Locale.ROOT, "KINETIC MESH  %.1fs", s.meshTicks() / 20F), cx, y + 4, FcsDraw.argb(0xFFD180, 0.85F), 0.5F);
+            com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.nano.mesh", cx, y + 4, FcsDraw.argb(0xFFD180, 0.85F), 0.55F, String.format(Locale.ROOT, "%.1f", s.meshTicks() / 20F));
             int edge = 10;
             for (int i = 0; i < edge; i += 2) {
                 int c = FcsDraw.argb(0xFFB300, 0.06F * (1 - i / (float) edge) * f);
@@ -401,7 +403,7 @@ public final class NanoHud {
                 g.fill(i, i, i + 1, h - i, c);
                 g.fill(w - i - 1, i, w - i, h - i, c);
             }
-            if (s.overheated()) FcsDraw.textCentered(g, "OVERHEAT // VENTING", w / 2F, h / 2F - 40, FcsDraw.argb(RED, 0.6F + 0.4F * k), 0.6F);
+            if (s.overheated()) com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.nano.overheat", w / 2F, h / 2F - 40, FcsDraw.argb(RED, 0.6F + 0.4F * k), 0.7F);
         }
     }
 

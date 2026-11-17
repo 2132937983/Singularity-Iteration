@@ -34,7 +34,11 @@ import java.util.List;
 
 @SuppressWarnings("null")
 public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider, IMioIcifCapabilities.IHeatStorage, IWrenchable {
-    /** 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. */
+    /**
+     * 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. 0.1.11.23: the heat moves of this class
+     * (friction / loss each tick, transfers) mark the chunk for saving and refresh a comparator signal (TickMarks.saved)
+     * instead of a full setChanged.
+     */
     @Override
     public void setChanged() {
         if (level != null && !level.isClientSide)
@@ -127,14 +131,14 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
     @Override
     public long receiveHeat(long toReceive, boolean simulate) {
         long received = heatStorage.receiveHeat(toReceive, simulate);
-        if (!simulate && received > 0) setChanged();
+        if (!simulate && received > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return received;
     }
 
     @Override
     public long extractHeat(long toExtract, boolean simulate) {
         long extracted = heatStorage.extractHeat(toExtract, simulate);
-        if (!simulate && extracted > 0) setChanged();
+        if (!simulate && extracted > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return extracted;
     }
 
@@ -187,34 +191,34 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
     public void setHeat(long heat) {
         long before = heatStorage.getHeatStored();
         heatStorage.setHeat(heat);
-        if (heatStorage.getHeatStored() != before) setChanged();
+        if (heatStorage.getHeatStored() != before) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
     }
 
     @Override
     public void setCapacity(long capacity) {
         long before = heatStorage.getMaxHeatStored();
         heatStorage.setCapacity(capacity);
-        if (heatStorage.getMaxHeatStored() != before) setChanged();
+        if (heatStorage.getMaxHeatStored() != before) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
     }
 
     @Override
     public long applyHeatLoss() {
         long lost = heatStorage.applyHeatLoss();
-        if (lost > 0) setChanged();
+        if (lost > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return lost;
     }
 
     @Override
     public long consumeHeatInternal(long amount, boolean simulate) {
         long consumed = heatStorage.consumeHeatInternal(amount, simulate);
-        if (!simulate && consumed > 0) setChanged();
+        if (!simulate && consumed > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return consumed;
     }
 
     @Override
     public long generateHeatInternal(long amount, boolean simulate) {
         long generated = heatStorage.generateHeatInternal(amount, simulate);
-        if (!simulate && generated > 0) setChanged();
+        if (!simulate && generated > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return generated;
     }
 
@@ -493,7 +497,7 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
 
         long loss = blockEntity.heatStorage.applyHeatLoss();
         if (loss > 0) {
-            blockEntity.setChanged();
+            com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
         }
 
         blockEntity.distributeHeat();

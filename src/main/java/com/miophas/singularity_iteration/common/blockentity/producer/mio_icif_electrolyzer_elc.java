@@ -216,6 +216,8 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
             if (!prepared.get().commit()) {
                 chemicalEnergy = oldChemical; energyAccumulator = oldCredit; legacyCellCredit = oldLegacy;
                 stopWork();
+            } else {
+                countFinishedOperation();   // 0.1.11.3: closes the work cycle with its completion callbacks
             }
             ContainerToTank.markUnsaved(this);
         } finally { scexProcessing = false; }

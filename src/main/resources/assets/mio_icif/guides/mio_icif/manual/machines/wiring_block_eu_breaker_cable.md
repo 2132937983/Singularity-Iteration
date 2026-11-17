@@ -19,9 +19,10 @@ item_ids:
 The EU Breaker Cable is an IV cable with a circuit breaker. It protects the line behind it.
 
 - **Overload**: above the rated flow the breaker opens after a delay. At twice the rated flow it opens after the set delay; a larger overload opens it sooner, ten times the rated flow at once.
-- **Overvoltage**: a packet above the rated voltage opens it at once, before the packet can melt cables or explode machines behind it.
+- **Overvoltage**: a packet above the rated voltage opens it at once, before the packet passes: the cables and machines behind it get nothing from that packet.
 - **Reclosing**: the breaker closes again after 3 s. After the fourth trip in a row it stays open (locked out) until you reset it.
 - A redstone signal holds it open, like the splitter cable.
+- **Defaults**: a new cable has no rated flow (cables have no flow limit, so it does not open for flow until you set one) and an automatic rated voltage: the largest packet of the cables next to it. A breaker in a tin line opens for packets above 32 EU. Choose "Off" to switch the voltage element off.
 
 Set a shorter delay on the breakers near the machines than on the breaker of the main line. Then a fault opens only the nearest breaker.
 

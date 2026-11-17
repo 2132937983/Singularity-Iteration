@@ -61,6 +61,12 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     private long currentEnergyOutput = 0L;
     // 面前是否有水
     private boolean hasWaterInFront = false;
+    /** 0.1.11.18: EU/t from the water in front: 2 x v^3 of its speed (WaterPhysics), 0..4; and that speed. */
+    private int faceOutput;
+    private double faceSpeed;
+    public static final int MAX_FACE_GENERATION = 4;
+    public int getFaceOutput() { return faceOutput; }
+    public double getFaceSpeed() { return faceSpeed; }
 
     /**
      * 构造函数（用于 BlockEntityType.Builder）
@@ -80,6 +86,9 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     /**
      * 检查面前是否有水
      */
+    @org.jetbrains.annotations.Nullable
+    private com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.Source biomeSource;
+
     private void checkWaterInFront(Level level, BlockPos pos, BlockState state) {
         // 获取方块朝向
         Direction facing = state.getValue(com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Water_Generator.FACING);
@@ -88,6 +97,14 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         if (!level.isLoaded(frontPos)) { this.hasWaterInFront = false; return; }
         BlockState frontState = level.getBlockState(frontPos);
         this.hasWaterInFront = frontState.is(Blocks.WATER);
+        // 0.1.11.18: the water's speed sets the output (a river, the tide, a canal or a waterfall; still water gives nothing)
+        // 0.1.11.22: the biome once (it does not change), and nothing more without water in front
+        if (biomeSource == null) biomeSource = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSource(level, pos);
+        if (hasWaterInFront) {
+            double biome = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSpeed(level, pos, biomeSource);
+            faceSpeed = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.cellSpeed(level, frontPos, facing, biome);
+        } else faceSpeed = 0;
+        faceOutput = (int) Math.min(MAX_FACE_GENERATION, Math.round(WATER_FACE_GENERATION * faceSpeed * faceSpeed * faceSpeed));
     }
 
     /**
@@ -102,7 +119,8 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
 
         // 检查是否是水桶
         if (bucketStack.is(Items.WATER_BUCKET)) {
-            if (energyStorage.scexNetworkControlled() && bucketStack.getCount() != 1) return false;
+            // 0.1.11.13: one bucket at a time in both energy modes (the old grid shrank a stack and lost its empty buckets)
+            if (bucketStack.getCount() != 1) return false;
             // 检查水槽是否有足够空间
             int spaceAvailable = WATER_CAPACITY - waterAmount;
             if (spaceAvailable < WATER_PER_BUCKET) {
@@ -110,19 +128,8 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
             }
 
             // 消耗水桶，添加水量
-            bucketStack.shrink(1);
             waterAmount += WATER_PER_BUCKET;
-
-            // 如果槽位为空，放入空桶
-            if (bucketStack.isEmpty()) {
-                itemHandler.setStackInSlot(BUCKET_SLOT, new ItemStack(Items.BUCKET));
-            } else {
-                // 尝试将空桶放入槽位或玩家背包
-                // 这里简化处理，直接替换（实际应该尝试合并）
-                // 由于槽位只能放一个物品，这里需要处理溢出
-                // 暂时简单处理：如果槽位满了，就不给空桶（或者可以掉落）
-                // 更好的做法是在tick中处理空桶输出
-            }
+            itemHandler.setStackInSlot(BUCKET_SLOT, new ItemStack(Items.BUCKET));   // written through the slot
 
             setChanged();
             return true;
@@ -140,7 +147,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         // 检查面前是否有水，产生微量电力
         checkWaterInFront(level, pos, state);
         if (hasWaterInFront) {
-            output += WATER_FACE_GENERATION;
+            output += faceOutput;
         }
 
         // 如果有水在水槽中，根据水量发电
@@ -163,7 +170,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
             long room = energyStorage.scexExactAmount().roomBelow(energyStorage.getCapacity()).whole();
             var step = com.miophas.singularity_iteration.core.runtime.energy.engine.ConsumableGeneration.plan(waterAmount, scexBufferedWaterEnergy,
                 com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_PER_BUCKET / WATER_PER_BUCKET), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, 4), room,
-                hasWaterInFront ? com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, WATER_FACE_GENERATION) : 0);   // 0.1.8.4 output multiplier
+                hasWaterInFront && faceOutput > 0 ? com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, faceOutput) : 0);   // 0.1.8.4 output multiplier
             if (step.generated() > 0) {
                 long generated = apiGenerateEnergy(step.generated(), false);
                 if (generated != step.generated()) throw new IllegalStateException("Stable water-generation capacity changed");
@@ -183,7 +190,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
             apiGenerateEnergy(energyGenerated, false);
 
             // 消耗水（如果是从水槽发电）
-            if (waterAmount > 0 && currentEnergyOutput > WATER_FACE_GENERATION) {
+            if (waterAmount > 0 && currentEnergyOutput > (hasWaterInFront ? faceOutput : 0)) {
                 waterAmount = Math.max(0, waterAmount - 1);
             }
         }
@@ -440,5 +447,35 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new com.miophas.singularity_iteration.common.menu.generator.WaterGeneratorMenu(containerId, playerInventory, this);
+    }
+
+    // ---- 0.1.11.13: pipes can fill the water tank (it took water buckets only) ----------------------------------------
+
+    private final net.neoforged.neoforge.fluids.capability.IFluidHandler waterHandler = new net.neoforged.neoforge.fluids.capability.IFluidHandler() {
+        @Override public int getTanks() { return 1; }
+        @Override public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return waterAmount > 0 ? new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, waterAmount)
+                : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+        @Override public int getTankCapacity(int tank) { return WATER_CAPACITY; }
+        @Override public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+            return stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER);
+        }
+        @Override public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || !isFluidValid(0, resource)) return 0;
+            int filled = Math.min(resource.getAmount(), Math.max(0, WATER_CAPACITY - waterAmount));
+            if (filled > 0 && action.execute()) { waterAmount += filled; setChanged(); }
+            return filled;
+        }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+    };
+
+    public net.neoforged.neoforge.fluids.capability.IFluidHandler getWaterHandler(net.minecraft.core.Direction side) {
+        return waterHandler;
     }
 }

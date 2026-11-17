@@ -72,9 +72,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private final PlatformHeatStorage heat=new PlatformHeatStorage(10000,0,1000,20,5000,0);
     private final com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat heatPort=new com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat(heat,this::operational);
     private final mio_icif_fluid_reactor_handler fluid=new mio_icif_fluid_reactor_handler(this::fluidAvailable,this::dirty);
-    /** Liquid cooling of the standard (generator-mode) reactor. */
-    private final ReactorLiquidCooling cooling=new ReactorLiquidCooling(this::dirty);
-    public ReactorLiquidCooling getLiquidCooling(){return cooling;}
+    // 0.1.11.4: the liquid cooling of the generator-mode reactor (coolant piped into the reactor itself) is removed.
     private mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> structure;
     private mio_icif_reactor_mode mode=mio_icif_reactor_mode.GENERATOR;
     private int cycleRemaining=19,lastHeat;
@@ -178,7 +176,62 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         }
     }
     private void frame(){long now=level.getGameTime();if(frameAt!=now){frameAt=now;frameUsed=EnergyAmount.ZERO;}}
-    private boolean enabled(){
+    /**
+     * 0.1.11.21: SCRAM. A tripped reactor runs no fuel (as with no redstone signal) until it is reset: by the button, or by
+     * a redstone signal that comes back on, and only while the hull is below the setpoint. The setpoint (30 to 100 %,
+     * 100 = off) trips it at the start of a cycle whose hull heat has reached it.
+     */
+    private boolean tripped,lastSignal;
+    private int scramSetpoint=100;
+    public static final int MIN_SETPOINT=30,MAX_SETPOINT=100;
+    public boolean isTripped(){return tripped;}
+    public int getScramSetpoint(){return scramSetpoint;}
+    public void setScramSetpoint(int percent){scramSetpoint=Math.max(MIN_SETPOINT,Math.min(MAX_SETPOINT,percent));dirty();}
+    public void scram(){if(!tripped){tripped=true;dirty();}}
+    private boolean belowSetpoint(){long max=heat.getMaxHeatStored();return scramSetpoint>=MAX_SETPOINT||max<=0||heat.getHeatStored()*100<max*scramSetpoint;}
+    /** Resets a trip when the hull is below the setpoint; true when the reactor may run again. */
+    public boolean resetTrip(){if(tripped&&belowSetpoint()){tripped=false;dirty();}return !tripped;}
+    private void scramTick(){
+        boolean signal=signal();
+        if(tripped&&signal&&!lastSignal)resetTrip();   // a redstone signal coming back on resets the trip
+        lastSignal=signal;
+    }
+    private void scramCheck(){if(!tripped&&scramSetpoint<MAX_SETPOINT&&!belowSetpoint()){tripped=true;dirty();}}
+
+    // ---- 0.1.11.21: the heat balance of the last cycle and the record of the last 60 cycles (the control-room screen)
+    public static final int RECORD=60;
+    private final int[] hullRecord=new int[RECORD],euRecord=new int[RECORD];
+    private int recordHead;
+    private long balanceGenerated,balanceEmitted,balanceHull;
+    private final int[] hottest={-1,-1,-1},hottestShare=new int[3];
+    public long getBalanceGenerated(){return balanceGenerated;}
+    public long getBalanceEmitted(){return balanceEmitted;}
+    public long getBalanceHull(){return balanceHull;}
+    public int hottestSlot(int i){return hottest[i];}
+    public int hottestShare(int i){return hottestShare[i];}
+    /** Hull heat (per mille of the maximum) and EU/t of the {@code i}-th cycle counted from the oldest. */
+    public int hullRecord(int i){return hullRecord[(recordHead+i)%RECORD];}
+    public int euRecord(int i){return euRecord[(recordHead+i)%RECORD];}
+    public int getCycleRemaining(){return cycleRemaining;}
+    private void record(long generated,long emitted,long hullBefore,long hullAfter,long max,ReactorCycle.Part[] parts,int columns,double eu){
+        balanceGenerated=generated;balanceEmitted=emitted;balanceHull=hullAfter-hullBefore;
+        hullRecord[recordHead]=max>0?(int)Math.min(1000,hullAfter*1000/max):0;
+        euRecord[recordHead]=(int)Math.min(Integer.MAX_VALUE,Math.round(eu));
+        recordHead=(recordHead+1)%RECORD;
+        java.util.Arrays.fill(hottest,-1);java.util.Arrays.fill(hottestShare,0);
+        for(int i=0;i<54;i++){
+            var p=parts[i];if(p==null||i%9>=columns||!p.profile().storesHeat()||p.profile().capacity()<=0)continue;
+            int share=(int)Math.min(1000,(long)p.stored()*1000/p.profile().capacity());
+            for(int k=0;k<3;k++)if(hottest[k]<0||share>hottestShare[k]){
+                for(int m=2;m>k;m--){hottest[m]=hottest[m-1];hottestShare[m]=hottestShare[m-1];}
+                hottest[k]=i;hottestShare[k]=share;break;
+            }
+        }
+    }
+
+    private boolean enabled(){return !tripped&&signal();}
+    /** A redstone signal on the reactor, a chamber or a redstone port. */
+    private boolean signal(){
         if(level.hasNeighborSignal(worldPosition))return true;
         for(Direction side:Direction.values()){
             var at=worldPosition.relative(side);if(isChamber(at)&&level.hasNeighborSignal(at))return true;
@@ -215,9 +268,11 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         else if(mode==mio_icif_reactor_mode.FLUID)setReactorMode(mio_icif_reactor_mode.GENERATOR);
     }
     public static void tick(Level world,BlockPos pos,BlockState state,mio_icif_nuclear_reactor_generator m){
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(m);   // 0.1.11.13
         if(!m.live())return;m.ready=true;
         if(!m.operational()){m.dispatchAccident();if(m.live()){m.syncOutputGate();m.updateActive();}return;}
         m.frame();
+        m.scramTick();   // 0.1.11.21
         if(m.cycleRemaining==19)m.refreshStructure();
         if(!m.operational())return;
         if(m.fluidAvailable())m.fluid.processContainers();
@@ -225,7 +280,13 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(--m.cycleRemaining<0){m.cycleRemaining=19;m.dropUnfittingComponents();if(!m.operational())return;m.operate();}
         if(!m.live())return;
         m.syncOutputGate();m.updateActive();
+        m.oldGridGenerate();
         if(m.live())m.dirty();
+    }
+    /** 0.1.11.11: the old grid (independent network off) pulls from the storage, so the reactor fills it at its rate each tick. */
+    private void oldGridGenerate(){
+        if(energyStorage.scexNetworkControlled()||!exportAllowed())return;
+        produce(rate.toDouble());   // 0.1.11.13: the framework's sink (whole EU, fraction carried)
     }
     /**
      * 对齐 IC2 {@code dropAllUnfittingStuff()}：每个循环开始时弹出所有不再适用的元件，
@@ -275,6 +336,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private void operate(){
         if(!operational())return;
         rate=EnergyAmount.ZERO;lastHeat=0;hem=1.0F;cycleVerified=false;syncOutputGate();
+        scramCheck();   // 0.1.11.21
         refreshStructure();
         if(!operational())return;
         boolean steam=steamMode();   // 0.1.10.36
@@ -291,7 +353,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             ItemStack[] current=new ItemStack[54];for(int i=0;i<54;i++)current[i]=expected[i].copy();
             long hull=heat.getHeatStored();int coldIn=liquid?fluid.getInputFluidAmount():0,hotOut=liquid?fluid.getOutputFluidAmount():0,convertedSum=0;
             double euSum=0;long generatedSum=0;
-            long coolBudget=liquid||steam?0:cooling.budget(),coolUsed=0;
+            final long coolBudget=0;   // 0.1.11.4: no liquid cooling (the blackbox keeps the field)
             int water=steam?steamWater():0,steamRoom=steam?steamRoom():0,waterUsed=0,steamMade=0;
             // 0.1.10.12 blackbox: the hull before the cycle, the vented heat, the parts that melted
             final long hullBefore=hull;long emittedSum=0;final boolean poweredOn=enabled();
@@ -314,13 +376,6 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
                 for(int i=0;i<54;i++)if(parts[i]!=null&&next[i]==null)
                     melts.add(new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Melt(i,
                         com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Slot.of(current[i],parts[i]),level.getGameTime()));
-                // liquid cooling: coolant drains heat stored in vents/cells/exchangers first -> no wear while it flows
-                for(int i=0;i<54&&coolUsed<coolBudget;i++){
-                    var p=next[i];
-                    if(p==null||!p.profile().storesHeat()||p.stored()<=0)continue;
-                    int take=(int)Math.min(p.stored(),coolBudget-coolUsed);
-                    next[i]=p.withStored(p.stored()-take);coolUsed+=take;
-                }
                 for(int i=0;i<54;i++)replacement[i]=i%9<columns?ReactorInventory.write(current[i],parts[i],next[i],depleted[i]):current[i].copy();
                 euSum+=result.euPerTick();generatedSum+=result.generatedHeat();hull=result.hullHeat();
                 if(liquid){convertedSum+=converted.converted();coldIn=converted.coolant();hotOut=converted.hotCoolant();}
@@ -329,9 +384,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             }
             long excessHeat=excessHeat(generatedSum,feeds);
             long hullAfter=Math.addExact(hull,excessHeat);
-            long hullCooling=Math.min(hullAfter,coolBudget-coolUsed);   // remaining flow then cools the hull
-            coolUsed+=hullCooling;
-            final long finalHull=hullAfter-hullCooling;final long finalCoolUsed=coolUsed;
+            final long finalHull=hullAfter;final long finalCoolUsed=0;
             final double finalEu=euSum*com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);   // 0.1.8.4 output multiplier (EU only, not heat)
             final long finalGenerated=Math.addExact(generatedSum,excessHeat);
             final int finalCold=coldIn,finalHot=hotOut,finalConverted=convertedSum,finalWater=waterUsed,finalSteam=steamMade;
@@ -353,7 +406,6 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             if(!operational())return;
             if(!itemHandler.scexCommitSlots(slots,expected,replacement,()->{
                 heat.setCapacity(finalResult.maxHullHeat());heat.setHeat(Math.min(finalHull,finalResult.maxHullHeat()));lastHeat=committedHeat;
-                if(!liquid)cooling.commit(finalCoolUsed);
                 if(finalConverted2!=null)fluid.commitCycle(finalCold,finalHot,finalConverted,coolant.huPerMB());
                 if(steam)commitSteam(finalWater,finalSteam);
                 accident.armAfterCommit(trigger);cycleVerified=true;rate=committedRate;
@@ -380,9 +432,10 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
                 blackbox.record(new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Sample(level.getGameTime(),
                     hullBefore,Math.min(finalHull,finalResult.maxHullHeat()),finalResult.maxHullHeat(),generatedSum,emittedSum,excessHeat,
                     finalEu,feeds,columns,unloaded,poweredOn,liquid,finalCold,finalHot,liquid?fluid.FLUID_CAPACITY:0,finalConverted,
-                    coolBudget,finalCoolUsed,cooling.coldFluid().getAmount(),cooling.hotFluid().getAmount(),partHeat,partCapacity,
+                    coolBudget,finalCoolUsed,0,0,partHeat,partCapacity,
                     rods,coolingParts,meltedCount,expired,blackbox.pendingDropped(),blackbox.pendingAutomationIn(),blackbox.pendingAutomationOut()),
                     after,melts);
+                record(generatedSum+excessHeat,emittedSum,hullBefore,Math.min(finalHull,finalResult.maxHullHeat()),finalResult.maxHullHeat(),accidentParts,columns,finalEu);   // 0.1.11.21
                 // explosions off in the config: no accident is armed and the hull stops at its limit; log that
                 // meltdown once (it does not take incidentId, so a later real accident is still recorded)
                 if(blastProfile.disabled()&&finalHull>=finalResult.maxHullHeat()){
@@ -627,10 +680,11 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     @Override public void setRemoved(){closeAccess();super.setRemoved();IndependentSiEnergy.changed(this);}
     @Override public void clearRemoved(){ready=false;cycleVerified=false;energyStorage.setOutputEnabled(false);super.clearRemoved();IndependentSiEnergy.changed(this);}
     @Override public void onChunkUnloaded(){closeAccess();super.onChunkUnloaded();IndependentSiEnergy.changed(this);}
-    @Override public double getOfferedEnergy(){return 0;}
-    @Override public void drawEnergy(double amount){}
-    @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return false;}
-    public long extractPowerForConsumer(long amount,boolean simulate){return 0;}
+    // 0.1.11.11: the old grid takes the stored energy (it made none before); the independent network keeps the demand path above
+    @Override public double getOfferedEnergy(){return energyStorage.scexNetworkControlled()||!exportAllowed()?0:Math.min(super.getOfferedEnergy(),MAX_EXTRACT);}
+    @Override public void drawEnergy(double amount){if(!energyStorage.scexNetworkControlled())super.drawEnergy(amount);}
+    @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return !energyStorage.scexNetworkControlled()&&exportAllowed()&&super.emitsEnergyTo(acceptor,side);}
+    public long extractPowerForConsumer(long amount,boolean simulate){return energyStorage.scexNetworkControlled()||!exportAllowed()?0:energyStorage.extract(Math.min(amount,MAX_EXTRACT),simulate);}
     public int getPacketCount(){return MAX_PACKETS;}   // 0.1.10.38: was 1 (8192 EU/t at most)
     @Override public int getSourceTier(){return 5;}
     @Override public long getPowerOutput(){return MAX_EXTRACT;}
@@ -653,18 +707,20 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
      * {@link #STATUS_STOPPED} the last cycle failed ({@link #getReactorFailure}); {@link #STATUS_HOLD} a saved state that needs
      * recovery; {@link #STATUS_ACCIDENT} shut down after an accident; {@link #STATUS_OK} otherwise (running, or simply no fuel).
      */
-    public static final int STATUS_OK=0,STATUS_OFF=1,STATUS_STOPPED=2,STATUS_HOLD=3,STATUS_ACCIDENT=4;
+    public static final int STATUS_OK=0,STATUS_OFF=1,STATUS_STOPPED=2,STATUS_HOLD=3,STATUS_ACCIDENT=4,STATUS_TRIPPED=5;
     public int statusCode(){
         if(hasReactorAccident())return STATUS_ACCIDENT;
         if(!hold.isEmpty())return STATUS_HOLD;
         if(!failure.isEmpty())return STATUS_STOPPED;
+        if(tripped)return STATUS_TRIPPED;   // 0.1.11.21
         if(level instanceof ServerLevel&&live()&&!enabled())return STATUS_OFF;
         return STATUS_OK;
     }
     /** The lang key of a status line, or null for {@link #STATUS_OK}. */
     public static @org.jetbrains.annotations.Nullable String statusKey(int status){
         return switch(status){case STATUS_OFF->"gui.mio_icif.reactor.status.off";case STATUS_STOPPED->"gui.mio_icif.reactor.status.stopped";
-            case STATUS_HOLD->"gui.mio_icif.reactor.status.hold";case STATUS_ACCIDENT->"gui.mio_icif.reactor.status.accident";default->null;};
+            case STATUS_HOLD->"gui.mio_icif.reactor.status.hold";case STATUS_ACCIDENT->"gui.mio_icif.reactor.status.accident";
+            case STATUS_TRIPPED->"gui.mio_icif.reactor.status.tripped";default->null;};
     }
     /** True in fluid mode (not a steam reactor): the heat leaves as hot coolant, no EU. */
     public boolean isFluidMode(){return mode==mio_icif_reactor_mode.FLUID&&!steamMode();}
@@ -708,39 +764,51 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     // structure through the multiblock manager; this is called every tick and per fluid capability query
     @Override public boolean isValidFluidReactorStructure(){return structure!=null&&structure.isValid()&&level!=null;}
     @Override public mio_icif_fluid_reactor_handler getFluidHandler(){return fluid;}
-    public IFluidHandler getFluidHandlerCapability(Direction side){if(steamMode())return steamFluids();if(fluidAvailable())return fluid;return mode==mio_icif_reactor_mode.GENERATOR?cooling:null;}
+    public IFluidHandler getFluidHandlerCapability(Direction side){if(steamMode())return steamFluids();if(fluidAvailable())return fluid;return null;}   // 0.1.11.4: generator mode takes no coolant
     public int getInputFluidAmount(){return fluid.getInputFluidAmount();}
     public int getOutputFluidAmount(){return fluid.getOutputFluidAmount();}
     @Override public Component getDisplayName(){return Component.translatable("block.mio_icif.generator.block_nuclear_reactor_generator");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return mode==mio_icif_reactor_mode.FLUID||steamMode()?new FluidReactorMenu(id,inventory,this):new NuclearReactorGeneratorMenu(id,inventory,this,itemHandler,getContainerData());}
     public ContainerData getContainerData(){return new ContainerData(){
-        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7->cooling.coldFluid().getAmount();case 8->cooling.hotFluid().getAmount();case 9->cooling.lastAbsorbed();case 10->cooling.active()==null?0:cooling.active().huPerMB();case 11->statusCode();default->0;};}
+        @Override public int get(int i){
+            // 0.1.11.21: 12 SCRAM setpoint, 13 tripped, 14 heat made, 15 heat vented, 16 hull change (last cycle),
+            // 17..19 the hottest three slots (-1 none), 20..22 their heat per mille, 23 ticks to the next cycle,
+            // 24.. hull per mille of the last 60 cycles, then their EU/t (oldest first)
+            if(i>=CONTROL_HULL&&i<CONTROL_HULL+RECORD)return hullRecord(i-CONTROL_HULL);
+            if(i>=CONTROL_EU&&i<CONTROL_EU+RECORD)return euRecord(i-CONTROL_EU);
+            return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7,8,9,10->0;case 11->statusCode();
+                case 12->scramSetpoint;case 13->tripped?1:0;case 14->(int)Math.min(Integer.MAX_VALUE,balanceGenerated);case 15->(int)Math.min(Integer.MAX_VALUE,balanceEmitted);
+                case 16->(int)Math.max(Integer.MIN_VALUE,Math.min(Integer.MAX_VALUE,balanceHull));case 17,18,19->hottest[i-17];case 20,21,22->hottestShare[i-20];case 23->cycleRemaining;default->0;};}
         @Override public void set(int i,int value){}
-        @Override public int getCount(){return 12;}
+        @Override public int getCount(){return CONTROL_DATA;}
     };}
+    public static final int CONTROL_HULL=24,CONTROL_EU=CONTROL_HULL+RECORD,CONTROL_DATA=CONTROL_EU+RECORD;
     public ContainerData getGeneratorContainerData(){return getContainerData();}
     public ContainerData getFluidContainerData(){return new FluidData();}
     private final class FluidData implements ContainerData {
-        @Override public int get(int i){return switch(i){case 0->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 1->(int)getMaxHeat();case 2->(int)getCurrentTemperature();case 3->getInputFluidAmount();case 4->getOutputFluidAmount();case 5->fluidOutputRate();case 6->inputFluidKind();case 7->outputFluidKind();case 8->inputFluidCapacity();case 9->outputFluidCapacity();case 10->statusCode();default->0;};}
+        @Override public int get(int i){return switch(i){case 0->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 1->(int)getMaxHeat();case 2->(int)getCurrentTemperature();case 3->getInputFluidAmount();case 4->getOutputFluidAmount();case 5->fluidOutputRate();case 6->inputFluidKind();case 7->outputFluidKind();case 8->inputFluidCapacity();case 9->outputFluidCapacity();case 10->statusCode();case 11->scramSetpoint;case 12->tripped?1:0;default->0;};}   // 0.1.11.21: 11 setpoint, 12 tripped
         @Override public void set(int i,int value){}
-        @Override public int getCount(){return 11;}
+        @Override public int getCount(){return 13;}
     }
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.saveAdditional(tag,provider);tag.putLong("HeatStored",heat.getHeatStored());tag.putLong("MaxHeatStored",heat.getMaxHeatStored());
-        tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());tag.putInt("FeedRate",feedRate);tag.put("LiquidCooling",cooling.save(provider));
+        tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());tag.putInt("FeedRate",feedRate);
         ListTag legacy=new ListTag();for(int i=0;i<54;i++)if(!getItem(i).isEmpty()){CompoundTag item=(CompoundTag)getItem(i).save(provider);item.putByte("Slot",(byte)i);legacy.add(item);}tag.put("ReactorItems",legacy);
         CompoundTag fluidTag=new CompoundTag();fluid.saveToNBT(fluidTag,provider);tag.put("FluidHandler",fluidTag);
         if(auditOwner!=null){tag.putUUID("AuditOwner",auditOwner);tag.putString("AuditOwnerName",auditOwnerName);}   // 0.1.10.12
         CompoundTag saved=new CompoundTag();saved.putInt("version",2);saved.putLong("rate",rate.whole());saved.putLong("rate_fraction",rate.fraction());saved.put("hold",hold.copy());saved.putString("failure",failure);saved.put("accident",saveAccident());tag.put("scex_reactor",saved);
+        tag.putInt("scex_scram_setpoint",scramSetpoint);tag.putBoolean("scex_scram_tripped",tripped);   // 0.1.11.21
     }
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.loadAdditional(tag,provider);hold=new CompoundTag();failure="";lastHeat=0;accident=new ReactorAccidentLatch();closeAccess();frameAt=Long.MIN_VALUE;
+        scramSetpoint=tag.contains("scex_scram_setpoint")?Math.max(MIN_SETPOINT,Math.min(MAX_SETPOINT,tag.getInt("scex_scram_setpoint"))):MAX_SETPOINT;   // 0.1.11.21
+        tripped=tag.getBoolean("scex_scram_tripped");
         auditOwner=tag.hasUUID("AuditOwner")?tag.getUUID("AuditOwner"):null;auditOwnerName=tag.getString("AuditOwnerName");   // 0.1.10.12
         long stored=tag.getLong("HeatStored");if(stored<0){hold.put("invalid_heat",tag.get("HeatStored").copy());stored=0;}heat.setHeat(stored);
         long max=tag.getLong("MaxHeatStored");heat.setCapacity(max>0?max:10000);
         cycleRemaining=tag.contains("ReactorCycleTicks")?tag.getInt("ReactorCycleTicks"):19;
         if(cycleRemaining<0||cycleRemaining>19){hold.put("invalid_cycle",tag.get("ReactorCycleTicks").copy());cycleRemaining=19;}
-        if(tag.contains("LiquidCooling"))cooling.load(tag.getCompound("LiquidCooling"),provider);
+        // 0.1.11.4: a saved "LiquidCooling" tank (removed feature) is ignored; its coolant is gone
         feedRate=tag.contains("FeedRate")?Math.max(MIN_FEED,Math.min(MAX_FEED,tag.getInt("FeedRate"))):1;
         String savedMode=tag.getString("ReactorMode");mode=mio_icif_reactor_mode.fromString(savedMode);
         if(!savedMode.isEmpty()&&!savedMode.equals("generator")&&!savedMode.equals("fluid"))hold.putString("unknown_mode",savedMode);
@@ -838,4 +906,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         return super.getUpdateTag(provider);
     }
     @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider){loadAdditional(tag,provider);}
+
+    /** 0.1.11.13: comparator by the hull heat (the share of the maximum). */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(getCurrentHeat(), getMaxHeat());
+    }
+
+    /** 0.1.11.13: rated output = the output of the current layout (its nameplate rate is 0). */
+    @Override
+    public long ratedOutput() {
+        return Math.round(rate.toDouble());
+    }
 }

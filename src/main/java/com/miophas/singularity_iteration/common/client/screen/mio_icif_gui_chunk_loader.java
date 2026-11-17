@@ -34,9 +34,12 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
     private static final int MAP_RADIUS = 4;
     private static final int MAP_SIZE = MAP_CELL_SIZE * (MAP_RADIUS * 2 + 1);
 
-    private static final int LOADED_OVERLAY = 0x5500FF00;
-    private static final int UNLOADED_OVERLAY = 0x40000000;
-    private static final int SELF_COLOR = 0x80FFFF00;
+    /** 0.1.11.38: cell overlays by {@link #cellState}: loading, selected but not loading, running beside a loading chunk, not selected. */
+    private static final int[] CELL_COLOURS = {0x2840FF90, 0x50FF9A20, 0x30FFFFFF, 0x60000000};
+    /** Frames of the loading and the waiting cells (the ring and the unselected cells have none). */
+    private static final int[] CELL_FRAMES = {0xE060FFA0, 0xF0FFA030, 0, 0};
+    private static final int STATE_HELD = 0, STATE_WAITING = 1, STATE_RING = 2, STATE_OFF = 3;
+    private static final int SELF_FRAME = 0xFFFFE040;
 
     private static final int CHUNK_COUNT_X = 8;
     private static final int CHUNK_COUNT_Y = 16;
@@ -66,6 +69,20 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
             terrainTextureId = ResourceLocation.fromNamespaceAndPath("mio_icif", "dynamic/chunk_loader_terrain_" + System.identityHashCode(this));
             minecraft.getTextureManager().register(terrainTextureId, terrainTexture);
         }
+        // 0.1.11.38 (chunk loader audit C2): select the whole 9 x 9 (nearest first, up to the limit) / clear all but the own chunk
+        int x = (this.width - this.imageWidth) / 2, y = (this.height - this.imageHeight) / 2;
+        var all = addRenderableWidget(new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(x + 7, y + 64, 18, 14,
+            Component.literal("+"), b -> area(true)));
+        all.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("gui.mio_icif.chunk_loader.select_all")));
+        var none = addRenderableWidget(new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(x + 7, y + 82, 18, 14,
+            Component.literal("−"), b -> area(false)));
+        none.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("gui.mio_icif.chunk_loader.clear")));
+    }
+
+    private void area(boolean select) {
+        if (menu.getBlockPos() != null)
+            PacketDistributor.sendToServer(new com.miophas.singularity_iteration.common.network.ChunkLoaderAreaPacket(
+                menu.getBlockPos(), -MAP_RADIUS, -MAP_RADIUS, MAP_RADIUS, MAP_RADIUS, select));
     }
 
     @Override
@@ -92,52 +109,83 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
         }
     }
 
+    /** A map colour as the ABGR pixel of the terrain image (0 for none). */
+    private static int abgr(MapColor mapColor) {
+        if (mapColor == null) return 0;
+        int rgb = mapColor.col;
+        return 0xFF000000 | ((rgb & 0xFF) << 16) | (rgb & 0xFF00) | ((rgb >> 16) & 0xFF);
+    }
+
     private void rebuildTerrainTexture(ChunkPos selfChunk) {
         if (terrainImage == null || minecraft == null || minecraft.level == null) return;
-
+        // 0.1.11.35: under a roof (the Nether) the top block of every column is the bedrock ceiling, so the map was one
+        // flat grey; there each column shows the first block at or below the loader's height (the floor around it)
+        boolean ceiling = minecraft.level.dimensionType().hasCeiling();
+        int floorStart = menu.getBlockPos() != null ? menu.getBlockPos().getY() : minecraft.level.getMinBuildHeight();
+        int minY = minecraft.level.getMinBuildHeight();
+        // 0.1.11.38 (chunk loader audit C2): the height of each column, for relief shading as on a vanilla map
+        int[] colour = new int[MAP_SIZE * MAP_SIZE], height = new int[MAP_SIZE * MAP_SIZE];
+        var cursor = new net.minecraft.core.BlockPos.MutableBlockPos();
         for (int ci = -MAP_RADIUS; ci <= MAP_RADIUS; ci++) {
             for (int cj = -MAP_RADIUS; cj <= MAP_RADIUS; cj++) {
                 ChunkPos chunkPos = new ChunkPos(selfChunk.x + ci, selfChunk.z + cj);
                 ChunkAccess chunk = minecraft.level.getChunk(chunkPos.x, chunkPos.z);
-
                 int baseX = (ci + MAP_RADIUS) * MAP_CELL_SIZE;
                 int baseY = (cj + MAP_RADIUS) * MAP_CELL_SIZE;
-
                 for (int cx = 0; cx < 16; cx++) {
                     for (int cz = 0; cz < 16; cz++) {
-                        int surfaceY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, cx, cz);
-                        net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(
-                            chunkPos.getMinBlockX() + cx, surfaceY, chunkPos.getMinBlockZ() + cz);
-                        BlockState state = chunk.getBlockState(pos);
-
-                        if (state.isAir()) {
-                            surfaceY--;
-                            if (surfaceY < minecraft.level.getMinBuildHeight()) {
-                                terrainImage.setPixelRGBA(baseX + cx, baseY + cz, 0);
-                                continue;
-                            }
-                            pos = new net.minecraft.core.BlockPos(pos.getX(), surfaceY, pos.getZ());
-                            state = chunk.getBlockState(pos);
+                        int y = ceiling ? floorStart : chunk.getHeight(Heightmap.Types.WORLD_SURFACE, cx, cz);
+                        cursor.set(chunkPos.getMinBlockX() + cx, y, chunkPos.getMinBlockZ() + cz);
+                        BlockState state = chunk.getBlockState(cursor);
+                        while (state.isAir() && y > minY && (ceiling || y >= chunk.getHeight(Heightmap.Types.WORLD_SURFACE, cx, cz) - 1)) {
+                            cursor.setY(--y);
+                            state = chunk.getBlockState(cursor);
                         }
-
-                        MapColor mapColor = state.getMapColor(minecraft.level, pos);
-                        int color = 0;
-                        if (mapColor != null) {
-                            int rgb = mapColor.col;
-                            int r = (rgb >> 16) & 0xFF;
-                            int g = (rgb >> 8) & 0xFF;
-                            int b = rgb & 0xFF;
-                            color = 0xFF000000 | (b << 16) | (g << 8) | r;
-                        }
-                        terrainImage.setPixelRGBA(baseX + cx, baseY + cz, color);
+                        int at = (baseY + cz) * MAP_SIZE + baseX + cx;
+                        colour[at] = state.isAir() ? 0 : abgr(state.getMapColor(minecraft.level, cursor));
+                        height[at] = y;
                     }
                 }
             }
         }
-
+        for (int py = 0; py < MAP_SIZE; py++) {
+            for (int px = 0; px < MAP_SIZE; px++) {
+                int at = py * MAP_SIZE + px, c = colour[at];
+                if (c != 0 && py > 0) {
+                    int north = height[at - MAP_SIZE];
+                    int shade = height[at] > north ? 255 : height[at] < north ? 180 : 220;   // vanilla map brightness steps
+                    c = 0xFF000000 | (((c >> 16 & 0xFF) * shade / 255) << 16) | (((c >> 8 & 0xFF) * shade / 255) << 8) | ((c & 0xFF) * shade / 255);
+                }
+                terrainImage.setPixelRGBA(px, py, c);
+            }
+        }
         terrainTexture.upload();
         terrainDirty = false;
     }
+
+    /** 0.1.11.38: the state of the cell at offset (dx, dz); see {@link #CELL_COLOURS}. */
+    private int cellState(int dx, int dz) {
+        if (menu.isChunkHeld(dx, dz)) return STATE_HELD;
+        if (menu.isChunkLoaded(dx, dz)) return STATE_WAITING;
+        for (int ox = -1; ox <= 1; ox++) for (int oz = -1; oz <= 1; oz++)
+            if ((ox != 0 || oz != 0) && Math.abs(dx + ox) <= MAP_RADIUS && Math.abs(dz + oz) <= MAP_RADIUS && menu.isChunkHeld(dx + ox, dz + oz)) return STATE_RING;
+        return STATE_OFF;
+    }
+
+    private static void frame(GuiGraphics g, int x0, int y0, int x1, int y1, int colour) {
+        g.fill(x0, y0, x1, y0 + 1, colour); g.fill(x0, y1 - 1, x1, y1, colour);
+        g.fill(x0, y0, x0 + 1, y1, colour); g.fill(x1 - 1, y0, x1, y1, colour);
+    }
+
+    /** The map cell under the mouse as {dx, dz}, or null. */
+    private int[] cellAt(double mouseX, double mouseY) {
+        int x = (this.width - this.imageWidth) / 2, y = (this.height - this.imageHeight) / 2;
+        int dx = (int) Math.floor((mouseX - x - MAP_CENTER_X) / MAP_CELL_SIZE), dz = (int) Math.floor((mouseY - y - MAP_CENTER_Y) / MAP_CELL_SIZE);
+        return Math.abs(dx) <= MAP_RADIUS && Math.abs(dz) <= MAP_RADIUS ? new int[]{dx, dz} : null;
+    }
+
+    private int dragButton = -1;
+    private int[] dragStart, dragEnd;
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
@@ -165,25 +213,24 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
         guiGraphics.blit(terrainTextureId, mapX, mapY, 0, 0, MAP_SIZE, MAP_SIZE, MAP_SIZE, MAP_SIZE);
 
         int amountLoaded = 0;
-
+        // 0.1.11.38 (chunk loader audit C2): four cell states: holds a ticket (loading), selected but not loading (a limit,
+        // no energy), running because a loading chunk is next to it (not billed: a ticket also ticks the chunks around
+        // it, as /forceload), not selected. The loader's own chunk has a yellow frame.
         for (int i = -MAP_RADIUS; i <= MAP_RADIUS; i++) {
             for (int j = -MAP_RADIUS; j <= MAP_RADIUS; j++) {
                 int cellX = x + MAP_CENTER_X + i * MAP_CELL_SIZE;
                 int cellY = y + MAP_CENTER_Y + j * MAP_CELL_SIZE;
-
-                boolean loaded = menu.isChunkLoaded(i, j);
-                boolean isSelf = (i == 0 && j == 0);
-
-                if (loaded) amountLoaded++;
-
-                if (isSelf) {
-                    guiGraphics.fill(cellX, cellY, cellX + MAP_CELL_SIZE, cellY + MAP_CELL_SIZE, SELF_COLOR);
-                } else if (loaded) {
-                    guiGraphics.fill(cellX, cellY, cellX + MAP_CELL_SIZE, cellY + MAP_CELL_SIZE, LOADED_OVERLAY);
-                } else {
-                    guiGraphics.fill(cellX, cellY, cellX + MAP_CELL_SIZE, cellY + MAP_CELL_SIZE, UNLOADED_OVERLAY);
-                }
+                if (menu.isChunkLoaded(i, j)) amountLoaded++;
+                int state = cellState(i, j);
+                guiGraphics.fill(cellX, cellY, cellX + MAP_CELL_SIZE, cellY + MAP_CELL_SIZE, CELL_COLOURS[state]);
+                if (CELL_FRAMES[state] != 0) frame(guiGraphics, cellX + 1, cellY + 1, cellX + MAP_CELL_SIZE - 1, cellY + MAP_CELL_SIZE - 1, CELL_FRAMES[state]);
+                if (i == 0 && j == 0) frame(guiGraphics, cellX, cellY, cellX + MAP_CELL_SIZE, cellY + MAP_CELL_SIZE, SELF_FRAME);
             }
+        }
+        if (dragButton >= 0 && dragEnd != null && !java.util.Arrays.equals(dragStart, dragEnd)) {
+            int x0 = x + MAP_CENTER_X + Math.min(dragStart[0], dragEnd[0]) * MAP_CELL_SIZE, x1 = x + MAP_CENTER_X + (Math.max(dragStart[0], dragEnd[0]) + 1) * MAP_CELL_SIZE;
+            int y0 = y + MAP_CENTER_Y + Math.min(dragStart[1], dragEnd[1]) * MAP_CELL_SIZE, y1 = y + MAP_CENTER_Y + (Math.max(dragStart[1], dragEnd[1]) + 1) * MAP_CELL_SIZE;
+            frame(guiGraphics, x0, y0, x1, y1, dragButton == 0 ? 0xFFFFFFFF : 0xFFFF6060);
         }
 
         guiGraphics.drawString(this.font, String.valueOf(amountLoaded), x + CHUNK_COUNT_X, y + CHUNK_COUNT_Y, 4210752, false);
@@ -191,30 +238,45 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
         guiGraphics.drawString(this.font, String.valueOf(menu.getMaxChunks()), x + CHUNK_COUNT_X, y + CHUNK_COUNT_Y + 18, 4210752, false);
     }
 
+    /**
+     * 0.1.11.38 (chunk loader audit C2): left click toggles a chunk, a left drag selects the rectangle (nearest first, up
+     * to the limit), a right click or right drag clears it (the loader's own chunk stays).
+     */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        for (int dx = -MAP_RADIUS; dx <= MAP_RADIUS; dx++) {
-            for (int dy = -MAP_RADIUS; dy <= MAP_RADIUS; dy++) {
-                int cellX = x + MAP_CENTER_X + dx * MAP_CELL_SIZE;
-                int cellY = y + MAP_CENTER_Y + dy * MAP_CELL_SIZE;
-
-                if (mouseX > cellX && mouseX <= cellX + MAP_CELL_SIZE &&
-                    mouseY > cellY && mouseY <= cellY + MAP_CELL_SIZE) {
-
-                    ChunkLoaderMenu menu = this.getMenu();
-                    if (menu != null && menu.getBlockPos() != null && button == 0) {
-                        PacketDistributor.sendToServer(new ChunkLoaderTogglePacket(
-                            menu.getBlockPos(), dx, dy));
-                    }
-                    return true;
-                }
-            }
+        int[] cell = cellAt(mouseX, mouseY);
+        if (cell != null && (button == 0 || button == 1) && menu.getBlockPos() != null) {
+            dragButton = button; dragStart = cell; dragEnd = cell;
+            return true;
         }
-
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (dragButton >= 0 && button == dragButton) {
+            int[] cell = cellAt(mouseX, mouseY);
+            if (cell != null) dragEnd = cell;
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (dragButton >= 0 && button == dragButton) {
+            int[] end = dragEnd != null ? dragEnd : dragStart;
+            if (menu.getBlockPos() != null) {
+                if (button == 0 && java.util.Arrays.equals(dragStart, end))
+                    PacketDistributor.sendToServer(new ChunkLoaderTogglePacket(menu.getBlockPos(), end[0], end[1]));
+                else
+                    PacketDistributor.sendToServer(new com.miophas.singularity_iteration.common.network.ChunkLoaderAreaPacket(
+                        menu.getBlockPos(), dragStart[0], dragStart[1], end[0], end[1], button == 0));
+            }
+            dragButton = -1; dragStart = null; dragEnd = null;
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -237,6 +299,10 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
     private Component statusText(int status) {
         String[] names = com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_NAMES;
         String name = status >= 0 && status < names.length ? names[status] : "starting";
+        if (status == com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_GRACE) {   // 0.1.11.37
+            int left = menu.getGraceSecondsLeft();
+            return Component.translatable("gui.mio_icif.chunk_loader.status.grace", String.format(java.util.Locale.ROOT, "%d:%02d", left / 60, left % 60));
+        }
         return Component.translatable("gui.mio_icif.chunk_loader.status." + name, menu.getForcedChunkCount(), menu.getLoadedChunkCount());
     }
 
@@ -251,9 +317,9 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
             mouseY >= y + ENERGY_GAUGE_Y && mouseY <= y + ENERGY_GAUGE_Y + LIGHTNING_HEIGHT) {
             ChunkLoaderMenu menu = this.getMenu();
             if (menu != null) {
-                guiGraphics.renderTooltip(this.font,
-                    Component.literal("Energy: " + menu.getEnergy() + "/" + menu.getMaxEnergy() + " EU"),
-                    mouseX, mouseY);
+                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                    Component.translatable("gui.mio_icif.chunk_loader.energy", menu.getEnergy(), menu.getMaxEnergy()),
+                    Component.translatable("gui.mio_icif.chunk_loader.cost", menu.getEnergyPerTick())), mouseX, mouseY);
             }
             return;
         }
@@ -261,39 +327,23 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
         // 0.1.10.11: the chunk count tells the state and how many selected chunks hold a ticket
         if (mouseX >= x + CHUNK_COUNT_X && mouseX <= x + CHUNK_COUNT_X + 16 && mouseY >= y + CHUNK_COUNT_Y && mouseY <= y + CHUNK_COUNT_Y + 26) {
             guiGraphics.renderComponentTooltip(this.font, java.util.List.of(statusText(menu.getStatus()),
-                Component.translatable("gui.mio_icif.chunk_loader.granted", menu.getForcedChunkCount(), menu.getLoadedChunkCount(), menu.getMaxChunks())),
+                Component.translatable("gui.mio_icif.chunk_loader.granted", menu.getForcedChunkCount(), menu.getLoadedChunkCount(), menu.getMaxChunks()),
+                Component.translatable("gui.mio_icif.chunk_loader.cost", menu.getEnergyPerTick())),
                 mouseX, mouseY);
             return;
         }
 
-        for (int dx = -MAP_RADIUS; dx <= MAP_RADIUS; dx++) {
-            for (int dy = -MAP_RADIUS; dy <= MAP_RADIUS; dy++) {
-                int cellX = x + MAP_CENTER_X + dx * MAP_CELL_SIZE;
-                int cellY = y + MAP_CENTER_Y + dy * MAP_CELL_SIZE;
-
-                if (mouseX > cellX && mouseX <= cellX + MAP_CELL_SIZE &&
-                    mouseY > cellY && mouseY <= cellY + MAP_CELL_SIZE) {
-
-                    ChunkLoaderMenu menu = this.getMenu();
-                    if (menu != null) {
-                        ChunkPos selfChunk = menu.getSelfChunkPos();
-                        ChunkPos chunk = new ChunkPos(selfChunk.x + dx, selfChunk.z + dy);
-                        boolean loaded = menu.isChunkLoaded(dx, dy);
-                        boolean isSelf = (dx == 0 && dy == 0);
-
-                        String tooltip;
-                        if (isSelf) {
-                            tooltip = "Chunk (self) [" + chunk.x + ", " + chunk.z + "]";
-                        } else if (loaded) {
-                            tooltip = "Chunk (loaded) [" + chunk.x + ", " + chunk.z + "]";
-                        } else {
-                            tooltip = "Chunk (unloaded) [" + chunk.x + ", " + chunk.z + "]";
-                        }
-                        guiGraphics.renderTooltip(this.font, Component.literal(tooltip), mouseX, mouseY);
-                    }
-                    return;
-                }
-            }
+        int[] cell = cellAt(mouseX, mouseY);
+        if (cell != null && dragButton < 0) {
+            ChunkPos selfChunk = menu.getSelfChunkPos();
+            ChunkPos chunk = new ChunkPos(selfChunk.x + cell[0], selfChunk.z + cell[1]);
+            String state = new String[] {"held", "waiting", "ring", "unselected"}[cellState(cell[0], cell[1])];
+            var lines = new java.util.ArrayList<Component>();
+            lines.add(Component.translatable("gui.mio_icif.chunk_loader.cell." + state, chunk.x, chunk.z));
+            if (cell[0] == 0 && cell[1] == 0) lines.add(Component.translatable("gui.mio_icif.chunk_loader.cell.own").withStyle(net.minecraft.ChatFormatting.YELLOW));
+            if (state.equals("waiting")) lines.add(statusText(menu.getStatus()).copy().withStyle(net.minecraft.ChatFormatting.GOLD));
+            lines.add(Component.translatable("gui.mio_icif.chunk_loader.cell.help").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+            guiGraphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
         }
     }
 }

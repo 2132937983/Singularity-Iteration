@@ -1,103 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.menu.generator;
 
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_twin_turbo_kinetic_generator;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
-import com.miophas.singularity_iteration.common.menu.base.mio_icif_generator_menu;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ContainerData;
-import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings({"null"}) public class TwinTurboKineticGeneratorMenu extends mio_icif_generator_menu {
+/**
+ * 0.1.11.17 (the shaft mimic screen): 0 energy, 1 capacity, 2 KU stored, 3 KU capacity, 4 working, 5 EU/t, 6 KU/t in,
+ * 7 EU per KU x1000, 8 source (0 none, 1 wind/water, 2 other), 9 source rpm, 10 max KU/t in.
+ */
+public class TwinTurboKineticGeneratorMenu extends MimicGeneratorMenu {
+    public static final int DATA_COUNT = 11;
 
-    private static final int DATA_ENERGY = 0;
-    private static final int DATA_MAX_ENERGY = 1;
-    private static final int DATA_KINETIC = 2;
-    private static final int DATA_MAX_KINETIC = 3;
-    private static final int DATA_IS_WORKING = 4;
-    private static final int DATA_ENERGY_OUTPUT = 5;
-    private static final int DATA_COUNT = 6;
-    private static final int SLOT_COUNT = 0;
+    public TwinTurboKineticGeneratorMenu(int containerId, Inventory playerInventory) { this(containerId, playerInventory, null); }
 
-    public TwinTurboKineticGeneratorMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, null, null);
+    public TwinTurboKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_twin_turbo_kinetic_generator be) {
+        super(mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, 0, playerInventory, null, DATA_COUNT, be);
     }
 
-    public TwinTurboKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler) {
-        this(containerId, playerInventory, itemHandler, null);
-    }
-
-    public TwinTurboKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT);
-    }
-
-    public TwinTurboKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_twin_turbo_kinetic_generator blockEntity, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT, blockEntity);
-    }
-
-    public void setSyncData(int energy, int maxEnergy, int kinetic, int maxKinetic, boolean isWorking, int energyOutput) {
-        this.data.set(DATA_ENERGY, energy);
-        this.data.set(DATA_MAX_ENERGY, maxEnergy);
-        this.data.set(DATA_KINETIC, kinetic);
-        this.data.set(DATA_MAX_KINETIC, maxKinetic);
-        this.data.set(DATA_IS_WORKING, isWorking ? 1 : 0);
-        this.data.set(DATA_ENERGY_OUTPUT, energyOutput);
-    }
-
-    public int getEnergy() {
-        return this.data.get(DATA_ENERGY);
-    }
-
-    public int getMaxEnergy() {
-        return this.data.get(DATA_MAX_ENERGY);
-    }
-
-    public int getKinetic() {
-        return this.data.get(DATA_KINETIC);
-    }
-
-    public int getMaxKinetic() {
-        return this.data.get(DATA_MAX_KINETIC);
-    }
-
-    public boolean isWorking() {
-        return this.data.get(DATA_IS_WORKING) == 1;
-    }
-
-    public int getEnergyOutput() {
-        return this.data.get(DATA_ENERGY_OUTPUT);
-    }
-
-    public int getEnergyProgressPixels() {
-        int energy = getEnergy();
-        int maxEnergy = getMaxEnergy();
-        if (maxEnergy <= 0) return 0;
-        return (int) ((energy * KINETIC_ENERGY_BAR2_WIDTH) / maxEnergy);
-    }
-
-    public int getKineticProgressPixels() {
-        int kinetic = getKinetic();
-        int maxKinetic = getMaxKinetic();
-        if (maxKinetic <= 0) return 0;
-        return (int) ((kinetic * KINETIC_ENERGY_BAR2_WIDTH) / maxKinetic);
-    }
+    @Override protected void addMachineSlots() {}
 
     @Override
-    public void broadcastChanges() {
-        if (blockEntity instanceof mio_icif_twin_turbo_kinetic_generator generator) {
-            setSyncData(
-                (int) generator.getEnergyStorage().getAmount(),
-                (int) generator.getEnergyStorage().getCapacity(),
-                (int) generator.getKineticStorage().getKineticStored(),
-                (int) generator.getKineticStorage().getMaxKineticStored(),
-                generator.isBurning(),
-                (int) generator.getLastProduction()
-            );
-        }
-        super.broadcastChanges();
-    }
-
-    @Override
-    protected void addMachineSlots() {
+    protected int[] values() {
+        var be = (mio_icif_twin_turbo_kinetic_generator) blockEntity;
+        int[] src = source(be.getLevel(), be.getBlockPos(), facing(be));
+        return new int[]{(int) be.getEnergyStorage().getAmount(), (int) be.getEnergyStorage().getCapacity(), (int) be.getKineticStorage().getKineticStored(),
+            (int) be.getKineticStorage().getMaxKineticStored(), be.isBurning() ? 1 : 0, (int) Math.round(be.getLastProduction()), be.getLastKuInput(),
+            (int) Math.round(be.getEuPerKu() * 1000), src[0], src[1], (int) be.getKineticStorage().getMaxReceive()};
     }
 }

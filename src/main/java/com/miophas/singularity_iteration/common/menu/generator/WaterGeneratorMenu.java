@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
     public static final int BUCKET_SLOT = 0;
     public static final int BATTERY_SLOT = 1;
     public static final int SLOT_COUNT = 2;
+    /** 0.1.11.18: 0 energy, 1 capacity, 2 generating, 3 EU/t, 4 water mB, 5 tank, 6 water in front, 7 EU/t from the water in front, 8 its speed x1000, 9 source. */
+    public static final int DATA_COUNT = 10;
 
     public WaterGeneratorMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -28,23 +30,23 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public WaterGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.WATER_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, 7);
+        super(mio_icif_menus.WATER_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT);
     }
 
     public WaterGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_water_generator blockEntity) {
         super(mio_icif_menus.WATER_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
-              blockEntity != null ? blockEntity.getItemHandler() : null, null, 7, blockEntity);
+              blockEntity != null ? blockEntity.getItemHandler() : null, null, DATA_COUNT, blockEntity);
     }
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, BUCKET_SLOT, 80, 53) {
+        this.addSlot(new SlotItemHandler(itemHandler, BUCKET_SLOT, 10, 30) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.is(Items.WATER_BUCKET);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 80, 17) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 70) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
@@ -70,6 +72,11 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(4, generator.getWaterAmount());
             setSyncData(5, generator.getMaxWaterAmount());
             setSyncData(6, generator.hasWaterInFront() ? 1 : 0);
+            setSyncData(7, generator.getFaceOutput());
+            setSyncData(8, (int) Math.round(generator.getFaceSpeed() * 1000));
+            setSyncData(9, generator.getLevel() == null ? 0 : (generator.getFaceSpeed() > 0 && com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSource(
+                generator.getLevel(), generator.getBlockPos()) == com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.Source.NONE ? 3
+                : com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSource(generator.getLevel(), generator.getBlockPos()).ordinal()));
         }
         super.broadcastChanges();
     }
@@ -115,4 +122,22 @@ import org.jetbrains.annotations.Nullable;
 
     /** 0.1.10.6: index 0 of the synced data is not a progress. */
     @Override protected int progressDataIndex() { return -1; }
+
+    // 0.1.11.18: the 248 x 204 rotor cross-section screen
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
+    public int value(int i) { return data.get(i); }
 }

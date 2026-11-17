@@ -33,7 +33,44 @@ import org.jetbrains.annotations.Nullable;
  * <p>Fuel handling goes through {@link IItemAPI}. Addons can register custom fuel types.
  */
 @SuppressWarnings("null")
-public abstract class AbstractGeneratorBlockEntity extends AbstractEnergyBlockEntity implements WorldlyContainer, com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock {
+public abstract class AbstractGeneratorBlockEntity extends AbstractEnergyBlockEntity implements WorldlyContainer, com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock,
+        com.miophas.singularity_iteration.core.api.machine.IComparatorSource, com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
+
+    // ---- 0.1.11.13: the generator framework ------------------------------------------------------------------------
+
+    /**
+     * The dispatch class of a generator, set by the content mod from its table (core has no catalogue of generators).
+     * Generators declared it one by one before; one without an entry is must-run, as before.
+     */
+    public static volatile java.util.function.Function<AbstractGeneratorBlockEntity, com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass> DISPATCH =
+        be -> com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.MUST_RUN;
+
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() {
+        var d = DISPATCH.apply(this);
+        return d != null ? d : com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.MUST_RUN;
+    }
+
+    /** Comparator: the share of the energy storage filled (generators with fuel override it with the fuel left). */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(energyStorage.getAmount(), energyStorage.getCapacity());
+    }
+
+    /**
+     * The rated output in EU/t (the configured multiplier included): what the energy terminal counts as generation
+     * capacity. By default the nameplate rate; generators whose rate depends on their state (fuel pellets, a reactor
+     * layout, a structure) override it.
+     */
+    public long ratedOutput() {
+        return Math.round(energyGenerationRate * outputScale());
+    }
+
+    /** {@code eu} times the output multiplier in whole EU, with this generator's one carry for the fraction. */
+    public long scaledEu(long eu) {
+        return scaleOutput(eu);
+    }
+
     
     // ==================== API method layer ====================
     // Fuel and energy operations go through protected methods. Subclasses can override them to change the behavior.
@@ -623,13 +660,11 @@ protected static final int CHARGE_SLOT = 1;
                 // Get the container item before the fuel is used (for example, a lava bucket gives an empty bucket).
                 ItemStack remainingItem = fuelStack.getCraftingRemainingItem();
 
-                // Use the fuel.
-            fuelStack.shrink(1);
-
-                // If the fuel stack is empty, put in the container item (if there is one).
-            if (fuelStack.isEmpty()) {
-                    itemHandler.setStackInSlot(FUEL_SLOT, remainingItem);
-                }
+                // 0.1.11.10: take one through the slot (shrinking the live stack bypassed the handler's change notice);
+                // the container item (a lava bucket's bucket) replaces the last one
+                ItemStack rest = fuelStack.copy();
+                rest.shrink(1);
+                itemHandler.setStackInSlot(FUEL_SLOT, rest.isEmpty() ? remainingItem : rest);
             }
         }
     }
@@ -736,10 +771,8 @@ protected static final int CHARGE_SLOT = 1;
         if (stack.isEmpty()) return ItemStack.EMPTY;
         int toRemove = Math.min(amount, stack.getCount());
         ItemStack result = stack.copyWithCount(toRemove);
-        stack.shrink(toRemove);
-        if (stack.isEmpty()) {
-            itemHandler.setStackInSlot(slot, ItemStack.EMPTY);
-        }
+        // 0.1.11.11: written through the slot (shrinking the live stack bypassed the handler's change notice)
+        itemHandler.setStackInSlot(slot, stack.getCount() > toRemove ? stack.copyWithCount(stack.getCount() - toRemove) : ItemStack.EMPTY);
         return result;
     }
 

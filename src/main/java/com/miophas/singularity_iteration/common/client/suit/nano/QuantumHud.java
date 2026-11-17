@@ -54,9 +54,10 @@ public final class QuantumHud {
             || t - NanoClient.usedAt[0] < 40 || t - NanoClient.usedAt[1] < 40 || t - NanoClient.deniedAt[0] < 40 || t - NanoClient.deniedAt[1] < 40;
         if (Math.abs(q.coherence() - lastCoherence) > 0.2F) lastChange = NanoClient.ticks;
         lastCoherence = q.coherence();
-        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0.4F;
+        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0F;   // 0.1.11.5 passive HUD: hidden when idle (was 0.4)
         alpha += (target - alpha) * 0.08F;
         float a = alpha;
+        if (a < 0.02F) { g.flush(); return; }   // 0.1.11.5: nothing to show
         float glitch = QuantumClient.glitch(partial);
         // glitch: the whole ring jumps sideways for a frame now and then
         float jx = 0;
@@ -94,8 +95,8 @@ public final class QuantumHud {
             int col = sat ? RED : k > 0.85F ? 0xFFB347 : CYAN;
             g.fill((int) (x0 + i * sw), (int) y, (int) (x0 + (i + 1) * sw - 1), (int) y + 2, FcsDraw.argb(col, (k <= fill ? 0.85F * pulse : 0.15F) * a));
         }
-        String label = sat ? String.format(java.util.Locale.ROOT, "SATURATED %d/%d QB", load, budget) : String.format(java.util.Locale.ROOT, "QB %d/%d", load, budget);
-        FcsDraw.textCentered(g, label, cx, y - 6, FcsDraw.argb(sat ? RED : 0x9FDFFF, 0.8F * a * pulse), 0.45F);
+        com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, sat ? "hud.mio_icif.quantum.saturated" : "hud.mio_icif.quantum.bandwidth", cx, y - 6,
+            FcsDraw.argb(sat ? RED : 0x9FDFFF, 0.8F * a * pulse), 0.5F, load, budget);   // 0.1.11.5: translated, HUD font
     }
 
     /** Working synergies: a small chip per link with its code, in its colour, with a slow light sweep. */
@@ -114,7 +115,8 @@ public final class QuantumHud {
         }
     }
 
-    private static final String[] COMBO_NAMES = {"QUANTUM TUNNEL", "FROZEN VOLLEY", "STATIC BARRAGE"};
+    /** 0.1.11.5: translation keys of the combo names (they were English). */
+    private static final String[] COMBO_NAMES = {"hud.mio_icif.quantum.combo.tunnel", "hud.mio_icif.quantum.combo.volley", "hud.mio_icif.quantum.combo.barrage"};
     private static final int[] COMBO_COLORS = {0xB98CFF, 0xFFD27A, 0x5AB8FF};
 
     /** Combo banner: the name slides in on a slanted light bar and fades over 1.5 s. */
@@ -131,7 +133,8 @@ public final class QuantumHud {
             FcsDraw.argb(col, 0.22F * a));
         FcsDraw.line(g, cx - bw / 2 + slide, y - 2, cx + bw / 2 + 8 + slide, y - 2, 1F, FcsDraw.argb(col, 0.9F * a));
         FcsDraw.line(g, cx - bw / 2 - 8 + slide, y + 10, cx + bw / 2 + slide, y + 10, 1F, FcsDraw.argb(col, 0.9F * a));
-        FcsDraw.textCentered(g, "COMBO // " + COMBO_NAMES[kind], cx + slide, y + 1, FcsDraw.argb(0xFFFFFF, a), 0.7F);
+        com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.quantum.combo", cx + slide, y + 1, FcsDraw.argb(0xFFFFFF, a), 0.75F,
+            net.minecraft.network.chat.Component.translatable(COMBO_NAMES[kind]));
     }
 
     // ------------------------------------------------------------------ coherence ring
@@ -177,8 +180,8 @@ public final class QuantumHud {
             costTick(g, cx, cy, r, keys.secondaryKey(), NanoClient.keyLabel(NanoClient.SECONDARY_KEY, "B"), q, a);
         }
         // read-out
-        String text = dec ? "DECOHERENT" : String.format(Locale.ROOT, "COH %03d", Math.round(shown));
-        FcsDraw.textCentered(g, text, cx, cy - r - 8, FcsDraw.argb(dec ? RED : q.max() > 100 ? GOLD : CYAN, 0.85F * a), 0.5F);
+        com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, dec ? "hud.mio_icif.quantum.decoherent" : "hud.mio_icif.quantum.coherence", cx, cy - r - 9,
+            FcsDraw.argb(dec ? RED : q.max() > 100 ? GOLD : CYAN, 0.85F * a), 0.55F, String.format(Locale.ROOT, "%03d", Math.round(shown)));
         if (dec) {
             float left = q.decoherent() / (float) Math.max(1, q.decoherentMax());
             g.fill((int) (cx - 18), (int) (cy - r - 2), (int) (cx + 18), (int) (cy - r - 1), FcsDraw.argb(0x160606, 0.6F));
@@ -217,23 +220,24 @@ public final class QuantumHud {
 
     private static void timers(GuiGraphics g, QuantumPackets.CoreSync q, float cx, float y, float t, float a) {
         if (q.phaseTicks() > 0) {
-            bar(g, cx, y, "PHASE SHIFT", q.phaseTicks() / 20F, q.phaseTicks() / (float) Math.max(1, q.phaseMax()), PHASE, t, a);
+            bar(g, cx, y, "hud.mio_icif.quantum.phase", q.phaseTicks() / 20F, q.phaseTicks() / (float) Math.max(1, q.phaseMax()), PHASE, t, a);
             y += 9;
         }
         if (q.field()) {
             float pulse = 0.6F + 0.4F * (float) Math.sin(t * 0.3F);
-            FcsDraw.textCentered(g, String.format(Locale.ROOT, "FORCE FIELD  %.1fs", q.fieldTicks() / 20F), cx, y, FcsDraw.argb(FIELD, 0.9F * a * pulse), 0.5F);
+            com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.quantum.field", cx, y, FcsDraw.argb(FIELD, 0.9F * a * pulse), 0.55F,
+                String.format(Locale.ROOT, "%.1f", q.fieldTicks() / 20F));
             y += 9;
         }
         if (q.dilationTicks() > 0) {
-            bar(g, cx, y, "TIME DILATION", q.dilationTicks() / 20F, q.dilationTicks() / (float) Math.max(1, q.dilationMax()), TIME, t, a);
+            bar(g, cx, y, "hud.mio_icif.quantum.dilation", q.dilationTicks() / 20F, q.dilationTicks() / (float) Math.max(1, q.dilationMax()), TIME, t, a);
         }
     }
 
     private static void bar(GuiGraphics g, float cx, float y, String label, float seconds, float left, int col, float t, float a) {
         g.fill((int) (cx - 24), (int) y, (int) (cx + 24), (int) y + 2, FcsDraw.argb(0x0A0614, 0.55F));
         g.fill((int) (cx - 24), (int) y, (int) (cx - 24 + 48 * Mth.clamp(left, 0, 1)), (int) y + 2, FcsDraw.argb(col, 0.9F * a));
-        FcsDraw.textCentered(g, String.format(Locale.ROOT, "%s  %.1fs", label, seconds), cx, y + 3.5F, FcsDraw.argb(col, 0.85F * a), 0.5F);
+        com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, label, cx, y + 3.5F, FcsDraw.argb(col, 0.85F * a), 0.55F, String.format(Locale.ROOT, "%.1f", seconds));   // label: a key
     }
 
     // ------------------------------------------------------------------ full-screen cues
@@ -266,7 +270,7 @@ public final class QuantumHud {
                 g.fill(e, e, e + 1, h - e, c);
                 g.fill(w - e - 1, e, w - e, h - e, c);
             }
-            FcsDraw.textCentered(g, "OUT OF PHASE", w / 2F, h / 2F - 44, FcsDraw.argb(PHASE, (0.55F + 0.45F * (float) Math.sin(t * 0.7F)) * k), 0.6F);
+            com.miophas.singularity_iteration.common.client.suit.AsciiHud.centred(g, "hud.mio_icif.quantum.out_of_phase", w / 2F, h / 2F - 44, FcsDraw.argb(PHASE, (0.55F + 0.45F * (float) Math.sin(t * 0.7F)) * k), 0.7F);
         }
         // time dilation: a violet vignette, slow ripples from the centre, a turning clock hand
         float dil = 0;

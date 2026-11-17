@@ -15,6 +15,12 @@ import java.util.List;
 
 @SuppressWarnings("null")
 public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
+    /**
+     * 0.1.11.3: blocks per tick. The rocket used to move twice per tick at 2.5 (about 5 blocks); it now moves once, with
+     * every block of the way checked, so the launch speed is 5 to keep its range and flight time.
+     */
+    public static final float ROCKET_SPEED = 5.0F;
+
     public static final int MAX_ENERGY = 1000000;
     public static final int CHARGE_RATE = 512;
     public static final int TIER = 3;
@@ -61,7 +67,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
             mio_icif_rocket_entity rocket = new mio_icif_rocket_entity(ROCKET_ENTITY, player, level);
             rocket.setDamage(0);
             rocket.setExplosionPower(5.0F);
-            rocket.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2.5F, 0.0F);
+            rocket.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, ROCKET_SPEED, 0.0F);
             level.addFreshEntity(rocket);
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -120,7 +126,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
     /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
     @Override
     public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
-        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.thrown("ROCKET", 2.5, canShoot(stack));
+        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.thrown("ROCKET", ROCKET_SPEED, canShoot(stack));   // 0.1.11.3: the real speed
     }
 
     /**
@@ -136,7 +142,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
         rocket.setExplosionPower(5.0F);
         rocket.setTerrainDamage(false);
         var d = direction.normalize();
-        rocket.shoot(d.x, d.y, d.z, 2.5F, 0.0F);
+        rocket.shoot(d.x, d.y, d.z, ROCKET_SPEED, 0.0F);
         shooter.level().addFreshEntity(rocket);
         shooter.level().playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(),
             com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ROCKET_LAUNCH.get(), net.minecraft.sounds.SoundSource.NEUTRAL, 1.0F, 1.0F);

@@ -42,9 +42,28 @@ The game measured these values from the block entity of this version.
 ## Notes
 
 - The Armory needs stored EU before it accepts an owner. Only the owner can open, use or break a bound Armory.
-- Equipment from other mods needs a Connector Kit before the Armory accepts the equipment.
+- The Armory accepts equipment from every mod: the armour positions take armour for that body slot, and the hands take any item that is not body armour. A modpack can keep items out with the item tag `mio_icif:armory_blacklist` (empty by default).
 - Each summon costs EU. The cost increases with the distance and with a change of dimension.
 - Since 0.1.10.32 the Armory is a gantry: an iris hatch on top twists open before a piece launches and as a returning piece comes in; small holograms of the stored suits circle above it (within 8 blocks); while it repairs and charges a ring with running arcs lies on the floor and a scan ring moves along its sides (amber or violet blinking: waiting for power or mana). A summon from far away or from another dimension opens a transfer gate in the sky for each piece: the piece leaves it with afterimages, and a piece that flies home to the sky goes into a gate. The console shows the suit under the mouse as a hologram beside its window, and a frame in the colour of the charge round each stored suit piece. Client option armory_fx.
+
+## Wingmen
+
+A Wingman is a stored suit that flies and fights next to you as an empty suit of armor. It wears the real items of the suit (four armor pieces, main hand, off hand), so it has the armor value, the weapon damage and the enchantments of the suit.
+
+- **Deploy:** in the Armory page of the console, choose "Wingman", then press "Deploy" beside a suit. The suit needs at least one armor piece. The cost is the same as a summon.
+- **Modes:** Offensive (attacks what you attack, else the nearest hostile mob near you), Dispersal (each holds a sector of a wide ring around you and draws the mobs that hunt you), Escort (stays close and destroys hostile projectiles that fly at you: those of hostile mobs, of mobs hunting you, of players of another team or of none; potions and ender pearls pass). The mode button of the console sets every Wingman. Your hit calls the squad on a hostile mob only; a neutral creature is attacked when it fights you, or on a focus order. (The Fulton mode was removed in 0.1.11.43; a Wingman saved in it flies as Escort.)
+- **Recall:** "Recall" or "Recall all" in the console, or crouch and use an empty hand on your Wingman. A Wingman also goes home when you log off, change dimension or become a spectator. When you die, your Wingmen guard the place for up to 2 minutes (your dropped items too): they form up when you come back within 24 blocks, take your new orders, and fly home when the time is over.
+- **Damage:** a fatal hit does not destroy a Wingman: it keeps 1 health and is invulnerable on its way home. Only the void and /kill remove it at once; its items still go to the Armory (to your inventory if the Armory is gone, else they drop at the Wingman). You and your other Wingmen cannot hurt it.
+- **Wear:** a Wingman wears its gear as a player does: hits on it wear the armor, its melee hits and shots wear the weapon (1 each). Nothing breaks: when any piece is below 10 % durability, the Wingman returns to the Armory, which repairs it, and a suit below 10 % cannot deploy. Bows and crossbows use no arrows. Energy weapons use their own charge; out of charge, the Wingman fights in melee for 10 seconds before it tries to fire again, and you are told once.
+
+## Sortie and return
+
+- A player has at most 4 Wingmen (config Wingmen.maxPerPlayer), counting the ones in unloaded chunks.
+- A suit out as a Wingman shows "Out" in the console. Its positions are kept for the Wingman: "send home", pipes and storage buses put nothing there, and the pieces come back to their places.
+- When the Armory is far away or in another dimension, the Wingman drops in where there is room above you (up to 18 blocks), else beside you; with no room at all it does not deploy and nothing is paid.
+- "Recall all" in the console also reaches the Wingmen in unloaded chunks: their chunk loads for a moment and the suit goes straight home. The same happens when you log off.
+- Upkeep is 160 EU per second by default (config Wingmen.upkeepEuPerSecond). At deployment the Armory charges the Wingman with an upkeep reserve of 10 minutes (96,000 EU, config Wingmen.reserveMinutes; less when the Armory has less). The electric pieces of the suit pay first, then the reserve, then the Armory (only while it is loaded), so a Wingman in plain armor flies about 10 minutes away from your base. The rest of the reserve goes back to the Armory when the Wingman returns. After 5 seconds without upkeep the Wingman returns (config Wingmen.lowPowerSeconds).
+- The flight time left (what the suit charge and the reserve pay for) shows in the Wingman row of the console, in the squad HUD and in Jade; it turns red under one minute, and "Armory" means the Armory is paying.
 
 ## Wingman safety
 

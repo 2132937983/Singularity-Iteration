@@ -90,23 +90,7 @@ public class mio_icif_gui_electrolyzer_elc extends mio_icif_screen<ElectrolyzerE
         }
     }
 
-    @Override
-    public void containerTick() {
-        super.containerTick();
-        
-        // 直接从方块实体同步数据到客户端
-        ElectrolyzerElcMenu menu = this.getMenu();
-        if (menu != null && menu.getBlockEntity() != null) {
-            var be = menu.getBlockEntity();
-            menu.setSyncData(0, be.getProgress());
-            menu.setSyncData(1, be.getMaxProgress());
-            menu.setSyncData(2, be.isWorking() ? 1 : 0);
-            menu.setSyncData(3, (int) be.getEnergyStorage().getAmount());
-            menu.setSyncData(4, (int) be.getEnergyStorage().getCapacity());
-            int status = 0;
-            if (be.isCharging()) status = 1;
-            else if (be.isDischarging()) status = 2;
-            menu.setSyncData(5, status);
-        }
-    }
+    // 0.1.11.3: no containerTick override. It copied the client block entity's values (never ticked on the client and
+    // only updated when the chunk loaded) over the values the menu syncs from the server each tick, so the progress,
+    // energy and heat bars stayed frozen or flickered.
 }

@@ -106,8 +106,38 @@ public final class CaptureDirector {
             File target = new File(OUT, "screenshots/" + name + ".png");
             target.getParentFile().mkdirs();
             Screenshot.grab(new File(OUT), name + ".png", mc.getMainRenderTarget(), c -> { });
+            if (Boolean.getBoolean("si.capture.guiBench")) guiBench(mc, name);
         });
     }
+
+    /**
+     * 0.1.11.24: with -Dsi.capture.guiBench=true, after each shot with a screen open, the screen is drawn
+     * {@code GUI_BENCH_FRAMES} times more (after a warm-up), with a GPU sync before and after, and the time per frame is
+     * logged as "[guibench]". The time includes the driver's work on the draw calls, which is what batching saves.
+     */
+    private static void guiBench(Minecraft mc, String name) {
+        if (mc.screen == null) return;
+        var g = new net.minecraft.client.gui.GuiGraphics(mc, mc.renderBuffers().bufferSource());
+        int mx = -4000, my = 4000;
+        for (int i = 0; i < 60; i++) { mc.screen.render(g, mx, my, 0); g.flush(); }
+        org.lwjgl.opengl.GL11.glFinish();
+        long[] each = new long[GUI_BENCH_FRAMES];
+        for (int i = 0; i < GUI_BENCH_FRAMES; i++) {
+            long t = System.nanoTime();
+            mc.screen.render(g, mx, my, 0);
+            g.flush();
+            org.lwjgl.opengl.GL11.glFinish();
+            each[i] = System.nanoTime() - t;
+        }
+        java.util.Arrays.sort(each);
+        long sum = 0;
+        for (long v : each) sum += v;
+        org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[guibench] {} ({}) | mean {} us | p50 {} us | p90 {} us",
+            name, mc.screen.getClass().getSimpleName(), String.format("%.0f", sum / (double) GUI_BENCH_FRAMES / 1000),
+            String.format("%.0f", each[GUI_BENCH_FRAMES / 2] / 1000.0), String.format("%.0f", each[GUI_BENCH_FRAMES * 9 / 10] / 1000.0));
+    }
+
+    private static final int GUI_BENCH_FRAMES = 300;
 
     private static Block block(String id) { return BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", id)); }
 
@@ -1202,14 +1232,8 @@ public final class CaptureDirector {
                 BlockPos at = new BlockPos(x, -60, 4);
                 level.setBlock(at, block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
                 var st = level.getBlockState(at);
-                var def = st.getBlock().getStateDefinition();
-                var reinforced = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_reinforced");
-                var foam = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged");
-                var hard = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_hardened");
-                if (x >= 1) st = st.setValue(reinforced, true);
-                if (x >= 2) st = st.setValue(foam, true);
-                if (x >= 3) st = st.setValue(hard, true);
-                level.setBlock(at, st, 3);
+                var casing = new com.miophas.singularity_iteration.common.block.wire.WireCasing[]{com.miophas.singularity_iteration.common.block.wire.WireCasing.NONE, com.miophas.singularity_iteration.common.block.wire.WireCasing.SCAFFOLD, com.miophas.singularity_iteration.common.block.wire.WireCasing.REINFORCED_FOAM, com.miophas.singularity_iteration.common.block.wire.WireCasing.CONSTRUCTION_WALL}[x];
+                level.setBlock(at, com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire.withCasing(st, casing), 3);
             }
             place(level, new BlockPos(6, -60, 4), "wiring/block_wireless_power_transmission_node", Direction.NORTH);
             place(level, new BlockPos(9, -60, 4), "wiring/block_wireless_power_transmission_node", Direction.NORTH);
@@ -1431,6 +1455,7 @@ public final class CaptureDirector {
      * barrier, flight HUD) and the nano suit model and icons.
      */
     private static void scene14() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);   // 0.1.11.63: a lost focus paused the flight
         server(40, sp -> {
             var level = sp.serverLevel();
             level.setDayTime(6000);
@@ -1561,10 +1586,17 @@ public final class CaptureDirector {
         // a gentle turn while the throttle passes the shock barrier: drift, bank and vapour cone
         client(8, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 6); });
         client(2, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 6); });
-        shot(2, "scene14/maneuver_shock_barrier");
-        shot(4, "scene14/maneuver_supersonic");
-        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
-        shot(5, "scene14/maneuver_flight_hud");
+        // 0.1.11.5: the barrier is the measured speed, so wait for it instead of a fixed tick
+        until(120, () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.supersonic(Minecraft.getInstance().player));
+        shot(3, "scene14/maneuver_shock_barrier");
+        shot(10, "scene14/maneuver_supersonic");
+        // drop below M 0.9 and cross again in first person: the edge flash of the own boom
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.keySprint.setDown(false); });
+        until(120, () -> !com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.supersonic(Minecraft.getInstance().player));
+        client(1, () -> Minecraft.getInstance().options.keySprint.setDown(true));
+        until(160, () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.supersonic(Minecraft.getInstance().player));
+        shot(2, "scene14/maneuver_boom_first_person");
+        shot(12, "scene14/maneuver_flight_hud");
         client(1, () -> Singularity_Iteration.LOGGER.warn("[scene14] supersonic: throttle={} speed={}",
             com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.throttle(),
             com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.speed()));
@@ -2024,6 +2056,2520 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "holo" (-Dsi.capture.scene=holo), 0.1.11.5: the tactical holomap in three places (open yard, by a wall, inside a
+     * roofed bunker with a lava pool and a pit) with creatures above, below, behind a wall and out of range. Shot at the
+     * enlarged holomap scale for before/after comparisons.
+     */
+    private static void sceneHolo() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            sp.setGameMode(GameType.SURVIVAL);
+            var bricks = net.minecraft.world.level.block.Blocks.STONE_BRICKS.defaultBlockState();
+            var stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+            var air = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+            // open yard: an L wall and a tower (west), a pit with water (north)
+            for (int x = -9; x <= -3; x++) for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(x, y, -6), bricks, 3);
+            for (int z = -6; z <= -1; z++) for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(-9, y, z), bricks, 3);
+            for (int y = -60; y <= -54; y++) for (int x = 6; x <= 8; x++) for (int z = -5; z <= -3; z++) level.setBlock(new BlockPos(x, y, z), bricks, 3);
+            for (int x = -2; x <= 2; x++) for (int z = -10; z <= -7; z++) for (int y = -63; y <= -61; y++) level.setBlock(new BlockPos(x, y, z), air, 3);
+            level.setBlock(new BlockPos(0, -63, -9), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            // bunker at x 30..44, z -7..7: stone shell, roof at -55, a lava pool and a 3-deep pit inside, a ledge
+            for (int x = 30; x <= 44; x++) for (int z = -7; z <= 7; z++) {
+                level.setBlock(new BlockPos(x, -55, z), stone, 3);
+                for (int y = -60; y <= -56; y++) if (x == 30 || x == 44 || z == -7 || z == 7) level.setBlock(new BlockPos(x, y, z), stone, 3);
+            }
+            for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(30, y, 0), air, 3);   // doorway
+            for (int x = 39; x <= 41; x++) for (int z = 2; z <= 4; z++) level.setBlock(new BlockPos(x, -61, z), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+            for (int x = 35; x <= 37; x++) for (int z = -5; z <= -3; z++) for (int y = -63; y <= -61; y++) level.setBlock(new BlockPos(x, y, z), air, 3);
+            for (int x = 41; x <= 43; x++) for (int z = -6; z <= -4; z++) for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(x, y, z), stone, 3);
+            for (int z = -2; z <= 2; z++) for (int y = -60; y <= -57; y++) level.setBlock(new BlockPos(38, y, z), bricks, 3);   // inner wall
+            look(sp, 0.5, -60, 0.5, 0, 20);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            suitUp(sp);
+            // yard creatures: a husk ahead, a wolf, a cow, a zombie on the tower (above), a skeleton in the pit (below), a far creeper
+            mob(level, net.minecraft.world.entity.EntityType.HUSK, 3.5, -60, 7.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.WOLF, 5.5, -60, 3.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.COW, -5.5, -60, 9.5, true, null);
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 7.5, -53, -3.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.SKELETON, 0.5, -63, -8.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.CREEPER, 0.5, -60, 19.5, true, sp);
+            // bunker creatures: a zombie behind the inner wall, a skeleton in the pit, a spider on the ledge
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 41.5, -60, 0.5, true, null);
+            mob(level, net.minecraft.world.entity.EntityType.SKELETON, 36.5, -63, -3.5, true, null);
+            mob(level, net.minecraft.world.entity.EntityType.SPIDER, 42.5, -57, -4.5, true, null);
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.HOLOMAP_SCALE.set(1.8);
+        });
+        server(40, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 0, 15));
+        shot(30, "holo/1_yard");
+        server(2, sp -> sp.teleportTo(sp.serverLevel(), -7.5, -60, -3.5, 300, 10));
+        shot(30, "holo/2_wall");
+        server(2, sp -> sp.teleportTo(sp.serverLevel(), 33.5, -60, 0.5, 270, 10));
+        shot(40, "holo/3_bunker");
+        // 0.1.11.5: the detail view (held key), zoomed, then a steeper elevation
+        client(1, () -> { com.miophas.singularity_iteration.common.client.suit.FcsClient.forceDetail = true;
+            com.miophas.singularity_iteration.common.client.suit.HoloMap.resetDetailView(); });
+        shot(10, "holo/4_detail_bunker");
+        client(1, () -> { for (int i = 0; i < 3; i++) com.miophas.singularity_iteration.common.client.suit.HoloMap.scroll(1, false); });
+        shot(10, "holo/5_detail_zoom");
+        client(1, () -> { for (int i = 0; i < 5; i++) com.miophas.singularity_iteration.common.client.suit.HoloMap.scroll(1, true); });
+        shot(10, "holo/6_detail_tilt");
+        client(1, () -> { com.miophas.singularity_iteration.common.client.suit.FcsClient.forceDetail = false;
+            com.miophas.singularity_iteration.common.client.suit.HoloMap.resetDetailView(); });
+        // 0.1.11.5: passive: no hostile left, the small map goes away after its linger time
+        server(2, sp -> {
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 0, 15);
+            sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(80),
+                m -> m instanceof net.minecraft.world.entity.monster.Enemy).forEach(m -> m.discard());
+        });
+        shot(120, "holo/7_passive_hidden");
+        client(1, () -> { if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.HOLOMAP_SCALE.set(1.0); });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
+     * Scene "mt" (-Dsi.capture.scene=mt), 0.1.11.6: the Molecular Transformer screen with its observation window. A
+     * transformer is fed a fixed number of EU per tick (the buffer is set each tick, the machine spends it all) and shot
+     * in each process class: transmutation in three phases, lattice, a continuous molecular run, an anomalous recipe,
+     * low power and idle.
+     */
+    private static void sceneMt() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("producer/block_molecular_transformer").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+        });
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+            level.getBlockState(at).useWithoutItem(level, sp, hit);
+        });
+        mtLoad(at, "minecraft:iron_ingot");
+        mtFeed(at, 32768, 30);
+        shot(1, "mt/1_nuclear_ionise");
+        mtFeed(at, 32768, 95);
+        shot(1, "mt/2_nuclear_transmute");
+        mtFeed(at, 32768, 125);
+        shot(1, "mt/3_nuclear_deposit");
+        mtLoad(at, "minecraft:coal");
+        mtFeed(at, 32768, 150);
+        shot(1, "mt/4_lattice");
+        mtLoad(at, "minecraft:netherrack");
+        mtFeed(at, 32768, 12);
+        shot(1, "mt/5_molecular_continuous");
+        mtLoad(at, "minecraft:wither_skeleton_skull");
+        mtFeed(at, 1_200_000, 50);
+        shot(1, "mt/6_exotic");
+        mtLoad(at, "minecraft:iron_ingot");
+        mtFeed(at, 32768, 75);
+        mtFeed(at, 4096, 60);
+        shot(1, "mt/7_low_power");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_molecular_transformer mt
+                && mt.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h) h.setStackInSlot(0, ItemStack.EMPTY);
+        });
+        shot(30, "mt/8_idle");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Puts 64 of {@code id} in the transformer's input and empties the output. */
+    private static void mtLoad(BlockPos at, String id) {
+        server(2, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_molecular_transformer mt
+                && mt.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h) {
+                h.setStackInSlot(0, new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(id)), 64));
+                h.setStackInSlot(1, ItemStack.EMPTY);
+            }
+        });
+    }
+
+    /** Sets the transformer's buffer to {@code perTick} EU on each of the next {@code ticks} ticks, then logs its state. */
+    private static void mtFeed(BlockPos at, long perTick, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(perTick);
+            });
+        }
+        server(0, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_molecular_transformer mt) {
+                var d = mt.getContainerData();
+                Singularity_Iteration.LOGGER.warn("[mt] progress={} working={} recipeEU={} euPerTick={} in={} out={}", d.get(0), d.get(2), d.get(5), d.get(6),
+                    mt.getItemHandler().getStackInSlot(0), mt.getItemHandler().getStackInSlot(1));
+            }
+        });
+    }
+
+    /**
+     * Scene "pump" (-Dsi.capture.scene=pump), 0.1.11.7: the pump screen. A lava pool deeper in the middle is surveyed and
+     * drained (keep level set), then turned into water (an infinite pool), then a second pump discharges lava into a pit.
+     */
+    private static void scenePump() {
+        BlockPos pump = new BlockPos(6, -61, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            for (int z = 4; z <= 12; z++) {
+                int depth = 1 + (z >= 6 && z <= 10 ? 1 : 0) + (z >= 7 && z <= 9 ? 1 : 0);
+                for (int x = 3; x <= 9; x++) for (int y = -61; y > -61 - depth; y--)
+                    level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+            }
+            level.setBlock(pump, block("producer/block_pump_elc").defaultBlockState()
+                .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.SOUTH), 3);
+            sp.teleportTo(level, 6.5, -60, -1.5, 0, 30);
+        });
+        server(5, sp -> openAt(sp, pump));
+        pumpFeed(pump, 60);
+        shot(1, "pump/1_lava_pool");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(pump) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc p)
+                for (int i = 0; i < 4; i++) p.handleButton(5);                     // keep 40 buckets
+        });
+        pumpFeed(pump, 240);
+        shot(1, "pump/2_lava_draining");
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            // the same basin, refilled with water (lava left in it would turn to obsidian where the water touches it)
+            for (int z = 4; z <= 12; z++) {
+                int depth = 1 + (z >= 6 && z <= 10 ? 1 : 0) + (z >= 7 && z <= 9 ? 1 : 0);
+                for (int x = 3; x <= 9; x++) for (int y = -61; y > -61 - depth; y--)
+                    level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+            }
+            for (int z = 4; z <= 12; z++) {
+                int depth = 1 + (z >= 6 && z <= 10 ? 1 : 0) + (z >= 7 && z <= 9 ? 1 : 0);
+                for (int x = 3; x <= 9; x++) for (int y = -61; y > -61 - depth; y--)
+                    level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            }
+        });
+        pumpFeed(pump, 160);
+        shot(1, "pump/3_water_infinite");
+        // a second pump pours lava into an empty pit (lava does not spread into new sources, so the fill stays visible)
+        BlockPos pump2 = new BlockPos(24, -60, 6);
+        server(2, sp -> {
+            var level = sp.serverLevel();
+            sp.closeContainer();
+            for (int x = 21; x <= 27; x++) for (int z = 4; z <= 8; z++) for (int y = -61; y >= -63; y--)
+                level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(pump2, block("producer/block_pump_elc").defaultBlockState()
+                .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.DOWN), 3);
+            if (level.getBlockEntity(pump2) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc p) {
+                p.handleButton(0);
+                p.handleButton(8);
+                p.getFluidHandler().fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.LAVA, 8000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            }
+            sp.teleportTo(level, 24.5, -60, 1.5, 0, 30);
+        });
+        server(5, sp -> openAt(sp, pump2));
+        pumpFeed(pump2, 120);
+        shot(1, "pump/4_discharge");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void openAt(net.minecraft.server.level.ServerPlayer sp, BlockPos at) {
+        var level = sp.serverLevel();
+        var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+        level.getBlockState(at).useWithoutItem(level, sp, hit);
+    }
+
+    /** Keeps the pump's small buffer full for {@code ticks} ticks. */
+    private static void pumpFeed(BlockPos at, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(20);
+                // a pipe that takes the pumped fluid away (the tank never fills up and stalls the pump)
+                if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc p
+                        && !p.discharging())
+                    p.getFluidHandler().drain(8000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            });
+        }
+    }
+
+    /**
+     * Scene "poly" (-Dsi.capture.scene=poly), 0.1.11.8: the Particle Polymerizer screen. Iron ingots on a chain to neutron
+     * plate, shot in each of the three steps (the job progress is set directly, a step takes 75 s), then coal to diamond,
+     * then idle.
+     */
+    private static void scenePoly() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("producer/block_neutron_polymerizer").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            polyInput(sp, at, new ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 16));
+        });
+        server(5, sp -> openAt(sp, at));
+        server(2, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer p) {
+                p.cycleTarget();
+                p.cycleTarget();                                                    // nano living metal, then neutron plate
+            }
+        });
+        polyFeed(at, 50);
+        polyJob(at, 600);
+        polyFeed(at, 6);
+        shot(1, "poly/1_chain_step1");
+        polyJob(at, 1500 + 800);
+        polyFeed(at, 6);
+        shot(1, "poly/2_chain_step2");
+        polyJob(at, 3000 + 1100);
+        polyFeed(at, 25);
+        shot(1, "poly/3_neutron_plate");
+        server(1, sp -> polyInput(sp, at, new ItemStack(net.minecraft.world.item.Items.COAL, 16)));
+        polyFeed(at, 4);
+        polyJob(at, 900);
+        polyFeed(at, 6);
+        shot(1, "poly/4_coal_diamond");
+        server(1, sp -> polyInput(sp, at, ItemStack.EMPTY));
+        polyFeed(at, 20);
+        shot(1, "poly/5_idle");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void polyInput(net.minecraft.server.level.ServerPlayer sp, BlockPos at, ItemStack stack) {
+        if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer p
+                && p.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h)
+            h.setStackInSlot(p.getSlotLayout().getInputSlots()[0], stack);
+    }
+
+    /** Sets the job progress (a step takes 1500 ticks; the scene jumps through them). */
+    private static void polyJob(BlockPos at, double ticks) {
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer p) {
+                try {
+                    var f = p.getClass().getDeclaredField("jobProgress");
+                    f.setAccessible(true);
+                    f.setDouble(p, ticks);
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        });
+    }
+
+    private static void polyFeed(BlockPos at, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(2_304_000L);
+            });
+        }
+    }
+
+    /**
+     * Scene "reactor" (-Dsi.capture.scene=reactor), 0.1.11.21: the control room. A nine-column reactor (six chambers)
+     * with quad uranium rods and golden vents, the hull started at 55 % with the trip at 70 %, run for 40 cycles.
+     */
+    private static void sceneReactor() {
+        BlockPos core = new BlockPos(0, -57, 6);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(core, block("generator/block_nuclear_reactor_generator").defaultBlockState(), 3);
+            for (Direction d : Direction.values()) level.setBlock(core.relative(d), block("reactor/block_reactor_chamber").defaultBlockState(), 3);
+            level.setBlock(core.east(2), net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -57, 2.5, 0, 10);
+        });
+        server(25, sp -> {
+            if (!(sp.serverLevel().getBlockEntity(core) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator r)) return;
+            var quad = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_uranium_quad"));
+            var vent = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_golden_vent"));
+            int[][] rods = {{1, 1}, {1, 4}, {1, 7}, {4, 1}, {4, 4}, {4, 7}};
+            for (int[] rc : rods) {
+                r.getItemHandler().insertItem(rc[0] * 9 + rc[1], new net.minecraft.world.item.ItemStack(quad), false);
+                for (int[] d : new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) {
+                    int row = rc[0] + d[0], col = rc[1] + d[1];
+                    if (row >= 0 && row < 6 && col >= 0 && col < 9) r.getItemHandler().insertItem(row * 9 + col, new net.minecraft.world.item.ItemStack(vent), false);
+                }
+            }
+            r.setScramSetpoint(70);
+            r.getHeatStorage().setHeat(5500);
+        });
+        server(1, sp -> openAt(sp, core));
+        server(800, sp -> {});
+        shot(1, "reactor/1_control_room");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(core) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator r) r.scram();
+        });
+        server(60, sp -> {});
+        shot(1, "reactor/2_tripped");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
+     * Scene "disguise" (-Dsi.capture.scene=disguise), 0.1.11.24: disguised construction foam and disguised wires, as the
+     * chunk mesh now draws them. A row of foam as stone, glass, grass, oak leaves and bricks; foamlogged tin cables
+     * disguised as planks and grass, a bare one; behind them a 32 x 12 wall of disguised foam and a layer of disguised
+     * cables. Logs the frame rate ("[disguisebench]", no frame cap, no vsync) looking at the wall.
+     */
+    private static void sceneDisguise() {
+        String[] looks = {"stone", "glass", "grass_block", "oak_leaves", "bricks"};
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            var foam = block("build/block_construction_foam");
+            var disguised = (net.minecraft.world.level.block.state.properties.BooleanProperty) foam.getStateDefinition().getProperty("disguised");
+            for (int i = 0; i < looks.length; i++) disguiseFoam(level, new BlockPos(i * 2, -60, 6), foam, disguised, looks[i]);
+            String[] wires = {"oak_planks", "grass_block", null};
+            for (int i = 0; i < wires.length; i++) disguiseWire(level, new BlockPos(11 + i * 2, -60, 6), wires[i]);
+            for (int x = -12; x < 20; x++) for (int y = 0; y < 12; y++) {
+                disguiseFoam(level, new BlockPos(x, -60 + y, 14), foam, disguised, (x + y) % 3 == 0 ? "glass" : "stone");
+                disguiseWire(level, new BlockPos(x, -60 + y, 15), "oak_planks");
+            }
+            look(sp, 4.5, -59, 1.5, 0, 5);
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = true;
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.options.enableVsync().set(false);
+            mc.options.framerateLimit().set(260);
+            mc.getWindow().updateVsync(false);
+        });
+        client(60, () -> Minecraft.getInstance().setScreen(null));
+        shot(40, "disguise/1_row");
+        for (int k = 0; k < 3; k++) client(40, () -> org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[disguisebench] fps {}", Minecraft.getInstance().getFps()));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void disguiseFoam(ServerLevel level, BlockPos at, Block foam, net.minecraft.world.level.block.state.properties.BooleanProperty disguised, String look) {
+        level.setBlock(at, foam.defaultBlockState().setValue(disguised, true), 3);
+        if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.build.mio_icif_block_foam_entity f)
+            f.setDisguisedBlockId(ResourceLocation.withDefaultNamespace(look));
+    }
+
+    private static void disguiseWire(ServerLevel level, BlockPos at, String look) {
+        var state = block("wiring/cable/block_tin_cable_1").defaultBlockState();
+        // 0.1.11.33: a disguise needs foam (casing); without a look the cable stays bare
+        if (look != null) state = com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire.withCasing(state, com.miophas.singularity_iteration.common.block.wire.WireCasing.DISGUISED_FOAM);
+        level.setBlock(at, state, 3);
+        if (look != null && level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire w)
+            w.setDisguisedBlockId(ResourceLocation.withDefaultNamespace(look));
+    }
+
+    static {
+        if (OUT != null && "disguise".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneDisguise();
+        }
+    }
+
+    /**
+     * Scene "cables" (-Dsi.capture.scene=cables), 0.1.11.25: every wire block as a short run with a branch, in daylight,
+     * close and from above; then the cable items and other redrawn items in the survival inventory.
+     */
+    private static BlockPos superconductorAt;
+
+    private static void sceneCables() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            int i = 0;
+            for (Block b : BuiltInRegistries.BLOCK) {
+                if (!(b instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire)) continue;
+                int col = i % 6, row = i / 6;
+                int bx = col * 4 - 10, bz = 4 + row * 3;
+                for (int x = 0; x < 3; x++) level.setBlock(new BlockPos(bx + x, -60, bz), b.defaultBlockState(), 3);
+                level.setBlock(new BlockPos(bx + 1, -60, bz + 1), b.defaultBlockState(), 3);
+                level.setBlock(new BlockPos(bx + 1, -59, bz), b.defaultBlockState(), 3);
+                if (BuiltInRegistries.BLOCK.getKey(b).getPath().equals("wiring/cable/block_superconducting_cable")) superconductorAt = new BlockPos(bx + 1, -60, bz);
+                i++;
+            }
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -55.5, 2.0, 0, 55);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "cables/1_overview");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -6.5, -58.3, 2.6, 0, 35));
+        shot(40, "cables/2_close_left");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 5.5, -58.3, 2.6, 0, 35));
+        shot(40, "cables/3_close_right");
+        server(1, sp -> { if (superconductorAt != null) sp.teleportTo(sp.serverLevel(), superconductorAt.getX() + 0.5, -58.6, superconductorAt.getZ() - 1.6, 0, 40); });
+        shot(40, "cables/5_superconducting");
+        // 0.1.11.33: every casing value on an insulated tin cable (the disguised ones look like stone), and a detector
+        // cable under wet foam and set
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            var values = com.miophas.singularity_iteration.common.block.wire.WireCasing.values();
+            for (int i = 0; i < values.length + 2; i++) {
+                boolean detector = i >= values.length;
+                var casing = detector ? (i == values.length ? com.miophas.singularity_iteration.common.block.wire.WireCasing.FOAM : com.miophas.singularity_iteration.common.block.wire.WireCasing.CF_WALL) : values[i];
+                var at = new BlockPos(-11 + i * 2, -60, -2);
+                level.setBlock(at, com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire.withCasing(block(detector ? "wiring/block_eu_detector_cable" : "wiring/cable/block_tin_cable_1").defaultBlockState(), casing), 3);
+                if (casing.disguised && level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire w)
+                    w.setDisguisedBlockId(ResourceLocation.withDefaultNamespace("stone"));
+            }
+            sp.teleportTo(level, 0.5, -56.5, -13.5, 0, 22);
+        });
+        shot(40, "cables/6_casings");
+        String[][] pages = {
+            {"wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable_1", "wiring/cable/block_cable_o", "wiring/cable/block_cable",
+             "wiring/cable/block_gold_cable", "wiring/cable/block_gold_cable_1", "wiring/cable/block_gold_cable_2", "wiring/cable/block_iron_cable",
+             "wiring/cable/block_iron_cable_1", "wiring/cable/block_iron_cable_2", "wiring/cable/block_iron_cable_3", "wiring/cable/block_glass_cable",
+             "wiring/cable/block_superconducting_cable", "wiring/cable/block_eu_detector_cable", "wiring/cable/block_eu_splitter_cable",
+             "wiring/cable/block_eu_fuse_cable", "wiring/cable/block_eu_breaker_cable", "build/item_cf_sprayer", "reactor/item_reactor_isotope_rod",
+             "item_tool_od_scanner", "item_tool_ov_scanner", "item_tool_meter", "item_tool_wooden_treetap"}};
+        client(1, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+        });
+        server(1, sp -> {
+            sp.getInventory().clearContent();
+            int slot = 0;
+            for (String id : pages[0]) {
+                var stack = item(id);
+                if (stack.isEmpty()) continue;
+                sp.getInventory().setItem(slot++, stack);
+            }
+        });
+        client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(20, "cables/4_inventory");
+        // 0.1.11.30: the tooltip of the bare tin cable (hotbar slot 0), then the meter HUD on a powered cable
+        client(1, () -> hoverGui = new int[]{8 + 8, 142 + 8});
+        shot(10, "cables/7_tooltip");
+        client(1, () -> { hoverGui = new int[]{-4000, 4000}; Minecraft.getInstance().setScreen(null); });
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            level.setBlock(new BlockPos(30, -60, 10), block("generator/block_thermal_generator").defaultBlockState(), 3);
+            if (level.getBlockEntity(new BlockPos(30, -60, 10)) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)
+                ((net.neoforged.neoforge.items.IItemHandlerModifiable) g.getItemHandler()).setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.COAL, 64));
+            for (int x = 31; x <= 35; x++) level.setBlock(new BlockPos(x, -60, 10), block("wiring/cable/block_tin_cable").defaultBlockState(), 3);
+            place(level, new BlockPos(36, -60, 10), "wiring/block_bat_box", Direction.EAST);   // output away from the cable
+            sp.getInventory().setItem(0, item("item_tool_meter"));
+            sp.getInventory().selected = 0;
+            sp.teleportTo(level, 33.5, -59.0, 8.0, 0, 40);
+        });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.getInventory().selected = 0; mc.options.hideGui = false; });
+        shot(80, "cables/8_meter_hud");
+        // 0.1.11.34: the settings of a new breaker in a tin line: flow not set, voltage following the line (32 EU)
+        BlockPos breakerAt = new BlockPos(0, -60, 8);
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            level.setBlock(breakerAt.west(), block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
+            level.setBlock(breakerAt, block("wiring/block_eu_breaker_cable").defaultBlockState(), 3);
+            level.setBlock(breakerAt.east(), block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -59, 6.5, 0, 30);
+        });
+        client(20, () -> com.miophas.singularity_iteration.common.client.screen.ProtectionSettingsScreen.open(breakerAt));
+        shot(30, "cables/9_protection");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "cables".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneCables();
+        }
+    }
+
+    /** Scene "chunkloader" (-Dsi.capture.scene=chunkloader), 0.1.11.35: the chunk loader's map in the Nether (one grey before). */
+    private static void sceneChunkLoader() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos at = new BlockPos(8, 70, 8);
+        server(40, sp -> {
+            var nether = sp.server.getLevel(net.minecraft.world.level.Level.NETHER);
+            sp.setGameMode(GameType.CREATIVE);
+            sp.teleportTo(nether, at.getX() + 0.5, at.getY() + 2, at.getZ() - 1.5, 0, 40);
+        });
+        server(60, sp -> {
+            var nether = sp.serverLevel();
+            for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) nether.setBlock(at.offset(x, -1, z), net.minecraft.world.level.block.Blocks.NETHERRACK.defaultBlockState(), 3);
+            nether.setBlock(at, block("producer/block_chunk_loader").defaultBlockState(), 3);
+            if (nether.getBlockEntity(at) instanceof net.minecraft.world.MenuProvider provider) sp.openMenu(provider, buf -> buf.writeBlockPos(at));
+        });
+        shot(60, "chunkloader/1_nether_map");
+        // 0.1.11.38: the overworld map: a 3 x 3 loading, its running ring, two selected chunks waiting over a limit of 9
+        BlockPos home = new BlockPos(8, -60, 8);
+        client(1, () -> Minecraft.getInstance().setScreen(null));
+        server(20, sp -> {
+            var level = sp.server.overworld();
+            sp.teleportTo(level, home.getX() + 0.5, home.getY() + 2, home.getZ() - 1.5, 0, 40);
+        });
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            com.miophas.singularity_iteration.common.energy.ChunkLoaderPolicy.configure(true, 9, 0, 0, -1, 1.0, true, false);
+            level.setBlock(home, block("producer/block_chunk_loader").defaultBlockState(), 3);
+            if (level.getBlockEntity(home) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader loader) {
+                loader.getEnergyStorageInternal().setStored(2500);
+                loader.selectArea(-1, -1, 1, 1, true);
+                loader.selectArea(3, -3, 3, -2, true);
+                sp.openMenu(loader, buf -> buf.writeBlockPos(home));
+            }
+        });
+        shot(60, "chunkloader/2_overworld_map");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "chunkloader".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneChunkLoader();
+        }
+    }
+
+    /**
+     * Scene "wingman" (-Dsi.capture.scene=wingman), 0.1.11.39: the console's Armory page with suit 0 out as a Wingman ("Out"
+     * row, the Wingman row and the count against the server limit).
+     */
+    private static void sceneWingman() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(8, -60, 12);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.teleportTo(level, 2.5, -60, 2.5, 0, 0);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[][] suits = {
+                    {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                        new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), ItemStack.EMPTY},
+                    {new ItemStack(Items.GOLDEN_HELMET), new ItemStack(Items.GOLDEN_CHESTPLATE), ItemStack.EMPTY, new ItemStack(Items.GOLDEN_BOOTS), ItemStack.EMPTY, ItemStack.EMPTY}};
+                for (int st = 0; st < suits.length; st++)
+                    for (int c = 0; c < 6; c++)
+                        if (!suits[st][c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), suits[st][c], false);
+                armory.rename(sp, 0, "Diamond Mk.II");
+                armory.rename(sp, 1, "Parade Gold");
+            }
+            ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+            remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+            if (!com.miophas.singularity_iteration.common.item.armor.ArmorFeatureSlots.write(sp, "curio:charm:0", remote)) sp.getInventory().add(remote);
+        });
+        server(20, sp -> {
+            if (sp.serverLevel().getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                var msg = com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+                Singularity_Iteration.LOGGER.info("capture wingman: {}", msg.getString());
+            }
+        });
+        client(40, () -> { Minecraft.getInstance().options.hideGui = false;
+            Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+                .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_ARMORY)); });
+        shot(50, "wingman/1_console_out");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "wingman/2_escort");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingman();
+        }
+    }
+
+    /**
+     * Scene "wingman_ui" (-Dsi.capture.scene=wingman_ui), 0.1.11.40: the squad HUD (W1 / W3 by suit, an order), the command
+     * wheel at GUI scale 3 and 4 (it scales to fit), the same in Chinese, and the holo table with its chips.
+     */
+    private static void sceneWingmanUi() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-6, -60, 10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, 0.5, 0, 10);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            ItemStack helmet = suitPiece("armor/item_armor_quantum_helmet", "entity_esp");
+            com.miophas.singularity_iteration.common.suit.SuitModules.install(helmet,
+                com.miophas.singularity_iteration.common.suit.UnitRef.of(com.miophas.singularity_iteration.common.suit.SuitModuleType.HOLOMAP), 2);
+            sp.setItemSlot(EquipmentSlot.HEAD, helmet);
+            sp.setItemSlot(EquipmentSlot.CHEST, suitPiece("armor/item_armor_quantum_chestplate", "entanglement_relay"));
+            sp.setItemSlot(EquipmentSlot.LEGS, suitPiece("armor/item_armor_quantum_leggings"));
+            sp.setItemSlot(EquipmentSlot.FEET, suitPiece("armor/item_armor_quantum_boots"));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.CHEST), new ItemStack(Items.DIAMOND_CHESTPLATE), false);
+                inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.MAINHAND), new ItemStack(Items.DIAMOND_SWORD), false);
+                inv.insertItem(mio_icif_armory.slotOf(2, ArmoryPiece.CHEST), new ItemStack(Items.IRON_CHESTPLATE), false);
+                inv.insertItem(mio_icif_armory.slotOf(2, ArmoryPiece.MAINHAND), new ItemStack(Items.BOW), false);
+                com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 2,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+                com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+            }
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 0.5, -60, 14.5, true, sp);
+        });
+        server(60, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
+                if (w.set() == 2) w.order(com.miophas.singularity_iteration.common.armory.WingmanOrder.HOLD, new net.minecraft.world.phys.Vec3(8.5, -60, 18.5), null);
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.guiScale().set(3); mc.resizeDisplay(); });
+        shot(60, "wingman_ui/1_hud_en");
+        Runnable wheel = () -> {
+            Minecraft mc = Minecraft.getInstance();
+            var target = new com.miophas.singularity_iteration.common.client.armory.CommandWheelClient.Target(
+                new net.minecraft.world.phys.Vec3(0.5, -60, 14.5), false, -1, null, 14);
+            mc.setScreen(new com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen(target));
+        };
+        client(5, wheel);
+        shot(20, "wingman_ui/2_wheel_scale3");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.guiScale().set(4); mc.resizeDisplay(); });
+        client(5, wheel);
+        shot(20, "wingman_ui/3_wheel_scale4");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.guiScale().set(3); mc.resizeDisplay();
+            mc.getLanguageManager().setSelected("zh_cn"); mc.options.languageCode = "zh_cn"; mc.reloadResourcePacks(); });
+        shot(120, "wingman_ui/4_hud_zh");
+        client(5, wheel);
+        shot(20, "wingman_ui/5_wheel_zh");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, com.miophas.singularity_iteration.common.client.armory.HoloTable::open);
+        shot(60, "wingman_ui/6_holo_zh");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance();
+            mc.getLanguageManager().setSelected("en_us"); mc.options.languageCode = "en_us"; mc.reloadResourcePacks(); });
+        client(80, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_ui".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanUi();
+        }
+    }
+
+    /**
+     * Scene "wingman_motion" (-Dsi.capture.scene=wingman_motion), Wingman motion audit: a sword Wingman and a bow Wingman
+     * fighting still zombies, seen from the side (frames every 2 ticks), then a hover close-up and a landed one.
+     */
+    private static void sceneWingmanMotion() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);   // peaceful removes the zombies at once
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, -6.5, 0, 8);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[][] suits = {
+                    {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                        new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), ItemStack.EMPTY},
+                    {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
+                        new ItemStack(Items.IRON_BOOTS), new ItemStack(Items.BOW), ItemStack.EMPTY},
+                    // 0.1.11.46 (M2): a crossbow and a trident
+                    {new ItemStack(Items.GOLDEN_HELMET), new ItemStack(Items.GOLDEN_CHESTPLATE), new ItemStack(Items.GOLDEN_LEGGINGS),
+                        new ItemStack(Items.GOLDEN_BOOTS), new ItemStack(Items.CROSSBOW), ItemStack.EMPTY},
+                    {new ItemStack(Items.NETHERITE_HELMET), new ItemStack(Items.NETHERITE_CHESTPLATE), new ItemStack(Items.NETHERITE_LEGGINGS),
+                        new ItemStack(Items.NETHERITE_BOOTS), new ItemStack(Items.TRIDENT), ItemStack.EMPTY}};
+                for (int st = 0; st < suits.length; st++)
+                    for (int c = 0; c < 6; c++)
+                        if (!suits[st][c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), suits[st][c], false);
+                for (int st = 0; st < suits.length; st++)
+                    Singularity_Iteration.LOGGER.info("capture motion deploy {}: {}", st, com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+            Singularity_Iteration.LOGGER.info("capture motion: player at {} yaw {}", sp.position(), sp.getYRot());
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        client(60, () -> { Minecraft mc = Minecraft.getInstance();
+            Singularity_Iteration.LOGGER.info("capture motion client: at {} yaw {} pitch {} camera {} entities {}", mc.player.position(), mc.player.getYRot(),
+                mc.player.getXRot(), mc.getCameraEntity(), mc.level.getEntityCount()); });
+        shot(1, "wingman_motion/00_hover");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(10, "wingman_motion/01_formation_front");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            for (double[] at : new double[][]{{-4.5, 8.5}, {5.5, 10.5}}) {
+                var z = mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, at[0], -60, at[1], true, sp);
+                z.setHealth(z.getMaxHealth());
+                z.setInvulnerable(true);
+                Singularity_Iteration.LOGGER.info("capture motion zombie at {}", z.position());
+            }
+        });
+        for (int f = 0; f < 50; f++) shot(2, String.format("wingman_motion/fight_%02d", f));
+        server(1, sp -> { for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class, sp.getBoundingBox().inflate(40))) e.discard(); });
+        shot(120, "wingman_motion/90_landed");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_motion".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanMotion();
+        }
+    }
+
+    /**
+     * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
+     * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;
+     * 0.1.11.53 (P1): on its own AI (the combo chains), a frame every 2 ticks. Without SlashBlade the scene shows nothing
+     * useful.
+     */
+    private static void sceneWingmanBlade() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(18000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            level.setDayTime(6000);
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, -6.5, -60, 6.5, -90, 6);   // looking east at the fight from the side
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack blade = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("slashblade", "slashblade_white")));
+                Singularity_Iteration.LOGGER.info("capture blade: {}, the Armory takes it: {}", blade,
+                    inv.isItemValid(mio_icif_armory.slotOf(0, ArmoryPiece.MAINHAND), blade));
+                ItemStack[] suit = {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
+                    new ItemStack(Items.IRON_BOOTS), blade, ItemStack.EMPTY};
+                for (int c = 0; c < 6; c++) if (!suit[c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
+                Singularity_Iteration.LOGGER.info("capture blade deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+        });
+        // 0.1.11.49 (F0): the Armory takes the blade as it is (no connector kit): the Wingman deployed from it holds the blade
+        server(10, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture blade held by the Wingman: {}", w.getMainHandItem());
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(60, "wingman_blade/00_formation");
+        // 0.1.11.53 (P1): the Wingman fights a still zombie on its own (the stare, the cleave from above, ground and aerial
+        // chains); every click and the combo it led to is logged ("blade ... click ->"); a frame every 2 ticks
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            var z = mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 2.5, -60, 6.5, true, sp);
+            z.setInvulnerable(true);
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
+                w.teleportTo(0.5, -55.5, 6.5);
+                w.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            }
+            look(sp, 0.5, -60, 0.0, 0, 8);   // looking south at the fight from the side
+        });
+        for (int f = 0; f < 200; f++) shot(2, String.format("wingman_blade/f%03d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_blade".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanBlade();
+        }
+    }
+
+    /**
+     * Scene "wingman_escort" (-Dsi.capture.scene=wingman_escort), 0.1.11.51 (escort and open Armory phase F2): four escort
+     * Wingmen form up on a hovering owner, who then flies a circle of 64 blocks 20 blocks above the ground, speeding up to
+     * 4 blocks per tick (the maneuver flight's top speed) in 60 ticks and flying 600 server ticks (about six laps), at the
+     * end looking back over the shoulder (first person); the camera looks back at the
+     * owner's face (the V behind). The distances of the Wingmen to the owner are logged every 20 ticks.
+     */
+    private static void sceneWingmanEscort() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        double cx = 0.5, cz = 0.5, radius = 64, height = -40;
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            look(sp, cx + radius, height, cz, 0, 10);   // at the start of the circle, facing south (+z): the way round
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS, Items.DIAMOND_SWORD},
+                    {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.BOW},
+                    {Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS, Items.CROSSBOW},
+                    {Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS, Items.TRIDENT}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    Singularity_Iteration.LOGGER.info("capture escort deploy {}: {}", st, com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+                }
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        // the squad flies up from the Armory and forms up on the hovering owner
+        for (int t = 0; t < 140; t++) server(1, sp -> sp.connection.teleport(cx + radius, height, cz, 0, 10));
+        shot(1, "wingman_escort/00_formed");
+        // the flight runs on the server tick (a client step can come every other server tick), 600 ticks; at the end the
+        // owner looks back over the shoulder while flying on (the formation follows the flight, not the view)
+        java.util.concurrent.atomic.AtomicBoolean lookBack = new java.util.concurrent.atomic.AtomicBoolean();
+        server(1, sp -> {
+            var uuid = sp.getUUID();
+            int[] tick = {0};
+            double[] angle = {0};
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.ServerTickEvent.Pre e) -> {
+                if (tick[0] >= 600) return;
+                ServerPlayer p = e.getServer().getPlayerList().getPlayer(uuid);
+                if (p == null) return;
+                int t = tick[0]++;
+                double speed = Math.min(4.0, (t + 1) * 4.0 / 60);
+                angle[0] += speed / radius;
+                double a = angle[0];
+                // counter-clockwise seen from above: the velocity is (-sin a, cos a), the yaw a
+                float yaw = (float) Math.toDegrees(a) + (lookBack.get() ? 150 : 0);
+                p.connection.teleport(cx + Math.cos(a) * radius, height, cz + Math.sin(a) * radius, yaw, lookBack.get() ? 5 : 10);
+                if (t % 20 == 19) {
+                    StringBuilder line = new StringBuilder();
+                    for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(p))
+                        line.append(String.format(java.util.Locale.ROOT, " [%.1f m, %.2f b/t]", w.distanceTo(p), w.getDeltaMovement().length()));
+                    Singularity_Iteration.LOGGER.info("capture escort t={} speed {}:{}", t + 1, String.format(java.util.Locale.ROOT, "%.2f", speed), line);
+                }
+            });
+        });
+        for (int f = 0; f < 30; f++) shot(5, String.format("wingman_escort/f%02d", f));
+        client(1, () -> { lookBack.set(true); Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON); });
+        for (int f = 0; f < 10; f++) shot(5, String.format("wingman_escort/back_%02d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_escort".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanEscort();
+        }
+    }
+
+    /**
+     * Scene "wingman_swap" (-Dsi.capture.scene=wingman_swap), 0.1.11.54 (gaze and Iron Man phase P2): the owner in iron
+     * armour calls a Wingman in a diamond suit to swap; seen from behind the owner (the Wingman comes to face them), a
+     * frame every 2 ticks until the Wingman stands in the iron suit.
+     */
+    private static void sceneWingmanSwap() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            sp.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+            sp.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+            sp.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[] set = {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS,
+                    Items.DIAMOND_SWORD};
+                for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), new ItemStack(set[c]), false);
+                Singularity_Iteration.LOGGER.info("capture swap deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        shot(120, "wingman_swap/00_before");
+        server(1, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture swap start: {}", w.suitUp(sp));
+        });
+        for (int f = 0; f < 70; f++) shot(2, String.format("wingman_swap/f%02d", f));
+        server(1, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture swap after: owner {} {} / Wingman {} {} phase {}", sp.getItemBySlot(EquipmentSlot.CHEST),
+                    sp.getMainHandItem(), w.getItemBySlot(EquipmentSlot.CHEST), w.getMainHandItem(), w.swapPhase());
+        });
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(40, "wingman_swap/90_after");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_swap".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanSwap();
+        }
+    }
+
+    /**
+     * Scene "wingman_eject" (-Dsi.capture.scene=wingman_eject), 0.1.11.55 (gaze and Iron Man phase P3): the owner in a
+     * golden suit with a paired remote sends the suit on: the pieces come off and a Wingman stands up in them in front of
+     * the owner; seen from the front, a frame every 2 ticks.
+     */
+    private static void sceneWingmanEject() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            sp.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.GOLDEN_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.GOLDEN_LEGGINGS));
+            sp.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.GOLDEN_BOOTS));
+            sp.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.GOLDEN_SWORD));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+                remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+                sp.getInventory().setItem(8, remote);
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "wingman_eject/00_before");
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture eject: {}",
+            com.miophas.singularity_iteration.common.armory.WingmanService.eject(sp).getString()));
+        for (int f = 0; f < 40; f++) shot(2, String.format("wingman_eject/f%02d", f));
+        server(1, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture eject after: owner chest {} / Wingman {} {} mode {}", sp.getItemBySlot(EquipmentSlot.CHEST),
+                    w.getItemBySlot(EquipmentSlot.CHEST), w.getMainHandItem(), w.mode());
+        });
+        shot(20, "wingman_eject/90_after");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_eject".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanEject();
+        }
+    }
+
+    /**
+     * Scene "wingman_rescue" (-Dsi.capture.scene=wingman_rescue), 0.1.11.56 (gaze and Iron Man phase P4): an owner without
+     * armour falls from 45 blocks; the escort Wingman (diamond suit) catches them in the air and swaps suits. Seen in third
+     * person, a frame every 2 ticks.
+     */
+    private static void sceneWingmanRescue() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.getAbilities().mayfly = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET})
+                sp.setItemSlot(slot, ItemStack.EMPTY);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[] set = {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS,
+                    Items.DIAMOND_SWORD};
+                for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), new ItemStack(set[c]), false);
+                Singularity_Iteration.LOGGER.info("capture rescue deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        shot(100, "wingman_rescue/00_formed");
+        server(1, sp -> sp.connection.teleport(0.5, -15, 0.5, 0, 30));   // 45 blocks up: the fall starts
+        for (int f = 0; f < 60; f++) {
+            int frame = f;
+            server(0, sp -> {
+                if (frame % 5 == 0) Singularity_Iteration.LOGGER.info("capture rescue f{}: y {} fall {} slow {} chest {}", frame,
+                    String.format(java.util.Locale.ROOT, "%.1f", sp.getY()), String.format(java.util.Locale.ROOT, "%.1f", sp.fallDistance),
+                    sp.hasEffect(net.minecraft.world.effect.MobEffects.SLOW_FALLING), sp.getItemBySlot(EquipmentSlot.CHEST));
+            });
+            shot(2, String.format("wingman_rescue/f%02d", f));
+        }
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture rescue after: alive {} health {} chest {} on ground {}", sp.isAlive(),
+            sp.getHealth(), sp.getItemBySlot(EquipmentSlot.CHEST), sp.onGround()));
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_rescue".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanRescue();
+        }
+    }
+
+    /**
+     * Scene "piece_call" (-Dsi.capture.scene=piece_call), 0.1.11.57 (gaze and Iron Man phase P5): the piece wheel, then a
+     * helmet called from the Armory flying onto the owner (seen from the front), a frame every 2 ticks.
+     */
+    private static void scenePieceCall() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-6, -60, 6);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                armory.getItemHandler().insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.HEAD), new ItemStack(Items.DIAMOND_HELMET), false);
+                ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+                remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+                sp.getInventory().setItem(8, remote);
+            }
+        });
+        client(5, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.armory.PieceCallScreen()));
+        shot(20, "piece_call/00_wheel");
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true;
+            mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        server(5, sp -> Singularity_Iteration.LOGGER.info("capture piece call: {}", com.miophas.singularity_iteration.common.armory.ArmoryPieceCall.call(sp,
+            sp.serverLevel().getBlockEntity(armoryAt) instanceof mio_icif_armory a ? a : null, ArmoryPiece.HEAD.ordinal()).getString()));
+        for (int f = 0; f < 50; f++) shot(2, String.format("piece_call/f%02d", f));
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture piece call after: head {} chest {}", sp.getItemBySlot(EquipmentSlot.HEAD),
+            sp.getItemBySlot(EquipmentSlot.CHEST)));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "piece_call".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scenePieceCall();
+        }
+    }
+
+    /**
+     * Scene "wingman_callouts" (-Dsi.capture.scene=wingman_callouts), 0.1.11.58 (gaze and Iron Man phase P6): a Wingman in
+     * a badly damaged suit (sparks, smoke, an unsteady flight) fights two zombies near the owner; the GUI is on, so the
+     * callouts (deployed, lock-on, kill, ...) show beside the squad HUD. A frame every 10 ticks.
+     */
+    private static void sceneWingmanCallouts() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, -6.5, 0, 8);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[] set = {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.IRON_SWORD};
+                for (int c = 0; c < 5; c++) {
+                    ItemStack stack = new ItemStack(set[c]);
+                    if (c == 1) stack.setDamageValue(stack.getMaxDamage() - stack.getMaxDamage() / 5);   // 20 %: sparks and smoke
+                    inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), stack, false);
+                }
+                Singularity_Iteration.LOGGER.info("capture callouts deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        server(60, sp -> {
+            var level = sp.serverLevel();
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, -2.5, -60, 6.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 3.5, -60, 7.5, true, sp);
+        });
+        for (int f = 0; f < 24; f++) shot(10, String.format("wingman_callouts/f%02d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_callouts".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanCallouts();
+        }
+    }
+
+    /**
+     * Scene "clean_slate" (-Dsi.capture.scene=clean_slate), 0.1.11.59 (gaze and Iron Man phase P7): three Wingmen (gold,
+     * diamond, netherite) form up; the protocol is asked twice; they climb and burst in their colours. Looking up, a frame
+     * every 3 ticks.
+     */
+    private static void sceneCleanSlate() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(14000);   // night: the bursts show
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, -10);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS},
+                    {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS},
+                    {Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 4; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+                }
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(120, "clean_slate/00_formed");
+        server(1, sp -> {
+            Singularity_Iteration.LOGGER.info("capture clean slate 1: {}", com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.request(sp).getString());
+            Singularity_Iteration.LOGGER.info("capture clean slate 2: {}", com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.request(sp).getString());
+        });
+        server(5, sp -> look(sp, sp.getX(), sp.getY(), sp.getZ(), 0, -70));
+        for (int f = 0; f < 40; f++) shot(3, String.format("clean_slate/f%02d", f));
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory)
+                Singularity_Iteration.LOGGER.info("capture clean slate after: Wingmen {}, Armory chest pieces {} {} {}",
+                    com.miophas.singularity_iteration.common.armory.WingmanService.of(sp).size(), armory.piece(0, ArmoryPiece.CHEST),
+                    armory.piece(1, ArmoryPiece.CHEST), armory.piece(2, ArmoryPiece.CHEST));
+        });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "clean_slate".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneCleanSlate();
+        }
+    }
+
+    /**
+     * Scene "wingman_pilot" (-Dsi.capture.scene=wingman_pilot), 0.1.11.60 (gaze and Iron Man phase P8): the owner (quantum
+     * chestplate with the entanglement relay) pilots an iron Wingman: the view from its eyes with the pilot line on top, a
+     * flight ahead (the forward key held), a look back at the body that stayed, then the way back into the body.
+     */
+    private static void sceneWingmanPilot() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            ItemStack chest = item("armor/item_armor_quantum_chestplate");
+            if (chest.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(chest, armor.getMaxEnergy(chest));
+            com.miophas.singularity_iteration.common.suit.SuitModules.install(chest, com.miophas.singularity_iteration.common.suit.SuitModuleType.ENTANGLEMENT_RELAY);
+            sp.setItemSlot(EquipmentSlot.CHEST, chest);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.IRON_SWORD},
+                    {Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS, Items.BOW}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+                }
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        server(100, sp -> {
+            var list = com.miophas.singularity_iteration.common.armory.WingmanService.of(sp);
+            var w = list.stream().filter(x -> x.getMainHandItem().is(Items.IRON_SWORD)).findFirst().orElse(list.get(0));
+            Singularity_Iteration.LOGGER.info("capture pilot start: {} (relay {})", com.miophas.singularity_iteration.common.armory.WingmanPilot.start(sp, w),
+                com.miophas.singularity_iteration.common.armory.WingmanCommands.commander(sp));
+        });
+        shot(20, "wingman_pilot/00_remote_view");
+        client(1, () -> net.minecraft.client.KeyMapping.set(Minecraft.getInstance().options.keyUp.getKey(), true));
+        for (int f = 0; f < 6; f++) shot(5, String.format("wingman_pilot/f%02d_ahead", f));
+        client(1, () -> net.minecraft.client.KeyMapping.set(Minecraft.getInstance().options.keyUp.getKey(), false));
+        client(10, () -> { var p = Minecraft.getInstance().player; if (p != null) { p.setYRot(180); p.setXRot(15); } });
+        shot(10, "wingman_pilot/10_look_back");
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture pilot during: piloting {}, body at {}",
+            com.miophas.singularity_iteration.common.armory.WingmanPilot.piloting(sp), sp.position()));
+        client(1, () -> com.miophas.singularity_iteration.common.client.armory.SquadClient.send(
+            com.miophas.singularity_iteration.common.armory.WingmanCommands.A_PILOT_EXIT,
+            com.miophas.singularity_iteration.common.armory.WingmanCommandPackets.ALL, (byte) 0, null, -1));
+        shot(20, "wingman_pilot/20_back_in_body");
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture pilot after: piloting {}",
+            com.miophas.singularity_iteration.common.armory.WingmanPilot.piloting(sp)));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_pilot".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanPilot();
+        }
+    }
+
+    /**
+     * Scene "wheel_fans" (-Dsi.capture.scene=wheel_fans), 0.1.11.65 (hit feel and constructivist FX phase Q4): the command
+     * wheel with the squad control fan (modes, follow squad, return) and with the new suit fan (swap, send, pilot, Clean
+     * Slate). The owner wears the entanglement relay and has two Wingmen.
+     */
+    private static void sceneWheelFans() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            ItemStack chest = item("armor/item_armor_quantum_chestplate");
+            if (chest.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(chest, armor.getMaxEnergy(chest));
+            com.miophas.singularity_iteration.common.suit.SuitModules.install(chest, com.miophas.singularity_iteration.common.suit.SuitModuleType.ENTANGLEMENT_RELAY);
+            sp.setItemSlot(EquipmentSlot.CHEST, chest);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                for (int st = 0; st < 2; st++) {
+                    inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.CHEST), new ItemStack(Items.IRON_CHESTPLATE), false);
+                    inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.HEAD), new ItemStack(Items.IRON_HELMET), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+                }
+            }
+        });
+        client(120, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            var screen = new com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen(
+                new com.miophas.singularity_iteration.common.client.armory.CommandWheelClient.Target(mc.player.position(), false, -1, null, 0));
+            mc.setScreen(screen);
+            screen.previewFan("CONTROL");
+        });
+        shot(20, "wheel_fans/1_control");
+        client(1, () -> { if (Minecraft.getInstance().screen instanceof com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen w) w.previewFan("SUIT"); });
+        shot(10, "wheel_fans/2_suit");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wheel_fans".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWheelFans();
+        }
+    }
+
+    /**
+     * Scene "nozzles" (-Dsi.capture.scene=nozzles), 0.1.11.66 (quantum flight phase R0): the full quantum suit in maneuver
+     * flight with each frame core (none, propulsion, graviton): hover from the back and the front, then the cruise from the
+     * back; the base suit once more in the classic style.
+     */
+    private static void sceneNozzles() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+        });
+        String[] cores = {null, "PROPULSION", "GRAVITON", null};
+        String[] names = {"base", "propulsion", "graviton", "base_classic"};
+        for (int i = 0; i < cores.length; i++) {
+            final String core = cores[i], name = names[i];
+            final boolean classic = name.endsWith("classic");
+            client(1, () -> {
+                Minecraft mc = Minecraft.getInstance();
+                mc.setScreen(null);   // another scene's timer opened the management screen here
+                mc.options.keyUp.setDown(false);
+                mc.options.keySprint.setDown(false);
+                if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+                    com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.CLASSIC_FLIGHT_FX.set(classic);
+            });
+            server(5, sp -> {
+                sp.getAbilities().flying = false;
+                sp.onUpdateAbilities();
+                String[][] suit = {{"HEAD", "armor/item_armor_quantum_helmet"}, {"CHEST", "armor/item_armor_quantum_chestplate"},
+                    {"LEGS", "armor/item_armor_quantum_leggings"}, {"FEET", "armor/item_armor_quantum_boots"}};
+                for (String[] p : suit) {
+                    ItemStack st = item(p[1]);
+                    if (st.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(st, b.getMaxEnergy(st));
+                    if (p[0].equals("CHEST")) {
+                        com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.setEnabled(st, "special_maneuver", true);
+                        if (core != null) com.miophas.singularity_iteration.common.suit.core.FrameCores.install(st,
+                            com.miophas.singularity_iteration.common.suit.core.FrameCore.valueOf(core));
+                    }
+                    sp.setItemSlot(EquipmentSlot.valueOf(p[0]), st);
+                }
+                sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                sp.teleportTo(sp.serverLevel(), 0.5, -50, -20.5, 0, 8);
+                sp.getAbilities().mayfly = true;
+                sp.getAbilities().flying = true;
+                sp.onUpdateAbilities();
+            });
+            client(3, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+            client(29, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_1_hover_back");
+            client(1, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+            client(7, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_2_hover_front");
+            client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+            server(2, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -40, -60.5, 0, -4));
+            client(3, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+            client(19, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_3_cruise");
+            client(1, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+            client(3, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_4_cruise_front");
+        }
+        client(1, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.keyUp.setDown(false);
+            mc.options.keySprint.setDown(false);
+            if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.CLASSIC_FLIGHT_FX.set(false);
+        });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "nozzles".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneNozzles();
+        }
+    }
+
+    /** 0.1.11.67: puts on the full charged quantum suit, maneuver armed, with a frame core (null: none), flying at a spot. */
+    private static void quantumFlyer(net.minecraft.server.level.ServerPlayer sp, String core, double x, double y, double z) {
+        sp.getAbilities().flying = false;
+        sp.onUpdateAbilities();
+        String[][] suit = {{"HEAD", "armor/item_armor_quantum_helmet"}, {"CHEST", "armor/item_armor_quantum_chestplate"},
+            {"LEGS", "armor/item_armor_quantum_leggings"}, {"FEET", "armor/item_armor_quantum_boots"}};
+        for (String[] p : suit) {
+            ItemStack st = item(p[1]);
+            if (st.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(st, b.getMaxEnergy(st));
+            if (p[0].equals("CHEST")) {
+                com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.setEnabled(st, "special_maneuver", true);
+                if (core != null) com.miophas.singularity_iteration.common.suit.core.FrameCores.install(st,
+                    com.miophas.singularity_iteration.common.suit.core.FrameCore.valueOf(core));
+            }
+            sp.setItemSlot(EquipmentSlot.valueOf(p[0]), st);
+        }
+        sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        sp.teleportTo(sp.serverLevel(), x, y, z, 0, 8);
+        sp.getAbilities().mayfly = true;
+        sp.getAbilities().flying = true;
+        sp.onUpdateAbilities();
+    }
+
+    /** 0.1.11.67: releases the movement keys and closes any screen (another scene's timer opens the management screen). */
+    private static void releaseKeys() {
+        Minecraft mc = Minecraft.getInstance();
+        mc.setScreen(null);
+        for (var k : new net.minecraft.client.KeyMapping[]{mc.options.keyUp, mc.options.keyDown, mc.options.keyLeft, mc.options.keyRight, mc.options.keySprint})
+            k.setDown(false);
+    }
+
+    /**
+     * Scene "rcs" (-Dsi.capture.scene=rcs), 0.1.11.67 (quantum flight phase R1): the reaction control of the quantum suit.
+     * Hover: a turn to the right (the right pod side jets), a strafe to the left (right side jets and forearm), the drift
+     * stopped after the forward key is let go (chest jets); cruise: a pull up (crown), the brake after the sprint is let go
+     * (crown and retro jets, main thrust cut); the propulsion core turning (booster side jets).
+     */
+    private static void sceneRcs() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            quantumFlyer(sp, null, 0.5, -50, -20.5);
+        });
+        client(3, () -> { releaseKeys(); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        // hover, turning right
+        client(30, CaptureDirector::releaseKeys);
+        for (int i = 0; i < 6; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 9); });
+        shot(1, "rcs/1_hover_yaw_right");
+        // hover, strafing left
+        client(10, () -> { releaseKeys(); Minecraft.getInstance().options.keyLeft.setDown(true); });
+        shot(6, "rcs/2_hover_strafe_left");
+        // hover, the forward drift stopped
+        client(1, () -> { releaseKeys(); Minecraft.getInstance().options.keyUp.setDown(true); });
+        client(14, CaptureDirector::releaseKeys);
+        shot(2, "rcs/3_hover_drift_brake");
+        // cruise, pulling up, then braking
+        server(10, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -40, -60.5, 0, 4));
+        client(3, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        client(30, () -> Minecraft.getInstance().setScreen(null));
+        for (int i = 0; i < 5; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setXRot(pl.getXRot() - 5); });
+        shot(1, "rcs/4_cruise_pull_up");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));   // 0.1.11.71: the light tunnel
+        shot(2, "rcs/4b_cruise_first_person");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+        client(15, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.player.setXRot(0); });
+        client(1, () -> Minecraft.getInstance().options.keySprint.setDown(false));
+        shot(2, "rcs/5_cruise_brake");
+        // the propulsion core, hover turning right
+        client(1, CaptureDirector::releaseKeys);
+        server(20, sp -> quantumFlyer(sp, "PROPULSION", 0.5, -50, -20.5));
+        client(30, CaptureDirector::releaseKeys);
+        for (int i = 0; i < 6; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 9); });
+        shot(1, "rcs/6_propulsion_yaw_right");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "rcs".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneRcs();
+        }
+    }
+
+    /**
+     * Scene "impact" (-Dsi.capture.scene=impact), 0.1.11.68 (quantum flight phase R2): the weight of the quantum flight. A
+     * dive into the ground (hard landing: cracks and the heavy ring), the take-off burst (staged at the feet), the boost
+     * out of the hover (stretched main wedges, wider view), the hard brake (the brake jets together), a cruise into a
+     * stone wall (cracks in the wall, the ring out of it). 0.1.11.69: pigs around the touchdown are thrown off by the
+     * shockwave.
+     */
+    private static void sceneImpact() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            var stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+            for (int x = -8; x <= 8; x++) for (int y = -60; y <= -44; y++) level.setBlock(new BlockPos(x, y, 40), stone, 3);
+            // 0.1.11.69 (R3): a ring of pigs around the touchdown, for the shockwave
+            for (int i = 0; i < 8; i++) {
+                double a = i * Math.PI / 4, r = i % 2 == 0 ? 2.2 : 3.6;
+                var pig = net.minecraft.world.entity.EntityType.PIG.create(level);
+                if (pig == null) continue;
+                pig.moveTo(0.5 + Math.cos(a) * r, -60, -20.5 + Math.sin(a) * r, (float) Math.toDegrees(a), 0);
+                pig.setPersistenceRequired();   // with AI: a mob without AI takes no push at all
+                level.addFreshEntity(pig);
+            }
+            quantumFlyer(sp, null, 0.5, -36, -20.5);
+            Singularity_Iteration.LOGGER.warn("[impact] pigs placed: {}", level.getEntitiesOfClass(net.minecraft.world.entity.animal.Pig.class,
+                sp.getBoundingBox().inflate(40)).size());
+        });
+        // the dive: straight down at full throttle
+        client(5, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); mc.player.setXRot(90); });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.setXRot(90); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        until(200, () -> com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.trauma() > 0.3F);
+        client(1, CaptureDirector::releaseKeys);
+        shot(3, "impact/1_hard_landing");
+        server(1, sp -> Singularity_Iteration.LOGGER.warn("[impact] pigs after the touchdown at {}: {}", sp.position(), sp.serverLevel().getEntitiesOfClass(
+            net.minecraft.world.entity.animal.Pig.class, sp.getBoundingBox().inflate(40)).stream().map(e -> e.position().toString()).toList()));
+        client(1, () -> Minecraft.getInstance().player.setXRot(55));
+        shot(4, "impact/2_hard_landing_cracks");
+        // the take-off burst at the feet (staged: a capture cannot double-tap the jump key)
+        server(30, sp -> quantumFlyer(sp, null, 0.5, -59.6, -10.5));
+        client(3, () -> { releaseKeys(); var pl = Minecraft.getInstance().player; pl.setXRot(35);
+            com.miophas.singularity_iteration.common.client.render.PhaseBursts.ground(pl.position(), 1F, true);
+            com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.takeoff(pl); });
+        shot(2, "impact/3_takeoff_burst");
+        // the boost out of the hover, then the hard brake
+        server(30, sp -> quantumFlyer(sp, null, 0.5, -45, -40.5));
+        client(30, () -> { releaseKeys(); Minecraft.getInstance().player.setXRot(4); });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        shot(2, "impact/4_boost");
+        client(18, () -> Minecraft.getInstance().setScreen(null));
+        client(1, () -> Minecraft.getInstance().options.keySprint.setDown(false));
+        shot(2, "impact/5_hard_brake");
+        // into the wall at speed
+        server(10, sp -> quantumFlyer(sp, null, 0.5, -52, -50.5));
+        client(20, () -> { releaseKeys(); Minecraft.getInstance().player.setXRot(0); });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        until(240, () -> com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.trauma() > 0.5F);
+        client(1, CaptureDirector::releaseKeys);
+        shot(2, "impact/6_wall_hit");
+        // stand back from the wall to see its cracks
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -3.5, -52, 34.5, -25, 5));
+        shot(3, "impact/7_wall_hit_cracks");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "impact".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneImpact();
+        }
+    }
+
+    /**
+     * Scene "warp" (-Dsi.capture.scene=warp), 0.1.11.72 (phase warp style phase W2): a cruise from the hover through the sound
+     * barrier, from behind: the gather, the flash at the crossing, the warp a little later (streams, afterimages, ripples)
+     * and the drop; then once more in first person (the gather and the warp round the camera).
+     */
+    private static void sceneWarp() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            quantumFlyer(sp, null, 0.5, -40, -200.5);
+        });
+        java.util.function.Supplier<Float> gather = () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.warpGather(Minecraft.getInstance().player, 1F);
+        java.util.function.Supplier<Float> since = () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.warpSince(Minecraft.getInstance().player, 0F);
+        for (String view : new String[]{"back", "first"}) {
+            client(20, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance();
+                mc.options.setCameraType(view.equals("back") ? CameraType.THIRD_PERSON_BACK : CameraType.FIRST_PERSON); mc.player.setXRot(-2); });
+            client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+            // 0.1.11.73: each shot is timed from the gather and the crossing themselves (fixed waits landed long after the warp)
+            until(400, () -> gather.get() > 0.5F || since.get() < 3F);
+            client(1, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "warp/" + view + "_1_gather");
+            until(200, () -> since.get() < 1.2F);
+            shot(1, "warp/" + view + "_2_flash");
+            until(60, () -> since.get() >= 9F);
+            shot(1, "warp/" + view + "_3_warp");
+            until(60, () -> since.get() >= 22F);
+            client(1, () -> { if (view.equals("back")) Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });   // the afterimages trail behind
+            shot(1, "warp/" + view + "_4_afterimages");
+            client(1, () -> { if (view.equals("back")) Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+            until(60, () -> since.get() >= 46F);
+            shot(1, "warp/" + view + "_5_drop");
+            // slow down below the gather again before the next pass
+            client(1, CaptureDirector::releaseKeys);
+            server(80, sp -> quantumFlyer(sp, null, 0.5, -40, -200.5));
+        }
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "warp".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWarp();
+        }
+    }
+
+    /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
+    private static void sceneResin() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            Direction[] faces = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+            for (int i = 0; i < 4; i++) place(level, new BlockPos(i * 2 - 3, -60, 4), "producer/block_resin_collector", faces[i]);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.0, -58.4, 1.6, 0, 30);
+            sp.getInventory().clearContent();
+            sp.getInventory().setItem(0, item("producer/block_resin_collector"));
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "resin/1_facings");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -2.4, -59.2, 2.7, 0, 25));
+        shot(30, "resin/2_close");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -0.6, -59.0, 6.4, 180, 30));
+        shot(30, "resin/3_back");
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(20, "resin/4_item");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "resin".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneResin();
+        }
+    }
+
+    /**
+     * Scene "suits" (-Dsi.capture.scene=suits), 0.1.11.27: the nano and quantum suits on armour stands: plain, with a
+     * palette (crimson, cobalt), and with frame cores (solar arrays, graviton, propulsion); front, back, three-quarter and
+     * night; then the player in the quantum suit, third person and first person (the hand).
+     */
+    private static void sceneSuits() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        String[] pieces = {"helmet", "chestplate", "leggings", "boots"};
+        EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+        // suit, palette (primary, accent; -1 none), head core, chest core
+        Object[][] stands = {
+            {"nano", -1, -1, null, null}, {"quantum", -1, -1, null, null},
+            {"nano", 0xC8323C, 0xFFD24A, null, null}, {"quantum", 0x2F5FD0, 0xE8F4FF, null, null},
+            {"nano", -1, -1, "solar_array_2", null}, {"quantum", -1, -1, "solar_array_3", "graviton"},
+            {"quantum", 0x3A3F46, 0x37E35A, "solar_array_1", "propulsion"}};
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            for (int i = 0; i < stands.length; i++) {
+                Object[] d = stands[i];
+                double x = i * 1.6 - 4.8, z = 5.5;
+                var stand = new net.minecraft.world.entity.decoration.ArmorStand(level, x, -60, z);
+                stand.moveTo(x, -60, z, 180, 0);
+                stand.setYHeadRot(180); stand.setYBodyRot(180);
+                for (int k = 0; k < 4; k++) {
+                    ItemStack st = item("armor/item_armor_" + d[0] + "_" + pieces[k]);
+                    if ((int) d[1] >= 0) st.set(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_PALETTE.get(),
+                        new com.miophas.singularity_iteration.common.suit.SuitPalette((int) d[1], (int) d[2]));
+                    if (k == 0 && d[3] != null) st.set(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_CORE.get(), (String) d[3]);
+                    if (k == 1 && d[4] != null) st.set(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_CORE.get(), (String) d[4]);
+                    if (st.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(st, Long.MAX_VALUE / 4);
+                    stand.setItemSlot(slots[k], st);
+                }
+                try { var m = net.minecraft.world.entity.decoration.ArmorStand.class.getDeclaredMethod("setShowArms", boolean.class); m.setAccessible(true); m.invoke(stand, true); } catch (ReflectiveOperationException ignored) { }
+                level.addFreshEntity(stand);
+            }
+            look(sp, 0.0, -59.0, 1.0, 0, 8);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "suits/1_front_day");
+        server(1, sp -> look(sp, -3.2, -59.2, 3.2, -20, 5));
+        shot(30, "suits/2_close_plain");
+        server(1, sp -> look(sp, 3.2, -59.2, 3.2, 20, 5));
+        shot(30, "suits/3_close_cores");
+        server(1, sp -> look(sp, 0.0, -59.0, 10.0, 180, 8));
+        shot(30, "suits/4_back_day");
+        server(1, sp -> look(sp, -6.5, -58.8, 2.0, -45, 12));
+        shot(30, "suits/5_three_quarter");
+        server(1, sp -> { sp.serverLevel().setDayTime(18000); look(sp, 0.0, -59.0, 1.0, 0, 8); });
+        shot(40, "suits/6_front_night");
+        server(1, sp -> {
+            sp.serverLevel().setDayTime(6000);
+            for (int k = 0; k < 4; k++) {
+                ItemStack st = item("armor/item_armor_quantum_" + pieces[k]);
+                if (st.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(st, Long.MAX_VALUE / 4);
+                sp.setItemSlot(slots[k], st);
+            }
+            sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, -3.0, 180, 10);
+            sp.setYBodyRot(180); sp.setYHeadRot(180);
+        });
+        client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(40, "suits/7_player_front");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+        shot(30, "suits/8_player_back");
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.hideGui = false; });
+        shot(30, "suits/9_first_person_hand");
+        server(1, sp -> sp.serverLevel().setDayTime(18000));
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "suits/10_player_night");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "suits".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSuits();
+        }
+    }
+
+    /**
+     * Scene "guns" (-Dsi.capture.scene=guns), 0.1.11.28: the mining laser and the CF sprayer (OBJ models): first person idle
+     * and firing, third person front and side, on the ground, in item frames, and in the inventory.
+     */
+    private static void sceneGuns() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            ItemStack laser = item("item_tool_laser_miner");
+            if (laser.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(laser, b.getMaxEnergy(laser));
+            sp.getInventory().clearContent();
+            sp.setItemInHand(InteractionHand.MAIN_HAND, laser);
+            sp.getInventory().setItem(1, item("build/item_cf_sprayer"));
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -60, 0.5, 180, 0);
+            // on the ground and in item frames, a few blocks ahead (north)
+            for (int i = 0; i < 2; i++) {
+                var drop = new net.minecraft.world.entity.item.ItemEntity(level, -0.5 + i * 2, -60, -3.5, item(i == 0 ? "item_tool_laser_miner" : "build/item_cf_sprayer"));
+                drop.setNoPickUpDelay(); drop.setPickUpDelay(32767); drop.setNeverPickUp(); drop.setUnlimitedLifetime();
+                drop.setDeltaMovement(0, 0, 0);
+                level.addFreshEntity(drop);
+                level.setBlock(new BlockPos(-1 + i * 2, -59, -6), net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState(), 3);
+                var frame = new net.minecraft.world.entity.decoration.ItemFrame(level, new BlockPos(-1 + i * 2, -59, -5), Direction.SOUTH);
+                frame.setItem(item(i == 0 ? "item_tool_laser_miner" : "build/item_cf_sprayer"), false);
+                level.addFreshEntity(frame);
+            }
+        });
+        client(5, () -> { Minecraft.getInstance().options.hideGui = false; Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(40, "guns/1_laser_fp_idle");
+        server(1, sp -> sp.getMainHandItem().use(sp.serverLevel(), sp, InteractionHand.MAIN_HAND));
+        shot(2, "guns/2_laser_fp_fire");
+        client(20, () -> { Minecraft.getInstance().options.hideGui = true; Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "guns/3_laser_tp_lowready");
+        server(1, sp -> sp.getMainHandItem().use(sp.serverLevel(), sp, InteractionHand.MAIN_HAND));
+        shot(3, "guns/4_laser_tp_aim");
+        server(30, sp -> { sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 90, 0); sp.setYBodyRot(90); sp.setYHeadRot(90); });
+        shot(20, "guns/5_laser_tp_side");
+        server(1, sp -> {
+            sp.setItemInHand(InteractionHand.MAIN_HAND, item("build/item_cf_sprayer"));
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 180, 0); sp.setYBodyRot(180); sp.setYHeadRot(180);
+        });
+        shot(20, "guns/6_sprayer_tp_front");
+        server(1, sp -> { sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 90, 0); sp.setYBodyRot(90); sp.setYHeadRot(90); });
+        shot(20, "guns/7_sprayer_tp_side");
+        client(1, () -> { Minecraft.getInstance().options.hideGui = false; Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON); });
+        server(1, sp -> { sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 180, 0); });
+        shot(20, "guns/8_sprayer_fp");
+        server(1, sp -> { sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); sp.teleportTo(sp.serverLevel(), 0.0, -59.0, -1.0, 180, 25); });
+        client(1, () -> Minecraft.getInstance().options.hideGui = true);
+        shot(30, "guns/9_ground_and_frames");
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(20, "guns/10_inventory");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "guns".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneGuns();
+        }
+    }
+
+    static {
+        if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneReactor();
+        }
+    }
+
+    /**
+     * Scene "rtg" (-Dsi.capture.scene=rtg), 0.1.11.20: the RTG with ice beside it, the RT heat generator, and a complete
+     * geomagnetic generator on a stone column above sea level, the clock set some hours into a storm of this world.
+     */
+    private static void sceneRtg() {
+        BlockPos rtg = new BlockPos(2, -60, 4), heat = new BlockPos(-2, -60, 4), geo = new BlockPos(0, 70, 8);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            var pellet = new net.minecraft.world.item.ItemStack(com.miophas.singularity_iteration.common.item.resource.mio_icif_resources.RTG_PELLET.get());
+            level.setBlock(rtg, block("generator/block_rt_generator").defaultBlockState(), 3);
+            level.setBlock(rtg.east(), net.minecraft.world.level.block.Blocks.ICE.defaultBlockState(), 3);
+            if (level.getBlockEntity(rtg) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_rt_generator r)
+                for (int i = 0; i < 6; i++) r.getItemHandler().insertItem(i, pellet.copy(), false);
+            level.setBlock(heat, block("hugenerator/block_rt_heat_generator").defaultBlockState(), 3);
+            if (level.getBlockEntity(heat) instanceof com.miophas.singularity_iteration.common.blockentity.huentity.hugenerator.mio_icif_rt_heat_generator r)
+                for (int i = 0; i < 4; i++) r.getItemHandler().insertItem(i, pellet.copy(), false);
+            for (int y = 50; y < 70; y++) level.setBlock(new BlockPos(0, y, 8), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            for (BlockPos p : new BlockPos[]{geo.offset(1, -1, 0), geo.offset(-1, -1, 0), geo.offset(0, -1, 1), geo.offset(0, -1, -1)})
+                level.setBlock(p, block("generator/block_geomagnetic_pedestal").defaultBlockState(), 3);
+            level.setBlock(geo, block("generator/block_geomagnetic_generator").defaultBlockState(), 3);
+            level.setBlock(geo.above(), block("generator/block_geomagnetic_antenna").defaultBlockState(), 3);
+            level.setBlock(geo.above(2), block("generator/block_geomagnetic_antenna").defaultBlockState(), 3);
+            long seed = level.getSeed();
+            long time = 6000;
+            for (long d = 3; d < 400; d++) {
+                var storm = com.miophas.singularity_iteration.common.energy.GeomagPhysics.storm(seed, d);
+                if (storm != null) { time = storm.start() + 1500; break; }
+            }
+            level.setDayTime(time);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -58, 0.5, 0, 30);
+        });
+        server(80, sp -> {
+            for (BlockPos p : new BlockPos[]{rtg, geo})
+                if (sp.serverLevel().getBlockEntity(p) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+        });
+        server(1, sp -> openAt(sp, rtg));
+        server(30, sp -> {});
+        shot(1, "rtg/1_rtg_ice");
+        server(1, sp -> openAt(sp, heat));
+        server(30, sp -> {});
+        shot(1, "rtg/2_rt_heat");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 0.5, 71, 4.5, 0, 20));
+        server(10, sp -> openAt(sp, geo));
+        server(40, sp -> {});
+        shot(1, "rtg/3_magnetogram");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "rtg".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneRtg();
+        }
+    }
+
+    /**
+     * Scene "geo" (-Dsi.capture.scene=geo), 0.1.11.19: the recorder screens. A geothermal generator in a pocket of lava
+     * (two lava blocks on faces, two further off, one flowing) with lava in its tank; an incinerator fed coal with now and
+     * then a cobblestone (the chart shows the warm-up and the quenches); an experience generator fed orbs.
+     */
+    private static void sceneGeo() {
+        BlockPos geo = new BlockPos(0, -60, 4), inc = new BlockPos(3, -60, 4), xp = new BlockPos(-3, -60, 4);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(geo, block("generator/block_geo_generator").defaultBlockState(), 3);
+            for (BlockPos l : new BlockPos[]{geo.below(), geo.south(), geo.offset(1, -1, 1), geo.offset(-1, -1, 1)})
+                level.setBlock(l, net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+            for (BlockPos stone : new BlockPos[]{geo.offset(0, -2, 0), geo.offset(1, -2, 1), geo.offset(-1, -2, 1), geo.offset(0, -2, 1), geo.offset(0, -1, 2),
+                    geo.offset(1, -1, 2), geo.offset(-1, -1, 2), geo.offset(2, -1, 1), geo.offset(-2, -1, 1), geo.offset(0, 0, 2), geo.offset(1, 0, 1), geo.offset(-1, 0, 1)})
+                level.setBlock(stone, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            if (level.getBlockEntity(geo) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_geo_generator g)
+                g.getLavaHandler().fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.LAVA, 6000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            level.setBlock(inc, block("generator/block_drop_generator").defaultBlockState(), 3);
+            level.setBlock(xp, block("generator/block_experience_generator").defaultBlockState(), 3);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -58, 0.5, 0, 30);
+        });
+        for (int i = 0; i < 600; i++) {
+            final int step = i;
+            server(1, sp -> {
+                var level = sp.serverLevel();
+                if (level.getBlockEntity(inc) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(xp) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(geo) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (step % 20 == 0) {
+                    var item = step % 100 == 40 || step % 100 == 60 ? net.minecraft.world.item.Items.COBBLESTONE : net.minecraft.world.item.Items.COAL;
+                    level.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(level, inc.getX() + 0.5, inc.getY() + 0.5, inc.getZ() + 0.5,
+                        new net.minecraft.world.item.ItemStack(item)));
+                }
+                if (step % 40 == 0)
+                    level.addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(level, xp.getX() + 0.5, xp.getY() + 0.5, xp.getZ() + 0.5, 7));
+            });
+        }
+        server(1, sp -> openAt(sp, geo));
+        server(20, sp -> {});
+        shot(1, "geo/1_geothermal");
+        server(1, sp -> openAt(sp, inc));
+        server(20, sp -> {});
+        shot(1, "geo/2_incinerator");
+        server(1, sp -> openAt(sp, xp));
+        server(20, sp -> {});
+        shot(1, "geo/3_experience");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "geo".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneGeo();
+        }
+    }
+
+    /**
+     * Scene "water" (-Dsi.capture.scene=water), 0.1.11.18: the water kinetic generator's rotor cross-section with a
+     * waterfall pouring through its disc (three stones in it), and the water generator under a second waterfall.
+     */
+    private static void sceneWater() {
+        BlockPos rotor = new BlockPos(0, -57, 6), gen = new BlockPos(6, -60, 6);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(rotor, facing(block("kugenerator/block_water_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            if (level.getBlockEntity(rotor) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Water_Kinetic_Generator w)
+                w.setRotorStack(new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "rotors/item_iron_rotor"))));
+            // a waterfall over the disc (z = 5, x -3..3, y -60..-54): sources above it, stones in three cells
+            for (int x = -3; x <= 3; x++) level.setBlock(new BlockPos(x, -53, 5), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            for (int x = -3; x <= 3; x++) level.setBlock(new BlockPos(x, -52, 5), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            for (BlockPos stone : new BlockPos[]{new BlockPos(2, -56, 5), new BlockPos(3, -56, 5), new BlockPos(2, -57, 5)})
+                level.setBlock(stone, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            level.setBlock(gen, facing(block("generator/block_water_generator").defaultBlockState(), Direction.NORTH), 3);
+            level.setBlock(gen.north().above(3), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            if (level.getBlockEntity(gen) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_water_generator g)
+                g.getItemHandler().insertItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET), false);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 2.5, -55, 1.5, 0, 20);   // flying above the spreading water (it pushed the player out of reach)
+        });
+        server(100, sp -> {});
+        server(1, sp -> openAt(sp, rotor));
+        server(50, sp -> {});
+        shot(1, "water/1_rotor_waterfall");
+        server(1, sp -> openAt(sp, gen));
+        server(50, sp -> {});
+        shot(1, "water/2_water_generator");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "water".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWater();
+        }
+    }
+
+    /**
+     * Scene "stirling" (-Dsi.capture.scene=stirling), 0.1.11.17: the Stirling and shaft mimic screens. A Stirling generator
+     * in air, an advanced Stirling generator with water beside it, a Stirling kinetic generator driving a kinetic generator,
+     * and a turbo kinetic generator with nothing in front.
+     */
+    private static void sceneStirling() {
+        BlockPos basic = new BlockPos(0, -60, 3), advanced = new BlockPos(2, -60, 3), water = new BlockPos(2, -61, 3);   // a pit under it: no spreading
+        BlockPos kinetic = new BlockPos(-3, -60, 3), kgen = new BlockPos(-3, -60, 2), turbo = new BlockPos(-6, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(basic, block("generator/block_stirling_generator").defaultBlockState(), 3);
+            level.setBlock(advanced, block("generator/block_advanced_stirling_generator").defaultBlockState(), 3);
+            level.setBlock(water, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            level.setBlock(kinetic, facing(block("kugenerator/block_stirling_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            level.setBlock(kgen, facing(block("generator/block_kinetic_generator").defaultBlockState(), Direction.SOUTH), 3);
+            level.setBlock(turbo, facing(block("generator/block_turbo_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+        });
+        stirlingRun(basic, advanced, kinetic, kgen, 400);
+        server(1, sp -> openAt(sp, basic));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/1_stirling_air");
+        server(1, sp -> openAt(sp, advanced));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/2_advanced_water");
+        server(1, sp -> openAt(sp, kinetic));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/3_kinetic");
+        server(1, sp -> openAt(sp, kgen));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/4_kinetic_generator");
+        server(1, sp -> openAt(sp, turbo));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/5_turbo_no_source");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Heat into the three engines, their storages drained, the kinetic engine's water topped up and hot water taken. */
+    private static void stirlingRun(BlockPos basic, BlockPos advanced, BlockPos kinetic, BlockPos kgen, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                var level = sp.serverLevel();
+                if (level.getBlockEntity(basic) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_stirling_generator s) {
+                    s.getHeatStorageCapability(null).receiveHeat(200, false);
+                    s.getEnergyStorage().setEnergy(0);
+                }
+                if (level.getBlockEntity(advanced) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_advanced_stirling_generator a) {
+                    var heat = a.getHeatStorageCapability(Direction.UP);
+                    if (heat != null) heat.receiveHeat(150, false);
+                    a.getEnergyStorage().setEnergy(0);
+                }
+                if (level.getBlockEntity(kinetic) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Stirling_Kinetic_Generator k) {
+                    var heat = k.getHeatStorageCapability(Direction.SOUTH);
+                    if (heat != null) heat.receiveHeat(400, false);
+                    k.getWaterTank().fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000),
+                        net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                    k.getHotWaterTank().drain(2000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                }
+                if (level.getBlockEntity(kgen) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "stirling".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneStirling();
+        }
+    }
+
+    /**
+     * Scene "steam" (-Dsi.capture.scene=steam), 0.1.11.16: the plant mimic screens of the steam chain. A boiler above the
+     * critical point feeds a steam turbine with a condenser beside it; a steam kinetic generator with a rotor drives a
+     * kinetic generator, its exhaust into a second condenser; a repressurizer with superheated steam in it.
+     */
+    private static void sceneSteam() {
+        BlockPos boiler = new BlockPos(0, -60, 3), turbine = new BlockPos(1, -60, 3), condenser = new BlockPos(2, -60, 3);
+        BlockPos kinetic = new BlockPos(-3, -60, 3), kgen = new BlockPos(-3, -60, 2), condenser2 = new BlockPos(-4, -60, 3);
+        BlockPos repress = new BlockPos(-6, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(boiler, block("producer/block_steam_generator").defaultBlockState(), 3);
+            level.setBlock(turbine, block("generator/block_steam_turbine").defaultBlockState(), 3);
+            level.setBlock(condenser, block("producer/block_condenser").defaultBlockState(), 3);
+            level.setBlock(kinetic, facing(block("producer/block_steam_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            level.setBlock(kgen, facing(block("generator/block_kinetic_generator").defaultBlockState(), Direction.SOUTH), 3);
+            level.setBlock(condenser2, block("producer/block_condenser").defaultBlockState(), 3);
+            level.setBlock(repress, block("producer/block_steam_repressurizer").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            var be = level.getBlockEntity(boiler);
+            if (be != null) {
+                var tag = be.saveWithoutMetadata(level.registryAccess());
+                tag.putInt("pressure", 221);
+                tag.putInt("inputMB", 1);
+                tag.putFloat("systemHeat", 100F + 221F / 220F * 100F * 2.74F);
+                be.loadWithComponents(tag, level.registryAccess());
+            }
+            if (be instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_steam_generator b)
+                b.getWaterTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                    com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.DISTILLEDWATER.get(), 8000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            if (level.getBlockEntity(kinetic) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_steam_kinetic_generator k)
+                k.getItemHandler().setStackInSlot(2, new net.minecraft.world.item.ItemStack(
+                    BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "normal/item_steam_turbin"))));
+            if (level.getBlockEntity(condenser2) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_condenser c)
+                for (int slot = 0; slot < 4; slot++) c.getItemHandler().insertItem(slot, new net.minecraft.world.item.ItemStack(
+                    BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_vent"))), false);
+            if (level.getBlockEntity(repress) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_steam_repressurizer r)
+                r.getInputTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                    com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.SUPERHEATEDSTEAM.get(), 6000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        });
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 80);
+        server(1, sp -> openAt(sp, boiler));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 40);
+        shot(1, "steam/1_boiler");
+        server(1, sp -> openAt(sp, turbine));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/2_turbine_condensing");
+        server(1, sp -> openAt(sp, condenser));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/3_condenser");
+        server(1, sp -> openAt(sp, kinetic));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/4_kinetic");
+        server(1, sp -> openAt(sp, repress));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/5_repressurizer");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static net.minecraft.world.level.block.state.BlockState facing(net.minecraft.world.level.block.state.BlockState state, Direction d) {
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING))
+            return state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, d);
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING))
+            return state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, d);
+        return state;
+    }
+
+    /** Heat into the boiler, the turbine's and the kinetic generator's storage drained, the kinetic turbine kept in steam. */
+    private static void steamRun(BlockPos boiler, BlockPos turbine, BlockPos kinetic, BlockPos kgen, BlockPos condenser2, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                var level = sp.serverLevel();
+                if (level.getBlockEntity(boiler) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_steam_generator b) {
+                    var heat = b.getHeatStorageCapability(null);
+                    if (heat != null) heat.receiveHeat(b.getSystemHeat() < 376 ? 1200 : 300, false);
+                }
+                if (level.getBlockEntity(turbine) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(kgen) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(condenser2) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+                if (level.getBlockEntity(kinetic) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_steam_kinetic_generator k
+                        && k.getSteamTank().getFluidAmount() < 8000)
+                    k.getSteamTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                        com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.STEAM.get(), 4000),
+                        net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "steam".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSteam();
+        }
+    }
+
+    /**
+     * Scene "engine" (-Dsi.capture.scene=engine), 0.1.11.15: the engine room monitor of a diesel generator. A cold start
+     * under a varying load, the engine warm at load, then a storage filled to the top (stopped).
+     */
+    private static void sceneEngine() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("generator/block_diesel_generator").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator d)
+                d.getFuelTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                    com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.DIESELOIL.get(), 180_000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        });
+        server(5, sp -> openAt(sp, at));
+        engineLoad(at, 140);
+        shot(1, "engine/1_cold_start");
+        engineLoad(at, 900);
+        shot(1, "engine/2_warm_running");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator d)
+                d.getEnergyStorageInternal().setStored(d.getEnergyStorageInternal().getCapacity());
+        });
+        server(60, sp -> {});
+        shot(1, "engine/3_stopped_full");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** A grid taking a varying load (30..110 EU/t) from the generator for {@code ticks} ticks, the storage held near half. */
+    private static void engineLoad(BlockPos at, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (!(sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator d)) return;
+                var store = d.getEnergyStorageInternal();
+                long t = sp.serverLevel().getGameTime();
+                long take = Math.round(70 + 40 * Math.sin(t / 90.0));
+                store.setStored(Math.max(0, Math.min(store.getAmount(), 500_000) - take));
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "engine".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneEngine();
+        }
+    }
+
+    /**
+     * Scene "solar" (-Dsi.capture.scene=solar), 0.1.11.14: the solar panel screen. A hybrid panel is driven through the
+     * morning against the world clock (a shower around 09:00), then shot at noon, under a roof, and at night on its core.
+     */
+    private static void sceneSolar() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, level.getServer());
+            level.setBlock(at, block("generator/block_hybrid_solar_panel").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            solarDrive(level, at, 0, 6200);
+        });
+        server(5, sp -> openAt(sp, at));
+        server(30, sp -> {});
+        shot(1, "solar/1_noon");
+        server(1, sp -> sp.serverLevel().setBlock(at.above(3), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3));
+        server(30, sp -> {});
+        shot(1, "solar/2_covered");
+        server(1, sp -> sp.serverLevel().removeBlock(at.above(3), false));
+        server(20, sp -> solarDrive(sp.serverLevel(), at, 6200, 15000));   // after the sky light under the old roof is back
+        server(30, sp -> {});
+        shot(1, "solar/3_night_core");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Runs the panel's tick against the world clock from {@code from} to {@code to} (a shower 2500..3800), leaving the clock at {@code to}. */
+    private static void solarDrive(net.minecraft.server.level.ServerLevel level, BlockPos at, long from, long to) {
+        if (!(level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_solar_generator panel)) return;
+        try {
+            var refresh = com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_solar_generator.class.getDeclaredField("refreshIn");
+            refresh.setAccessible(true);
+            for (long t = from; t <= to; t += 10) {
+                level.setDayTime(t);
+                boolean shower = t >= 2500 && t < 3800;
+                level.setRainLevel(shower ? 1 : 0);
+                level.setThunderLevel(0);
+                refresh.setInt(panel, 0);
+                com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_solar_generator.tick(level, at, level.getBlockState(at), panel);
+                panel.getEnergyStorageInternal().setStored(Math.max(0, panel.getEnergyStorageInternal().getAmount() - 600));
+            }
+            level.setRainLevel(0);
+            level.setDayTime(to);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static {
+        if (OUT != null && "solar".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSolar();
+        }
+    }
+
+    /**
+     * Scene "thermal" (-Dsi.capture.scene=thermal), 0.1.11.10: the generator's chart recorder. Most of a game day of record
+     * is written first (the furnace is driven against earlier times with a load that rises and falls, and a refuel gap),
+     * then the screen at full output, banked (storage full), and in a cold start.
+     */
+    private static void sceneThermal() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("generator/block_thermal_generator").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            if (!(level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)) return;
+            var fuel = g.getItemHandler();
+            try {
+                var tick = g.getClass().getDeclaredMethod("tickFurnace", net.minecraft.world.level.Level.class, BlockPos.class);
+                var record = g.getClass().getDeclaredMethod("record", long.class);
+                tick.setAccessible(true);
+                record.setAccessible(true);
+                long now = level.getGameTime(), span = 20000;
+                var store = g.getEnergyStorageInternal();
+                for (long k = 0; k < span; k++) {
+                    long t = now - span + k;
+                    // six lumps, a cold gap until a refuel, then a long run
+                    if (k == 0 || k == 6000 || k == 18000)
+                        ((net.neoforged.neoforge.items.IItemHandlerModifiable) fuel).setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.COAL, k == 0 ? 6 : k == 6000 ? 30 : 64));
+                    tick.invoke(g, level, at);
+                    // the grid's draw: a day curve, light in the small hours (the storage fills and the fire is banked)
+                    double load = 7 + 5 * Math.sin(k / 3200.0) + 1.5 * Math.sin(k / 410.0);
+                    store.setStored(Math.max(0, store.getAmount() - Math.round(Math.max(0, load))));
+                    record.invoke(g, t);
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+            store(g, 1200);
+        });
+        server(5, sp -> openAt(sp, at));
+        thermalDrain(at, 60, 12);
+        shot(1, "thermal/1_full_output");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)
+                store(g, g.getEnergyStorageInternal().getCapacity());
+        });
+        server(160, sp -> {});
+        shot(1, "thermal/2_banked");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g) {
+                ((net.neoforged.neoforge.items.IItemHandlerModifiable) g.getItemHandler()).setStackInSlot(0, ItemStack.EMPTY);
+                try {
+                    for (String f : new String[]{"heat", "burnLeft"}) {
+                        var field = g.getClass().getDeclaredField(f);
+                        field.setAccessible(true);
+                        field.setDouble(g, 0);
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+                store(g, 0);
+                ((net.neoforged.neoforge.items.IItemHandlerModifiable) g.getItemHandler()).setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.CHARCOAL, 23));
+            }
+        });
+        thermalDrain(at, 70, 12);
+        shot(1, "thermal/3_cold_start");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void store(com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g, long eu) {
+        g.getEnergyStorageInternal().setStored(eu);
+    }
+
+    /** A load of {@code perTick} EU taken from the generator each tick for {@code ticks} ticks. */
+    private static void thermalDrain(BlockPos at, int ticks, int perTick) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)
+                    store(g, Math.max(0, g.getEnergyStorageInternal().getAmount() - perTick));
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "thermal".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneThermal();
+        }
+    }
+
+    /**
+     * Scene "wind" (-Dsi.capture.scene=wind), 0.1.11.9: the two wind machine screens. A carbon-rotor turbine high up with
+     * another one upstream (its wake), in a fair wind, then a storm (feathered, then overloaded without storm protection);
+     * then the wind generator. The wind field is set directly and the roses get a minute of varied wind.
+     */
+    private static void sceneWind() {
+        BlockPos kin = new BlockPos(0, 140, 12), up = new BlockPos(0, 140, 4), gen = new BlockPos(20, 140, 12);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            var state = block("kugenerator/block_wind_kinetic_generator").defaultBlockState()
+                .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.NORTH);
+            level.setBlock(kin, state, 3);
+            level.setBlock(up, state, 3);
+            level.setBlock(gen, block("generator/block_wind_generator").defaultBlockState(), 3);
+            var rotor = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "rotors/item_carbon_rotor")));
+            for (BlockPos at : new BlockPos[]{kin, up})
+                if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator k)
+                    k.setRotorStack(rotor.copy());
+            windField(level, 14, 20);
+            var rnd = new java.util.Random(7);
+            for (BlockPos at : new BlockPos[]{kin, gen}) {
+                Object rose = fieldOf(level.getBlockEntity(at), "rose");
+                for (int i = 0; i < 64; i++) {
+                    int b = Math.floorMod((int) (20 + rnd.nextGaussian() * 40), 360);
+                    ((com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindRoseBuffer) rose).add(b, 30 + rnd.nextInt(60));
+                }
+            }
+            sp.setGameMode(GameType.CREATIVE);                                     // flies: a fall would close the screen
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, 141, 16.5, 180, 10);
+        });
+        server(5, sp -> openAt(sp, kin));
+        server(140, sp -> {});
+        shot(1, "wind/1_kinetic_wake");
+        server(1, sp -> {
+            // a thunderstorm (wind x1.5) and the upstream turbine gone: well above the carbon rotor's cut-out
+            sp.serverLevel().setWeatherParameters(0, 6000, true, true);
+            sp.serverLevel().removeBlock(up, false);
+            windField(sp.serverLevel(), 30, 200);
+        });
+        server(140, sp -> {});
+        shot(1, "wind/2_storm_feathered");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(kin) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator k)
+                k.toggleStormProtection();
+        });
+        server(140, sp -> {});
+        shot(1, "wind/3_storm_overload");
+        server(1, sp -> {
+            sp.closeContainer();
+            sp.serverLevel().setWeatherParameters(6000, 0, false, false);
+            windField(sp.serverLevel(), 20, 60);
+            sp.teleportTo(sp.serverLevel(), 20.5, 141, 16.5, 180, 10);
+        });
+        server(5, sp -> openAt(sp, gen));
+        server(260, sp -> {});
+        shot(1, "wind/4_generator");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Sets the dimension's wind field (strength 0..30, bearing). */
+    private static void windField(net.minecraft.server.level.ServerLevel level, int strength, int bearing) {
+        Object sim = com.miophas.singularity_iteration.core.runtime.world.WindSim.get(level);
+        setField(sim, "windStrength", strength);
+        setField(sim, "windDirection", bearing);
+    }
+
+    private static Object fieldOf(Object target, String name) {
+        try {
+            var f = target.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            return f.get(target);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static void setField(Object target, String name, int value) {
+        try {
+            var f = target.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            f.setInt(target, value);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static {
+        if (OUT != null && "wind".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWind();
+        }
+    }
+
+    static {
+        if (OUT != null && "poly".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scenePoly();
+        }
+    }
+
+    static {
+        if (OUT != null && "pump".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scenePump();
+        }
+    }
+
+    static {
+        if (OUT != null && "mt".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneMt();
+        }
+    }
+
+    static {
+        if (OUT != null && "holo".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneHolo();
+        }
+    }
+
     static {
         if (OUT != null && "14".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
@@ -2072,7 +4618,8 @@ public final class CaptureDirector {
         } else if (OUT != null && "2".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene2();
-        } else if (OUT != null && System.getProperty("si.capture.scene") != null) {
+        } else if (OUT != null && System.getProperty("si.capture.scene") != null && STEPS.isEmpty()) {
+            // a named scene of its own (registered above, so its steps are queued) does not get the default scene too
             new File(OUT).mkdirs();
             scene();
         } else {

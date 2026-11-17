@@ -119,4 +119,15 @@ public class mio_icif_Block_Wind_Kinetic_Generator extends mio_icif_entity_block
 
         return InteractionResult.PASS;
     }
+
+    /** 0.1.11.9: comparator output = the rotor's output as a share of its output at its maximum wind. */
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof mio_icif_Wind_Kinetic_Generator g ? g.comparatorSignal() : 0;
+    }
 }

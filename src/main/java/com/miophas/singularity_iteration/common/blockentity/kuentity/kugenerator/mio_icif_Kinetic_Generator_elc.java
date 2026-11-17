@@ -106,7 +106,7 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
     @Override
     protected boolean hasEnoughEnergy() {
         // 根据马达数量检查是否有足够能量
-        return energyStorage.getAmount() >= getCurrentEnergyConsumption();
+        return energyStorage.getAmount() > 0 || prepaidKu > 0;   // 0.1.11.11: pays per KU delivered
     }
 
     @Override
@@ -156,17 +156,22 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
     @Override
     protected void doWork() {
         if (energyStorage.scexNetworkControlled()) { scexConvertKinetic(); return; }
-        // 消耗能
-        if (consumeEnergy()) {
-            // 根据马达数量计算动能产生
-            int motorCount = getMotorCount();
-            int kineticToGenerate = motorCount * KINETIC_PER_MOTOR;
-            // 输出动能
-            outputKinetic(kineticToGenerate);
-            isWorking = true;
-        } else {
-            isWorking = false;
+        // 0.1.11.11 (old grid): 4 KU per EU like the independent network (was 1 KU per EU, so the rate depended on the
+        // energy mode), and the EU is paid for the KU the front actually took (it was paid in full first, whatever went out)
+        int want = getMotorCount() * KINETIC_PER_MOTOR;
+        long affordable = energyStorage.getAmount() * 4 + prepaidKu;
+        long accepted = deliver(Math.min(want, affordable));
+        if (accepted > 0) {
+            long owed = accepted - prepaidKu;
+            if (owed > 0) {
+                long eu = (owed + 3) / 4;
+                apiUseEnergy(eu, false);
+                prepaidKu = eu * 4 - owed;
+            } else {
+                prepaidKu = -owed;
+            }
         }
+        isWorking = accepted > 0;
     }
 
     /**
@@ -276,6 +281,24 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
      * 输出动能到相邻方
      * @param kineticAmount 要输出的动能数量
      */
+    /** 0.1.11.11: KU paid for but not yet handed out (0..3, from rounding up to whole EU). */
+    private long prepaidKu;
+
+    /** Hands up to {@code offer} KU to the front (old grid); returns what it took. */
+    private long deliver(long offer) {
+        if (level == null || offer <= 0) return 0;
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+        IMioIcifCapabilities.IKineticStorage front = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, facing);
+        if (front == null) front = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(level.getBlockEntity(worldPosition.relative(facing)));
+        if (front == null || !front.canReceiveKinetic() || getMotorCount() * 1000 <= front.getRPM()) return 0;
+        long accepted = front.receiveKinetic(Math.min(offer, front.receiveKinetic(offer, true)), false);
+        if (accepted > 0) {
+            lastPushed = (int) Math.min(Integer.MAX_VALUE, accepted);
+            lastPushedAt = level.getGameTime();
+        }
+        return Math.max(0, accepted);
+    }
+
     protected void outputKinetic(int kineticAmount) {
         if (level == null) return;
 
@@ -415,12 +438,14 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        tag.putLong("PrepaidKu", prepaidKu);
         scexMotor.save(tag);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        prepaidKu = Math.max(0, Math.min(3, tag.getLong("PrepaidKu")));
         scexMotor.load(tag);
     }
 

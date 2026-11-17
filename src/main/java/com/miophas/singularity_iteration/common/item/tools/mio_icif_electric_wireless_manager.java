@@ -82,6 +82,11 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
                 int targetX = tag.getInt(TAG_TARGET_X);
                 int targetY = tag.getInt(TAG_TARGET_Y);
                 int targetZ = tag.getInt(TAG_TARGET_Z);
+                if (pos.equals(new BlockPos(targetX, targetY, targetZ))) {
+                    // 0.1.11.3: a node linked to itself duplicated energy; the node refuses it too
+                    player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.self_target"));
+                    return InteractionResult.SUCCESS;
+                }
 
                 node.setTargetPosition(new BlockPos(targetX, targetY, targetZ));
                 extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));

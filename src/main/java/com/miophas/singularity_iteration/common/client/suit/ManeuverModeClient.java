@@ -166,6 +166,10 @@ public final class ManeuverModeClient {
         double lastVy;
         final ArrayDeque<Vec3[]> trail = new ArrayDeque<>();
         long lastTick;
+        /** 0.1.11.67 (R1): the inputs of the reaction control, sampled once per game tick (see {@link #rcsSample}). */
+        int rcsTick = Integer.MIN_VALUE;
+        float rcsSpeed, rcsThrottle, rcsLookPitch, pitchRate, brake;
+        float[] viewVelocity = new float[3];
     }
     /**
      * Visual state per entity id. {@link #pruneVisuals} removes the entries of players that are
@@ -715,6 +719,7 @@ public final class ManeuverModeClient {
         vis.lastYaw = yaw;
         float turn = dt > 0 ? yawDelta / dt : 0;
         vis.turnSpeed += (turn - vis.turnSpeed) * Math.min(1, dt * 8);
+        rcsSample(p, vis, thr);
 
         // hover: a small forward lean. The forward stick makes it deeper. The strafe keys bank a little.
         float leanTarget = 7.0F + 9.0F * stick[0];
@@ -839,6 +844,48 @@ public final class ManeuverModeClient {
         float feet = Mth.lerp(cruise, hoverFeet, 0.5F + 0.5F * thr);
         float t = vis.transition;
         return new float[]{Math.min(1, right) * t, Math.min(1, left) * t, feet * t, feet * t};
+    }
+
+    /**
+     * 0.1.11.67 (R1): once per game tick, the inputs of the reaction control: the velocity in the frame of the view
+     * ({left, down, back}, blocks per tick), the pitch rate of the view (nose up, degrees per second, smoothed) and the
+     * brake (0..1: the speed or the throttle falling, held and fading over a few ticks).
+     */
+    private static void rcsSample(Player p, Visual vis, float thr) {
+        if (vis.rcsTick == p.tickCount) return;
+        boolean first = vis.rcsTick == Integer.MIN_VALUE || p.tickCount - vis.rcsTick > 5;
+        vis.rcsTick = p.tickCount;
+        Vec3 v = p.position().subtract(p.xo, p.yo, p.zo);
+        double yaw = Math.toRadians(p.getYRot());
+        vis.viewVelocity = new float[]{(float) (v.x * Math.cos(yaw) + v.z * Math.sin(yaw)), (float) -v.y,
+            (float) (v.x * Math.sin(yaw) - v.z * Math.cos(yaw))};
+        float speed = (float) v.length(), look = p.getXRot();
+        if (!first) {
+            float rate = -(look - vis.rcsLookPitch) * 20F;
+            vis.pitchRate += (rate - vis.pitchRate) * 0.5F;
+            float decel = Math.max((vis.rcsSpeed - speed) * 4F, (vis.rcsThrottle - thr) / ManeuverMode.THROTTLE_DOWN);   // a throttle closing at full rate is a full brake
+            vis.brake = Math.max(Mth.clamp(decel, 0, 1), vis.brake * 0.7F);
+        }
+        vis.rcsSpeed = speed;
+        vis.rcsThrottle = thr;
+        vis.rcsLookPitch = look;
+    }
+
+    /**
+     * 0.1.11.67 (R1): the output of each nozzle of a flyer, in the order of {@code nozzles}, by {@link
+     * com.miophas.singularity_iteration.common.suit.RcsAllocator}: null when the flyer has no flight visual.
+     */
+    public static float[] nozzleOutput(Player p, java.util.List<com.miophas.singularity_iteration.common.suit.QuantumNozzles.Nozzle> nozzles, float partial) {
+        Visual vis = VISUALS.get(p.getId());
+        float[] limbs = thrusterOutput(p);
+        if (vis == null || limbs == null) return null;
+        float thr = throttleOf(p, partial);
+        float[] stick = stickOf(p);
+        var command = com.miophas.singularity_iteration.common.suit.RcsAllocator.command(Mth.clamp(thr / 0.35F, 0, 1),
+            stick[0], stick[1], vis.viewVelocity, vis.turnSpeed, vis.pitchRate, vis.brake);
+        float[] out = com.miophas.singularity_iteration.common.suit.RcsAllocator.allocate(nozzles, command, limbs, thr, vis.brake, p.tickCount);
+        for (int i = 0; i < out.length; i++) out[i] *= vis.transition;
+        return out;
     }
 
     /** Strength of the aerodynamic deflection field, 0..1 (cruise only). */

@@ -29,7 +29,8 @@ import org.joml.Matrix4f;
  *       {@link ManeuverModeClient#thrusterOutput}.</li>
  *   <li><b>Nozzles</b> (0.1.11.66, quantum flight phase R0): the flames leave the ports of the worn suit, from
  *       {@link QuantumNozzles} (back pods or propulsion boosters, crown and tail ports, forearm fins, palms, soles and heels),
- *       each along its own exhaust; a graviton core shows field rings instead of flames.</li>
+ *       each along its own exhaust; a graviton core shows field rings instead of flames. 0.1.11.67 (R1): the outputs come
+ *       from {@link com.miophas.singularity_iteration.common.suit.RcsAllocator}: the attitude jets burn in hard pulses.</li>
  *   <li><b>Shock diamonds</b> (0.1.10.2): at full burn the plume grows longer and four bright Mach
  *       nodes (double cones) stand in it, flickering. Each flame is also recorded in world space
  *       for the heat haze of {@code ThrusterFx}.</li>
@@ -86,10 +87,14 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         int id = player.getId();
         strips.clear();
         // 0.1.11.66 (R0): every flame leaves a port of the worn suit (QuantumNozzles), the way the port looks
-        for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
-            float p = QuantumNozzles.output(n, output, thr);
+        java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
+        float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
+        for (int i = 0; outs != null && i < outs.length; i++) {
+            QuantumNozzles.Nozzle n = nozzles.get(i);
+            float p = outs[i];
             if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
             if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, time, true);
+            else if (n.kind() == QuantumNozzles.Kind.RCS) thruster(pose, vc, 0.7F * p, n.size(), time, i, 0, id, thr, strips);
             else thruster(pose, vc, p, n.size(), time, n.name().hashCode() & 7, burn, id, thr, strips);
             pose.popPose();
         }
@@ -118,11 +123,18 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
         float seconds = (player.tickCount + partial) / 20F;
         // 0.1.11.66 (R0, decision one A): one wedge out of every lit port of the worn suit, along its exhaust; graviton rings
-        for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
-            float p = QuantumNozzles.output(n, output, thr);
+        java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
+        float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
+        for (int i = 0; outs != null && i < outs.length; i++) {
+            QuantumNozzles.Nozzle n = nozzles.get(i);
+            float p = outs[i];
             if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
             if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, seconds, false);
-            else {
+            else if (n.kind() == QuantumNozzles.Kind.RCS) {
+                // an attitude jet: a hard pulse of one length (no beat, no burn), short and narrow
+                com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(),
+                    0.34F * p * (0.6F + 0.4F * n.size()), 0.13F * n.size() + 0.05F, 0.95F);
+            } else {
                 float length = (0.2F + 0.55F * p + 0.7F * burn * p) * beat * (0.6F + 0.4F * n.size());
                 com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(), length,
                     (0.14F + 0.08F * p) * n.size(), 0.95F);

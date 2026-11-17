@@ -3507,6 +3507,90 @@ public final class CaptureDirector {
         }
     }
 
+    /** 0.1.11.67: puts on the full charged quantum suit, maneuver armed, with a frame core (null: none), flying at a spot. */
+    private static void quantumFlyer(net.minecraft.server.level.ServerPlayer sp, String core, double x, double y, double z) {
+        sp.getAbilities().flying = false;
+        sp.onUpdateAbilities();
+        String[][] suit = {{"HEAD", "armor/item_armor_quantum_helmet"}, {"CHEST", "armor/item_armor_quantum_chestplate"},
+            {"LEGS", "armor/item_armor_quantum_leggings"}, {"FEET", "armor/item_armor_quantum_boots"}};
+        for (String[] p : suit) {
+            ItemStack st = item(p[1]);
+            if (st.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(st, b.getMaxEnergy(st));
+            if (p[0].equals("CHEST")) {
+                com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.setEnabled(st, "special_maneuver", true);
+                if (core != null) com.miophas.singularity_iteration.common.suit.core.FrameCores.install(st,
+                    com.miophas.singularity_iteration.common.suit.core.FrameCore.valueOf(core));
+            }
+            sp.setItemSlot(EquipmentSlot.valueOf(p[0]), st);
+        }
+        sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        sp.teleportTo(sp.serverLevel(), x, y, z, 0, 8);
+        sp.getAbilities().mayfly = true;
+        sp.getAbilities().flying = true;
+        sp.onUpdateAbilities();
+    }
+
+    /** 0.1.11.67: releases the movement keys and closes any screen (another scene's timer opens the management screen). */
+    private static void releaseKeys() {
+        Minecraft mc = Minecraft.getInstance();
+        mc.setScreen(null);
+        for (var k : new net.minecraft.client.KeyMapping[]{mc.options.keyUp, mc.options.keyDown, mc.options.keyLeft, mc.options.keyRight, mc.options.keySprint})
+            k.setDown(false);
+    }
+
+    /**
+     * Scene "rcs" (-Dsi.capture.scene=rcs), 0.1.11.67 (quantum flight phase R1): the reaction control of the quantum suit.
+     * Hover: a turn to the right (the right pod side jets), a strafe to the left (right side jets and forearm), the drift
+     * stopped after the forward key is let go (chest jets); cruise: a pull up (crown), the brake after the sprint is let go
+     * (crown and retro jets, main thrust cut); the propulsion core turning (booster side jets).
+     */
+    private static void sceneRcs() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            quantumFlyer(sp, null, 0.5, -50, -20.5);
+        });
+        client(3, () -> { releaseKeys(); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        // hover, turning right
+        client(30, CaptureDirector::releaseKeys);
+        for (int i = 0; i < 6; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 9); });
+        shot(1, "rcs/1_hover_yaw_right");
+        // hover, strafing left
+        client(10, () -> { releaseKeys(); Minecraft.getInstance().options.keyLeft.setDown(true); });
+        shot(6, "rcs/2_hover_strafe_left");
+        // hover, the forward drift stopped
+        client(1, () -> { releaseKeys(); Minecraft.getInstance().options.keyUp.setDown(true); });
+        client(14, CaptureDirector::releaseKeys);
+        shot(2, "rcs/3_hover_drift_brake");
+        // cruise, pulling up, then braking
+        server(10, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -40, -60.5, 0, 4));
+        client(3, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        client(30, () -> Minecraft.getInstance().setScreen(null));
+        for (int i = 0; i < 5; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setXRot(pl.getXRot() - 5); });
+        shot(1, "rcs/4_cruise_pull_up");
+        client(15, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.player.setXRot(0); });
+        client(1, () -> Minecraft.getInstance().options.keySprint.setDown(false));
+        shot(2, "rcs/5_cruise_brake");
+        // the propulsion core, hover turning right
+        client(1, CaptureDirector::releaseKeys);
+        server(20, sp -> quantumFlyer(sp, "PROPULSION", 0.5, -50, -20.5));
+        client(30, CaptureDirector::releaseKeys);
+        for (int i = 0; i < 6; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 9); });
+        shot(1, "rcs/6_propulsion_yaw_right");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "rcs".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneRcs();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

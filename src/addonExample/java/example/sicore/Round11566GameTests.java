@@ -143,7 +143,7 @@ public final class Round11566GameTests {
         h.assertTrue(variant("PROPULSION") == Round33GameTests.call(variant, "of", Enum.valueOf(cast(core), "PROPULSION")), "propulsion");
         h.assertTrue(variant("GRAVITON") == Round33GameTests.call(variant, "of", Enum.valueOf(cast(core), "GRAVITON")), "graviton");
         List<?> base = chest("BASE"), prop = chest("PROPULSION"), grav = chest("GRAVITON");
-        h.assertTrue(base.stream().filter(n -> s(n, "name").startsWith("pod_")).count() == 4 && count(base, "MAIN") == 4, "the base has not four back pods");
+        h.assertTrue(base.stream().filter(n -> s(n, "name").startsWith("pod_") && s(n, "kind").equals("MAIN")).count() == 4 && count(base, "MAIN") == 4, "the base has not four back pods");
         h.assertTrue(count(prop, "MAIN") == 2 && prop.stream().filter(n -> s(n, "kind").equals("MAIN")).allMatch(n -> f(n, "y") > 12 && f(n, "z") > 7),
             "the propulsion main thrust is not the two boosters");
         h.assertTrue(prop.stream().noneMatch(n -> s(n, "name").startsWith("pod_") || s(n, "name").equals("spine")), "the boosters do not cover the pods");

@@ -26,7 +26,10 @@ import javax.annotation.Nullable;
  * The quantum boots add a sole (down) and a heel port (down and back) to each leg.
  *
  * <p>Kinds: {@link Kind#MAIN} pushes the flight, {@link Kind#LIFT} holds the hover, {@link Kind#RCS} are the small
- * attitude and correction jets (lit by the allocator of R1; dark in R0), {@link Kind#FIELD} is a graviton ring.
+ * attitude and correction jets (lit in pulses by {@link RcsAllocator}, 0.1.11.67), {@link Kind#FIELD} is a graviton ring.
+ *
+ * <p>0.1.11.67 (R1): more attitude jets from the lit faces of the model: the outer sides and the upper faces of the pods,
+ * the chest lights (forwards), and under the propulsion core the sides and backs of the booster bells.
  */
 public final class QuantumNozzles {
     private QuantumNozzles() {}
@@ -63,16 +66,31 @@ public final class QuantumNozzles {
         Nozzle.of("pod_left_upper", Part.BODY, 3.0F, 3.8F, 6.2F, 0, 1, 1, Kind.MAIN, 0.7F),
         Nozzle.of("pod_right_lower", Part.BODY, -2.7F, 7.4F, 4.5F, 0, 1, 1, Kind.MAIN, 0.7F),
         Nozzle.of("pod_left_lower", Part.BODY, 2.7F, 7.4F, 4.5F, 0, 1, 1, Kind.MAIN, 0.7F),
-        Nozzle.of("spine", Part.BODY, 0, 5.4F, 4.4F, 0, 0, 1, Kind.RCS, 0.6F));
+        Nozzle.of("spine", Part.BODY, 0, 5.4F, 4.4F, 0, 0, 1, Kind.RCS, 0.6F),
+        // 0.1.11.67 (R1): the other lit faces of the pods: outer sides (yaw and strafe) and the upper faces (up and back)
+        Nozzle.of("pod_right_side_upper", Part.BODY, -4.1F, 3.4F, 5.6F, -1, 0, 0, Kind.RCS, 0.45F),
+        Nozzle.of("pod_left_side_upper", Part.BODY, 4.1F, 3.4F, 5.6F, 1, 0, 0, Kind.RCS, 0.45F),
+        Nozzle.of("pod_right_side_lower", Part.BODY, -3.8F, 7.0F, 4.0F, -1, 0, 0, Kind.RCS, 0.45F),
+        Nozzle.of("pod_left_side_lower", Part.BODY, 3.8F, 7.0F, 4.0F, 1, 0, 0, Kind.RCS, 0.45F),
+        Nozzle.of("retro_right", Part.BODY, -3.0F, 2.9F, 6.4F, 0, -1, 1, Kind.RCS, 0.5F),
+        Nozzle.of("retro_left", Part.BODY, 3.0F, 2.9F, 6.4F, 0, -1, 1, Kind.RCS, 0.5F));
 
     private static final List<Nozzle> PROPULSION_BODY = List.of(
         Nozzle.of("booster_right", Part.BODY, -2.6F, 13.1F, 8.5F, 0, 1, 0, Kind.MAIN, 1.3F),
-        Nozzle.of("booster_left", Part.BODY, 2.6F, 13.1F, 8.5F, 0, 1, 0, Kind.MAIN, 1.3F));
+        Nozzle.of("booster_left", Part.BODY, 2.6F, 13.1F, 8.5F, 0, 1, 0, Kind.MAIN, 1.3F),
+        // 0.1.11.67 (R1): the lit bells of the booster nozzles: outer sides (yaw and strafe, far behind the body) and backs
+        Nozzle.of("booster_right_side", Part.BODY, -3.9F, 11.8F, 8.5F, -1, 0, 0, Kind.RCS, 0.55F),
+        Nozzle.of("booster_left_side", Part.BODY, 3.9F, 11.8F, 8.5F, 1, 0, 0, Kind.RCS, 0.55F),
+        Nozzle.of("booster_right_back", Part.BODY, -2.6F, 11.8F, 9.7F, 0, 0, 1, Kind.RCS, 0.55F),
+        Nozzle.of("booster_left_back", Part.BODY, 2.6F, 11.8F, 9.7F, 0, 0, 1, Kind.RCS, 0.55F));
 
     /** Ports the base back unit keeps under the propulsion core. */
     private static final List<Nozzle> SHARED_BODY = List.of(
         Nozzle.of("crown", Part.BODY, 0, 0.2F, 3.9F, 0, -1, 0, Kind.RCS, 0.6F),
-        Nozzle.of("tail", Part.BODY, 0, 10.3F, 2.7F, 0, 1, 0, Kind.LIFT, 0.8F));
+        Nozzle.of("tail", Part.BODY, 0, 10.3F, 2.7F, 0, 1, 0, Kind.LIFT, 0.8F),
+        // 0.1.11.67 (R1): the two chest lights, facing forwards: the brake of the hover (push back)
+        Nozzle.of("chest_right", Part.BODY, -2.5F, 8.6F, -3.7F, 0, 0, -1, Kind.RCS, 0.45F),
+        Nozzle.of("chest_left", Part.BODY, 2.5F, 8.6F, -3.7F, 0, 0, -1, Kind.RCS, 0.45F));
 
     private static final List<Nozzle> ARMS = List.of(
         Nozzle.of("forearm_right", Part.RIGHT_ARM, -4.7F, 6.6F, 0, -1, 0, 0, Kind.RCS, 0.45F),
@@ -117,7 +135,7 @@ public final class QuantumNozzles {
     /**
      * R0 output of a nozzle from the four limb outputs of the maneuver flight ({right hand, left hand, right foot, left foot},
      * 0..1) and the throttle (0..1). Main thrust grows with the cruise (none in the hover); the lift follows the limb it sits
-     * on (the tail port the feet, fading in the cruise); RCS stays dark until the allocator (R1); a field ring follows its
+     * on (the tail port the feet, fading in the cruise); RCS is not lit here (see {@link RcsAllocator}); a field ring follows its
      * limb, the gyro the larger of throttle and feet.
      */
     public static float output(Nozzle n, float[] limbs, float throttle) {

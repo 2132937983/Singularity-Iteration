@@ -62,9 +62,11 @@ public final class Round11530GameTests {
     @SuppressWarnings({"unchecked", "rawtypes"})
     @GameTest(template = "empty", batch = "round11530_flow", timeoutTicks = 120)
     public static void cableReadsItsOwnFlow(GameTestHelper h) {
-        BlockPos source = new BlockPos(1, 2, 1), sink = new BlockPos(5, 2, 1), cable = new BlockPos(3, 2, 1);
+        // all inside the 5 x 5 "empty" structure (until 0.1.11.52 the sink stood at x 5, outside it: in the gap to the next
+        // structure, and in a chunk the test server does not force when x 5 begins a new chunk)
+        BlockPos source = new BlockPos(0, 2, 1), sink = new BlockPos(4, 2, 1), cable = new BlockPos(2, 2, 1);
         h.setBlock(source, CoreExampleMod.SOURCE.get());
-        for (int x = 2; x <= 4; x++) h.setBlock(new BlockPos(x, 2, 1), block("wiring/cable/block_tin_cable"));
+        for (int x = 1; x <= 3; x++) h.setBlock(new BlockPos(x, 2, 1), block("wiring/cable/block_tin_cable"));
         h.setBlock(sink, CoreExampleMod.SINK.get());
         InheritedSource src = (InheritedSource) h.getBlockEntity(source);
         h.onEachTick(() -> src.generate(32));

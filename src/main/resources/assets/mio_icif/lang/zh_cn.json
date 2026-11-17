@@ -5412,5 +5412,8 @@
   "jade.mio_icif.wingman.endurance": "剩余航时：%s（储备 %s EU）",
   "config.jade.plugin_mio_icif.wingman": "僚机",
   "mio_icif.configuration.wingmen.reserveMinutes": "维持费储备（分钟）",
-  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出击时从武装库预充（电量不足时少充）。先由套装支付，再用储备，最后由已加载的武装库支付；返航时剩余部分退回。0 = 不预充。"
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出击时从武装库预充（电量不足时少充）。先由套装支付，再用储备，最后由已加载的武装库支付；返航时剩余部分退回。0 = 不预充。",
+  "message.mio_icif.wingman.worn": "%s 耐久过低：僚机返回武装库维修",
+  "message.mio_icif.wingman.needs_repair": "%s 需要先维修才能出击（耐久低于 10%%）",
+  "message.mio_icif.wingman.no_charge": "僚机：%s 没电了，改为近战"
 }

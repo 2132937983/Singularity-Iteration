@@ -5412,5 +5412,8 @@
   "jade.mio_icif.wingman.endurance": "残り飛行時間：%s（予備 %s EU）",
   "config.jade.plugin_mio_icif.wingman": "僚機",
   "mio_icif.configuration.wingmen.reserveMinutes": "維持費の予備（分）",
-  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出撃時に武装庫から充電（足りなければ少なめ）。スーツ、予備、読み込み中の武装庫の順に払い、帰還時に残りを戻す。0 = 予備なし。"
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出撃時に武装庫から充電（足りなければ少なめ）。スーツ、予備、読み込み中の武装庫の順に払い、帰還時に残りを戻す。0 = 予備なし。",
+  "message.mio_icif.wingman.worn": "%s の耐久が低下：僚機は修理のため武装庫へ帰還",
+  "message.mio_icif.wingman.needs_repair": "%s は修理が必要です（耐久 10%% 未満）",
+  "message.mio_icif.wingman.no_charge": "僚機：%s の電力切れ。近接戦闘に切り替えます"
 }

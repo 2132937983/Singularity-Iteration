@@ -92,27 +92,28 @@ public final class Round11541GameTests {
         h.succeed();
     }
 
-    /** The reserve pays before the (loaded) Armory; when it is empty the Armory pays and the flight time says so. */
-    @GameTest(template = "empty", batch = "round11541_order", timeoutTicks = 120)
+    /**
+     * The reserve pays before the (loaded) Armory; when it is empty the Armory pays and the flight time says so. The upkeep
+     * runs directly (a Wingman left to fly may leave the ticking chunks of the test area and stop).
+     */
+    @GameTest(template = "empty", batch = "round11541_order", timeoutTicks = 40)
     public static void reservePaysBeforeTheArmory(GameTestHelper h) {
         ServerPlayer owner = Round33GameTests.survivalPlayer(h);
         BlockEntity armory = armory(h, owner, 500_000);
         Entity w = deploy(h, owner, armory);
         long start = storage(armory).getAmount();
-        h.runAtTickTime(50, () -> {
-            h.assertTrue(storage(armory).getAmount() == start && reserve(w) < RESERVE && reserve(w) >= RESERVE - 3 * 160,
-                "the Armory paid while there was a reserve: armory " + (start - storage(armory).getAmount()) + ", reserve " + reserve(w));
-            call(w, "setReserve", 0L);
-        });
-        h.runAtTickTime(100, () -> {
-            h.assertTrue(storage(armory).getAmount() < start, "the Armory did not pay without a reserve");
-            h.assertTrue((Integer) call(w, "enduranceSeconds") == -2, "endurance " + call(w, "enduranceSeconds"));
-            call(w, "secure");
-            w.discard();
-            Round33GameTests.remove(owner);
-            h.setBlock(ARMORY, Blocks.AIR);
-            h.succeed();
-        });
+        call(w, "upkeep", h.getLevel(), owner);
+        h.assertTrue(storage(armory).getAmount() == start && reserve(w) == RESERVE - 160,
+            "the Armory paid while there was a reserve: armory " + (start - storage(armory).getAmount()) + ", reserve " + reserve(w));
+        call(w, "setReserve", 0L);
+        call(w, "upkeep", h.getLevel(), owner);
+        h.assertTrue(storage(armory).getAmount() == start - 160, "the Armory did not pay without a reserve: " + (start - storage(armory).getAmount()));
+        h.assertTrue((Integer) call(w, "enduranceSeconds") == -2, "endurance " + call(w, "enduranceSeconds"));
+        call(w, "secure");
+        w.discard();
+        Round33GameTests.remove(owner);
+        h.setBlock(ARMORY, Blocks.AIR);
+        h.succeed();
     }
 
     /** The reserve survives a save; a save without it (older version) has none. */

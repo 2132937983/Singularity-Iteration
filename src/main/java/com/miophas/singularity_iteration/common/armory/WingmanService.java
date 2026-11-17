@@ -192,6 +192,11 @@ public final class WingmanService {
             if (p.isArmor()) armor++;
         }
         if (armor == 0) return Component.translatable("message.mio_icif.wingman.no_armor", armory.setName(set));
+        // 0.1.11.42 (decision 2 C): a piece below the return threshold would send the Wingman home at its first wear
+        List<ItemStack> suit = new ArrayList<>();
+        for (ArmoryPiece p : ArmoryPiece.VALUES) suit.add(armory.piece(set, p));
+        ItemStack worn = WingmanEntity.wornPiece(suit);
+        if (!worn.isEmpty()) return Component.translatable("message.mio_icif.wingman.needs_repair", worn.getHoverName());
         if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new com.miophas.singularity_iteration.core.api.armory.ArmoryEvent.WingmanDeploy(
                 player, armory.getBlockPos(), set, mode.name())).isCanceled()) return Component.translatable("message.mio_icif.armory.cancelled");
 

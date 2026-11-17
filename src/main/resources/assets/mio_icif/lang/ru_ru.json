@@ -5412,5 +5412,8 @@
   "jade.mio_icif.wingman.endurance": "Осталось полёта: %s (запас %s EU)",
   "config.jade.plugin_mio_icif.wingman": "Ведомый",
   "mio_icif.configuration.wingmen.reserveMinutes": "Запас на содержание (минуты)",
-  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Заряжается из арсенала при выпуске (меньше, если энергии мало). Платит сначала костюм, затем запас, затем загруженный арсенал; остаток возвращается. 0 = без запаса."
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Заряжается из арсенала при выпуске (меньше, если энергии мало). Платит сначала костюм, затем запас, затем загруженный арсенал; остаток возвращается. 0 = без запаса.",
+  "message.mio_icif.wingman.worn": "%s изношен: ведомый возвращается в арсенал на ремонт",
+  "message.mio_icif.wingman.needs_repair": "%s нужно починить перед вылетом (прочность ниже 10 %%)",
+  "message.mio_icif.wingman.no_charge": "Ведомый: у %s нет заряда, он сражается в ближнем бою"
 }

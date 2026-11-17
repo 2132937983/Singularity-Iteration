@@ -285,6 +285,86 @@ public class WingmanEntity extends Mob {
         return capacity <= 0 ? -1 : (float) stored / capacity;
     }
 
+    // ------------------------------------------------------------------ wear (0.1.11.42, Wingman audit W3, decision 2 C)
+    //
+    // A Wingman wears its gear as a player does: a hit on it wears the armor (a quarter of the damage, at least 1, as for a
+    // player), a melee hit or a shot wears the weapon by 1. A piece is never worn out: the last point of durability is kept,
+    // and when any piece is below WORN_FRACTION the Wingman flies home, where the Armory repairs it. Arrows stay free.
+    // Before, a Wingman (a Mob) wore nothing: NeoForge wears the armor of players only.
+
+    /** A piece below this fraction of its durability sends the Wingman home. */
+    public static final float WORN_FRACTION = 0.10F;
+
+    /**
+     * True for a piece that wears: damageable, and not an electric item (an electric item spends charge instead, and
+     * some show their charge as durability: an empty one would count as worn).
+     */
+    static boolean wears(ItemStack stack) {
+        if (stack.isEmpty() || !stack.isDamageableItem() || stack.getMaxDamage() <= 0) return false;
+        var item = stack.getItem();
+        return !(item instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem
+            || item instanceof com.miophas.singularity_iteration.core.api.item.IElectricArmorItem
+            || item instanceof com.miophas.singularity_iteration.core.api.item.IElectricToolItem);
+    }
+
+    /** Wears {@code stack} (in {@code slot}) by {@code amount}, keeping its last point of durability. */
+    void wear(ItemStack stack, EquipmentSlot slot, int amount) {
+        if (amount <= 0 || !wears(stack) || level().isClientSide) return;
+        int left = stack.getMaxDamage() - stack.getDamageValue();
+        int dmg = Math.min(amount, left - 1);
+        if (dmg > 0) stack.hurtAndBreak(dmg, this, slot);
+        checkWorn();
+    }
+
+    /** The first worn piece (below {@link #WORN_FRACTION}), or empty. */
+    static ItemStack wornPiece(Iterable<ItemStack> pieces) {
+        for (ItemStack s : pieces) {
+            if (!wears(s)) continue;
+            if ((s.getMaxDamage() - s.getDamageValue()) < s.getMaxDamage() * WORN_FRACTION) return s;
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /** A worn piece sends the Wingman home for repairs (once). */
+    private void checkWorn() {
+        if (state() == RETURNING) return;
+        ItemStack worn = wornPiece(items());
+        if (!worn.isEmpty()) startReturn(Component.translatable("message.mio_icif.wingman.worn", worn.getHoverName()));
+    }
+
+    @Override
+    protected void hurtArmor(DamageSource source, float damage) {
+        wearArmor(source, damage, EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD);
+    }
+
+    @Override
+    protected void hurtHelmet(DamageSource source, float damage) {
+        wearArmor(source, damage, EquipmentSlot.HEAD);
+    }
+
+    private void wearArmor(DamageSource source, float damage, EquipmentSlot... slots) {
+        if (damage <= 0) return;
+        int amount = (int) Math.max(1.0F, damage / 4.0F);
+        for (EquipmentSlot slot : slots) {
+            ItemStack piece = getItemBySlot(slot);
+            if (piece.getItem() instanceof net.minecraft.world.item.ArmorItem && piece.canBeHurtBy(source)) wear(piece, slot, amount);
+        }
+    }
+
+    // ---- an energy weapon out of charge (0.1.11.42, decision 2 C)
+    /** Tick until which a ranged Wingman whose energy weapon could not fire fights in melee. */
+    private int dryUntil = -1;
+    /** The owner was told about the empty weapon (once per empty spell). */
+    private boolean toldEmpty;
+
+    /** Tells the owner once that the weapon of this Wingman is out of charge. */
+    private void tellEmpty(ItemStack weapon) {
+        if (toldEmpty || !(level() instanceof ServerLevel world) || owner == null) return;
+        toldEmpty = true;
+        ServerPlayer player = world.getServer().getPlayerList().getPlayer(owner);
+        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.no_charge", weapon.getHoverName()), true);
+    }
+
     // ------------------------------------------------------------------ server logic
     @Override
     protected void customServerAiStep() {
@@ -801,7 +881,10 @@ public class WingmanEntity extends Mob {
 
     private void engage(LivingEntity enemy, ServerPlayer player) {
         switch (weaponKind()) {
-            case RANGED -> engageRanged(enemy, player);
+            case RANGED -> {
+                if (tickCount < dryUntil) engageMelee(enemy, player);   // 0.1.11.42: an empty energy weapon: melee until it may fire again
+                else engageRanged(enemy, player);
+            }
             case BLADE -> engageBlade(enemy, player);
             default -> engageMelee(enemy, player);
         }
@@ -861,7 +944,11 @@ public class WingmanEntity extends Mob {
     @Override
     public boolean doHurtTarget(Entity target) {
         ItemStack weapon = getMainHandItem();
-        if (!(weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc tool)) return super.doHurtTarget(target);
+        if (!(weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc tool)) {
+            boolean hit = super.doHurtTarget(target);
+            if (hit && !SlashBladeCombat.isBlade(weapon)) wear(weapon, EquipmentSlot.MAINHAND, 1);   // 0.1.11.42: as a player's hit
+            return hit;
+        }
         // the equipment check applies a changed weapon's modifiers only at the next tick: apply them now
         // (same ids as the held item's, so they replace what is there)
         weapon.forEachModifier(net.minecraft.world.entity.EquipmentSlot.MAINHAND, (attribute, modifier) -> {
@@ -881,6 +968,7 @@ public class WingmanEntity extends Mob {
             }
             if (level() instanceof ServerLevel world) net.minecraft.world.item.enchantment.EnchantmentHelper.doPostAttackEffects(world, target, source);
             if (target instanceof LivingEntity living) tool.hurtEnemy(weapon, living, this);
+            wear(weapon, EquipmentSlot.MAINHAND, 1);                  // 0.1.11.42 (most SI electric tools have no durability)
             setLastHurtMob(target);
         }
         return hit;
@@ -895,6 +983,10 @@ public class WingmanEntity extends Mob {
                 && saber.hasEnoughEnergy(weapon, com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.ACTIVATE_COST)) {
             com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.setActive(weapon, true);
             playSound(mio_icif_sounds.NANO_HF_SYNC.get(), 0.6F, 1.3F);
+            toldEmpty = false;
+        } else if (weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber
+                && !com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.isActive(weapon)) {
+            tellEmpty(weapon);   // 0.1.11.42: a nanosaber without its activation charge fights switched off
         }
     }
 
@@ -1007,8 +1099,17 @@ public class WingmanEntity extends Mob {
         if (splash(weapon) && enemy.distanceToSqr(player) < 5.5 * 5.5) return;   // no blast next to the owner
         int cooldown = fire(weapon, aim.subtract(muzzle), enemy);
         if (cooldown >= 0) entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);   // muzzle flash on the clients
-        if (cooldown >= 0) attackCooldown = Math.max(2, cooldown);
-        else attackCooldown = 20;                                  // could not fire (no charge): try again later
+        if (cooldown >= 0) {
+            attackCooldown = Math.max(2, cooldown);
+            toldEmpty = false;
+            wear(weapon, EquipmentSlot.MAINHAND, 1);                // 0.1.11.42: a shot wears the weapon (arrows stay free)
+        } else {
+            // 0.1.11.42 (decision 2 C): could not fire (no charge): melee for 10 s, then try again; the owner is told once.
+            // Before, the Wingman hovered at its firing station and tried again every second without a word.
+            attackCooldown = 10;
+            dryUntil = tickCount + 200;
+            tellEmpty(weapon);
+        }
     }
 
     /** Fires the held ranged weapon along {@code dir}. Returns the cooldown, or -1. */

@@ -5412,5 +5412,8 @@
   "jade.mio_icif.wingman.endurance": "Flight time left: %s (reserve %s EU)",
   "config.jade.plugin_mio_icif.wingman": "Wingman",
   "mio_icif.configuration.wingmen.reserveMinutes": "Upkeep reserve (minutes)",
-  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Charged from the Armory at deployment (less when it has less). The suit pays first, then the reserve, then the loaded Armory; the rest goes back when the Wingman returns. 0 = no reserve."
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Charged from the Armory at deployment (less when it has less). The suit pays first, then the reserve, then the loaded Armory; the rest goes back when the Wingman returns. 0 = no reserve.",
+  "message.mio_icif.wingman.worn": "%s is worn: the Wingman returns to the Armory for repairs",
+  "message.mio_icif.wingman.needs_repair": "%s must be repaired before it can fly (below 10 %% durability)",
+  "message.mio_icif.wingman.no_charge": "Wingman: %s is out of charge; it fights in melee"
 }

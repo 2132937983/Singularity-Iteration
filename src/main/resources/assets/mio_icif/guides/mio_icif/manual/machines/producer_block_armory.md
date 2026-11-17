@@ -54,7 +54,7 @@ A Wingman is a stored suit that flies and fights next to you as an empty suit of
 - **Modes:** Offensive (attacks what you attack, else the nearest hostile mob near you), Dispersal (each holds a sector of a wide ring around you and draws the mobs that hunt you), Escort (stays close and destroys projectiles that fly at you), Fulton (takes the marked mob to the Armory, 4,000 EU each; a hostile mob must be below half health first). The mode button of the console sets every Wingman.
 - **Recall:** "Recall" or "Recall all" in the console, or crouch and use an empty hand on your Wingman. A Wingman also goes home when you log off, die, change dimension or become a spectator.
 - **Damage:** a fatal hit does not destroy a Wingman: it keeps 1 health and is invulnerable on its way home. Only the void and /kill remove it at once; its items still go to the Armory (to your inventory if the Armory is gone, else they drop at the Wingman). You and your other Wingmen cannot hurt it.
-- **Wear:** the armor and the weapons of a Wingman lose no durability, and bows and crossbows use no arrows. Energy weapons use their own charge; without charge the Wingman does not fire.
+- **Wear:** a Wingman wears its gear as a player does: hits on it wear the armor, its melee hits and shots wear the weapon (1 each). Nothing breaks: when any piece is below 10 % durability, the Wingman returns to the Armory, which repairs it, and a suit below 10 % cannot deploy. Bows and crossbows use no arrows. Energy weapons use their own charge; out of charge, the Wingman fights in melee for 10 seconds before it tries to fire again, and you are told once.
 
 ## Sortie and return
 

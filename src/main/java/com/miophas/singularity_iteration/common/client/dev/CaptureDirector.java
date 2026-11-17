@@ -2844,8 +2844,9 @@ public final class CaptureDirector {
 
     /**
      * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
-     * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie, close from the side,
-     * a frame every tick. Without SlashBlade the blade is missing and the scene shows nothing useful.
+     * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;
+     * 0.1.11.53 (P1): on its own AI (the combo chains), a frame every 2 ticks. Without SlashBlade the scene shows nothing
+     * useful.
      */
     private static void sceneWingmanBlade() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
@@ -2884,34 +2885,19 @@ public final class CaptureDirector {
         });
         client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
         shot(60, "wingman_blade/00_formation");
-        // a still Wingman (its AI off) facing a still zombie; the scene feeds SlashBlade's combo inputs and ticks the blade,
-        // as the Wingman's AI does in a fight, so the blade and the arms can be compared frame by frame
+        // 0.1.11.53 (P1): the Wingman fights a still zombie on its own (the stare, the cleave from above, ground and aerial
+        // chains); every click and the combo it led to is logged ("blade ... click ->"); a frame every 2 ticks
         server(1, sp -> {
             var level = sp.serverLevel();
             var z = mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 2.5, -60, 6.5, true, sp);
             z.setInvulnerable(true);
             for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
-                w.setNoAi(true);
-                w.teleportTo(0.5, -59.0, 6.5);
-                w.setYRot(-90);
-                w.yHeadRot = -90;
-                w.yBodyRot = -90;
+                w.teleportTo(0.5, -55.5, 6.5);
                 w.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             }
-            look(sp, 0.5, -60, 2.0, 0, 8);   // looking south at the Wingman's right side
+            look(sp, 0.5, -60, 0.0, 0, 8);   // looking south at the fight from the side
         });
-        for (int f = 0; f < 120; f++) {
-            int frame = f;
-            server(0, sp -> {
-                var level = sp.serverLevel();
-                var zs = level.getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class, sp.getBoundingBox().inflate(16));
-                for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
-                    com.miophas.singularity_iteration.common.armory.SlashBladeCombat.tick(w);
-                    if (!zs.isEmpty() && frame % 10 == 0) com.miophas.singularity_iteration.common.armory.SlashBladeCombat.attack(w, zs.get(0));
-                }
-            });
-            shot(1, String.format("wingman_blade/f%03d", f));
-        }
+        for (int f = 0; f < 200; f++) shot(2, String.format("wingman_blade/f%03d", f));
         client(10, () -> Minecraft.getInstance().stop());
     }
 

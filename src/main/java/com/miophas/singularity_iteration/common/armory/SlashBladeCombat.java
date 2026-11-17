@@ -106,6 +106,27 @@ public final class SlashBladeCombat {
         }
     }
 
+    /**
+     * 0.1.11.53 (P1): one input of exactly {@code commands} (no left click added), for example
+     * {@code SNEAK, BACK, R_CLICK} in the air for the aerial cleave. Returns the new combo id, or null.
+     */
+    public static ResourceLocation input(LivingEntity wielder, Entity target, Command... commands) {
+        ItemStack blade = wielder.getMainHandItem();
+        Object s = isBlade(blade) ? state(blade) : null;
+        if (s == null) return null;
+        EnumSet<?> set = commands(wielder);
+        try {
+            setTarget.invoke(s, target);
+            if (set != null) for (Command c : commands) add(set, c);
+            return (ResourceLocation) progressCombo.invoke(s, wielder);
+        } catch (Throwable t) {
+            fail(t);
+            return null;
+        } finally {
+            if (set != null) for (Command c : commands) remove(set, c);
+        }
+    }
+
     /** Releases a fully charged Slash Art at {@code target}. Returns the combo id, or null. */
     public static ResourceLocation slashArts(LivingEntity wielder, Entity target) {
         ItemStack blade = wielder.getMainHandItem();

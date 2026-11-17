@@ -115,7 +115,7 @@ public class WingmanEntity extends Mob {
     @Nullable private LivingEntity target;
     private int attackCooldown, deflectCooldown, lowPowerSeconds, stateTicks, slot, slotCount = 1;
     // 0.1.8.4 combat state: circling direction (+1/-1), melee peel-off, blade dash, Slash Art timer, blocked line
-    private int strafeSign = 1, retreatTicks, dashTicks, artsCooldown, blockedTicks;
+    private int strafeSign = 1, retreatTicks, artsCooldown, blockedTicks;
     /** Ticks between two Slash Arts of a blade-wielding Wingman. */
     private static final int ARTS_INTERVAL = 200;
     private boolean secured, protectedReturn;
@@ -1059,7 +1059,7 @@ public class WingmanEntity extends Mob {
         }
     }
 
-    /** 0.1.10.11: ticks between two combo inputs in reach, so each slash of the blade plays out. */
+    /** 0.1.10.11: ticks of the arm cut of one combo input (the client key frames; 0.1.11.53: the chains time the inputs). */
     static final int BLADE_COMBO_TICKS = 8;
 
     /**
@@ -1080,45 +1080,174 @@ public class WingmanEntity extends Mob {
      * every 5 ticks cut each motion short), release a Slash Art every {@link #ARTS_INTERVAL} ticks
      * of contact. The blade's own tick actions do the cutting.
      */
+    // ---- SlashBlade combos (0.1.11.53, gaze and Iron Man phase P1, decision two A)
+    //
+    // The Wingman plays whole chains ({@link BladeChain}): in the air the aerial chains A and B by turns, opening a fight
+    // from above with the aerial cleave (a dive onto the target, the landing slash); against a target on the ground with
+    // room beside it, it lands there (onGround picks the ground chains) for the chains A (a4, or a4_ex and a5ex when
+    // powered), C and the B flurry, stays down until the finisher has played and takes off. During a chain it stays at
+    // the target (no circling, which took it out of reach and broke the chain), and a Slash Art comes only between chains.
+
+    /** Most blocks to the target at which a chain starts or goes on (SlashBlade's reach). */
+    static final double BLADE_REACH = 3.5;
+    /** Chance that a chain against a target on the ground is played on the ground. */
+    static final float GROUND_CHANCE = 0.6F;
+    /** Ticks a Wingman tries to reach its ground spot or the cleave perch before it plays an aerial chain instead. */
+    static final int SETUP_TICKS = 40;
+    /** Ticks after the kick of aerial_rave_b3 in which the Wingman does not steer (the blade lifts it). */
+    static final int KICK_TICKS = 6;
+
+    private final BladeChain chain = new BladeChain();
+    /** The chain chosen next and where it is set up (the ground spot or the cleave perch), and since when. */
+    @Nullable private BladeChain.Kind planned;
+    @Nullable private Vec3 setupAt;
+    private int setupTicks, kickTicks;
+    private boolean aerialB, firstChain = true;
+    @Nullable private LivingEntity chainTarget;
+
+    /** 0.1.11.53: the chain scheduler (tests). */
+    BladeChain bladeChain() { return chain; }
+
     private void engageBlade(LivingEntity enemy, ServerPlayer player) {
-        Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
-        faceSmooth(enemy.getEyePosition(), 45);
+        faceSmooth(enemy.getEyePosition(), GAZE_TURN);
+        long now = level().getGameTime();
+        if (enemy != chainTarget) { chainTarget = enemy; firstChain = true; planned = null; chain.end(now, 0); }
         double d = distanceTo(enemy);
-        if (dashTicks > 0) {                                      // rapid slash: a straight burst through the target
-            dashTicks--;
-            Vec3 to = aim.subtract(position());
-            if (to.lengthSqr() > 1.0E-4) setDeltaMovement(to.normalize().scale(1.6));
-        } else {
-            steer(aim.add(enemy.getDeltaMovement().scale(3)).add(sideOf(enemy).scale(0.8)), COMBAT, player);
+        BladeChain.Kind running = chain.running(now);
+        if (running != null) {
+            playChain(enemy, player, running, now, d);
+            return;
         }
-        if (attackCooldown > 0) return;
+        if (!chain.free(now)) { holdAtBlade(enemy, player, false); return; }
+        // between chains: a Slash Art when it is ready
         if (artsCooldown == 0 && d < 7 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
                 slash(SLASH_ARTS);
                 artsCooldown = ARTS_INTERVAL;
-                attackCooldown = 20;
+                chain.end(now, 20);
                 boost(position().subtract(enemy.position()));     // 0.1.9.1: break away after the art
                 return;
             }
         }
-        if (d > 3.5 && d < 9 && hasLineOfSight(enemy)) {
-            if (SlashBladeCombat.attack(this, enemy, SlashBladeCombat.Command.FORWARD, SlashBladeCombat.Command.SPRINT) != null) {
-                slash(SLASH_DASH);
-                dashTicks = 5;
-                attackCooldown = 12;
-                return;
+        if (planned == null) plan(enemy, now);
+        if (planned == null) { engageMelee(enemy, player); return; }   // the bridge went off: a plain sword
+        switch (planned) {
+            case CLEAVE -> {
+                // above the target, a little to the side; then the dive
+                if (setupAt == null || position().distanceTo(setupAt) > 1.2) {
+                    if (setupAt == null || ++setupTicks > SETUP_TICKS) { planned = BladeChain.Kind.AERIAL_A; setupAt = null; return; }
+                    steer(setupAt, COMBAT, player);
+                    return;
+                }
+                startChain(BladeChain.Kind.CLEAVE, now);
+                playChain(enemy, player, BladeChain.Kind.CLEAVE, now, d);
+            }
+            case GROUND_A, GROUND_B, GROUND_C -> {
+                if (setupAt == null || ++setupTicks > SETUP_TICKS || setupAt.distanceTo(enemy.position()) > BLADE_REACH) {
+                    planned = aerialB ? BladeChain.Kind.AERIAL_B : BladeChain.Kind.AERIAL_A;
+                    setupAt = null;
+                    return;
+                }
+                if (!descendTo(setupAt, player)) return;
+                BladeChain.Kind k = planned;
+                startChain(k, now);
+                playChain(enemy, player, k, now, d);
+            }
+            default -> {
+                if (d > BLADE_REACH) { steer(enemy.position().add(0, enemy.getBbHeight() * 0.5, 0).add(enemy.getDeltaMovement().scale(3)), COMBAT, player); return; }
+                BladeChain.Kind k = planned;
+                startChain(k, now);
+                playChain(enemy, player, k, now, d);
             }
         }
-        if (d <= 3.5) {
-            if (SlashBladeCombat.attack(this, enemy) != null) {
-                slash(SLASH_COMBO);
-                attackCooldown = BLADE_COMBO_TICKS;
-            } else if (isWithinMeleeAttackRange(enemy)) {        // bridge off: plain sword
-                swing(InteractionHand.MAIN_HAND);
-                doHurtTarget(enemy);
-                attackCooldown = Mth.ceil(20.0 / Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED)));
-            }
+    }
+
+    /** Chooses the next chain and where to set it up. */
+    private void plan(LivingEntity enemy, long now) {
+        if (!SlashBladeCombat.isBlade(getMainHandItem())) return;
+        setupTicks = 0;
+        setupAt = null;
+        Vec3 side = position().subtract(enemy.position()).multiply(1, 0, 1);
+        side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+        Vec3 spot = standsOnFloor(enemy) ? findLanding(enemy.position().add(side.scale(1.8)).add(0, 1.0, 0)) : null;
+        if (spot != null && Math.abs(spot.y - enemy.getY()) > 1.1) spot = null;
+        Vec3 perch = enemy.position().add(side.scale(1.2)).add(0, 4.0, 0);
+        if (firstChain && spot != null && level().noCollision(this, getBoundingBox().move(perch.subtract(position())).expandTowards(0, -3.0, 0))) {
+            planned = BladeChain.Kind.CLEAVE;   // the opener: up to the perch above the target, then the dive
+            setupAt = perch;
+        } else if (spot != null && getRandom().nextFloat() < GROUND_CHANCE) {
+            BladeChain.Kind[] ground = {BladeChain.Kind.GROUND_A, BladeChain.Kind.GROUND_C, BladeChain.Kind.GROUND_B};
+            planned = ground[getRandom().nextInt(ground.length)];
+            setupAt = spot;
+        } else {
+            planned = aerialB ? BladeChain.Kind.AERIAL_B : BladeChain.Kind.AERIAL_A;
         }
+        firstChain = false;
+    }
+
+    /** True when {@code e} stands on a floor (its onGround, or a solid block right under its feet: a still mob never updates onGround). */
+    private boolean standsOnFloor(LivingEntity e) {
+        if (e.onGround()) return true;
+        BlockPos under = BlockPos.containing(e.getX(), e.getY() - 0.05, e.getZ());
+        var shape = level().getBlockState(under).getCollisionShape(level(), under);
+        return !shape.isEmpty() && under.getY() + shape.max(net.minecraft.core.Direction.Axis.Y) >= e.getY() - 0.06;
+    }
+
+    private void startChain(BladeChain.Kind kind, long now) {
+        chain.start(kind, now);
+        planned = null;
+        setupAt = null;
+        if (kind == BladeChain.Kind.AERIAL_A || kind == BladeChain.Kind.AERIAL_B) aerialB = !aerialB;
+    }
+
+    /** Flies down onto {@code spot} (a floor point); true when the Wingman stands on it. */
+    private boolean descendTo(Vec3 spot, ServerPlayer player) {
+        Vec3 to = spot.subtract(position());
+        if (onGround() && to.horizontalDistanceSqr() < 0.6 * 0.6) return true;
+        if (to.horizontalDistanceSqr() > 0.5 * 0.5) steer(new Vec3(spot.x, Math.max(spot.y + 0.6, Math.min(getY(), spot.y + 2.5)), spot.z), COMBAT, player);
+        else setDeltaMovement(to.x * 0.4, Math.max(-0.4, Math.min(-0.08, to.y * 0.5)), to.z * 0.4);
+        return false;
+    }
+
+    /** One tick of a running chain: stay at the target (on the ground, or in the air), click when due. */
+    private void playChain(LivingEntity enemy, ServerPlayer player, BladeChain.Kind kind, long now, double d) {
+        if (kind.grounded) {
+            if (!onGround() && chain.clicks() > 0 && !chain.resting(now)) { chain.end(now, BladeChain.MISS_REST); return; }   // knocked off the ground: the chain is lost
+            setDeltaMovement(0, -0.1, 0);   // stand (the suit flies without gravity)
+            if (!chain.resting(now) && d > BLADE_REACH + 0.5) { chain.end(now, BladeChain.MISS_REST); return; }   // the target left
+        } else if (kind == BladeChain.Kind.CLEAVE) {
+            // the dive: the blade drives the Wingman down (3 blocks per tick) until it lands; no steering against it
+            if (chain.resting(now) && onGround()) setDeltaMovement(0, -0.1, 0);
+        } else if (kickTicks > 0) {
+            kickTicks--;
+        } else {
+            holdAtBlade(enemy, player, true);
+            if (onGround() && chain.clicks() == 0) return;   // an aerial chain starts in the air (onGround picks the chain)
+        }
+        if (!chain.due(now)) return;
+        if (kind != BladeChain.Kind.CLEAVE && d > BLADE_REACH + 0.5) return;   // wait for reach (the window may still hold)
+        net.minecraft.resources.ResourceLocation combo = kind == BladeChain.Kind.CLEAVE
+            ? SlashBladeCombat.input(this, enemy, SlashBladeCombat.Command.SNEAK, SlashBladeCombat.Command.BACK, SlashBladeCombat.Command.R_CLICK)
+            : SlashBladeCombat.attack(this, enemy);
+        String path = combo == null ? null : combo.getPath();
+        if (chain.clicked(now, path)) {
+            slash(SLASH_COMBO);
+            if ("aerial_rave_b3".equals(path)) kickTicks = KICK_TICKS;
+        }
+        if (BLADE_LOG) com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.info("Wingman {} blade {} click -> {} (chain {}, clicks {})", getId(), kind, path,
+            chain.running(now), chain.clicks());
+    }
+
+    /** Debug log of the blade clicks (-Dsi.wingman.bladeLog=true; the capture scene and the tests read it). */
+    static final boolean BLADE_LOG = Boolean.getBoolean("si.wingman.bladeLog") || "wingman_blade".equals(System.getProperty("si.capture.scene"));
+
+    /** Hover at the target within reach, on the side the Wingman is on (no circling). */
+    private void holdAtBlade(LivingEntity enemy, ServerPlayer player, boolean close) {
+        if (onGround() && chain.resting(level().getGameTime())) { setDeltaMovement(0, -0.1, 0); return; }
+        Vec3 side = position().subtract(enemy.position()).multiply(1, 0, 1);
+        side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+        Vec3 at = enemy.position().add(side.scale(close ? 2.0 : 2.6)).add(0, enemy.getBbHeight() * 0.35, 0);
+        steer(at, COMBAT, player);
     }
 
     /**

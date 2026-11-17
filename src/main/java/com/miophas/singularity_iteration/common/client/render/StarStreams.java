@@ -22,7 +22,9 @@ import org.joml.Matrix4f;
  * tick, {@link PhaseRules#STREAMS} streaks of light run in a tube round the flight ({@link PhaseRules#STREAM_INNER} to
  * {@link PhaseRules#STREAM_OUTER} blocks out, never through the body) and slide back past the flyer; they grow with the
  * speed, a white-cyan head and a tail that shifts to violet and magenta as the flight gets fast. A world pass, so they
- * also stand round the own camera in first person (a tunnel of light). Not in the classic style.
+ * also stand round the own camera in first person (a tunnel of light). Not in the classic style. 0.1.11.72 (W2): the gather
+ * before a warp pulls them in, shortens and dims them; the warp stretches and heats them ({@link
+ * com.miophas.singularity_iteration.common.suit.WarpRules#streamBoost}).
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class StarStreams {
@@ -44,21 +46,27 @@ public final class StarStreams {
             if (p.distanceToSqr(cam) > 64 * 64 || !ManeuverModeClient.inManeuver(p)) continue;
             Vec3 flow = ManeuverModeClient.flow(p);
             float speed = (float) flow.length(), alpha = PhaseRules.streamAlpha(speed);
+            // 0.1.11.72 (W2): the gather pulls the streams in and dims them; the warp stretches them and heats them
+            float gather = ManeuverModeClient.warpGather(p, partial);
+            float boost = com.miophas.singularity_iteration.common.suit.WarpRules.streamBoost(ManeuverModeClient.warpSince(p, partial));
+            alpha = Math.min(1F, alpha * boost * (1 - 0.4F * gather));
             if (alpha <= 0.01F) continue;
             if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
             boolean own = p == mc.player && mc.options.getCameraType().isFirstPerson();
             // round the own first-person camera the tube is twice as wide (it would brush the eye)
-            draw(vc, m, p, flow, speed, alpha * (own ? 0.7F : 0.85F), own ? 2F : 1F, partial, cam);
+            draw(vc, m, p, flow, speed, alpha * (own ? 0.7F : 0.85F), own ? 2F : 1F, gather, boost, partial, cam);
         }
         pose.popPose();
         if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
     }
 
-    private static void draw(VertexConsumer vc, Matrix4f m, Player p, Vec3 flow, float speed, float alpha, float widen, float partial, Vec3 cam) {
+    private static void draw(VertexConsumer vc, Matrix4f m, Player p, Vec3 flow, float speed, float alpha, float widen, float gather, float boost,
+                             float partial, Vec3 cam) {
         Vec3 axis = flow.normalize(), u = FxDraw.perp(axis).normalize(), v = axis.cross(u).normalize();
         Vec3 centre = p.getPosition(partial).add(0, p.getBbHeight() * 0.5, 0).subtract(cam);
-        float seconds = (p.tickCount + partial) / 20F, len = PhaseRules.streamLength(speed);
-        float[][] colours = PhaseRules.streamColours(speed);
+        float seconds = (p.tickCount + partial) / 20F, len = PhaseRules.streamLength(speed) * boost * (1 - 0.6F * gather);
+        float[][] colours = PhaseRules.streamColours(speed * boost);
+        widen *= 1 - 0.45F * gather;
         long seed = p.getId();
         for (int i = 0; i < PhaseRules.STREAMS; i++) {
             float place = PhaseRules.streamPlace(i, seed, seconds, speed);

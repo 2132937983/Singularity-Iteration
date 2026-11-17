@@ -3668,6 +3668,54 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "warp" (-Dsi.capture.scene=warp), 0.1.11.72 (phase warp style phase W2): a cruise from the hover through the sound
+     * barrier, from behind: the gather, the flash at the crossing, the warp a little later (streams, afterimages, ripples)
+     * and the drop; then once more in first person (the gather and the warp round the camera).
+     */
+    private static void sceneWarp() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            quantumFlyer(sp, null, 0.5, -40, -200.5);
+        });
+        java.util.function.Supplier<Float> gather = () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.warpGather(Minecraft.getInstance().player, 1F);
+        java.util.function.Supplier<Float> since = () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.warpSince(Minecraft.getInstance().player, 0F);
+        for (String view : new String[]{"back", "first"}) {
+            client(20, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance();
+                mc.options.setCameraType(view.equals("back") ? CameraType.THIRD_PERSON_BACK : CameraType.FIRST_PERSON); mc.player.setXRot(-2); });
+            client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+            until(400, () -> gather.get() > 0.7F);
+            client(1, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "warp/" + view + "_1_gather");
+            until(200, () -> since.get() < 1.5F);
+            shot(1, "warp/" + view + "_2_flash");
+            client(8, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "warp/" + view + "_3_warp");
+            client(14, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null);
+                if (view.equals("back")) mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });   // the afterimages trail behind
+            shot(1, "warp/" + view + "_4_afterimages");
+            client(1, () -> { if (view.equals("back")) Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+            client(30, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "warp/" + view + "_5_drop");
+            // slow down below the gather again before the next pass
+            client(1, CaptureDirector::releaseKeys);
+            server(80, sp -> quantumFlyer(sp, null, 0.5, -40, -200.5));
+        }
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "warp".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWarp();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

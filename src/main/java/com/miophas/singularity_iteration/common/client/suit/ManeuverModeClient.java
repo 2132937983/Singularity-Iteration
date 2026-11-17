@@ -181,6 +181,9 @@ public final class ManeuverModeClient {
         int hardTick = Integer.MIN_VALUE / 2;
         /** 0.1.11.71: the move per tick, smoothed. */
         Vec3 flow = Vec3.ZERO;
+        /** 0.1.11.72 (W2): the tick the gather began (MIN_VALUE: none), the tick of the last barrier crossing, the last Mach. */
+        int gatherTick = Integer.MIN_VALUE, crossTick = Integer.MIN_VALUE / 2;
+        double lastMach;
     }
     /**
      * Visual state per entity id. {@link #pruneVisuals} removes the entries of players that are
@@ -487,8 +490,12 @@ public final class ManeuverModeClient {
         // not the throttle; re-armed below Mach 0.9
         Vec3 moved = p.position().subtract(p.xo, p.yo, p.zo);
         vis.speed = Mth.lerp(0.45, vis.speed, moved.length());
-        boolean shock = ManeuverMode.supersonic(vis.wasShock, ManeuverMode.mach(vis.speed));
+        double mach = ManeuverMode.mach(vis.speed);
+        boolean shock = ManeuverMode.supersonic(vis.wasShock, mach);
+        warpTick(p, vis, mach, shock, local);
         if (shock && !vis.wasShock) {
+            vis.crossTick = p.tickCount;                       // 0.1.11.72 (W2): the warp
+            vis.gatherTick = Integer.MIN_VALUE;
             boom(p, moved, local);
             vis.coneAt = System.currentTimeMillis();           // 0.1.10.4: the vapour cone bursts only now
         }
@@ -544,6 +551,40 @@ public final class ManeuverModeClient {
         } else if (vis.brake < 0.3F) vis.braking = false;
     }
 
+    /**
+     * 0.1.11.72 (phase warp W2): the gather before the barrier. It starts when the Mach number passes
+     * {@link com.miophas.singularity_iteration.common.suit.WarpRules#GATHER_FROM} on the way up (a rising hum; the own
+     * view narrows a little) and is called off when the flight falls back or takes too long.
+     */
+    private static void warpTick(Player p, Visual vis, double mach, boolean shock, boolean local) {
+        if (vis.gatherTick == Integer.MIN_VALUE) {
+            if (!shock && com.miophas.singularity_iteration.common.suit.WarpRules.gatherStarts(vis.lastMach, mach)) {
+                vis.gatherTick = p.tickCount;
+                if (!FcsClientConfig.classicFlightFx()) {
+                    p.level().playLocalSound(p.getX(), p.getY(), p.getZ(), net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS,
+                        local ? 0.7F : 1.2F, 1.6F, false);
+                    FlightImpactClient.gather(p);
+                }
+            }
+        } else if (com.miophas.singularity_iteration.common.suit.WarpRules.gatherCancels(mach, p.tickCount - vis.gatherTick)) {
+            vis.gatherTick = Integer.MIN_VALUE;
+        }
+        vis.lastMach = mach;
+    }
+
+    /** 0.1.11.72 (W2): the strength of a flyer's gather, 0..1 (0: none). */
+    public static float warpGather(Player p, float partial) {
+        Visual vis = VISUALS.get(p.getId());
+        if (vis == null || vis.gatherTick == Integer.MIN_VALUE) return 0F;
+        return com.miophas.singularity_iteration.common.suit.WarpRules.gather(p.tickCount - vis.gatherTick + partial);
+    }
+
+    /** 0.1.11.72 (W2): ticks since a flyer's last barrier crossing (large when long ago or never). */
+    public static float warpSince(Player p, float partial) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis == null ? 1.0E6F : p.tickCount - vis.crossTick + partial;
+    }
+
     /** 0.1.11.71 (W1): the smoothed flight of a flyer (blocks per tick), zero when unknown. */
     public static Vec3 flow(Player p) {
         Visual vis = VISUALS.get(p.getId());
@@ -594,7 +635,10 @@ public final class ManeuverModeClient {
         boolean ownView = local && Minecraft.getInstance().options.getCameraType().isFirstPerson();
         // 0.1.11.63 (Q2): the constructivist boom: one white ring across the flight with a black one behind it, no puffs
         if (!FcsClientConfig.classicFlightFx()) {
-            if (!ownView) com.miophas.singularity_iteration.common.client.render.ConstructBursts.boom(centre, axis, player.getId());
+            // 0.1.11.72 (W2): the phase warp (drawn by WarpFx from the crossing tick); a rush of air over the boom
+            player.level().playLocalSound(player.getX(), player.getY(), player.getZ(), net.minecraft.sounds.SoundEvents.ILLUSIONER_MIRROR_MOVE,
+                SoundSource.PLAYERS, local ? 1.0F : 1.6F, 0.6F, false);
+            FlightImpactClient.jump(player);
         } else
         // 0.1.8.3: a burst of condensation around the ring plane, thrown outward and left behind
         // (0.1.11.5: 14 puffs, none around the own camera)

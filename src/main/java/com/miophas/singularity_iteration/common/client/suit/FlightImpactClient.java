@@ -38,6 +38,7 @@ public final class FlightImpactClient {
     private static float trauma;
     private static long boostAt = Long.MIN_VALUE / 2, brakeAt = Long.MIN_VALUE / 2;
     private static float brakeSize;
+    private static long gatherAt = Long.MIN_VALUE / 2, jumpAt = Long.MIN_VALUE / 2;
 
     private static long now() {
         var level = Minecraft.getInstance().level;
@@ -84,6 +85,18 @@ public final class FlightImpactClient {
         brakeSize = Math.max(0F, Math.min(1F, size));
     }
 
+    /** 0.1.11.72 (W2): the gather before a warp: the own view narrows a little. */
+    public static void gather(Player p) {
+        if (!local(p)) return;
+        gatherAt = now();
+    }
+
+    /** 0.1.11.72 (W2): the warp at the barrier: the own view widens hard and shakes a little; a viewer nearby feels it. */
+    public static void jump(Player p) {
+        if (local(p)) jumpAt = now();
+        shakeFrom(p, 0.3F);
+    }
+
     /** The trauma of the local view now (for tests and the HUD). */
     public static float trauma() { return trauma; }
 
@@ -112,7 +125,9 @@ public final class FlightImpactClient {
         float scale = FcsClientConfig.impactFov();
         if (scale <= 0) return;
         float kick = FlightImpact.fovKick(now() - boostAt, FlightImpact.BOOST_KICK, scale)
-            + FlightImpact.fovKick(now() - brakeAt, FlightImpact.BRAKE_KICK * brakeSize, scale);
+            + FlightImpact.fovKick(now() - brakeAt, FlightImpact.BRAKE_KICK * brakeSize, scale)
+            + FlightImpact.fovKick((now() - gatherAt) / 1.5F, -0.04F, scale)          // 0.1.11.72: the gather draws the view in
+            + FlightImpact.fovKick((now() - jumpAt) / 1.6F, 0.16F, scale);            // and the warp throws it wide
         if (kick != 0) event.setNewFovModifier(event.getNewFovModifier() * (1 + kick));
     }
 }

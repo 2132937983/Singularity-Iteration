@@ -44,10 +44,12 @@ public final class CommandWheelScreen extends Screen {
     }
 
     /** Squad control fan: the three modes (0.1.11.43: the Fulton mode is gone), follow squad, return home. */
-    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0x9B7CFF};
+    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0xFFD24D, 0x9B7CFF};
     private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
-        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.return"};
-    private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_RETURN = SUB_SQUAD + 1;
+        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.suit_up",
+        "gui.mio_icif.command.sub.return"};
+    /** 0.1.11.54 (P2): the suit swap sits between "follow squad" and "return home". */
+    private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_SUIT_UP = SUB_SQUAD + 1, SUB_RETURN = SUB_SUIT_UP + 1;
     private static final float SUB_STEP = (float) Math.toRadians(23);
 
     private final CommandWheelClient.Target target;
@@ -417,6 +419,7 @@ public final class CommandWheelScreen extends Screen {
                 if (sub < 0) { done = false; return; }                     // the fan stays open until a choice
                 if (sub < WingmanMode.VALUES.length) SquadClient.send(WingmanCommands.A_MODE, unit, (byte) sub, null, -1);
                 else if (sub == SUB_SQUAD) SquadClient.send(WingmanCommands.A_SQUAD, unit, (byte) 0, null, -1);
+                else if (sub == SUB_SUIT_UP) SquadClient.send(WingmanCommands.A_SUIT_UP, unit, (byte) 0, null, -1);
                 else SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
             }
             case DATALINK -> SquadClient.send(WingmanCommands.A_DATALINK, WingmanCommandPackets.ALL, (byte) (SquadClient.datalink() ? 0 : 1), null, -1);

@@ -431,7 +431,8 @@ public class WingmanEntity extends Mob {
                 case RETURNING -> tickReturn(world);
                 default -> {
                     if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
-                    if (!ownerHere) return;
+                    if (!ownerHere && swapPhase == SWAP_NONE) return;
+                    if (swapPhase != SWAP_NONE) { tickSwap(player, ownerHere); return; }   // 0.1.11.54: a suit swap
                     // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
                     if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
                     if (distanceToSqr(player) > CATCH_UP * CATCH_UP) catchUp(player);
@@ -774,6 +775,224 @@ public class WingmanEntity extends Mob {
         }
         if (target != null) engage(target, player);
         else idle(formation(player), player, false);
+    }
+
+    // ---- suit swap (0.1.11.54, gaze and Iron Man phase P2, decision four A)
+    //
+    // The owner calls a Wingman to swap suits (the command wheel, squad control). It flies to a place in front of the
+    // owner and faces them; its pieces come off (the suit frame has no body: it is gone) and fly onto the owner, who is
+    // suited up when they arrive (the seal of the Armory); then the owner's old pieces fly the other way and the Wingman
+    // stands up in them, in its old place of the squad (same sortie, same Armory set). While pieces fly they are held by
+    // the Wingman (saved with it): a cancel (the owner gone, dead, far, or the Wingman removed) puts them back.
+    //
+    // A slot is swapped when the Wingman has a piece there or the owner has gear there (hands: an unstackable item);
+    // a slot with Curse of Binding is left alone; the owner's hand items that are not gear, the Armory remote and items
+    // the Armory does not take go into the owner's inventory instead. With fewer than two armour pieces after the swap
+    // the Wingman flies home (none at all: it is dismissed and its sortie closes).
+
+    static final byte SWAP_NONE = 0, SWAP_APPROACH = 1, SWAP_TO_OWNER = 2, SWAP_TO_WINGMAN = 3, SWAP_RESUME = 4;
+    /** Ticks the Wingman tries to reach the owner, and the farthest the owner may be when the pieces arrive. */
+    static final int SWAP_APPROACH_TICKS = 200;
+    static final double SWAP_REACH = 12;
+    private byte swapPhase = SWAP_NONE;
+    private int swapWait;
+    private final ItemStack[] swapOut = emptyPieces(), swapIn = emptyPieces();
+    private final boolean[] swapTake = new boolean[ArmoryPiece.VALUES.length];
+
+    private static ItemStack[] emptyPieces() {
+        ItemStack[] a = new ItemStack[ArmoryPiece.VALUES.length];
+        java.util.Arrays.fill(a, ItemStack.EMPTY);
+        return a;
+    }
+
+    /** 0.1.11.54: the swap phase (0 none). */
+    public byte swapPhase() { return swapPhase; }
+
+    /** 0.1.11.54: starts a suit swap with the owner; null when it starts, else the reason (a message key). */
+    @Nullable
+    public String suitUp(ServerPlayer player) {
+        if (state() != ACTIVE || secured) return "message.mio_icif.wingman.swap.busy";
+        if (swapPhase != SWAP_NONE) return "message.mio_icif.wingman.swap.busy";
+        if (player.level() != level()) return "message.mio_icif.wingman.swap.far";
+        clearOrder();
+        deathGuard = false;
+        target = null;
+        swapPhase = SWAP_APPROACH;
+        swapWait = 0;
+        return null;
+    }
+
+    /** An item the owner holds that counts as gear (it goes to the Wingman): a tool, weapon, shield or totem (unstackable). */
+    static boolean handGear(ItemStack stack) {
+        return !stack.isEmpty() && stack.getMaxStackSize() == 1;
+    }
+
+    /** True when the owner's {@code stack} in {@code piece} goes to the Wingman. */
+    static boolean givesToWingman(ItemStack stack, ArmoryPiece piece) {
+        if (stack.isEmpty() || stack.getItem() instanceof ArmoryRemoteItem || !ArmoryRules.isSummonable(stack)) return false;
+        if (!piece.isArmor() && !handGear(stack)) return false;
+        return ArmoryRules.fits(stack, piece);
+    }
+
+    private static boolean bound(ItemStack stack, ServerPlayer player) {
+        return !stack.isEmpty() && !player.isCreative()
+            && net.minecraft.world.item.enchantment.EnchantmentHelper.has(stack, net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
+    }
+
+    /** Where the Wingman stands for the swap: in front of the owner, at the owner's height, facing them. */
+    private static Vec3 swapPlace(ServerPlayer player) {
+        Vec3 look = player.getLookAngle().multiply(1, 0, 1);
+        look = look.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : look.normalize();
+        return player.position().add(look.scale(1.8)).add(0, 0.05, 0);
+    }
+
+    private void tickSwap(@Nullable ServerPlayer player, boolean ownerHere) {
+        if (swapPhase == SWAP_RESUME) { flushSwap(); return; }
+        if (player != null) face(player.getEyePosition());
+        switch (swapPhase) {
+            case SWAP_APPROACH -> {
+                if (!ownerHere || ++swapWait > SWAP_APPROACH_TICKS) { cancelSwap(player); return; }
+                Vec3 place = swapPlace(player);
+                double d = position().distanceTo(place);
+                if (d > 0.7) {
+                    steer(place, Math.max(COMBAT, ownerVelocity.length() + 0.6), player);
+                    face(player.getEyePosition());
+                    return;
+                }
+                setDeltaMovement(Vec3.ZERO);
+                beginSwap(player);
+            }
+            case SWAP_TO_OWNER -> {
+                setDeltaMovement(getDeltaMovement().scale(0.5));
+                if (--swapWait > 0) return;
+                if (!ownerHere || player.distanceTo(this) > SWAP_REACH) { cancelSwap(player); return; }
+                suitOwner(player);
+            }
+            case SWAP_TO_WINGMAN -> {
+                setDeltaMovement(getDeltaMovement().scale(0.5));
+                if (--swapWait > 0) return;
+                standUp(player);
+            }
+            default -> swapPhase = SWAP_NONE;
+        }
+    }
+
+    /** The Wingman's pieces come off and fly to the owner. */
+    private void beginSwap(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) level();
+        int longest = 1;
+        boolean any = false;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            ItemStack mine = getItemBySlot(p.slot), theirs = player.getItemBySlot(p.slot);
+            swapTake[i] = !bound(theirs, player) && (!mine.isEmpty() || givesToWingman(theirs, p));
+            if (!swapTake[i]) continue;
+            any = true;
+            swapOut[i] = mine.copy();
+            setItemSlot(p.slot, ItemStack.EMPTY);
+            if (swapOut[i].isEmpty()) continue;
+            Vec3 from = ArmoryFlight.dockPoint(this, 1.0F, p), to = ArmoryFlight.dockPoint(player, 1.0F, p);
+            ArmoryPieceEntity echo = ArmoryPieceEntity.echo(level, this, swapOut[i].copy(), p, from, to);
+            level.addFreshEntity(echo);
+            longest = Math.max(longest, ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(from, to)));
+        }
+        if (!any) { cancelSwap(player); return; }
+        level.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_UNLOCK.get(), SoundSource.NEUTRAL, 0.9F, 1.0F);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 1.0, getZ(), 14, 0.3, 0.5, 0.3, 0.08);
+        swapPhase = SWAP_TO_OWNER;
+        swapWait = longest;
+    }
+
+    /** The pieces arrive: the owner is suited up, their old pieces fly to the Wingman. */
+    private void suitOwner(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) level();
+        int longest = 1;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            if (!swapTake[i]) continue;
+            ItemStack theirs = player.getItemBySlot(p.slot).copy();
+            if (bound(theirs, player)) {   // bound since the start: this slot stays as it is, the piece goes back to the suit
+                swapIn[i] = swapOut[i];
+                swapOut[i] = ItemStack.EMPTY;
+                continue;
+            }
+            ArmoryPieceEntity.equipSilently(player, p.slot, swapOut[i]);
+            swapOut[i] = ItemStack.EMPTY;
+            if (theirs.isEmpty()) continue;
+            if (givesToWingman(theirs, p)) {
+                swapIn[i] = theirs;
+                Vec3 from = ArmoryFlight.dockPoint(player, 1.0F, p), to = ArmoryFlight.dockPoint(this, 1.0F, p);
+                level.addFreshEntity(ArmoryPieceEntity.echo(level, player, theirs.copy(), p, from, to));
+                longest = Math.max(longest, ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(from, to)));
+            } else {
+                ArmoryPieceEntity.stash(player, theirs);
+            }
+        }
+        player.inventoryMenu.broadcastChanges();
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_COMPLETE.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, player.getX(), player.getY() + 1.0, player.getZ(), 16, 0.3, 0.6, 0.3, 0.06);
+        player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.suited", getName()), true);
+        swapPhase = SWAP_TO_WINGMAN;
+        swapWait = longest;
+    }
+
+    /** The owner's old pieces arrive: the Wingman stands up in them (or flies home / is dismissed with too few). */
+    private void standUp(@Nullable ServerPlayer player) {
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            if (swapIn[i].isEmpty()) continue;
+            if (getItemBySlot(p.slot).isEmpty()) setItemSlot(p.slot, swapIn[i]);
+            else spawnAtLocation(swapIn[i]);
+            swapIn[i] = ItemStack.EMPTY;
+        }
+        swapPhase = SWAP_NONE;
+        java.util.Arrays.fill(swapTake, false);
+        level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.NEUTRAL, 0.9F, 1.1F);
+        int armour = 0;
+        boolean anything = false;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            if (getItemBySlot(p.slot).isEmpty()) continue;
+            anything = true;
+            if (p.isArmor()) armour++;
+        }
+        if (!anything) {
+            // nothing to fly in: dismissed, its sortie closes (the suit is on the owner)
+            if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.dismissed", getName()), false);
+            secure();
+            discard();
+            return;
+        }
+        if (armour < 2) {
+            startReturn(Component.translatable("message.mio_icif.wingman.swap.home", getName()));
+            return;
+        }
+        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.done", getName()), false);
+    }
+
+    /** Ends a swap before the owner was suited up: the pieces go back on the Wingman. */
+    private void cancelSwap(@Nullable ServerPlayer player) {
+        flushSwap();
+        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.far", getName()), true);
+    }
+
+    /** Puts every held swap piece back on the Wingman (into an empty slot), else home or on the ground. */
+    private void flushSwap() {
+        mio_icif_armory home = level() instanceof ServerLevel world ? loadedArmory(world) : null;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            for (ItemStack[] held : new ItemStack[][]{swapOut, swapIn}) {
+                ItemStack stack = held[i];
+                if (stack.isEmpty()) continue;
+                held[i] = ItemStack.EMPTY;
+                if (getItemBySlot(p.slot).isEmpty()) { setItemSlot(p.slot, stack); continue; }
+                ItemStack rest = home != null ? home.store(set, p, stack) : stack;
+                if (!rest.isEmpty()) spawnAtLocation(rest);
+            }
+        }
+        java.util.Arrays.fill(swapTake, false);
+        swapPhase = SWAP_NONE;
+        swapWait = 0;
     }
 
     // ---- orders (0.1.10.2)
@@ -1597,6 +1816,7 @@ public class WingmanEntity extends Mob {
      */
     void secure() {
         if (secured || !(level() instanceof ServerLevel world)) return;
+        flushSwap();   // 0.1.11.54: pieces of a swap in flight go back to the suit (or home) with the rest
         secured = true;
         WingmanSorties ledger = WingmanSorties.get(world.getServer());
         if (ledger != null) ledger.close(sortie);
@@ -1977,6 +2197,17 @@ public class WingmanEntity extends Mob {
         tag.putBoolean("Protected", protectedReturn);
         // 0.1.10.2 (absent in older saves: squad mode, no order); a focus order is not saved
         tag.putBoolean("Individual", individual);
+        // 0.1.11.54: the pieces of a swap in flight (they go back to the suit when the Wingman loads)
+        if (swapPhase != SWAP_NONE) {
+            var provider = registryAccess();
+            net.minecraft.nbt.ListTag out = new net.minecraft.nbt.ListTag(), in = new net.minecraft.nbt.ListTag();
+            for (int i = 0; i < ArmoryPiece.VALUES.length; i++) {
+                out.add(swapOut[i].isEmpty() ? new CompoundTag() : swapOut[i].save(provider));
+                in.add(swapIn[i].isEmpty() ? new CompoundTag() : swapIn[i].save(provider));
+            }
+            tag.put("SwapOut", out);
+            tag.put("SwapIn", in);
+        }
         if (order.anchored() && orderPos != null) {
             tag.putByte("Order", (byte) order.ordinal());
             tag.putDouble("OrderX", orderPos.x);
@@ -2005,6 +2236,15 @@ public class WingmanEntity extends Mob {
         } else {
             order = WingmanOrder.NONE;
             orderPos = null;
+        }
+        if (tag.contains("SwapOut")) {
+            var provider = registryAccess();
+            net.minecraft.nbt.ListTag out = tag.getList("SwapOut", net.minecraft.nbt.Tag.TAG_COMPOUND), in = tag.getList("SwapIn", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < ArmoryPiece.VALUES.length; i++) {
+                swapOut[i] = i < out.size() ? ItemStack.parseOptional(provider, out.getCompound(i)) : ItemStack.EMPTY;
+                swapIn[i] = i < in.size() ? ItemStack.parseOptional(provider, in.getCompound(i)) : ItemStack.EMPTY;
+            }
+            swapPhase = SWAP_RESUME;   // flushed on the first tick
         }
         setNoGravity(true);
     }

@@ -2989,6 +2989,64 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_swap" (-Dsi.capture.scene=wingman_swap), 0.1.11.54 (gaze and Iron Man phase P2): the owner in iron
+     * armour calls a Wingman in a diamond suit to swap; seen from behind the owner (the Wingman comes to face them), a
+     * frame every 2 ticks until the Wingman stands in the iron suit.
+     */
+    private static void sceneWingmanSwap() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            sp.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+            sp.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+            sp.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[] set = {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS,
+                    Items.DIAMOND_SWORD};
+                for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), new ItemStack(set[c]), false);
+                Singularity_Iteration.LOGGER.info("capture swap deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        shot(120, "wingman_swap/00_before");
+        server(1, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture swap start: {}", w.suitUp(sp));
+        });
+        for (int f = 0; f < 70; f++) shot(2, String.format("wingman_swap/f%02d", f));
+        server(1, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture swap after: owner {} {} / Wingman {} {} phase {}", sp.getItemBySlot(EquipmentSlot.CHEST),
+                    sp.getMainHandItem(), w.getItemBySlot(EquipmentSlot.CHEST), w.getMainHandItem(), w.swapPhase());
+        });
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(40, "wingman_swap/90_after");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_swap".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanSwap();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

@@ -69,7 +69,7 @@ public final class WingmanCommands {
     private WingmanCommands() {}
 
     public static final byte A_MOVE = 0, A_HOLD = 1, A_SUPPRESS = 2, A_FOCUS = 3, A_FORM_UP = 4, A_MODE = 5, A_SQUAD = 6,
-        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10;
+        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11;
     /** Cooldown key of the quantum recall in the nano core cooldown map. */
     public static final String RECALL_KEY = "mio_icif:quantum_recall";
     /** Ticks of the chunk ticket of an unloaded Wingman's recall. */
@@ -160,6 +160,12 @@ public final class WingmanCommands {
             }
             case A_SQUAD -> name = "SQUAD";
             case A_RETURN -> name = "RETURN";
+            case A_SUIT_UP -> {
+                // 0.1.11.54 (P2): one Wingman swaps suits with the owner: the selected one, or with "all" the nearest
+                WingmanEntity nearest = units.stream().min(java.util.Comparator.comparingDouble(w -> w.distanceToSqr(player))).orElse(null);
+                units = List.of(nearest);
+                name = "SUIT_UP";
+            }
             default -> { return; }
         }
         if (NeoForge.EVENT_BUS.post(new com.miophas.singularity_iteration.core.api.armory.ArmoryEvent.WingmanCommand(player, name, units.size(),
@@ -190,6 +196,10 @@ public final class WingmanCommands {
                     w.setMode(squad, false);
                 }
                 case A_RETURN -> w.startReturn(null);
+                case A_SUIT_UP -> {
+                    String refused = w.suitUp(player);
+                    if (refused != null) { refuse(player, refused); return; }
+                }
                 default -> { }
             }
             done++;

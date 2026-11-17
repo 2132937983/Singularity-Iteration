@@ -64,12 +64,15 @@ public final class CommandWheelClient {
         @SubscribeEvent
         static void setup(FMLClientSetupEvent event) {
             WingmanCommandPackets.SQUAD_HOOK = SquadClient::accept;
+            com.miophas.singularity_iteration.common.armory.WingmanCallouts.HOOK = CalloutHud::accept;   // 0.1.11.58 (P6)
         }
 
         @SubscribeEvent
         static void layers(RegisterGuiLayersEvent event) {
             event.registerAbove(VanillaGuiLayers.CROSSHAIR, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
                 "squad_hud"), SquadHud::render);
+            event.registerAbove(VanillaGuiLayers.CROSSHAIR, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
+                "wingman_callouts"), CalloutHud::render);   // 0.1.11.58 (P6)
         }
     }
 

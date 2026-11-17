@@ -74,6 +74,9 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             - 0.12F * WingmanPose.landingCrouch(entity.sinceLanding(partialTick));
         if (drop != 0) pose.translate(0, drop * scale, 0);
         float[] lean = entity.lean(partialTick);
+        // 0.1.11.58 (P6): a badly damaged suit flies unsteadily
+        float[] shake = entity.damageShake(partialTick);
+        lean = new float[]{lean[0] + shake[0], lean[1] + shake[1]};
         if (Math.abs(lean[0]) + Math.abs(lean[1]) <= 0.01F) return;
         // pivot at the waist; negative x rotation tips the head forward, negative z rotation tips it to the right
         pose.translate(0, 0.9F * scale, 0);

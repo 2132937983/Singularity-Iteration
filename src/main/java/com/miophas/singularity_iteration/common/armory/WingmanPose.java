@@ -326,6 +326,26 @@ public final class WingmanPose {
         return out;
     }
 
+    // ---- battle damage (0.1.11.58, gaze and Iron Man phase P6)
+
+    /** Durability fraction below which a piece counts as badly damaged (sparks start at 2 x this). */
+    public static final float DAMAGED_FRACTION = 0.25F;
+
+    /** 0 sound, 1 sparks (worst piece under 50 %), 2 sparks and smoke and an unsteady flight (under 25 %). */
+    public static int damageLevel(float worstFraction) {
+        if (!Float.isFinite(worstFraction) || worstFraction >= DAMAGED_FRACTION * 2) return 0;
+        return worstFraction < DAMAGED_FRACTION ? 2 : 1;
+    }
+
+    /** The unsteady flight of a badly damaged suit: {pitch, roll} degrees, smooth in time, within 3.5 degrees. */
+    public static float[] damageShake(float time, int level, float air) {
+        if (level < 2) return new float[]{0, 0};
+        float a = clamp01(air), t = finite(time);
+        float pitch = (Mth.sin(t * 0.73F) * 1.6F + Mth.sin(t * 1.91F + 0.4F) * 0.9F) * a;
+        float roll = (Mth.sin(t * 0.57F + 1.1F) * 2.0F + Mth.sin(t * 2.37F) * 1.2F) * a;
+        return new float[]{pitch, roll};
+    }
+
     /** Leg angles: [right x, y, z, left x, y, z]. */
     public static final int LEG_RX = 0, LEG_RZ = 2, LEG_LX = 3, LEG_LZ = 5;
     /** Ticks of the leg tuck of a thruster boost. */

@@ -3201,6 +3201,56 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_callouts" (-Dsi.capture.scene=wingman_callouts), 0.1.11.58 (gaze and Iron Man phase P6): a Wingman in
+     * a badly damaged suit (sparks, smoke, an unsteady flight) fights two zombies near the owner; the GUI is on, so the
+     * callouts (deployed, lock-on, kill, ...) show beside the squad HUD. A frame every 10 ticks.
+     */
+    private static void sceneWingmanCallouts() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, -6.5, 0, 8);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[] set = {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.IRON_SWORD};
+                for (int c = 0; c < 5; c++) {
+                    ItemStack stack = new ItemStack(set[c]);
+                    if (c == 1) stack.setDamageValue(stack.getMaxDamage() - stack.getMaxDamage() / 5);   // 20 %: sparks and smoke
+                    inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), stack, false);
+                }
+                Singularity_Iteration.LOGGER.info("capture callouts deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        server(60, sp -> {
+            var level = sp.serverLevel();
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, -2.5, -60, 6.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 3.5, -60, 7.5, true, sp);
+        });
+        for (int f = 0; f < 24; f++) shot(10, String.format("wingman_callouts/f%02d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_callouts".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanCallouts();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

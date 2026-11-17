@@ -227,6 +227,16 @@ public class WingmanEntity extends Mob {
     /** 0.1.10.11: true while the Wingman stands on the ground (idle landing). */
     public boolean landed() { return entityData.get(DATA_LANDED); }
     public int set() { return set; }
+
+    /** 0.1.11.58: the tick of this Wingman's last callout ({@link WingmanCallouts}). */
+    long lastCallout = Long.MIN_VALUE / 2;
+    private boolean toldReserveLow;
+
+    /** 0.1.11.58: the owner when online (server). */
+    @Nullable
+    ServerPlayer ownerPlayer() {
+        return owner == null || !(level() instanceof ServerLevel world) ? null : world.getServer().getPlayerList().getPlayer(owner);
+    }
     @Nullable GlobalPos armory() { return armory; }
     /** 0.1.10.5: the sortie token (server), see {@link WingmanSorties}. */
     @Nullable UUID sortie() { return sortie; }
@@ -337,6 +347,10 @@ public class WingmanEntity extends Mob {
         int left = stack.getMaxDamage() - stack.getDamageValue();
         int dmg = Math.min(amount, left - 1);
         if (dmg > 0) stack.hurtAndBreak(dmg, this, slot);
+        // 0.1.11.58 (P6): a piece that falls below DAMAGED_FRACTION is called
+        float max = stack.getMaxDamage();
+        if (left >= max * WingmanPose.DAMAGED_FRACTION && left - dmg < max * WingmanPose.DAMAGED_FRACTION)
+            WingmanCallouts.say(this, WingmanCallouts.Kind.DAMAGED, stack.getHoverName());
         checkWorn();
     }
 
@@ -353,7 +367,10 @@ public class WingmanEntity extends Mob {
     private void checkWorn() {
         if (state() == RETURNING) return;
         ItemStack worn = wornPiece(items());
-        if (!worn.isEmpty()) startReturn(Component.translatable("message.mio_icif.wingman.worn", worn.getHoverName()));
+        if (!worn.isEmpty()) {
+            WingmanCallouts.say(this, WingmanCallouts.Kind.REPAIR, worn.getHoverName());
+            startReturn(Component.translatable("message.mio_icif.wingman.worn", worn.getHoverName()));
+        }
     }
 
     @Override
@@ -675,9 +692,16 @@ public class WingmanEntity extends Mob {
                 if (upkeepOnly != null) { upkeepOnly.commit(); due = speed; armoryPaid = true; }
             }
         }
+        boolean starvedBefore = speedStarved;
         speedStarved = due > 0;   // what is left unpaid: no escort speed above cruise until a full payment
+        if (speedStarved && !starvedBefore && speed > 0) WingmanCallouts.say(this, WingmanCallouts.Kind.SPEED_STARVED);
+        // 0.1.11.58 (P6): the reserve is down to its last minute (once until it is refilled)
+        if (reserve > 0 && reserve < base * 60) {
+            if (!toldReserveLow) toldReserveLow = WingmanCallouts.say(this, WingmanCallouts.Kind.RESERVE_LOW);
+        } else if (reserve >= base * 60) toldReserveLow = false;
         if (due <= speed) { lowPowerSeconds = 0; return; }   // only the speed went unpaid: the upkeep itself is covered
         if (++lowPowerSeconds >= WingmanConfig.lowPowerSeconds()) {
+            WingmanCallouts.say(this, WingmanCallouts.Kind.LOW_POWER);
             startReturn(player == null ? null : Component.translatable("message.mio_icif.wingman.low_power"));
         }
     }
@@ -762,6 +786,7 @@ public class WingmanEntity extends Mob {
                 world.sendParticles(ParticleTypes.ELECTRIC_SPARK, threat.getX(), threat.getY(), threat.getZ(), 10, 0.15, 0.15, 0.15, 0.2);
                 world.playSound(null, threat.getX(), threat.getY(), threat.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.NEUTRAL, 0.8F, 1.3F);
                 threat.discard();
+                WingmanCallouts.say(this, WingmanCallouts.Kind.INTERCEPT);
                 deflectCooldown = 3;
             }
             return;
@@ -811,7 +836,7 @@ public class WingmanEntity extends Mob {
         target = null;
         if (danger == WingmanRescue.Danger.LOW_HEALTH) {
             // near death: the suit comes to the owner at once
-            if (suitUp(player) == null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.rescue.suit", getName()), true);
+            if (suitUp(player) == null) WingmanCallouts.say(this, WingmanCallouts.Kind.RESCUE_SUIT);
             return;
         }
         rescue = danger;
@@ -834,7 +859,7 @@ public class WingmanEntity extends Mob {
             if (distanceTo(player) <= CATCH_REACH) {
                 holdTicks = CATCH_HOLD;
                 player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, false, false, true));
-                player.displayClientMessage(Component.translatable("message.mio_icif.wingman.rescue.catch", getName()), true);
+                WingmanCallouts.say(this, WingmanCallouts.Kind.CAUGHT);
                 level().playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.PLAYERS, 1.0F, 0.8F);
                 holdOwner(player);
             }
@@ -845,7 +870,7 @@ public class WingmanEntity extends Mob {
         rescue = WingmanRescue.Danger.NONE;
         // caught: the owner gets the suit when they wear less armour than the Wingman
         if (WingmanRescue.armourPieces(player) < armourPieces() && armourPieces() >= 2 && suitUp(player) == null)
-            player.displayClientMessage(Component.translatable("message.mio_icif.wingman.rescue.suit", getName()), true);
+            WingmanCallouts.say(this, WingmanCallouts.Kind.RESCUE_SUIT);
     }
 
     /** Holds the caught owner: no fall, no fall distance; the Wingman under them. */
@@ -1044,7 +1069,7 @@ public class WingmanEntity extends Mob {
         level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_COMPLETE.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, player.getX(), player.getY() + 1.0, player.getZ(), 16, 0.3, 0.6, 0.3, 0.06);
-        player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.suited", getName()), true);
+        WingmanCallouts.say(this, WingmanCallouts.Kind.SUITED);
         swapPhase = SWAP_TO_WINGMAN;
         swapWait = longest;
     }
@@ -1080,7 +1105,7 @@ public class WingmanEntity extends Mob {
             startReturn(Component.translatable("message.mio_icif.wingman.swap.home", getName()));
             return;
         }
-        if (player != null && !ejected) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.done", getName()), false);
+        WingmanCallouts.say(this, ejected ? WingmanCallouts.Kind.EJECTED : WingmanCallouts.Kind.REJOINED);
         ejected = false;
     }
 
@@ -1859,6 +1884,10 @@ public class WingmanEntity extends Mob {
         int id = target != null && target.isAlive() && state() == ACTIVE ? target.getId() : -1;
         if (id == entityData.get(DATA_TARGET)) return;
         boolean fresh = id >= 0 && tickCount - lastGlare >= GLARE_REST;
+        // 0.1.11.58 (P6): the kill of the last target and a new lock are called
+        int before = entityData.get(DATA_TARGET);
+        if (before >= 0 && world.getEntity(before) instanceof LivingEntity old && old.isDeadOrDying()) WingmanCallouts.say(this, WingmanCallouts.Kind.KILL, old.getName());
+        if (id >= 0 && target != null) WingmanCallouts.say(this, WingmanCallouts.Kind.LOCK, target.getName());
         entityData.set(DATA_TARGET, id);
         // 0.1.11.52 (P0, decision one A): a new lock starts with a stare: the Wingman stops, turns its head on the enemy and
         // holds it there for GLARE ticks before the first attack (at most once per GLARE_REST ticks, so a fight that
@@ -2173,6 +2202,41 @@ public class WingmanEntity extends Mob {
         return new float[]{yaw * Mth.DEG_TO_RAD, pitch * Mth.DEG_TO_RAD};
     }
 
+    // 0.1.11.58 (P6): battle damage on the client: sparks below half durability, smoke and an unsteady flight below a quarter
+    private int damageLevel;
+
+    /** Client: the damage level of the worst worn armour piece ({@link WingmanPose#damageLevel}). */
+    public int damageLevel() { return damageLevel; }
+
+    /** Client: the unsteady flight of a badly damaged suit, {pitch, roll} degrees. */
+    public float[] damageShake(float partialTick) {
+        return WingmanPose.damageShake(tickCount + partialTick, damageLevel, 1 - landBlend(partialTick));
+    }
+
+    private void tickDamageFx() {
+        if (tickCount % 10 == 0) {
+            float worst = 1;
+            for (ArmoryPiece p : ArmoryPiece.VALUES) {
+                ItemStack s = getItemBySlot(p.slot);
+                if (!p.isArmor() || !wears(s)) continue;
+                worst = Math.min(worst, (s.getMaxDamage() - s.getDamageValue()) / (float) s.getMaxDamage());
+            }
+            damageLevel = WingmanPose.damageLevel(worst);
+        }
+        if (damageLevel == 0) return;
+        var r = getRandom();
+        if (r.nextFloat() < (damageLevel == 2 ? 0.2F : 0.08F)) {
+            double x = getX() + (r.nextDouble() - 0.5) * 0.6, y = getY() + 0.6 + r.nextDouble(), z = getZ() + (r.nextDouble() - 0.5) * 0.6;
+            for (int i = 0; i < 3; i++)
+                level().addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, (r.nextDouble() - 0.5) * 0.3, r.nextDouble() * 0.2, (r.nextDouble() - 0.5) * 0.3);
+        }
+        if (damageLevel < 2) return;
+        Vec3 v = getDeltaMovement();
+        if (r.nextBoolean())
+            level().addParticle(ParticleTypes.SMOKE, getX() - v.x * 0.5, getY() + 1.1, getZ() - v.z * 0.5, -v.x * 0.1, 0.03, -v.z * 0.1);
+        if (r.nextFloat() < 0.03F) level().addParticle(ParticleTypes.FLAME, getX(), getY() + 0.1, getZ(), 0, -0.05, 0);   // a sputtering thruster
+    }
+
     private void tickAnimation() {
         flightO = flight;
         landO = land;
@@ -2285,6 +2349,7 @@ public class WingmanEntity extends Mob {
         super.tick();
         if (level().isClientSide && isAlive()) {
             tickAnimation();
+            tickDamageFx();
             if (landed()) return;   // 0.1.10.11: thrusters off on the ground
             // boot thrusters: two jets, stronger when the drone climbs or moves fast
             Vec3 v = getDeltaMovement();

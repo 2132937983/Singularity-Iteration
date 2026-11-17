@@ -117,5 +117,10 @@ public final class WingmanCommandPackets {
             if (FMLEnvironment.dist != Dist.CLIENT) return;
             c.enqueueWork(() -> { Consumer<Squad> hook = SQUAD_HOOK; if (hook != null) hook.accept(p); });
         });
+        // 0.1.11.58 (P6): the Wingman callouts
+        registrar.playToClient(WingmanCallouts.Line.TYPE, WingmanCallouts.Line.CODEC, (p, c) -> {
+            if (FMLEnvironment.dist != Dist.CLIENT) return;
+            c.enqueueWork(() -> { Consumer<WingmanCallouts.Line> hook = WingmanCallouts.HOOK; if (hook != null) hook.accept(p); });
+        });
     }
 }

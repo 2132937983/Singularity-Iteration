@@ -231,6 +231,7 @@ public final class WingmanService {
         long reserve = armory.getEnergyStorageInternal().consumeEnergyInternal(WingmanConfig.reserveEu(), false);
         w.setReserve(reserve);
         armory.markStorageChanged();
+        WingmanCallouts.say(w, WingmanCallouts.Kind.DEPLOYED);   // 0.1.11.58 (P6)
         if (launch) {
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_HATCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_LAUNCH.get(), SoundSource.BLOCKS, 1.0F, 0.9F);

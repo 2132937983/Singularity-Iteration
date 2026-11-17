@@ -66,6 +66,8 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue PHOTON_FX;
     public static final ModConfigSpec.BooleanValue SCAN_FX;
     public static final ModConfigSpec.BooleanValue WINGMAN_FX;
+    /** 0.1.11.58: the Wingman callouts as subtitles (else in the action bar), and their chirp. */
+    public static final ModConfigSpec.BooleanValue WINGMAN_CALLOUTS, WINGMAN_CALLOUT_SOUND;
     /** 0.1.8.3: flight visual effects (vapour cone, wake trails, boom rings) and their strength. */
     public static final ModConfigSpec.BooleanValue VAPOR_EFFECTS;
     public static final ModConfigSpec.DoubleValue VAPOR_INTENSITY;
@@ -158,6 +160,9 @@ public final class FcsClientConfig {
         SCAN_FX = b.comment("Active scan: a radar ring sweeps out from your feet when an entity sensor unit comes on, when a new hostile comes into range, and when you hold the detail key.").define("scan_fx", true);
         WINGMAN_FX = b.comment("Wingman effects: lock-on scan laser and hologram marker, muzzle flashes, thruster boosts, attitude jets, slash arcs.")
             .define("wingman_fx", true);
+        WINGMAN_CALLOUTS = b.comment("Wingman callouts (lock-on, kills, damage, power, rescues...) as a subtitle line beside the squad HUD;",
+                "off: in the action bar.").define("wingman_callouts", true);
+        WINGMAN_CALLOUT_SOUND = b.comment("A short chirp with each Wingman callout.").define("wingman_callout_sound", true);
         SUIT_GLOW = b.comment("Nano and quantum suits glow: their lights and circuit lines shine in the light colour (palette accent),",
                 "amber and red as the charge falls, with breathing, an energy band and a power-on sweep. Players, Wingmen, armour stands.")
             .define("suit_glow", true);
@@ -238,6 +243,8 @@ public final class FcsClientConfig {
     public static boolean photonFx() { return !loaded() || PHOTON_FX.get(); }
     public static boolean scanFx() { return !loaded() || SCAN_FX.get(); }
     public static boolean wingmanFx() { return !loaded() || WINGMAN_FX.get(); }
+    public static boolean wingmanCallouts() { return !loaded() || WINGMAN_CALLOUTS.get(); }
+    public static boolean wingmanCalloutSound() { return !loaded() || WINGMAN_CALLOUT_SOUND.get(); }
     public static void setCoreAttachments(boolean on) {
         if (!loaded()) return;
         CORE_ATTACHMENTS.set(on);

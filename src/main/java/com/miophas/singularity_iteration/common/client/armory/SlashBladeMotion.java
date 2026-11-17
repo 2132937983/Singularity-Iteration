@@ -45,7 +45,7 @@ public final class SlashBladeMotion {
 
     private static MethodHandle stateOf, peek, animations, tick, setupAnim, get3D, isActive, play, vec, vx, vy, vz;
     private static Class<?> playerAnimationBase;
-    private static Object rotation;
+    private static Object rotation, position;
 
     /** The SlashBlade animation of one Wingman and the combo it plays. */
     private static final class Track {
@@ -110,19 +110,56 @@ public final class SlashBladeMotion {
      * Returns false when nothing was applied.
      */
     public static boolean apply(Object animation, float partialTick, ModelPart rightArm, ModelPart leftArm, ModelPart rightLeg, ModelPart leftLeg) {
+        return apply(animation, partialTick, rightArm, leftArm, rightLeg, leftLeg, null, true);
+    }
+
+    /**
+     * 0.1.11.61 (hit feel and constructivist FX phase Q0, decision two A): with the torso ({@code body} part: its bend) too,
+     * and the legs only when {@code legs} (on the ground; in the air the Wingman keeps its flight legs, which before stepped
+     * as if walking).
+     */
+    public static boolean apply(Object animation, float partialTick, ModelPart rightArm, ModelPart leftArm, ModelPart rightLeg, ModelPart leftLeg,
+                                @org.jetbrains.annotations.Nullable ModelPart torso, boolean legs) {
         if (animation == null || state != READY) return false;
         try {
             setupAnim.invoke(animation, partialTick);
             part(animation, "rightArm", rightArm, partialTick);
             part(animation, "leftArm", leftArm, partialTick);
-            part(animation, "rightLeg", rightLeg, partialTick);
-            part(animation, "leftLeg", leftLeg, partialTick);
+            if (torso != null) part(animation, "torso", torso, partialTick);
+            if (legs) {
+                part(animation, "rightLeg", rightLeg, partialTick);
+                part(animation, "leftLeg", leftLeg, partialTick);
+            }
             return true;
         } catch (Throwable t) {
             turnOff("apply", t);
             return false;
         }
     }
+
+    /**
+     * 0.1.11.61 (Q0): the whole-body transform of the animation ({@code body}): {position x, y, z, rotation x, y, z}, as
+     * PlayerAnimator applies it to a player (in {@code setupRotations}: a translate by the position and 0.7 up, the rotations
+     * about z, y, x, a translate 0.7 down). Null when the bridge is off.
+     */
+    @org.jetbrains.annotations.Nullable
+    public static float[] bodyTransform(Object animation, float partialTick) {
+        if (animation == null || state != READY) return null;
+        try {
+            setupAnim.invoke(animation, partialTick);
+            Object zero = vec.invoke(0F, 0F, 0F);
+            Object p = get3D.invoke(animation, "body", position, partialTick, zero);
+            Object r = get3D.invoke(animation, "body", rotation, partialTick, zero);
+            float[] out = {num(vx.invoke(p)), num(vy.invoke(p)), num(vz.invoke(p)), num(vx.invoke(r)), num(vy.invoke(r)), num(vz.invoke(r))};
+            for (float f : out) if (!Float.isFinite(f)) return null;
+            return out;
+        } catch (Throwable t) {
+            turnOff("body", t);
+            return null;
+        }
+    }
+
+    private static float num(Object o) { return o instanceof Number n ? n.floatValue() : 0F; }
 
     private static void part(Object animation, String name, ModelPart part, float partialTick) throws Throwable {
         Object current = vec.invoke(part.xRot, part.yRot, part.zRot);
@@ -168,6 +205,9 @@ public final class SlashBladeMotion {
             @SuppressWarnings({"unchecked", "rawtypes"})
             Object rot = Enum.valueOf((Class) transform, "ROTATION");
             rotation = rot;
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            Object pos = Enum.valueOf((Class) transform, "POSITION");
+            position = pos;
             Singularity_Iteration.LOGGER.info("Wingman: SlashBlade: Resharped and PlayerAnimator found, Wingmen move with the blade's own motion");
             return state = READY;
         } catch (Throwable t) {

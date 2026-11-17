@@ -73,6 +73,17 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
         float drop = WingmanPose.hoverBob(entity.tickCount + partialTick, air, flightFactor(entity, partialTick))
             - 0.12F * WingmanPose.landingCrouch(entity.sinceLanding(partialTick));
         if (drop != 0) pose.translate(0, drop * scale, 0);
+        // 0.1.11.61 (Q0, decision two A): on the ground a blade combo moves the whole body as it moves a player
+        if (entity.onGround() && SlashBladeResharpedBridge.isBlade(entity.getMainHandItem())) {
+            float[] b = SlashBladeMotion.bodyTransform(SlashBladeMotion.update(entity), partialTick);
+            if (b != null) {
+                pose.translate(b[0], b[1] + 0.7F, b[2]);
+                pose.mulPose(Axis.ZP.rotation(b[5]));
+                pose.mulPose(Axis.YP.rotation(b[4]));
+                pose.mulPose(Axis.XP.rotation(b[3]));
+                pose.translate(0, -0.7F, 0);
+            }
+        }
         float[] lean = entity.lean(partialTick);
         // 0.1.11.58 (P6): a badly damaged suit flies unsteadily
         float[] shake = entity.damageShake(partialTick);
@@ -177,8 +188,9 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             // 0.1.11.48 (M3): with a SlashBlade blade, the arms and legs follow SlashBlade's own player motion of the combo
             // (the blade layer draws the blade from the same combo); without the bridge the key frames above stay
             if (hold == WingmanPose.Hold.BLADE) {
+                // 0.1.11.61 (Q0, decision two A): the torso bends with the blade; the legs follow it on the ground only
                 Object motion = SlashBladeMotion.update(entity);
-                if (motion != null) SlashBladeMotion.apply(motion, partial, rightArm, leftArm, rightLeg, leftLeg);
+                if (motion != null) SlashBladeMotion.apply(motion, partial, rightArm, leftArm, rightLeg, leftLeg, body, entity.onGround());
             }
             // the head looks forward in fast flight
             head.xRot -= leanPitch * Mth.DEG_TO_RAD * 0.6F;   // 0.1.11.44: the head keeps looking ahead (forward and back)

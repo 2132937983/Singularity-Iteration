@@ -147,6 +147,18 @@ public class WingmanEntity extends Mob {
     }
 
     /**
+     * 0.1.11.61 (hit feel and constructivist FX phase Q0, decision one A): vanilla advances the swing only in
+     * {@code Monster.aiStep} and {@code Player.aiStep}; a Wingman is a {@code Mob}, so its first swing never ended: the
+     * arm stood still (the cut key frames and the slash arc read the swing) and every later swing was dropped (no animate
+     * packet either). Both sides advance it here.
+     */
+    @Override
+    public void aiStep() {
+        updateSwingTime();
+        super.aiStep();
+    }
+
+    /**
      * 0.1.11.52 (P0): the body is turned by the Wingman ({@link #setYaw}: it follows the head by at most {@link #BODY_TURN}
      * degrees per tick, the neck at most {@link #NECK} degrees); the vanilla body control (which turned the body to the
      * head after 10 still ticks and to the motion when moving) is not used. On the client the body keeps the synced yaw.
@@ -878,7 +890,8 @@ public class WingmanEntity extends Mob {
             default -> {
                 LivingEntity hit = aimed(look, 3.5);
                 swing(InteractionHand.MAIN_HAND);
-                if (hit != null) doHurtTarget(hit);
+                if (hit != null) meleeImpact(hit, doHurtTarget(hit));
+                else meleeImpact(null, false);
                 attackCooldown = Mth.ceil(20.0 / Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED)));
             }
         }
@@ -1442,7 +1455,7 @@ public class WingmanEntity extends Mob {
         armElectric();                                          // 0.1.10.4: switch the nanosaber on
         if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) {
             swing(InteractionHand.MAIN_HAND);
-            doHurtTarget(enemy);
+            meleeImpact(enemy, doHurtTarget(enemy));
             double speed = Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED));
             attackCooldown = Mth.ceil(20.0 / speed);
             // a creeper is thrown away from the owner
@@ -1454,6 +1467,49 @@ public class WingmanEntity extends Mob {
             hitPause = HIT_PAUSE;   // the boost away follows the pause (0.1.11.46; it was at once, in the tick of the hit)
             retreatTicks = 10;
             strafeSign = -strafeSign;
+        }
+    }
+
+    /** 0.1.11.61 (Q0): the weight class of a melee weapon, for its sounds. */
+    enum Heft { LIGHT, BLADE, HEAVY }
+
+    static Heft heftOf(ItemStack weapon) {
+        var item = weapon.getItem();
+        if (item instanceof net.minecraft.world.item.AxeItem || item instanceof net.minecraft.world.item.MaceItem) return Heft.HEAVY;
+        if (item instanceof net.minecraft.world.item.SwordItem || item instanceof net.minecraft.world.item.TridentItem) return Heft.BLADE;
+        return Heft.LIGHT;
+    }
+
+    /** 0.1.11.61 (Q0): a dive into the target (sinking faster than this, blocks per tick) is a critical hit. */
+    static final double CRIT_DIVE = 0.25;
+
+    /**
+     * 0.1.11.61 (Q0, decision one A): the sound and the sparks of a melee strike. A hit: the strike (a sweep for a blade, a
+     * low heavy blow for an axe or mace, a knock for the rest) under a deep thud, crit sparks and the crit sound in a dive,
+     * the sweep mark for a blade; a miss: the whiff. Before, a Wingman struck in silence.
+     */
+    private void meleeImpact(@Nullable LivingEntity enemy, boolean hit) {
+        if (!(level() instanceof ServerLevel world)) return;
+        Heft heft = heftOf(getMainHandItem());
+        Vec3 at = enemy != null ? enemy.position().add(0, enemy.getBbHeight() * 0.6, 0) : getEyePosition().add(getLookAngle().scale(2));
+        float pitch = 0.92F + getRandom().nextFloat() * 0.16F;
+        if (!hit) {
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.NEUTRAL, 0.8F, pitch);
+            return;
+        }
+        boolean crit = getDeltaMovement().y < -CRIT_DIVE;
+        switch (heft) {
+            case HEAVY -> world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.NEUTRAL, 1.1F, 0.62F);
+            case BLADE -> world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.NEUTRAL, 0.9F, pitch);
+            default -> world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.NEUTRAL, 0.9F, pitch);
+        }
+        world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.NEUTRAL, 0.7F, 0.55F);   // the deep thud under it
+        if (heft == Heft.BLADE) world.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        if (crit) {
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.NEUTRAL, 1.0F, 1.0F);
+            world.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 14, 0.3, 0.4, 0.3, 0.4);
+        } else {
+            world.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 4, 0.2, 0.3, 0.2, 0.2);
         }
     }
 

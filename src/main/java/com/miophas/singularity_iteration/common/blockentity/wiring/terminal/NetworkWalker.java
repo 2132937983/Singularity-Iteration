@@ -130,6 +130,11 @@ public final class NetworkWalker {
         public final IntOpenHashSet originSubnets = new IntOpenHashSet();
         /** Total number of conductors in all sub-networks. */
         public int conductors;
+        /**
+         * 0.1.11.30 (cable audit T-2): conductors in chunks that do not tick now. The engine cuts a grid at such a chunk
+         * (each side keeps working), while this walk only needs the chunk loaded, so a tool would show it whole.
+         */
+        public int idleConductors;
         /** True if a conductor or device limit stopped part of the walk. */
         public boolean truncated;
         /**
@@ -427,6 +432,7 @@ public final class NetworkWalker {
         queue.add(start.immutable());
         BlockEntity startBe = level.getBlockEntity(start);
         subnet.conductors++; r.conductors++;
+        if (!level.shouldTickBlocksAt(net.minecraft.world.level.ChunkPos.asLong(start))) r.idleConductors++;
         subnet.ratedPacket = Math.max(subnet.ratedPacket, rating(startBe));
         r.include(start);
         // 0.1.10.22: a closed breaker or fuse is a conductor and also a device of its sub-network
@@ -451,6 +457,7 @@ public final class NetworkWalker {
                     if (r.conductors >= maxConductors) { r.truncated = true; continue; }
                     visited.add(key);
                     subnet.conductors++; r.conductors++;
+                    if (!level.shouldTickBlocksAt(net.minecraft.world.level.ChunkPos.asLong(next))) r.idleConductors++;
                     subnet.ratedPacket = Math.max(subnet.ratedPacket, rating(be));
                     r.include(next);
                     if (isProtective(be)) addDevice(r, devices, next, EnergyNetworkSnapshot.Category.PROTECTION, subnet.index, maxDevices);

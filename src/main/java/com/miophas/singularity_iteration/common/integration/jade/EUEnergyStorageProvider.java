@@ -72,26 +72,16 @@ public enum EUEnergyStorageProvider implements IBlockComponentProvider, IServerD
         if (data.contains("CableTier")) {
             // 优先使用"能量等级"编号显示（LV = 能量等级1，MV = 能量等级2 ……），
             // 若服务端未同步等级编号则回退为等级名称。
-            String tierDisplay = data.contains("TierLevel")
-                    ? String.valueOf(data.getInt("TierLevel"))
-                    : data.getString("CableTier");
-            if (data.contains("PowerRating")) {
-                long powerRating = data.getLong("PowerRating");
-                tierDisplay += " (" + powerRating + " EU/t)";
-            }
+            // 0.1.11.30 (cable audit D-2): the number with the tier name the HUD and the guide use, and the rating as what it
+            // is, the largest packet (it read "32 EU/t"; the unlimited tier printed Long.MAX_VALUE)
+            String tierDisplay = tierText(data, "TierLevel", "CableTier", "PowerRating");
             Component tierText = Component.translatable("jade.mio_icif.cable_tier", tierDisplay);
             tooltip.add(tierText);
         }
 
         if (data.contains("DelegateTier")) {
             // 同样以"能量等级"编号显示，缺失时回退为等级名称。
-            String delegateTierDisplay = data.contains("DelegateTierLevel")
-                    ? String.valueOf(data.getInt("DelegateTierLevel"))
-                    : data.getString("DelegateTier");
-            if (data.contains("DelegatePowerRating")) {
-                long delegatePowerRating = data.getLong("DelegatePowerRating");
-                delegateTierDisplay += " (" + delegatePowerRating + " EU/t)";
-            }
+            String delegateTierDisplay = tierText(data, "DelegateTierLevel", "DelegateTier", "DelegatePowerRating");
             Component delegateTierText = Component.translatable("jade.mio_icif.delegate_tier", delegateTierDisplay);
             tooltip.add(delegateTierText);
         }
@@ -214,5 +204,19 @@ public enum EUEnergyStorageProvider implements IBlockComponentProvider, IServerD
     @Override
     public ResourceLocation getUid() {
         return ID;
+    }
+
+    /** "1 · LV (packets up to 32 EU)"; the name alone when the number is missing; "∞" for an unlimited tier. */
+    private static String tierText(net.minecraft.nbt.CompoundTag data, String levelKey, String nameKey, String ratingKey) {
+        String name = data.getString(nameKey);
+        String shown = name;
+        try { shown = CableTier.getTier(name).getDisplayName(); } catch (java.util.NoSuchElementException unknown) { /* the stored name */ }
+        String text = data.contains(levelKey) ? data.getInt(levelKey) + " · " + shown : shown;
+        if (data.contains(ratingKey)) {
+            long rating = data.getLong(ratingKey);
+            String packet = rating >= Long.MAX_VALUE / 2 ? "∞" : String.format(java.util.Locale.ROOT, "%,d", rating);
+            text += " " + Component.translatable("jade.mio_icif.tier_packet", packet).getString();
+        }
+        return text;
     }
 }

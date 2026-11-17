@@ -17,7 +17,7 @@ item_ids:
 ## Function
 
 The Low-Voltage Cable carries EU at the LV voltage tier.
-The bare cable shocks living entities that touch the cable while EU flows.
+The bare cable shocks living things within 1.5 blocks while it carries a packet above 8 EU.
 A packet above the cable limit burns the cable.
 
 ## Power data

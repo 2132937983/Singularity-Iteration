@@ -34,13 +34,17 @@ public final class MeterHudPacket {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    public record Reply(BlockPos pos, float voltage, float throughput, int conductors, int endpoints, long ratedPacket, boolean network)
+    /** 0.1.11.30: {@code cableFlow} / {@code cablePeak}: this cable's own EU this tick and largest packet (-1: not a cable). */
+    public record Reply(BlockPos pos, float voltage, float throughput, int conductors, int endpoints, long ratedPacket, boolean network,
+                        float cableFlow, float cablePeak, int idleConductors)
         implements CustomPacketPayload {
         public static final Type<Reply> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "meter_hud_reply"));
         public static final StreamCodec<FriendlyByteBuf, Reply> CODEC = StreamCodec.of(
             (b, p) -> { b.writeBlockPos(p.pos); b.writeFloat(p.voltage); b.writeFloat(p.throughput); b.writeVarInt(p.conductors);
-                b.writeVarInt(p.endpoints); b.writeVarLong(Math.max(0, p.ratedPacket)); b.writeBoolean(p.network); },
-            b -> new Reply(b.readBlockPos(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt(), b.readVarLong(), b.readBoolean()));
+                b.writeVarInt(p.endpoints); b.writeVarLong(Math.max(0, p.ratedPacket)); b.writeBoolean(p.network);
+                b.writeFloat(p.cableFlow); b.writeFloat(p.cablePeak); b.writeVarInt(p.idleConductors); },
+            b -> new Reply(b.readBlockPos(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt(), b.readVarLong(), b.readBoolean(),
+                b.readFloat(), b.readFloat(), b.readVarInt()));
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
@@ -68,10 +72,17 @@ public final class MeterHudPacket {
             if (be == null || (!network && NetworkWalker.categorize(be) == null)) return;
             NetworkWalker.Result r = NetworkWalker.walk(level, pos, NetworkWalker.Scope.SYSTEM, 4096, 256);
             var reading = NetworkWalker.read(level, r);
+            // 0.1.11.30: a cable's own flow, from the engine's per-conductor samples of this tick
+            float flow = -1, peak = -1;
+            if (NetworkWalker.isConductor(be)) {
+                var own = EnergyNetGlobal.getNodeStats(level, pos);
+                flow = own == null ? 0 : (float) own.energyIn();
+                peak = own == null ? 0 : (float) own.voltage();
+            }
             try {
                 if (player.connection != null && player.connection.hasChannel(Reply.TYPE))
                     PacketDistributor.sendToPlayer(player, new Reply(pos, (float) reading.voltage(), (float) reading.throughput(),
-                        r.conductors, r.devices.size(), reading.ratedPacket(), network));
+                        r.conductors, r.devices.size(), reading.ratedPacket(), network, flow, peak, r.idleConductors));
             } catch (RuntimeException ignored) { }
         });
     }

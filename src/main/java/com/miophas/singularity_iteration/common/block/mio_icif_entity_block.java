@@ -218,14 +218,16 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock implements c
                 if (apiTier instanceof CableTier cableTier) {
                     tier = cableTier;
                 }
-            } else if (tempEntity instanceof mio_icif_wire wire) {
-                tier = wire.getCableTier();
-            }
+            }   // 0.1.11.30: a cable shows its own lines (largest packet, loss, shock): mio_icif_block_wire
         }
 
-        if (tier != null) {
+        // 0.1.11.30: a cable shows its own lines instead (largest packet, loss, shock: mio_icif_block_wire)
+        if (tier != null && !(this instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire)) {
             // 以"能量等级"数字显示（LV = 能量等级1，MV = 能量等级2 ……）
-            String tierDisplay = tier.getEnergyLevel() + " (" + tier.powerRating + " EU/t)";
+            // 0.1.11.30 (cable audit D-2): with the tier name and as the largest packet, as Jade shows it (it read "32 EU/t")
+            String packet = tier.powerRating >= Long.MAX_VALUE / 2 ? "∞" : String.format(java.util.Locale.ROOT, "%,d", tier.powerRating);
+            String tierDisplay = tier.getEnergyLevel() + " · " + tier.getDisplayName() + " "
+                + Component.translatable("jade.mio_icif.tier_packet", packet).getString();
             tooltip.add(Component.translatable("tooltip.mio_icif.voltage_tier", tierDisplay)
                     .withStyle(ChatFormatting.AQUA));
         }

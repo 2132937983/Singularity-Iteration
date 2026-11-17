@@ -17,7 +17,7 @@ item_ids:
 ## Function
 
 The Superconducting Cable carries EU with no voltage or packet limit.
-The cable has no transport loss and does not burn.
+The cable takes packets of any size, so it never burns.
 The insulation does not break down. The cable does not shock living entities.
 
 ## Power data

@@ -224,6 +224,18 @@ public class JEIPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
+        // 0.1.11.30 (cable audit D-1): an information page for every cable: what the rating means, line loss, shock,
+        // insulation, colours, long lines, measuring (the numbers of each cable are in its tooltip)
+        var cables = new java.util.ArrayList<net.minecraft.world.item.ItemStack>();
+        for (var block : net.minecraft.core.registries.BuiltInRegistries.BLOCK)
+            if (block instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire && block.asItem() != net.minecraft.world.item.Items.AIR)
+                cables.add(new net.minecraft.world.item.ItemStack(block));
+        if (!cables.isEmpty()) registration.addItemStackInfo(cables,
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.rating"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.loss"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.shock"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.colour"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.chunks"));
         var level = Minecraft.getInstance().level;
         if (level == null) return;
 

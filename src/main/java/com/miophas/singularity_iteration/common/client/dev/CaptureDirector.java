@@ -2559,6 +2559,23 @@ public final class CaptureDirector {
         });
         client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
         shot(20, "cables/4_inventory");
+        // 0.1.11.30: the tooltip of the bare tin cable (hotbar slot 0), then the meter HUD on a powered cable
+        client(1, () -> hoverGui = new int[]{8 + 8, 142 + 8});
+        shot(10, "cables/7_tooltip");
+        client(1, () -> { hoverGui = new int[]{-4000, 4000}; Minecraft.getInstance().setScreen(null); });
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            level.setBlock(new BlockPos(30, -60, 10), block("generator/block_thermal_generator").defaultBlockState(), 3);
+            if (level.getBlockEntity(new BlockPos(30, -60, 10)) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)
+                ((net.neoforged.neoforge.items.IItemHandlerModifiable) g.getItemHandler()).setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.COAL, 64));
+            for (int x = 31; x <= 35; x++) level.setBlock(new BlockPos(x, -60, 10), block("wiring/cable/block_tin_cable").defaultBlockState(), 3);
+            place(level, new BlockPos(36, -60, 10), "wiring/block_bat_box", Direction.EAST);   // output away from the cable
+            sp.getInventory().setItem(0, item("item_tool_meter"));
+            sp.getInventory().selected = 0;
+            sp.teleportTo(level, 33.5, -59.0, 8.0, 0, 40);
+        });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.getInventory().selected = 0; mc.options.hideGui = false; });
+        shot(80, "cables/8_meter_hud");
         client(10, () -> Minecraft.getInstance().stop());
     }
 

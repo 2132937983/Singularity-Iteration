@@ -329,6 +329,7 @@ public class Singularity_Iteration {
         com.miophas.singularity_iteration.common.command.ToggleCommand.register(event.getDispatcher());
         com.miophas.singularity_iteration.common.processing.PipeRecoveryCommand.register(event.getDispatcher());
         com.miophas.singularity_iteration.common.command.PerfCommand.register(event.getDispatcher());   // 0.1.10.7
+        com.miophas.singularity_iteration.common.command.GridCommand.register(event.getDispatcher());   // 0.1.11.30
         com.miophas.singularity_iteration.common.command.ChunkLoaderCommand.register(event.getDispatcher());   // 0.1.10.11
         com.miophas.singularity_iteration.common.command.ReactorAuditCommand.register(event.getDispatcher());  // 0.1.10.12
         com.miophas.singularity_iteration.common.command.MarketAuditCommand.register(event.getDispatcher());   // 0.1.10.21

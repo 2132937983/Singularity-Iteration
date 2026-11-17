@@ -1739,6 +1739,29 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     }
     /** Returns the recovery counters of the topology. */
     public PlatformTopology.RecoveryMetrics topologyRecoveryMetrics() { return topology.recoveryMetrics(); }
+
+    /**
+     * 0.1.11.30 (cable audit T-3): the state of one dimension's grid for {@code /mio_icif grid}: conductors, endpoints,
+     * foreign FE ports, chunks with conductors and how many of them do not tick now (a line is cut there), settlement
+     * passes stopped by the time cap, the EU dropped at FE ports on chunk unload, and neighbour events the topology left
+     * out (no grid near them).
+     */
+    public record GridHealth(long conductors, int endpoints, int foreignPorts, int conductorChunks, int idleChunks,
+                             long timeCapped, double foreignDroppedEu, long filteredSignals) { }
+
+    public GridHealth gridHealth(ServerLevel level) {
+        if (level.getServer() != server || !server.isSameThread()) throw new IllegalStateException("Wrong grid diagnostics thread");
+        var grid = worlds.get(level);
+        if (grid == null) return new GridHealth(0, 0, 0, 0, 0, 0, 0, topology.filteredSignals());
+        long conductors = 0;
+        int idle = 0;
+        for (var entry : grid.conductorChunks.long2IntEntrySet()) {
+            conductors += entry.getIntValue();
+            if (!level.shouldTickBlocksAt(entry.getLongKey())) idle++;
+        }
+        return new GridHealth(conductors, grid.machines.size(), grid.foreignPorts.size(), grid.conductorChunks.size(), idle,
+            grid.timeCapped, foreignDropped.toDouble(), topology.filteredSignals());
+    }
     /**
      * Isolates a failure to one dimension. It logs the error, drops the pending
      * catch-up and asks the topology to rebuild the level. Other dimensions

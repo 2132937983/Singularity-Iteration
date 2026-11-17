@@ -100,7 +100,12 @@ public class mio_icif_meter_menu extends mio_icif_base_menu {
         NodeStats stats = EnergyNetGlobal.getCurrentTickNodeStats(level, targetPos);
         // A cable, special cable, transformer or terminal has no node of its own: the meter reads the
         // network through it (delivered EU, injected EU, highest packet). Endpoints keep the IC2 reading.
-        if (isNetworkTarget()) stats = network;
+        // 0.1.11.30 (cable audit T-1): a cable (or special cable) reads its own flow, as an IC2 conductor node does: the EU
+        // that went through it this tick and its largest packet, from the engine's per-conductor samples (zero when idle)
+        if (com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.isConductor(targetOwner)) {
+            NodeStats own = EnergyNetGlobal.getNodeStats(level, targetPos);
+            stats = own != null ? own : new NodeStats(0, 0, 0);
+        } else if (isNetworkTarget()) stats = network;
         // IC2 closes an instrument whose energy node no longer exists.
         if (stats == null) { player.closeContainer(); return; }
         double result = switch (mode) {

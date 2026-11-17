@@ -642,6 +642,40 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     // 对齐 IC2：破坏被建筑泡沫包裹的线缆时，泡沫会被破坏且不可回收，
     // 线缆本体按战利品表正常掉落。此处无需掉落泡沫物品。
 
+    /**
+     * 0.1.11.30 (cable audit W1): what the cable does, on its item. The rating is the largest packet, not a flow limit;
+     * the line loss follows the configured model (none by default); a bare or partly insulated cable shocks living things
+     * within 1.5 blocks when a packet is above its insulation's absorption.
+     */
+    @Override
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<net.minecraft.network.chat.Component> tooltip,
+                                net.minecraft.world.item.TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        var grey = net.minecraft.ChatFormatting.GRAY;
+        if (cableTier == CableTier.UNLIMITED)
+            tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.any_packet").withStyle(grey));
+        else
+            tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.packet",
+                String.format(java.util.Locale.ROOT, "%,d", cableTier.getPowerRating()), cableTier.getDisplayName()).withStyle(grey));
+        var id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(this);
+        Long milli = com.miophas.singularity_iteration.core.api.energy.EnergyNodeRegistry.conductorLoss(id);
+        boolean lossless = milli == null || milli <= 0 || com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode.lineLoss()
+            == com.miophas.singularity_iteration.core.runtime.energy.engine.FairShareDistributor.LineLoss.LOSSLESS;
+        tooltip.add(lossless
+            ? net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.lossless").withStyle(grey)
+            : net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.loss",
+                String.format(java.util.Locale.ROOT, "%.3f", milli / 1000.0).replaceAll("0+$", "").replaceAll("\\.$", "")).withStyle(grey));
+        int full = com.miophas.singularity_iteration.core.api.energy.CableInsulation.maximumLayers(cableTier);
+        if (full == 0 || getClass() != mio_icif_block_wire.class)
+            tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.no_shock").withStyle(grey));
+        else if (insulationLayers >= full)
+            tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.insulated_full", insulationLayers).withStyle(grey));
+        else
+            tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.cable.shock",
+                (long) com.miophas.singularity_iteration.core.api.energy.CableInsulation.absorption(cableTier, insulationLayers), full)
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+    }
+
     @Override
     public List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder context) {
         var drops = new java.util.ArrayList<>(super.getDrops(state, context));

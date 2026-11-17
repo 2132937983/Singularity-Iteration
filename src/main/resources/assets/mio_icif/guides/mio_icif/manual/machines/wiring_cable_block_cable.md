@@ -31,7 +31,7 @@ The game measured these values from the block entity of this version.
 ## Procedure
 
 1. Connect the generator to the machine with the Insulated Medium-Voltage Cable.
-2. Shift-right-click the cable with a Cable Cutter to remove one insulation layer.
+2. Right-click the cable with a Cable Cutter to remove one insulation layer (the rubber comes back).
 3. Right-click the cable with a dye to give the cable a colour.
 
 ## Notes

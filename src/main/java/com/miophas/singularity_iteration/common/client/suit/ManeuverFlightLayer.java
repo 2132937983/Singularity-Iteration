@@ -89,13 +89,15 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         // 0.1.11.66 (R0): every flame leaves a port of the worn suit (QuantumNozzles), the way the port looks
         java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
+        float kickClassic = ManeuverModeClient.boostKick(player);                       // 0.1.11.68 (R2)
         for (int i = 0; outs != null && i < outs.length; i++) {
             QuantumNozzles.Nozzle n = nozzles.get(i);
             float p = outs[i];
             if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
             if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, time, true);
             else if (n.kind() == QuantumNozzles.Kind.RCS) thruster(pose, vc, 0.7F * p, n.size(), time, i, 0, id, thr, strips);
-            else thruster(pose, vc, p, n.size(), time, n.name().hashCode() & 7, burn, id, thr, strips);
+            else thruster(pose, vc, n.kind() == QuantumNozzles.Kind.MAIN ? p * (1 + 0.6F * kickClassic) : p, n.size(), time,
+                n.name().hashCode() & 7, burn, id, thr, strips);
             pose.popPose();
         }
         float field = ManeuverModeClient.deflectionField(player, partial);
@@ -125,6 +127,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         // 0.1.11.66 (R0, decision one A): one wedge out of every lit port of the worn suit, along its exhaust; graviton rings
         java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
+        float kick = ManeuverModeClient.boostKick(player);
         for (int i = 0; outs != null && i < outs.length; i++) {
             QuantumNozzles.Nozzle n = nozzles.get(i);
             float p = outs[i];
@@ -136,6 +139,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
                     0.34F * p * (0.6F + 0.4F * n.size()), 0.13F * n.size() + 0.05F, 0.95F);
             } else {
                 float length = (0.2F + 0.55F * p + 0.7F * burn * p) * beat * (0.6F + 0.4F * n.size());
+                if (n.kind() == QuantumNozzles.Kind.MAIN) length *= 1 + 0.9F * kick;   // 0.1.11.68 (R2): the boost stretch
                 com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(), length,
                     (0.14F + 0.08F * p) * n.size(), 0.95F);
             }

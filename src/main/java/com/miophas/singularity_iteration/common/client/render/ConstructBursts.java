@@ -2,6 +2,7 @@
 package com.miophas.singularity_iteration.common.client.render;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.suit.FlightImpact;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -71,9 +72,62 @@ public final class ConstructBursts {
         add(new Burst(centre, axis, 0.8F, 6.5F, 0.35F, now(), 9, ConstructFx.WHITE, ConstructFx.BLACK, entityId));
     }
 
+    /** 0.1.11.68 (R2): a star of hard wedges lying in a surface (cracks, a blast print), {@link FlightImpact#cracks}. */
+    private record Star(Vec3 at, Vec3 normal, float[][] rays, long start, int life, float[] core) { }
+
+    private static final List<Star> STARS = new ArrayList<>();
+
+    private static void add(Star s) {
+        STARS.add(s);
+        if (STARS.size() > 16) STARS.remove(0);
+    }
+
+    /**
+     * 0.1.11.68 (quantum flight phase R2): a hard landing at {@code at}, {@code strength} 0..1: the ground cracks in a star of
+     * black wedges with red cores, standing 24 ticks before the cut, and a heavy double ring (white, red inside).
+     */
+    public static void hardLanding(Vec3 at, float strength) {
+        Vec3 ground = at.add(0, 0.03, 0);
+        long seed = (long) Math.floor(at.x * 7) * 31 + (long) Math.floor(at.z * 7) * 17 + now();
+        add(new Star(ground, new Vec3(0, 1, 0), FlightImpact.cracks(seed, strength), now(), 24, ConstructFx.RED));
+        float k = 0.6F + 0.4F * Math.min(1, Math.max(0, strength));
+        add(new Burst(ground.add(0, 0.01, 0), new Vec3(0, 1, 0), 0.5F, 4.2F * k, 0.32F, now(), 8, ConstructFx.WHITE, ConstructFx.RED, -1));
+    }
+
+    /**
+     * 0.1.11.68: the take-off burst at {@code at}: a short star of white wedges blasted into the ground under the soles, cut
+     * after 7 ticks (the small take-off ring of {@link #ground} goes with it).
+     */
+    public static void takeoffBurst(Vec3 at) {
+        float[][] rays = FlightImpact.cracks((long) Math.floor(at.x * 5) * 13 + now(), 0F);
+        for (float[] r : rays) r[1] *= 0.75F;
+        add(new Star(at.add(0, 0.03, 0), new Vec3(0, 1, 0), rays, now(), 7, ConstructFx.WHITE));
+    }
+
+    /**
+     * 0.1.11.68: a high-speed wall hit at {@code at} on a wall facing {@code normal}: cracks in the wall and a large ring
+     * standing out of it.
+     */
+    public static void wallHit(Vec3 at, Vec3 normal, float strength) {
+        Vec3 n = normal.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : normal.normalize();
+        long seed = (long) Math.floor(at.x * 7) * 31 + (long) Math.floor(at.y * 7) * 7 + now();
+        add(new Star(at.add(n.scale(0.03)), n, FlightImpact.cracks(seed, strength), now(), 22, ConstructFx.RED));
+        add(new Burst(at.add(n.scale(0.05)), n, 0.6F, 3.6F * (0.6F + 0.4F * strength), 0.36F, now(), 8, ConstructFx.WHITE, ConstructFx.BLACK, -1));
+    }
+
+    /** One wedge of a star: from {@code r0} to {@code r1} along {@code dir} in the plane of {@code normal}. */
+    private static void rayWedge(VertexConsumer vc, Matrix4f m, Vec3 at, Vec3 dir, Vec3 normal, float r0, float r1, float width, float[] c) {
+        Vec3 side = dir.cross(normal).normalize().scale(width / 2);
+        Vec3 base = at.add(dir.scale(r0)), tip = at.add(dir.scale(r1));
+        FxDraw.vertex(vc, m, base.add(side), c[0], c[1], c[2], 1F);
+        FxDraw.vertex(vc, m, base.subtract(side), c[0], c[1], c[2], 1F);
+        FxDraw.vertex(vc, m, tip, c[0], c[1], c[2], 1F);
+        FxDraw.vertex(vc, m, tip, c[0], c[1], c[2], 1F);
+    }
+
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || BURSTS.isEmpty() && SLATES.isEmpty()) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || BURSTS.isEmpty() && SLATES.isEmpty() && STARS.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float t = now() + partial;
@@ -95,6 +149,21 @@ public final class ConstructBursts {
                 at = e.getPosition(partial).add(0, e.getBbHeight() * 0.5, 0).subtract(b.normal.normalize().scale(0.6));
             if (b.inner != null) ConstructFx.ring(vc, m, at, b.normal, r * 0.72F, b.width * 0.7F, b.inner, 1F, 40);
             ConstructFx.ring(vc, m, at, b.normal, r, b.width, b.outer, 1F, 48);
+        }
+        for (Iterator<Star> it = STARS.iterator(); it.hasNext(); ) {
+            Star st = it.next();
+            float age = (t - st.start) / st.life;
+            if (age >= 1 || age < -0.5F) { it.remove(); continue; }
+            // out in two ticks, then held, then the hard cut
+            float out = Math.min(1F, Math.max(0F, (t - st.start) / 2F));
+            Vec3 n = st.normal.normalize(), u = FxDraw.perp(n).normalize(), w = n.cross(u).normalize();
+            for (float[] ray : st.rays) {
+                Vec3 dir = u.scale(Math.cos(ray[0])).add(w.scale(Math.sin(ray[0])));
+                float len = ray[1] * out, width = 0.16F + 0.05F * ray[1];
+                rayWedge(vc, m, st.at, dir, n, 0.2F, 0.2F + len * 1.04F + 0.03F, width * 1.25F, ConstructFx.BLACK);
+                rayWedge(vc, m, st.at.add(n.scale(0.004)), dir, n, 0.22F, 0.2F + len, width, st.core);
+                rayWedge(vc, m, st.at.add(n.scale(0.008)), dir, n, 0.24F, 0.2F + len * 0.45F, width * 0.4F, ConstructFx.WHITE);
+            }
         }
         for (Iterator<Slate> it = SLATES.iterator(); it.hasNext(); ) {
             Slate sl = it.next();

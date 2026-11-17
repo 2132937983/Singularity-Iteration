@@ -3591,6 +3591,66 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "impact" (-Dsi.capture.scene=impact), 0.1.11.68 (quantum flight phase R2): the weight of the quantum flight. A
+     * dive into the ground (hard landing: cracks and the heavy ring), the take-off burst (staged at the feet), the boost
+     * out of the hover (stretched main wedges, wider view), the hard brake (the brake jets together), a cruise into a
+     * stone wall (cracks in the wall, the ring out of it).
+     */
+    private static void sceneImpact() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            var stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+            for (int x = -8; x <= 8; x++) for (int y = -60; y <= -44; y++) level.setBlock(new BlockPos(x, y, 40), stone, 3);
+            quantumFlyer(sp, null, 0.5, -36, -20.5);
+        });
+        // the dive: straight down at full throttle
+        client(5, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); mc.player.setXRot(80); });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.setXRot(80); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        until(200, () -> com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.trauma() > 0.3F);
+        client(1, CaptureDirector::releaseKeys);
+        shot(3, "impact/1_hard_landing");
+        client(1, () -> Minecraft.getInstance().player.setXRot(55));
+        shot(4, "impact/2_hard_landing_cracks");
+        // the take-off burst at the feet (staged: a capture cannot double-tap the jump key)
+        server(30, sp -> quantumFlyer(sp, null, 0.5, -59.6, -10.5));
+        client(3, () -> { releaseKeys(); var pl = Minecraft.getInstance().player; pl.setXRot(35);
+            com.miophas.singularity_iteration.common.client.render.ConstructBursts.ground(pl.position(), 1F, true);
+            com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.takeoff(pl); });
+        shot(2, "impact/3_takeoff_burst");
+        // the boost out of the hover, then the hard brake
+        server(30, sp -> quantumFlyer(sp, null, 0.5, -45, -40.5));
+        client(30, () -> { releaseKeys(); Minecraft.getInstance().player.setXRot(4); });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        shot(2, "impact/4_boost");
+        client(18, () -> Minecraft.getInstance().setScreen(null));
+        client(1, () -> Minecraft.getInstance().options.keySprint.setDown(false));
+        shot(2, "impact/5_hard_brake");
+        // into the wall at speed
+        server(10, sp -> quantumFlyer(sp, null, 0.5, -52, -50.5));
+        client(20, () -> { releaseKeys(); Minecraft.getInstance().player.setXRot(0); });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        until(240, () -> com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.trauma() > 0.5F);
+        client(1, CaptureDirector::releaseKeys);
+        shot(2, "impact/6_wall_hit");
+        // stand back from the wall to see its cracks
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -3.5, -52, 34.5, -25, 5));
+        shot(3, "impact/7_wall_hit_cracks");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "impact".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneImpact();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

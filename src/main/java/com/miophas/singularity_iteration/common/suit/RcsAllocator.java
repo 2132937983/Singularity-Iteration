@@ -7,7 +7,8 @@ import java.util.List;
  * 0.1.11.67 (quantum flight phase R1, decision two A): the reaction control of the quantum suit. It turns what the flight
  * asks of the body into the output of each nozzle of {@link QuantumNozzles}, the way a real RCS does: the main thrust
  * follows the throttle, the hover stands on the lift nozzles only, and the attitude jets fire in hard on/off pulses
- * (pulse-width modulated on a four-tick frame) where their push and turn serve the demand.
+ * (pulse-width modulated on a four-tick frame) where their push and turn serve the demand. 0.1.11.68 (R2): from a brake of
+ * {@link #HARD_BRAKE} the jets that serve it burn together and steady.
  *
  * <p>Body frame (the model space of the nozzles): +x the left of the wearer, +y towards the feet, +z the back. A
  * {@link Command} is the push wanted on the body (force, -1..1 per axis) and the turn wanted (torque, -1..1 per axis):
@@ -26,6 +27,8 @@ public final class RcsAllocator {
     public static final int PERIOD = 4;
     /** Demand under which a jet stays dark (no flicker on noise). */
     public static final float DEADBAND = 0.15F;
+    /** 0.1.11.68 (R2): from this brake the jets burn together and steady. */
+    public static final float HARD_BRAKE = 0.5F;
     /** The centre of mass of the wearer in the body frame (pixels): the waist. */
     private static final float COM_Y = 11F;
     /** The lever that makes a torque comparable with a force (pixels). */
@@ -79,7 +82,8 @@ public final class RcsAllocator {
             QuantumNozzles.Nozzle n = nozzles.get(i);
             float base = QuantumNozzles.output(n, limbs, throttle);
             out[i] = switch (n.kind()) {
-                case RCS -> pulse(score(n, c), tick, i);
+                // 0.1.11.68 (R2): a hard brake fires its jets together and steady, not in pulses
+                case RCS -> brake >= HARD_BRAKE ? (score(n, c) >= DEADBAND ? 1F : 0F) : pulse(score(n, c), tick, i);
                 case MAIN -> base * cut;
                 default -> base;
             };

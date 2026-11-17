@@ -170,6 +170,15 @@ public final class ManeuverModeClient {
         int rcsTick = Integer.MIN_VALUE;
         float rcsSpeed, rcsThrottle, rcsLookPitch, pitchRate, brake;
         float[] viewVelocity = new float[3];
+        /** 0.1.11.68 (R2): on the ground in the last tick; the distance and the move of the last tick; the throttle of the
+         *  last tick; the tick of the last boost; a hard brake under way. */
+        boolean grounded;
+        float rawSpeed, tickThrottle;
+        Vec3 lastMove = Vec3.ZERO;
+        int boostTick = Integer.MIN_VALUE / 2;
+        boolean braking;
+        /** 0.1.11.68: the tick of the last hard landing or wall hit (the plain landing ring stays away right after). */
+        int hardTick = Integer.MIN_VALUE / 2;
     }
     /**
      * Visual state per entity id. {@link #pruneVisuals} removes the entries of players that are
@@ -380,6 +389,7 @@ public final class ManeuverModeClient {
      */
     private static void launch(LocalPlayer player) {
         takeoffTicks = 4;
+        FlightImpactClient.takeoff(player);   // 0.1.11.68 (R2): the take-off burst and a light shake
         var level = player.level();
         level.playLocalSound(player.getX(), player.getY(), player.getZ(), mio_icif_sounds.MANEUVER_TAKEOFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F, false);
         BlockPos below = player.blockPosition().below();
@@ -454,17 +464,23 @@ public final class ManeuverModeClient {
                 vis.trail.clear();
                 // 0.1.10.2: a touchdown from maneuver flight raises a dust ring
                 if (vis.wasFlying && p.onGround()) {
+                    // 0.1.11.68 (R2): a hard landing cracks the ground and shakes the camera
+                    float hard = com.miophas.singularity_iteration.common.suit.FlightImpact.landing((float) vis.lastVy);
+                    // (not again when the touchdown tick in flight already had it)
+                    if (hard > 0 && p.tickCount - vis.hardTick > 10) { FlightImpactClient.hardLanding(p, hard); vis.hardTick = p.tickCount; }
                     float strength = (float) Mth.clamp(0.55 + Math.abs(vis.lastVy) * 1.6, 0.55, 1.4);
-                    com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.landing(p, strength);
+                    // the plain landing ring only for a soft landing (a hard one has its cracks and heavy ring)
+                    if (p.tickCount - vis.hardTick > 10) com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.landing(p, strength);
                 }
                 vis.wasFlying = false;
             }
             return;
         }
         Visual vis = VISUALS.computeIfAbsent(p.getId(), k -> new Visual());
+        float thr = throttleOf(p, 1.0F);
+        impacts(p, vis, thr, local);
         vis.wasFlying = true;
         vis.lastVy = p.getY() - p.yo;
-        float thr = throttleOf(p, 1.0F);
         // 0.1.11.5: the barrier is the measured speed (smoothed over ~3 ticks against the jitter of relayed positions),
         // not the throttle; re-armed below Mach 0.9
         Vec3 moved = p.position().subtract(p.xo, p.yo, p.zo);
@@ -478,6 +494,61 @@ public final class ManeuverModeClient {
         recordTrail(p, vis, thr);
         // condensation puffs only during the burst (they used to stream all the time above throttle 0.55)
         if (FcsClientConfig.vaporEffects() && coneAge(vis, System.currentTimeMillis()) < 0.45F) vapour(p, thr);
+    }
+
+    /**
+     * 0.1.11.68 (quantum flight phase R2): the impact events of a flyer in one tick, before its state of the last tick is
+     * overwritten: a hard touchdown (fall of the last tick), a wall hit at speed (the speed of the last tick lost against a
+     * solid block ahead), the start of a boost (the throttle opening from closed) and a hard brake (see {@link #rcsSample}).
+     */
+    private static void impacts(Player p, Visual vis, float thr, boolean local) {
+        boolean ground = p.onGround(), landed = false;
+        if (ground && !vis.grounded && vis.wasFlying) {
+            float hard = com.miophas.singularity_iteration.common.suit.FlightImpact.landing((float) vis.lastVy);
+            if (hard > 0) { FlightImpactClient.hardLanding(p, hard); landed = true; vis.hardTick = p.tickCount; }
+        }
+        vis.grounded = ground;
+        Vec3 moved = p.position().subtract(p.xo, p.yo, p.zo);
+        float raw = (float) moved.length();
+        Vec3 dir = vis.lastMove.lengthSqr() > 1.0E-6 ? vis.lastMove.normalize() : Vec3.ZERO;
+        if (vis.wasFlying && !landed && dir != Vec3.ZERO) {   // a dive into the ground is a landing, not a wall hit
+            Vec3 ahead = p.position().add(0, p.getBbHeight() * 0.5, 0).add(dir.scale(0.9));
+            boolean solid = !p.level().getBlockState(net.minecraft.core.BlockPos.containing(ahead)).getCollisionShape(p.level(),
+                net.minecraft.core.BlockPos.containing(ahead)).isEmpty();
+            float hit = com.miophas.singularity_iteration.common.suit.FlightImpact.wallHit(vis.rawSpeed, raw, solid && (!local || p.horizontalCollision || p.verticalCollision));
+            if (hit > 0) {
+                // the face of the wall: a ray from the body centre along the last move
+                Vec3 centre = p.position().add(0, p.getBbHeight() * 0.5, 0);
+                var ray = p.level().clip(new net.minecraft.world.level.ClipContext(centre, centre.add(dir.scale(2)),
+                    net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+                boolean face = ray.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+                Vec3 normal = face ? Vec3.atLowerCornerOf(ray.getDirection().getNormal()) : dir.scale(-1);
+                FlightImpactClient.wallHit(p, face ? ray.getLocation() : centre.add(dir.scale(0.3)), normal, hit);
+                vis.hardTick = p.tickCount;
+            }
+        }
+        vis.rawSpeed = raw;
+        vis.lastMove = moved;
+        if (vis.wasFlying && vis.tickThrottle < 0.05F && thr > vis.tickThrottle + 0.005F) {
+            vis.boostTick = p.tickCount;
+            FlightImpactClient.boost(p);
+        }
+        vis.tickThrottle = thr;
+        rcsSample(p, vis, thr);
+        if (vis.brake >= com.miophas.singularity_iteration.common.suit.RcsAllocator.HARD_BRAKE && !vis.braking) {
+            vis.braking = true;
+            FlightImpactClient.brake(p, vis.brake);
+        } else if (vis.brake < 0.3F) vis.braking = false;
+    }
+
+    /** 0.1.11.68 (R2): the stretch of the main thrust of a flyer just after a boost, 0..1 (1 at the start, 0 after 8 ticks). */
+    public static float boostKick(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        if (vis == null) return 0F;
+        int age = p.tickCount - vis.boostTick;
+        if (age < 0 || age >= 8) return 0F;
+        float left = 1 - age / 8F;
+        return left * left;
     }
 
     /** 0.1.10.4: life of the vapour-cone burst at a barrier crossing, in milliseconds. */
@@ -719,7 +790,6 @@ public final class ManeuverModeClient {
         vis.lastYaw = yaw;
         float turn = dt > 0 ? yawDelta / dt : 0;
         vis.turnSpeed += (turn - vis.turnSpeed) * Math.min(1, dt * 8);
-        rcsSample(p, vis, thr);
 
         // hover: a small forward lean. The forward stick makes it deeper. The strafe keys bank a little.
         float leanTarget = 7.0F + 9.0F * stick[0];

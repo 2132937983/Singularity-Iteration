@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "中压变压器"
+  title: "中压–高压–超高压变压器"
   icon: mio_icif:wiring/transformer_mv_hv
   parent: power.md
   position: 36
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/transformer_mv_hv
 ---
 
-# 中压变压器
+# 中压–高压–超高压变压器
 
 <Row>
   <BlockImage id="mio_icif:wiring/transformer_mv_hv" scale="3" />

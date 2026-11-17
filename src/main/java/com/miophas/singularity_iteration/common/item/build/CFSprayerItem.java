@@ -426,7 +426,8 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
                 } else {
                     level.setBlockAndUpdate(targetPos, state
                             .setValue(mio_icif_block_wire.FOAMLOGGED, true)
-                            .setValue(mio_icif_block_wire.FOAM_REINFORCED, state.getValue(mio_icif_block_wire.FOAM_REINFORCED)));
+                            .setValue(mio_icif_block_wire.FOAM_REINFORCED, state.getValue(mio_icif_block_wire.FOAM_REINFORCED))
+                            .setValue(mio_icif_block_wire.WATERLOGGED, false));   // 0.1.11.29: foam drives the water out
                 }
                 continue;
             }

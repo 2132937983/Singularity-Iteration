@@ -135,18 +135,6 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
      */
     public static final BooleanProperty FOAM_HARDENED = BooleanProperty.create("foam_hardened");
     
-    // Center core of a bare cable: 4x4x4 pixels. (0.1.10.3: the shape of each cable follows its own
-    // model thickness, see shapeRadius; these constants stay for the bare size.)
-    protected static final VoxelShape CENTER_SHAPE = Block.box(6.0, 6.0, 6.0, 10.0, 10.0, 10.0);
-    
-    // Connection shape for each direction. Each one extends 6 pixels.
-    protected static final VoxelShape NORTH_SHAPE = Block.box(6.0, 6.0, 0.0, 10.0, 10.0, 6.0);
-    protected static final VoxelShape SOUTH_SHAPE = Block.box(6.0, 6.0, 10.0, 10.0, 10.0, 16.0);
-    protected static final VoxelShape EAST_SHAPE = Block.box(10.0, 6.0, 6.0, 16.0, 10.0, 10.0);
-    protected static final VoxelShape WEST_SHAPE = Block.box(0.0, 6.0, 6.0, 6.0, 10.0, 10.0);
-    protected static final VoxelShape UP_SHAPE = Block.box(6.0, 10.0, 6.0, 10.0, 16.0, 10.0);
-    protected static final VoxelShape DOWN_SHAPE = Block.box(6.0, 0.0, 6.0, 10.0, 6.0, 10.0);
-
     private static final int NORTH_SHAPE_BIT = 1;
     private static final int SOUTH_SHAPE_BIT = 1 << 1;
     private static final int EAST_SHAPE_BIT = 1 << 2;
@@ -173,8 +161,6 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     /** 0.1.10.3: half width of the cable in pixels, as its model draws it (see SHAPES_BY_RADIUS). */
     private final int shapeRadius;
     private static final java.util.Map<CableTier, java.util.Map<Integer, mio_icif_block_wire>> LAYERS = new java.util.HashMap<>();
-    private mio_icif_block_wire bareCounterpart;
-    private mio_icif_block_wire insulatedCounterpart;
     
     /**
      * Default constructor. It uses the LV tier.
@@ -204,7 +190,9 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
 
     public mio_icif_block_wire(Properties properties, CableTier cableTier, int layers) {
         // the superconductor is flagged insulated (no shock) but its model stays bare-thin
-        this(properties, cableTier, layers, layers <= 0 || cableTier == CableTier.UNLIMITED ? 2 : Math.min(6, 2 + layers));
+        // 0.1.11.29: glass fibre and the superconductor are drawn 6 px thick (core and shell, 0.1.11.25): outline radius 3
+        this(properties, cableTier, layers, cableTier == CableTier.UNLIMITED || cableTier == CableTier.IV && layers <= 0 ? 3
+            : layers <= 0 ? 2 : Math.min(6, 2 + layers));
     }
 
     /**
@@ -217,7 +205,10 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         this.insulated = layers > 0;
         this.insulationLayers = layers;
         this.shapeRadius = Math.clamp(shapeRadius, 2, 6);
-        LAYERS.computeIfAbsent(cableTier, ignored -> new java.util.HashMap<>()).put(layers, this);
+        // 0.1.11.29: only plain cables take part in "one layer more / less": the special cables (IV, 1 layer) took the
+        // place of insulated glass fibre, so rubber on glass fibre made a splitter cable
+        if (getClass() == mio_icif_block_wire.class)
+            LAYERS.computeIfAbsent(cableTier, ignored -> new java.util.HashMap<>()).put(layers, this);
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(NORTH, false)
             .setValue(SOUTH, false)
@@ -250,17 +241,13 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     public int getShapeRadius() { return shapeRadius; }
 
     public mio_icif_block_wire getBareCounterpart() {
-        if (!insulated) return null;
-        return LAYERS.getOrDefault(cableTier, java.util.Map.of()).getOrDefault(insulationLayers - 1, bareCounterpart);
+        if (!insulated || getClass() != mio_icif_block_wire.class) return null;   // 0.1.11.29: the special cables have none
+        return LAYERS.getOrDefault(cableTier, java.util.Map.of()).getOrDefault(insulationLayers - 1, null);
     }
 
     public mio_icif_block_wire getInsulatedCounterpart() {
-        return LAYERS.getOrDefault(cableTier, java.util.Map.of()).getOrDefault(insulationLayers + 1, insulatedCounterpart);
-    }
-
-    public void setCounterparts(mio_icif_block_wire bare, mio_icif_block_wire insulated) {
-        this.bareCounterpart = bare;
-        this.insulatedCounterpart = insulated;
+        if (getClass() != mio_icif_block_wire.class) return null;
+        return LAYERS.getOrDefault(cableTier, java.util.Map.of()).getOrDefault(insulationLayers + 1, null);
     }
     
     @Override
@@ -399,7 +386,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
                                    LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        if (state.getValue(WATERLOGGED) && direction == Direction.DOWN) {
+        if (state.getValue(WATERLOGGED)) {   // 0.1.11.29: on every side, as vanilla (it was only below)
             level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
         }
 
@@ -598,7 +585,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         }
         // 0.1.8.0: the cutter strips with or without Shift (the cutter item now bypasses the
         // vanilla sneak rule). The stripped rubber goes to the player, or drops when the inventory is full.
-        if (stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICutterItem
+        // 0.1.11.29: not through foam or a set wall (the cable inside cannot be reached)
+        if (stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICutterItem && !state.getValue(FOAMLOGGED)
                 && getBareCounterpart() != null && level.getBlockEntity(pos) instanceof mio_icif_wire wire) {
             if (!level.isClientSide) {
                 wire.changeInsulation(getBareCounterpart());
@@ -620,8 +608,9 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
             }
             return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals("mio_icif:resource/item_rubber")
-                && getInsulatedCounterpart() != null && level.getBlockEntity(pos) instanceof mio_icif_wire wire) {
+        // 0.1.11.29: any rubber of the c:rubber tag (as the crafting recipes), and not through foam or a wall
+        if ((stack.is(RUBBER) || net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals("mio_icif:resource/item_rubber"))
+                && !state.getValue(FOAMLOGGED) && getInsulatedCounterpart() != null && level.getBlockEntity(pos) instanceof mio_icif_wire wire) {
             if (!level.isClientSide) {
                 wire.changeInsulation(getInsulatedCounterpart());
                 if (!player.getAbilities().instabuild) stack.shrink(1);
@@ -637,7 +626,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                     || state.getValue(FOAM_REINFORCED);       // a scaffolded cable stays reinforced
                 BlockState newState = state
                     .setValue(FOAMLOGGED, true)
-                    .setValue(FOAM_REINFORCED, reinforced);
+                    .setValue(FOAM_REINFORCED, reinforced)
+                    .setValue(WATERLOGGED, false);   // 0.1.11.29: foam drives the water out (the wall was a water source)
                 level.setBlockAndUpdate(pos, newState);
                 level.playSound(null, pos, SoundEvents.SLIME_BLOCK_PLACE, SoundSource.BLOCKS, 0.8F, 1.2F);
                 if (!player.getAbilities().instabuild) {
@@ -671,9 +661,10 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         return drops;
     }
 
-    public static void tickFoamHardening(Level level, BlockPos pos, BlockState state) {
-    }
-    
+    /** 0.1.11.29: rubber of any mod, as in the insulation recipes. */
+    private static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> RUBBER =
+        net.minecraft.tags.ItemTags.create(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "rubber"));
+
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;   // 0.1.11.24: a disguise is drawn by the chunk mesh too (DisguiseModels)
@@ -886,41 +877,6 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 }
             };
     }
-
-    /**
-     * 触发电线融毁（当低等级电线连接高等级电线时）
-     * @param level 世界
-     * @param pos 电线位置
-     */
-    @SuppressWarnings("unused")
-    private void triggerWireBurnout(Level level, BlockPos pos) {
-        if (level.isClientSide) return;
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof com.miophas.singularity_iteration.core.api.energy.tile.IExplosionPowerOverride override && !override.shouldExplode()) {
-            level.destroyBlock(pos, false);
-            return;
-        }
-
-        float explosionPower = 0.5F;
-        if (be instanceof com.miophas.singularity_iteration.core.api.energy.tile.IExplosionPowerOverride override) {
-            explosionPower = override.getExplosionPower(0, explosionPower);
-        }
-
-        level.destroyBlock(pos, false);
-
-        if (explosionPower > 0.0F) {
-            level.explode(
-                null,
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                explosionPower,
-                Level.ExplosionInteraction.NONE
-            );
-        }
-    }
-
     public void refreshConnections(Level level, BlockPos pos) {
         if (level.isClientSide) return;
         BlockState state = level.getBlockState(pos);

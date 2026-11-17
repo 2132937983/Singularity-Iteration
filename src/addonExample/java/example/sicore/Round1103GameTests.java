@@ -76,7 +76,7 @@ public final class Round1103GameTests {
     /** Radius in pixels of every cable model (core box from 8 - r to 8 + r). */
     private static final Object[][] CABLES = {
         {"cable/block_tin_cable", 2}, {"cable/block_cable_o", 2}, {"cable/block_gold_cable", 2}, {"cable/block_iron_cable", 2},
-        {"cable/block_glass_cable", 2}, {"cable/block_superconducting_cable", 2},
+        {"cable/block_glass_cable", 3}, {"cable/block_superconducting_cable", 3},   // 0.1.11.29: 6 px core and shell
         {"cable/block_tin_cable_1", 3}, {"cable/block_cable", 3}, {"cable/block_gold_cable_1", 3}, {"cable/block_iron_cable_1", 3},
         {"cable/block_gold_cable_2", 4}, {"cable/block_iron_cable_2", 4}, {"cable/block_iron_cable_3", 5},
         {"block_eu_detector_cable", 2}, {"block_eu_splitter_cable", 2}};   // insulated IV, drawn 4 px

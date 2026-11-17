@@ -53,8 +53,9 @@ public class mio_icif_wire extends AbstractWireBlockEntity implements com.miopha
     }
     public net.minecraft.world.item.DyeColor getCableColor() { return cableColor; }
     public boolean canColor(net.minecraft.world.item.DyeColor color) {
+        // 0.1.11.29: not the superconductor (flagged insulated, but it has no colour band to show it)
         return color != cableColor && !getBlockState().getValue(mio_icif_block_wire.FOAMLOGGED)
-            && (insulated || getCableTier() == CableTier.IV);
+            && (insulated || getCableTier() == CableTier.IV) && getCableTier() != CableTier.UNLIMITED;
     }
     public void setCableColor(net.minecraft.world.item.DyeColor color) {
         if (!canColor(color)) return;

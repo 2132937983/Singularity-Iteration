@@ -2910,10 +2910,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * An exception for one port isolates its chunk, as in {@code ports}. */
     private List<Port> refreshQuotes(ServerLevel level, WorldGrid grid, List<Port> cached, boolean prepareDemand) {
         var refreshed = new ArrayList<Port>(cached.size());
+        var ready = new it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap();   // 0.1.11.29: the locked readiness once per chunk
         for (var port : cached) {
             try {
             var tile = port.tile();
-            if (tile.isRemoved() || !topology.chunkReady(level, ChunkPos.asLong(port.position))) continue;
+            if (tile.isRemoved() || !chunkReady(level, ready, port.position)) continue;
             if (port.foreign != null) {
                 // 0.1.11.1: the staging cell again; the snapshot of the frame stays
                 if (!port.foreign.retired && grid.foreignPorts.get(port.position) == port.foreign)
@@ -2942,7 +2943,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 port.inputs(), port.outputs(), packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential, port.emitterPositions(), null));
             } catch (RuntimeException error) { topology.isolateChunk(level, port.position, error); }
         }
-        refreshed.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position))
+        refreshed.removeIf(port -> !chunkReady(level, ready, port.position)
             || (port.foreign == null ? grid.machines.get(port.position) != port.tile : grid.foreignPorts.get(port.position) != port.foreign));
         return refreshed;
     }
@@ -2951,6 +2952,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * {@code input}: the face of the foreign block that touches the SI side.
      */
     private record ForeignContact(BlockPos at, Direction input) { }
+    /** 0.1.11.29: the topology's (synchronized) chunk readiness, remembered per chunk in {@code memo} for one pass. */
+    private boolean chunkReady(ServerLevel level, it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap memo, BlockPos at) {
+        long chunk = ChunkPos.asLong(at);
+        if (memo.containsKey(chunk)) return memo.get(chunk);
+        boolean r = topology.chunkReady(level, chunk);
+        memo.put(chunk, r);
+        return r;
+    }
+
     /** A position-only tile. {@code tileAt} returns it for an SI node that is not an {@link IEnergyTile}. */
     private record LocatedNode(ServerLevel getWorld, BlockPos getPos) implements ILocatableTile { }
 

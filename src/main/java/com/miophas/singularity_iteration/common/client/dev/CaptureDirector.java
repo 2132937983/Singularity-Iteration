@@ -2520,6 +2520,23 @@ public final class CaptureDirector {
         shot(40, "cables/3_close_right");
         server(1, sp -> { if (superconductorAt != null) sp.teleportTo(sp.serverLevel(), superconductorAt.getX() + 0.5, -58.6, superconductorAt.getZ() - 1.6, 0, 40); });
         shot(40, "cables/5_superconducting");
+        // 0.1.11.29: casings: tin under wet foam, wet reinforced foam, set; a detector cable under wet foam and set
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            String[] ids = {"wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable",
+                "wiring/block_eu_detector_cable", "wiring/block_eu_detector_cable"};
+            boolean[][] f = {{true, false, false}, {true, true, false}, {true, false, true}, {true, false, false}, {true, false, true}};
+            for (int i = 0; i < ids.length; i++) {
+                var st = block(ids[i]).defaultBlockState();
+                var def = st.getBlock().getStateDefinition();
+                st = st.setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged"), f[i][0])
+                    .setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_reinforced"), f[i][1])
+                    .setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_hardened"), f[i][2]);
+                level.setBlock(new BlockPos(-4 + i * 2, -60, -2), st, 3);
+            }
+            sp.teleportTo(level, 0.5, -58.5, -5.5, 0, 30);
+        });
+        shot(40, "cables/6_casings");
         String[][] pages = {
             {"wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable_1", "wiring/cable/block_cable_o", "wiring/cable/block_cable",
              "wiring/cable/block_gold_cable", "wiring/cable/block_gold_cable_1", "wiring/cable/block_gold_cable_2", "wiring/cable/block_iron_cable",

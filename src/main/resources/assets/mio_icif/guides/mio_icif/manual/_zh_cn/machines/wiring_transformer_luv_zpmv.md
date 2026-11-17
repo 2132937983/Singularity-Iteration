@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "剧差压变压器"
+  title: "LuV–ZPMV 变压器"
   icon: mio_icif:wiring/transformer_luv_zpmv
   parent: power.md
   position: 35
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/transformer_luv_zpmv
 ---
 
-# 剧差压变压器
+# LuV–ZPMV 变压器
 
 <Row>
   <BlockImage id="mio_icif:wiring/transformer_luv_zpmv" scale="3" />

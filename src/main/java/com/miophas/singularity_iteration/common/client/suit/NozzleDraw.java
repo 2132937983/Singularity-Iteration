@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: Apache-2.0
+package com.miophas.singularity_iteration.common.client.suit;
+
+import com.miophas.singularity_iteration.common.client.render.ConstructFx;
+import com.miophas.singularity_iteration.common.suit.QuantumNozzles;
+import com.miophas.singularity_iteration.common.suit.core.FrameCores;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+/**
+ * 0.1.11.66 (quantum flight phase R0): puts a draw at a nozzle of {@link QuantumNozzles}: the part of the posed model, the
+ * port on it and the exhaust direction turned onto +y, so a flame drawn along +y leaves the real port the real way.
+ */
+public final class NozzleDraw {
+    private NozzleDraw() {}
+
+    private static final ResourceLocation BOOTS = ResourceLocation.fromNamespaceAndPath(
+        com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_boots");
+
+    /** The nozzle set of the chestplate an entity wears. */
+    public static QuantumNozzles.Variant variant(LivingEntity e) {
+        return QuantumNozzles.Variant.of(FrameCores.core(e.getItemBySlot(EquipmentSlot.CHEST)));
+    }
+
+    /** True when the entity wears the quantum boots. */
+    public static boolean boots(LivingEntity e) {
+        var s = e.getItemBySlot(EquipmentSlot.FEET);
+        return !s.isEmpty() && BOOTS.equals(BuiltInRegistries.ITEM.getKey(s.getItem()));
+    }
+
+    /** The nozzles of what an entity wears: the chestplate set and, with the quantum boots, the boot set. */
+    public static List<QuantumNozzles.Nozzle> worn(LivingEntity e) {
+        QuantumNozzles.Variant v = variant(e);
+        List<QuantumNozzles.Nozzle> out = new ArrayList<>(QuantumNozzles.chest(v));
+        if (boots(e)) out.addAll(QuantumNozzles.boots(v));
+        return out;
+    }
+
+    public static ModelPart part(HumanoidModel<?> model, QuantumNozzles.Part p) {
+        return switch (p) {
+            case BODY -> model.body;
+            case RIGHT_ARM -> model.rightArm;
+            case LEFT_ARM -> model.leftArm;
+            case RIGHT_LEG -> model.rightLeg;
+            case LEFT_LEG -> model.leftLeg;
+        };
+    }
+
+    /**
+     * Pushes the pose to nozzle {@code n} of the posed model, +y along its exhaust. False (and nothing pushed) when the part
+     * is hidden.
+     */
+    public static boolean push(PoseStack pose, HumanoidModel<?> model, QuantumNozzles.Nozzle n) {
+        ModelPart part = part(model, n.part());
+        if (!part.visible) return false;
+        pose.pushPose();
+        part.translateAndRotate(pose);
+        pose.translate(n.x() / 16F, n.y() / 16F, n.z() / 16F);
+        pose.mulPose(new Quaternionf().rotationTo(new Vector3f(0, 1, 0), new Vector3f(n.dx(), n.dy(), n.dz())));
+        return true;
+    }
+
+    /**
+     * A graviton field at the pose origin around +y: a red ring and a white ring that grows out of it and fades, on a
+     * one-second beat (constructivist), or two violet rings (classic).
+     */
+    public static void field(VertexConsumer vc, PoseStack pose, float size, float power, float seconds, boolean classic) {
+        if (power <= 0.02F) return;
+        float r = 0.16F * size * (0.7F + 0.3F * power), phase = (seconds + size) % 1F;
+        float[] inner = classic ? new float[]{0.72F, 0.55F, 1F} : ConstructFx.RED;
+        float[] outer = classic ? new float[]{0.85F, 0.75F, 1F} : ConstructFx.WHITE;
+        ConstructFx.ring(vc, pose.last().pose(), Vec3.ZERO, new Vec3(0, 1, 0), r, 0.035F * size, inner, 0.9F * Math.min(1, power + 0.3F), 20);
+        ConstructFx.ring(vc, pose.last().pose(), new Vec3(0, 0.02, 0), new Vec3(0, 1, 0), r * (1.2F + 1.3F * phase), 0.02F * size,
+            outer, 0.85F * power * (1 - phase), 24);
+    }
+}

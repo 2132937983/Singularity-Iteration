@@ -3427,6 +3427,86 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "nozzles" (-Dsi.capture.scene=nozzles), 0.1.11.66 (quantum flight phase R0): the full quantum suit in maneuver
+     * flight with each frame core (none, propulsion, graviton): hover from the back and the front, then the cruise from the
+     * back; the base suit once more in the classic style.
+     */
+    private static void sceneNozzles() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+        });
+        String[] cores = {null, "PROPULSION", "GRAVITON", null};
+        String[] names = {"base", "propulsion", "graviton", "base_classic"};
+        for (int i = 0; i < cores.length; i++) {
+            final String core = cores[i], name = names[i];
+            final boolean classic = name.endsWith("classic");
+            client(1, () -> {
+                Minecraft mc = Minecraft.getInstance();
+                mc.setScreen(null);   // another scene's timer opened the management screen here
+                mc.options.keyUp.setDown(false);
+                mc.options.keySprint.setDown(false);
+                if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+                    com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.CLASSIC_FLIGHT_FX.set(classic);
+            });
+            server(5, sp -> {
+                sp.getAbilities().flying = false;
+                sp.onUpdateAbilities();
+                String[][] suit = {{"HEAD", "armor/item_armor_quantum_helmet"}, {"CHEST", "armor/item_armor_quantum_chestplate"},
+                    {"LEGS", "armor/item_armor_quantum_leggings"}, {"FEET", "armor/item_armor_quantum_boots"}};
+                for (String[] p : suit) {
+                    ItemStack st = item(p[1]);
+                    if (st.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(st, b.getMaxEnergy(st));
+                    if (p[0].equals("CHEST")) {
+                        com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.setEnabled(st, "special_maneuver", true);
+                        if (core != null) com.miophas.singularity_iteration.common.suit.core.FrameCores.install(st,
+                            com.miophas.singularity_iteration.common.suit.core.FrameCore.valueOf(core));
+                    }
+                    sp.setItemSlot(EquipmentSlot.valueOf(p[0]), st);
+                }
+                sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                sp.teleportTo(sp.serverLevel(), 0.5, -50, -20.5, 0, 8);
+                sp.getAbilities().mayfly = true;
+                sp.getAbilities().flying = true;
+                sp.onUpdateAbilities();
+            });
+            client(3, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+            client(29, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_1_hover_back");
+            client(1, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+            client(7, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_2_hover_front");
+            client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+            server(2, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -40, -60.5, 0, -4));
+            client(3, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+            client(19, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_3_cruise");
+            client(1, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+            client(3, () -> Minecraft.getInstance().setScreen(null));
+            shot(1, "nozzles/" + name + "_4_cruise_front");
+        }
+        client(1, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.keyUp.setDown(false);
+            mc.options.keySprint.setDown(false);
+            if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.CLASSIC_FLIGHT_FX.set(false);
+        });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "nozzles".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneNozzles();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

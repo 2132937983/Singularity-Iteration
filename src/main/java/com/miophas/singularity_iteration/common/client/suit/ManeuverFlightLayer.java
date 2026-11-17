@@ -3,10 +3,10 @@ package com.miophas.singularity_iteration.common.client.suit;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.suit.QuantumNozzles;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.PlayerModel;
-import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -27,6 +27,9 @@ import org.joml.Matrix4f;
  *       posed limbs of the player model, so each flame points along its limb, as the thrust vector
  *       of {@link ManeuverModeClient#applyLimbPose}. The output of each limb comes from
  *       {@link ManeuverModeClient#thrusterOutput}.</li>
+ *   <li><b>Nozzles</b> (0.1.11.66, quantum flight phase R0): the flames leave the ports of the worn suit, from
+ *       {@link QuantumNozzles} (back pods or propulsion boosters, crown and tail ports, forearm fins, palms, soles and heels),
+ *       each along its own exhaust; a graviton core shows field rings instead of flames.</li>
  *   <li><b>Shock diamonds</b> (0.1.10.2): at full burn the plume grows longer and four bright Mach
  *       nodes (double cones) stand in it, flickering. Each flame is also recorded in world space
  *       for the heat haze of {@code ThrusterFx}.</li>
@@ -82,11 +85,14 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float burn = net.minecraft.util.Mth.clamp((thr - 0.72F) / 0.2F, 0, 1);
         int id = player.getId();
         strips.clear();
-        // limb tip in the limb frame (pixels): arms 10 px below the shoulder pivot, legs 12 px below the hip
-        thruster(pose, vc, model.rightArm, -1F / 16F, 10.5F / 16F, output[0], time, 0, burn, id, thr, strips);
-        thruster(pose, vc, model.leftArm, 1F / 16F, 10.5F / 16F, output[1], time, 1, burn, id, thr, strips);
-        thruster(pose, vc, model.rightLeg, 0, 12.2F / 16F, output[2], time, 2, burn, id, thr, strips);
-        thruster(pose, vc, model.leftLeg, 0, 12.2F / 16F, output[3], time, 3, burn, id, thr, strips);
+        // 0.1.11.66 (R0): every flame leaves a port of the worn suit (QuantumNozzles), the way the port looks
+        for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
+            float p = QuantumNozzles.output(n, output, thr);
+            if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
+            if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, time, true);
+            else thruster(pose, vc, p, n.size(), time, n.name().hashCode() & 7, burn, id, thr, strips);
+            pose.popPose();
+        }
         float field = ManeuverModeClient.deflectionField(player, partial);
         if (field > 0.02F) {
             pose.pushPose();
@@ -110,16 +116,17 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float thr = ManeuverModeClient.throttleOf(player, partial);
         float burn = net.minecraft.util.Mth.clamp((thr - 0.72F) / 0.2F, 0, 1);
         float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
-        ModelPart[] limbs = {model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
-        float[][] tips = {{-1F / 16F, 10.5F / 16F}, {1F / 16F, 10.5F / 16F}, {0, 12.2F / 16F}, {0, 12.2F / 16F}};
-        for (int i = 0; i < 4; i++) {
-            float p = output[i];
-            if (p <= 0.02F || !limbs[i].visible) continue;
-            pose.pushPose();
-            limbs[i].translateAndRotate(pose);
-            pose.translate(tips[i][0], tips[i][1], 0);
-            float length = (0.2F + 0.55F * p + 0.7F * burn * p) * beat;
-            com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(), length, 0.14F + 0.08F * p, 0.95F);
+        float seconds = (player.tickCount + partial) / 20F;
+        // 0.1.11.66 (R0, decision one A): one wedge out of every lit port of the worn suit, along its exhaust; graviton rings
+        for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
+            float p = QuantumNozzles.output(n, output, thr);
+            if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
+            if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, seconds, false);
+            else {
+                float length = (0.2F + 0.55F * p + 0.7F * burn * p) * beat * (0.6F + 0.4F * n.size());
+                com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(), length,
+                    (0.14F + 0.08F * p) * n.size(), 0.95F);
+            }
             pose.popPose();
         }
         // the speed bars, in camera-relative world space (the layer pose ends there; the camera rotation is not in it)
@@ -145,17 +152,13 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         }
     }
 
-    /** Glow disc at the tip of one limb and a flame along the limb axis (+y of the limb). */
-    private static void thruster(PoseStack pose, VertexConsumer vc, ModelPart part, float tipX, float tipY,
-                                 float power, float time, int seed, float burn, int owner, float throttle, ThrusterFlame.Strips strips) {
-        if (power <= 0.02F || !part.visible) return;
-        pose.pushPose();
-        part.translateAndRotate(pose);
-        pose.translate(tipX, tipY, 0);
+    /** Glow disc and a flame along +y of the posed nozzle (0.1.11.66: at a port of {@link QuantumNozzles}, scaled by its size). */
+    private static void thruster(PoseStack pose, VertexConsumer vc, float power, float size, float time, int seed, float burn, int owner,
+                                 float throttle, ThrusterFlame.Strips strips) {
         Matrix4f m = pose.last().pose();
         float flicker = 0.85F + 0.15F * (float) Math.sin(time * 37 + seed * 1.7) * (float) Math.sin(time * 23 + seed);
         float p = power * flicker;
-        float radius = 0.06F + 0.05F * p, length = 0.12F + 0.42F * p + 0.5F * burn * power;
+        float radius = (0.06F + 0.05F * p) * size, length = (0.12F + 0.42F * p + 0.5F * burn * power) * (0.6F + 0.4F * size);
         // 0.1.10.31 (S-5): disc and cone in the colour of the thrust, and the animated flame strip
         float colour = Math.max(throttle, 0.5F * power);
         ThrusterFlame.glow(vc, m, radius, length, power, colour, flicker, time, owner * 4 + seed,
@@ -177,7 +180,6 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
                 new net.minecraft.world.phys.Vec3(a.x + cam.x, a.y + cam.y, a.z + cam.z), new net.minecraft.world.phys.Vec3(b.x + cam.x, b.y + cam.y, b.z + cam.z),
                 p * (0.7F + 0.5F * burn), Math.max(throttle, 0.5F * power));
         }
-        pose.popPose();
     }
 
     /** One Mach node: two cones base to base around {@code y} on the limb axis, a white-violet core. */

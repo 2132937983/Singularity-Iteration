@@ -7,7 +7,6 @@ import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
 import com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -33,8 +32,9 @@ import org.joml.Vector3f;
 /**
  * 0.1.10.31 (S-4): thrusters of the quantum suit in normal mode, drawn on the worn model (third person, other players).
  * <ul>
- *   <li><b>Jetpack flight</b> of the quantum chestplate: two jets from the thruster pods under the back unit (body pixels
- *       x = +-2.9, y = 12, z = 5.4, tilted 12 degrees back) and, with the quantum boots, from the soles. The thrust comes
+ *   <li><b>Jetpack flight</b> of the quantum chestplate: jets from the back ports of {@link com.miophas.singularity_iteration.common.suit.QuantumNozzles}
+ *       (0.1.11.66: the four pods, or the two propulsion boosters, and the tail port; graviton rings) and, with the quantum
+ *       boots, from the soles. The thrust comes
  *       from {@link JetpackSoundClient#throttle} (the own player continuous, other players the relayed three levels).</li>
  *   <li><b>Boost jump</b> of the quantum boots: the soles burn for a moment ({@link SuitMotionFx#soleBurst}).</li>
  * </ul>
@@ -46,8 +46,6 @@ import org.joml.Vector3f;
 public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     private static final ResourceLocation CHEST = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_chestplate");
     private static final ResourceLocation BOOTS = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_boots");
-    /** Back thruster pods of the quantum chestplate (body space, pixels). */
-    static final float POD_X = 2.92F, POD_Y = 12.0F, POD_Z = 5.4F, POD_TILT = 12F;
     private final ThrusterFlame.Strips strips = new ThrusterFlame.Strips();
     /** 0.1.10.32 (P-3): detail tier of the player being drawn. */
     private int lodTier;
@@ -85,35 +83,27 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         flat = !FcsClientConfig.classicFlightFx();   // 0.1.11.63 (Q2): constructivist wedges instead of the glowing flames
         beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
         VertexConsumer vc = buffers.getBuffer(flat ? SiRenderTypes.FLAT : SiRenderTypes.FIELD_GLOW);
-        if (jet > 0.02F) {
-            for (int side = -1; side <= 1; side += 2) {
-                pose.pushPose();
-                model.body.translateAndRotate(pose);
-                pose.translate(side * POD_X / 16F, POD_Y / 16F, POD_Z / 16F);
-                pose.mulPose(Axis.XP.rotationDegrees(POD_TILT));
-                nozzle(pose, vc, 0.085F, 0.18F + 0.5F * jet, jet, jet, seconds, id, 4 + (side + 1) / 2);
-                pose.popPose();
-            }
-        }
+        // 0.1.11.66 (R0): the jets leave the back ports of the worn chestplate (pods, boosters; a graviton core shows rings)
+        // and the soles of the boots (QuantumNozzles)
         float sole = Math.max(boots ? jet * 0.75F : 0F, burst);
-        if (sole > 0.02F) {
-            sole(pose, vc, model.rightLeg, sole, Math.max(jet, burst), seconds, id, 6);
-            sole(pose, vc, model.leftLeg, sole, Math.max(jet, burst), seconds, id, 7);
+        for (com.miophas.singularity_iteration.common.suit.QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
+            boolean back = n.part() == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Part.BODY;
+            boolean foot = n.name().startsWith("sole");
+            var kind = n.kind();
+            float p = back ? (kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.MAIN ? jet
+                : kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.LIFT ? jet * 0.6F
+                : kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD ? jet : 0F) : foot ? sole : 0F;
+            if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
+            if (kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, seconds, !flat);
+            else if (foot) nozzle(pose, vc, 0.07F * n.size(), 0.14F + 0.4F * p, p, Math.max(jet, burst), seconds, id, n.part().ordinal());
+            else nozzle(pose, vc, 0.085F * n.size(), (0.18F + 0.5F * p) * (0.6F + 0.4F * n.size()), p, jet, seconds, id, 4 + (n.name().hashCode() & 3));
+            pose.popPose();
         }
         if (!flat) strips.draw(buffers);
     }
 
     private boolean flat;
     private float beat = 1F;
-
-    private void sole(PoseStack pose, VertexConsumer vc, ModelPart leg, float power, float throttle, float seconds, int id, int seed) {
-        if (!leg.visible) return;
-        pose.pushPose();
-        leg.translateAndRotate(pose);
-        pose.translate(0, 12.2F / 16F, 0);
-        nozzle(pose, vc, 0.07F, 0.14F + 0.4F * power, power, throttle, seconds, id, seed);
-        pose.popPose();
-    }
 
     private void nozzle(PoseStack pose, VertexConsumer vc, float radius, float length, float power, float throttle, float seconds, int id, int seed) {
         Matrix4f m = pose.last().pose();
@@ -147,7 +137,7 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         float seconds = (player.tickCount + partial) / 20F;
         pose.pushPose();
         arm.translateAndRotate(pose);
-        pose.translate((right ? -1F : 1F) / 16F, 10.5F / 16F, 0);
+        pose.translate((right ? -1.2F : 1.2F) / 16F, 10.4F / 16F, 0);   // 0.1.11.66: the palm port of QuantumNozzles
         PALM.clear();
         if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): the constructivist palm wedge
             float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_armory"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.armory.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.armory.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "armory": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_armory"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:armory",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_armory_remote"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.armory_remote.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.armory_remote.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "remote": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:normal/item_armory_remote"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

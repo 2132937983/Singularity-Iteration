@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:nano_set",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_nano_bow"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.nano_bow.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.nano_bow.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "bow": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_nano_bow"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

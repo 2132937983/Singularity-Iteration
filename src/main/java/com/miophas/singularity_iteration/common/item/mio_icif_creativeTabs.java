@@ -909,6 +909,7 @@ public class mio_icif_creativeTabs {
 
                 // Accident audit (0.1.10.12)
                 output.accept(mio_icif_reactors.REACTOR_BLACKBOX.get());
+                output.accept(mio_icif_reactors.REACTOR_CONFIG_CARD.get());   // 0.1.11.76
 
                 // ============================================================
                 //  10. FLUID BUCKETS

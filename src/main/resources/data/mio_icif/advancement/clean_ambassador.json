@@ -1,0 +1,26 @@
+{
+  "parent": "mio_icif:solar",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_wind_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.clean_ambassador.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.clean_ambassador.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "total": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 500
+  }
+}

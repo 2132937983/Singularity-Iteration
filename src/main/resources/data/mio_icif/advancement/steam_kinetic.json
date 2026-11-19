@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:kinetic_generator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_steam_kinetic_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.steam_kinetic.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.steam_kinetic.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "steam": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_steam_kinetic_generator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

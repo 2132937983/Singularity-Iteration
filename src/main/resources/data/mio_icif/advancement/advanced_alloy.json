@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:hammer_time",
+  "display": {
+    "icon": {
+      "id": "mio_icif:resource/item_alloy_ingot"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.advanced_alloy.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.advanced_alloy.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "alloy": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:resource/item_alloy_ingot"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

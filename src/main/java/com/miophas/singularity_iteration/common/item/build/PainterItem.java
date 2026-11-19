@@ -100,6 +100,7 @@ public enum PainterColor {
                         Component.translatable("item.mio_icif.build.item_painter_" + color.name))
                         .withStyle(ChatFormatting.GREEN), true);
             }
+            com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "painter", "painted");   // 0.1.11.79
             return InteractionResult.sidedSuccess(false);
         } else if (targetBlock == clickedBlock) {
             if (player != null) {
@@ -113,6 +114,7 @@ public enum PainterColor {
         // Construction foam becomes concrete of the painter color.
         if (clickedBlock == mio_icif_blocks.CONSTRUCTION_FOAM.get()) {
             level.setBlockAndUpdate(pos, getConcreteForColor(color).defaultBlockState());
+            com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "painter", "painted");   // 0.1.11.79
             level.playSound(null, pos, SoundEvents.DYE_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
             if (player != null) {
                 player.displayClientMessage(

@@ -1,0 +1,30 @@
+{
+  "parent": "mio_icif:modification_station",
+  "display": {
+    "icon": {
+      "id": "mio_icif:module/item_module_phase_jump_drive"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.suit_module.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.suit_module.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "module": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#mio_icif:suit_modules"
+          }
+        ]
+      }
+    }
+  }
+}

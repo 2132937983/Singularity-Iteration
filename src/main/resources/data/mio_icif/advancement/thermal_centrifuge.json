@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:ore_washer",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_centrifuge_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.thermal_centrifuge.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.thermal_centrifuge.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "centrifuge": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_centrifuge_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

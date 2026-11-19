@@ -1,0 +1,34 @@
+{
+  "parent": "mio_icif:singularity_ore",
+  "display": {
+    "icon": {
+      "id": "mio_icif:block_ore_iridium_in_deep"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.iridium_ore.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.iridium_ore.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "iridium": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:block_ore_iridium_in_deep",
+              "mio_icif:resource/item_iridium_dust_small",
+              "mio_icif:resource/item_shard_iridium"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

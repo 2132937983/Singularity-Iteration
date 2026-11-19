@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:circuit",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_lathe"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.lathe.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.lathe.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "lathe": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_lathe"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

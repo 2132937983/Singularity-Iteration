@@ -194,6 +194,9 @@ public final class QuantumActions {
             };
         }
         if (!fired) return;
+        // 0.1.11.79: "Kamui!" and "Domain Expansion!" (the jump with a decoy is granted where the decoy is placed)
+        if (kind == Kind.PHASE) com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "phase_shift", "phase");
+        else if (kind == Kind.DILATION) com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "time_warp", "warp");
         if (tunnel) {
             QuantumSynergies.combo(player, QuantumSynergies.COMBO_TUNNEL);
             s.lastBlink = -1000;                                  // one discount per blink

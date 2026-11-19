@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/reactor/item_reactor_config_card"
+  },
+  "overrides": [
+    { "predicate": { "mio_icif:written": 1 }, "model": "mio_icif:item/reactor/item_reactor_config_card_written" }
+  ]
+}

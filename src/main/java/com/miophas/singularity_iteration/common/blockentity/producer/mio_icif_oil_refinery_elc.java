@@ -130,10 +130,10 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
             DEFAULT_ENERGY_PER_TICK,
             getOrCreateTier());
         ISlotLayout layout = getOrCreateLayout();
-        this.inputSlot = layout.getInputSlots()[0];
-        this.inputEmptySlot = layout.getInputSlots()[1];
-        this.outputEmptySlot = layout.getOutputSlots()[0];
-        this.outputSlot = layout.getOutputSlots()[1];
+        this.inputSlot = layout.getInputSlots()[0];          // 0
+        this.inputEmptySlot = layout.getOutputSlots()[0];    // 1 (0.1.11.77: an output slot)
+        this.outputEmptySlot = layout.getInputSlots()[1];    // 2 (0.1.11.77: an input slot)
+        this.outputSlot = layout.getOutputSlots()[1];        // 3
         this.batterySlot = layout.getBatterySlots()[0];
         setConfiguration(getOrCreateConfiguration());
         this.inputTank = new FluidTank(INPUT_TANK_CAPACITY) {
@@ -146,10 +146,21 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
             .inputOutput(inputTank, outputTank);
     }
 
+    /**
+     * 0.1.11.77: the slot types follow what each slot does; the indices are unchanged (saves and the screen).
+     * <ul>
+     *   <li>0 input: a cell or bucket of a refinable fluid, drained into the input tank;</li>
+     *   <li>1 output: the container it leaves (was an input slot: Shift-click sent empty cells there, hoppers filled it
+     *       and automation could not take the emptied cells out);</li>
+     *   <li>2 input: empty cells to fill from the output tank (was an output slot: automation could not put cells in,
+     *       and an ejector upgrade pushed the waiting empty cells out);</li>
+     *   <li>3 output: the filled cells; 4 battery; 5..8 upgrades.</li>
+     * </ul>
+     */
     public static ISlotLayout getOrCreateLayout() {
         if (CACHED_LAYOUT == null) {
-            CACHED_LAYOUT = MioIcifAPI.instance().getMachineBuilderAPI()
-                .createStandardLayout(2, 2, true, 4);
+            CACHED_LAYOUT = com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout.builder()
+                .input(1).output(1).input(1).output(1).battery().upgrade(4).build();
         }
         return CACHED_LAYOUT;
     }
@@ -265,19 +276,11 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == inputSlot) return isValidInputCell(stack);
-        if (slot == inputEmptySlot) return isEmptyContainer(stack);
+        if (slot == inputEmptySlot) return false;   // 0.1.11.77: only the machine puts the emptied container here
         if (slot == outputEmptySlot) return mio_icif_cells.isEmptyCell(stack);
         if (slot == outputSlot) return false;
         if (slot == batterySlot) return isBattery(stack);
         if (isUpgradeSlot(slot)) return getItemAPI().isUpgrade(stack);
-        return false;
-    }
-
-    private boolean isEmptyContainer(ItemStack stack) {
-        if (mio_icif_cells.isEmptyCell(stack)) return true;
-        if (stack.getItem() == net.minecraft.world.item.Items.BUCKET) return true;
-        var containedOpt = FluidUtil.getFluidContained(stack);
-        if (containedOpt.isPresent() && containedOpt.get().isEmpty()) return true;
         return false;
     }
 

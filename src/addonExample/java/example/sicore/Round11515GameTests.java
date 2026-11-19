@@ -28,6 +28,13 @@ public final class Round11515GameTests {
 
     private static double d(Object o) { return ((Number) o).doubleValue(); }
 
+    /** The diesel generator's EU per mB at full load (0.1.11.77: read from the code, it changed from 160 to 240). */
+    private static double dieselFuelValue() {
+        try {
+            return d(common("blockentity.generator.mio_icif_diesel_generator").getField("EU_PER_MB").get(null));
+        } catch (ReflectiveOperationException e) { throw new AssertionError("EU_PER_MB", e); }
+    }
+
     private static Object governor(int cylinders) {
         try {
             return common(GOV).getConstructor(int.class).newInstance(cylinders);
@@ -76,7 +83,7 @@ public final class Round11515GameTests {
         h.succeed();
     }
 
-    /** A diesel generator with diesel and an empty storage runs, warms up and gets at most 105 % of 160 EU/mB. */
+    /** A diesel generator with diesel and an empty storage runs, warms up and gets at most 105 % of its fuel value (EU_PER_MB). */
     @GameTest(template = "empty", timeoutTicks = 260)
     public static void dieselGeneratorRunsAsAnEngine(GameTestHelper h) {
         BlockPos at = new BlockPos(1, 2, 1);
@@ -89,7 +96,7 @@ public final class Round11515GameTests {
             int used = 1000 - tank.getFluidInTank(0).getAmount();
             Object gov = call(be, "getEngine");
             h.assertTrue(stored > 0 && used > 0, "made " + stored + " EU from " + used + " mB");
-            h.assertTrue(stored <= used * 160 * 1.05 + 1, stored + " EU from " + used + " mB is above the fuel value");
+            h.assertTrue(stored <= used * dieselFuelValue() * 1.05 + 1, stored + " EU from " + used + " mB is above the fuel value");
             h.assertTrue(d(call(gov, "coolant")) > 20.5, "the coolant warmed up: " + call(gov, "coolant"));
             h.succeed();
         });

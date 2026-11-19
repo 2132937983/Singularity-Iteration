@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:root",
+  "parent": "mio_icif:hammer_time",
   "display": {
     "icon": {
       "id": "mio_icif:item_tool_cutter"

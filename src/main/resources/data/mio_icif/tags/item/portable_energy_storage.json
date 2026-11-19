@@ -1,0 +1,16 @@
+{
+  "values": [
+    "mio_icif:armor/item_armor_batpack",
+    "mio_icif:armor/item_armor_advbatpack",
+    "mio_icif:armor/item_armor_energypack",
+    "mio_icif:armor/item_armor_lappack",
+    {
+      "id": "mio_icif:item_trinket_energy_crystal_belt",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_trinket_lapotron_crystal_belt",
+      "required": false
+    }
+  ]
+}

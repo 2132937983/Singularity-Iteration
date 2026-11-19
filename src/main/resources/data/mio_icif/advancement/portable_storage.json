@@ -1,0 +1,30 @@
+{
+  "parent": "mio_icif:batbox",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_batpack"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.portable_storage.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.portable_storage.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "pack": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#mio_icif:portable_energy_storage"
+          }
+        ]
+      }
+    }
+  }
+}

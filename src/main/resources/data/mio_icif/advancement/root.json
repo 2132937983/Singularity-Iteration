@@ -3,13 +3,13 @@
     "icon": {
       "id": "mio_icif:armor/item_armor_quantum_helmet"
     },
-    "background": "mio_icif:textures/achievements/background.png",
     "title": {
       "translate": "advancements.mio_icif.root.title"
     },
     "description": {
       "translate": "advancements.mio_icif.root.description"
     },
+    "background": "mio_icif:textures/achievements/background.png",
     "frame": "task",
     "show_toast": false,
     "announce_to_chat": false,

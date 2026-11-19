@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:batbox",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_meter"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.eu_meter.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.eu_meter.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "meter": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_meter"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

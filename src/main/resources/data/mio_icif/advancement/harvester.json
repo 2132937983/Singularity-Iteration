@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:ejector",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_harvest_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.harvester.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.harvester.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "harvester": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_harvest_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

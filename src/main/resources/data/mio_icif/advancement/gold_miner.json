@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:industrial_age",
+  "parent": "mio_icif:wrench",
   "display": {
     "icon": {
       "id": "mio_icif:item_tool_iron_driller"
@@ -22,9 +22,7 @@
         "items": [
           {
             "items": [
-              "mio_icif:item_tool_iron_driller",
-              "mio_icif:item_tool_diamond_driller",
-              "mio_icif:item_tool_iridium_driller"
+              "mio_icif:item_tool_iron_driller"
             ]
           }
         ]

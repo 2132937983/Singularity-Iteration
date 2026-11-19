@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:eu_meter",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_energy_terminal"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.energy_terminal.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.energy_terminal.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "terminal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:wiring/block_energy_terminal"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

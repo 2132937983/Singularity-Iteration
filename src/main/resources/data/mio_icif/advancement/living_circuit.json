@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:nano_metal",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_living_circuit"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.living_circuit.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.living_circuit.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "circuit": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:normal/item_living_circuit"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

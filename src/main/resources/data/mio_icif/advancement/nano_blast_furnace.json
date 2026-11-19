@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:blast_furnace",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_blast_furnace_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.nano_blast_furnace.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.nano_blast_furnace.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "furnace": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_blast_furnace_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -96,6 +96,7 @@ public class mio_icif_thorium_scrapbox extends Item {
             }
 
             stack.shrink(1);
+            com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "scrap_box", "opened");   // 0.1.11.79
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

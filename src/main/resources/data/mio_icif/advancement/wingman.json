@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:armory_remote",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_armory_remote"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.wingman.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.wingman.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "summoned": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

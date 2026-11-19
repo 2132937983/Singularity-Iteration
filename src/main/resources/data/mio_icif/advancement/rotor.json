@@ -1,0 +1,38 @@
+{
+  "parent": "mio_icif:wind_kinetic",
+  "display": {
+    "icon": {
+      "id": "mio_icif:rotors/item_iron_rotor"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.rotor.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.rotor.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "rotor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:rotors/item_wood_rotor",
+              "mio_icif:rotors/item_bronze_rotor",
+              "mio_icif:rotors/item_iron_rotor",
+              "mio_icif:rotors/item_carbon_rotor",
+              "mio_icif:rotors/item_adviron_rotor",
+              "mio_icif:rotors/item_titanium_iron_alloy_rotor",
+              "mio_icif:rotors/item_super_iridium_alloy_rotor"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -115,6 +115,7 @@ public class mio_icif_windmeter extends mio_icif_tool_elc implements IWindMeterI
     }
 
     private void reportWind(Player player, double windStrength) {
+        com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "wind_meter", "used");   // 0.1.11.79
         String formatted = String.format("%.2f", Math.max(0.0, windStrength));
         player.sendSystemMessage(
             Component.translatable("message.mio_icif.windmeter.info", formatted)

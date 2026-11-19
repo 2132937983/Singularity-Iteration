@@ -1,0 +1,50 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_nano_chestplate"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.nano_set.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.nano_set.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "set": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:armor/item_armor_nano_helmet"
+            ]
+          },
+          {
+            "items": [
+              "mio_icif:armor/item_armor_nano_chestplate"
+            ]
+          },
+          {
+            "items": [
+              "mio_icif:armor/item_armor_nano_leggings"
+            ]
+          },
+          {
+            "items": [
+              "mio_icif:armor/item_armor_nano_boots"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

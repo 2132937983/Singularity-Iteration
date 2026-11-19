@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:industrial_age",
+  "parent": "mio_icif:any_cable",
   "display": {
     "icon": {
       "id": "mio_icif:wiring/cable/block_tin_cable_1"
@@ -22,7 +22,13 @@
         "items": [
           {
             "items": [
-              "mio_icif:wiring/cable/block_tin_cable_1"
+              "mio_icif:wiring/cable/block_tin_cable_1",
+              "mio_icif:wiring/cable/block_cable",
+              "mio_icif:wiring/cable/block_gold_cable_1",
+              "mio_icif:wiring/cable/block_gold_cable_2",
+              "mio_icif:wiring/cable/block_iron_cable_1",
+              "mio_icif:wiring/cable/block_iron_cable_2",
+              "mio_icif:wiring/cable/block_iron_cable_3"
             ]
           }
         ]

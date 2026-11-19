@@ -1,0 +1,33 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_wrench"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.wrench.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.wrench.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "wrench": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_wrench",
+              "mio_icif:item_tool_wrench_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

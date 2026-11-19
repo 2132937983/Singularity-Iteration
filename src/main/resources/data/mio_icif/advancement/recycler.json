@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:compressor",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_recycler_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.recycler.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.recycler.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "recycler": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_recycler_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

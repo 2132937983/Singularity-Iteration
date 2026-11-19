@@ -1,0 +1,47 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:resource/item_raw_tin_ore"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.singularity_ore.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.singularity_ore.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "ore": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:block_ore_tin",
+              "mio_icif:block_ore_tin_in_deep",
+              "mio_icif:block_ore_lead",
+              "mio_icif:block_ore_lead_in_deep",
+              "mio_icif:block_ore_uran",
+              "mio_icif:block_ore_uran_in_deep",
+              "mio_icif:block_ore_niobium",
+              "mio_icif:block_ore_niobium_in_deep",
+              "mio_icif:block_ore_titanium",
+              "mio_icif:block_ore_titanium_in_deep",
+              "mio_icif:resource/item_raw_tin_ore",
+              "mio_icif:resource/item_raw_lead_ore",
+              "mio_icif:resource/item_raw_uran_ore",
+              "mio_icif:resource/item_raw_silver_ore",
+              "mio_icif:resource/item_raw_niobium_ore",
+              "mio_icif:resource/item_raw_titanium_ore"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

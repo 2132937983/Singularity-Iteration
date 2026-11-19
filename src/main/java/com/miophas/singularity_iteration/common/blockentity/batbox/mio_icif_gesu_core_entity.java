@@ -146,7 +146,10 @@ public class mio_icif_gesu_core_entity extends MultiblockEnergyCore implements n
     @Override
     public void onMultiblockFormed(IMultiblockStructure structure) {
         this.multiblockStructure = structure;
+        // 0.1.11.79: a newly built GESU (not one re-validated after a chunk load) grants "Mad Energy Hoarder" nearby
+        boolean fresh = !isStructureComplete();
         this.setStructureComplete(true);
+        if (fresh && level != null && !level.isClientSide()) com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(level, worldPosition, "gesu", "formed");
 
         java.util.Map<String, Object> data = structure.getStructureData();
 

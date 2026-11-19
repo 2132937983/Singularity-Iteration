@@ -60,10 +60,12 @@ public class OilRefineryElcMenu extends mio_icif_machine_menu {
                 return itemHandler.isItemValid(INPUT_CELL_SLOT, stack);
             }
         });
+        // 0.1.11.77: the container left by the input cell comes out here; nothing goes in (Shift-click sent empty cells
+        // here, not to the top-right slot that fills them)
         this.addSlot(new SlotItemHandler(itemHandler, INPUT_EMPTY_CELL_SLOT, 25, 48) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return itemHandler.isItemValid(INPUT_EMPTY_CELL_SLOT, stack);
+                return false;
             }
         });
         this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_EMPTY_CELL_SLOT, 127, 17) {

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:kinetic_generator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_geomagnetic_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.geomagnetic.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.geomagnetic.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "geo": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:generator/block_geomagnetic_generator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

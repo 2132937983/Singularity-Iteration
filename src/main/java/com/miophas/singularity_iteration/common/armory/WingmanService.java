@@ -227,6 +227,7 @@ public final class WingmanService {
             if (payment.isPending()) payment.commit();   // settled on every path (a throw keeps the old behaviour: spent)
         }
         armory.markDeployed(set, w.sortie());   // 0.1.11.39 (G-1): the suit keeps its positions while it flies
+        com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "wingman", "summoned");   // 0.1.11.79
         // 0.1.11.41 (decision 1 C): the upkeep reserve, as much of it as the Armory has after the deployment
         long reserve = armory.getEnergyStorageInternal().consumeEnergyInternal(WingmanConfig.reserveEu(), false);
         w.setReserve(reserve);
@@ -296,6 +297,7 @@ public final class WingmanService {
         player.inventoryMenu.broadcastChanges();
         w.receiveSuit(player, items);
         armory.markDeployed(set, w.sortie());
+        com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "wingman", "summoned");   // 0.1.11.79
         long reserve = armory.getEnergyStorageInternal().consumeEnergyInternal(WingmanConfig.reserveEu(), false);
         w.setReserve(reserve);
         armory.markStorageChanged();

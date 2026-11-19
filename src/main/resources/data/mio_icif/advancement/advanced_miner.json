@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:miner",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_advanced_miner_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.advanced_miner.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.advanced_miner.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "miner": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_advanced_miner_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

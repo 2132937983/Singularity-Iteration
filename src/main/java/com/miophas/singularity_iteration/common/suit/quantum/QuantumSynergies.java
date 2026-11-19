@@ -91,6 +91,7 @@ public final class QuantumSynergies {
         releaseDecoy(player, s);
         s.decoy = at;
         s.decoyTicks = QuantumConfig.decoyTicks();
+        com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "quantum_jump", "decoy_jump");   // 0.1.11.79: a Quantum Jump that left the Afterimage Decoy
         for (Mob mob : player.serverLevel().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(DECOY_RANGE),
                 m -> m.getTarget() == player && m instanceof Enemy)) {
             mob.setTarget(null);

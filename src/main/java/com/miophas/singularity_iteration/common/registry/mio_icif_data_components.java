@@ -72,6 +72,12 @@ public class mio_icif_data_components {
             builder -> builder.persistent(com.mojang.serialization.Codec.STRING)
                 .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8));
 
+    /** 0.1.11.76: the reactor layout written on a reactor config card (absent = blank card). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.item.component.ReactorLayout>> REACTOR_LAYOUT =
+        DATA_COMPONENTS.registerComponentType("reactor_layout",
+            builder -> builder.persistent(com.miophas.singularity_iteration.common.item.component.ReactorLayout.CODEC)
+                .networkSynchronized(com.miophas.singularity_iteration.common.item.component.ReactorLayout.STREAM_CODEC));
+
     /** Colour palette of a suit piece (0.1.8.0): primary plate colour and accent light colour. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.suit.SuitPalette>> SUIT_PALETTE =
         DATA_COMPONENTS.registerComponentType("suit_palette",

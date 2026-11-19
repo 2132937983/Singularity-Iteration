@@ -17,7 +17,7 @@ item_ids:
 ## Function
 
 The machine burns diesel oil and makes EU.
-The machine accepts diesel oil buckets and diesel oil cells only.
+The machine accepts diesel oil buckets and diesel oil cells, and diesel oil from pipes or a Fluid Ejector Upgrade on any side.
 The machine is an engine that follows the grid: it makes what is taken, plus a top-up while its storage is below 90 %. It stops when the storage is full (98 %) and starts again below 60 %, so a full storage burns no fuel.
 Fuel per EU is lowest near 80 % load (5 % better than at full load) and rises at part load. A cold engine has 80 % of its efficiency until the coolant reaches about 80 °C.
 The screen is an engine room monitor: exhaust temperature per cylinder, tachometer, coolant, fuel tank and a record of the load and exhaust temperature.
@@ -29,7 +29,7 @@ The screen is an engine room monitor: exhaust temperature per cylinder, tachomet
 | Output voltage tier | EV (2,048 EU) |
 | Output | 120 EU/t |
 | Energy storage | 1,000,000 EU |
-| Fuel: Diesel Oil | 0.75 mB/t → 120 EU/t (160 EU/mB) |
+| Fuel: Diesel Oil | 0.5 mB/t → 120 EU/t (240 EU/mB) |
 
 The game measured these values from the block entity of this version.
 

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:canner",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_tin_filled_can"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.canned_food.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.canned_food.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "can": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:normal/item_tin_filled_can"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

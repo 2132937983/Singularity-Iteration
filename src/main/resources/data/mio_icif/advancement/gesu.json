@@ -1,0 +1,26 @@
+{
+  "parent": "mio_icif:storage_upgrade",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_gesu_core"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.gesu.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.gesu.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 500
+  }
+}

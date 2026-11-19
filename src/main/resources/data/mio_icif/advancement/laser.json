@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_laser_miner"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.laser.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.laser.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "laser": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_laser_miner"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -69,12 +69,14 @@ public final class QuantumField {
                 if (caught.size() < NanoPackets.Fx.MAX_POINTS) { caught.add((float) p.getX()); caught.add((float) p.getY()); caught.add((float) p.getZ()); }
                 level.sendParticles(ParticleTypes.ELECTRIC_SPARK, p.getX(), p.getY(), p.getZ(), 10, 0.15, 0.15, 0.15, 0.25);
                 p.discard();
+                com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "force_field", "stopped");   // 0.1.11.79
                 continue;
             }
             if (!s.frozen.containsKey(p.getId())) {
                 // only shots in flight: an arrow stuck in the ground or a resting projectile is left alone
                 if (p.getDeltaMovement().lengthSqr() < 0.01) continue;
                 s.frozen.put(p.getId(), p.isNoGravity());
+                com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "force_field", "stopped");   // 0.1.11.79: a shot in flight held by the field
                 s.frozenVelocity.put(p.getId(), p.getDeltaMovement());       // 0.1.10.1 Static Barrage
                 if (caught.size() < NanoPackets.Fx.MAX_POINTS) { caught.add((float) p.getX()); caught.add((float) p.getY()); caught.add((float) p.getZ()); }
             }

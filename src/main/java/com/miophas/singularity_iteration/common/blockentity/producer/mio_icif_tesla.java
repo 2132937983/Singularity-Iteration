@@ -187,6 +187,8 @@ public class mio_icif_tesla extends AbstractProcessingMachineBlockEntity impleme
         }
         blockEntity.workTimer = 0;
 
+        // 0.1.11.79: a powered coil firing: "Tesla Trooper" for players nearby
+        com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(level, pos, "tesla", "fired");
         // 执行攻击
         blockEntity.performAttack(level, pos);
     }

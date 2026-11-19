@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_steel_shield"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.shield.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.shield.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "blocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

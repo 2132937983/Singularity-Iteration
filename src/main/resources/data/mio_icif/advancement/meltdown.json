@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:trinity",
+  "parent": "mio_icif:clean_energy",
   "display": {
     "icon": {
       "id": "mio_icif:generator/block_nuclear_reactor_generator"

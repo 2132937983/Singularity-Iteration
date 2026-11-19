@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:kinetic_generator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:kugenerator/block_wind_kinetic_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.kinetic_running.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.kinetic_running.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "running": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

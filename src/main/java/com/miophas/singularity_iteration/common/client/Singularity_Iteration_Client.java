@@ -118,6 +118,11 @@ public class Singularity_Iteration_Client {
         ItemProperties.register(mio_icif_normal.ADV_LITHIUM_BATTERY.get(), energyProperty, propertyFunction);
         ItemProperties.register(mio_icif_normal.THORIUM_BATTERY.get(), energyProperty, propertyFunction);
 
+        // 0.1.11.76: a written reactor config card shows its lit layout grid
+        ItemProperties.register(com.miophas.singularity_iteration.common.item.reactor.mio_icif_reactors.REACTOR_CONFIG_CARD.get(),
+            ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "written"),
+            (stack, level, entity, seed) -> com.miophas.singularity_iteration.common.item.reactor.ReactorConfigCardItem.layout(stack) != null ? 1F : 0F);
+
         // 注册METS移植饰品模型属性
         ResourceLocation ringEnergyProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "ring_energy_value");
         if (net.neoforged.fml.ModList.get().isLoaded("curios")) {

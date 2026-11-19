@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:refined_steel",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_compressor_advanced_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.advanced_machine.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.advanced_machine.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "machine": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_powder_advanced_elc",
+              "mio_icif:producer/block_compressor_advanced_elc",
+              "mio_icif:producer/block_metal_former_advanced",
+              "mio_icif:producer/block_blast_furnace_advanced"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

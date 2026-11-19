@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:industrial_age",
+  "parent": "mio_icif:ejector",
   "display": {
     "icon": {
       "id": "mio_icif:producer/block_matter_elc"

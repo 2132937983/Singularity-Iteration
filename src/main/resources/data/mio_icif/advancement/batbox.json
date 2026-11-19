@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:industrial_age",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_bat_box"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.batbox.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.batbox.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "batbox": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:wiring/block_bat_box"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

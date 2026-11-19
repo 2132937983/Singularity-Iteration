@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:recycler",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_scrapbox"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.scrap_box.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.scrap_box.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "opened": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

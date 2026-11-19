@@ -1,0 +1,26 @@
+{
+  "parent": "mio_icif:terraformer",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_terra_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.end_paradise.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.end_paradise.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "end_terraform": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

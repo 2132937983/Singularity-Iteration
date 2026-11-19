@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:industrial_age",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_steam_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.steam_engine.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.steam_engine.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "steam": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_steam_generator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

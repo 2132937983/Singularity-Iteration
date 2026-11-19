@@ -7,6 +7,8 @@ import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_n
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_fluid_reactor_handler;
 import com.miophas.singularity_iteration.common.item.reactor.mio_icif_reactor;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
+import com.miophas.singularity_iteration.common.item.reactor.ReactorConfigCardItem;
+import com.miophas.singularity_iteration.common.reactor.ReactorLayoutGuide;
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,7 +19,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class FluidReactorMenu extends mio_icif_base_menu {
+public class FluidReactorMenu extends mio_icif_base_menu implements ReactorGuideMenu {
 
     private static final int INPUT_TANK_INPUT_SLOT_X = 8;
     private static final int INPUT_TANK_INPUT_SLOT_Y = 25;
@@ -135,6 +137,27 @@ public class FluidReactorMenu extends mio_icif_base_menu {
             };
         }
         this.addDataSlots(data);
+
+        // 0.1.11.76: the reactor config card (ReactorLayoutGuide), left of the player inventory, after all other slots
+        this.cardSlotIndex = this.slots.size();
+        this.addSlot(new ReactorLayoutGuide.CardSlot(cardSlot, CARD_SLOT_X, CARD_SLOT_Y));
+        this.guide = new ReactorLayoutGuide.Data(blockEntity);
+        this.addDataSlots(guide);
+    }
+
+    public static final int CARD_SLOT_X = 5, CARD_SLOT_Y = 164;
+    private final SimpleContainer cardSlot = new SimpleContainer(1);
+    private final int cardSlotIndex;
+    private final ReactorLayoutGuide.Data guide;
+
+    @Override public ReactorLayoutGuide.Data guideData() { return guide; }
+    @Override public int cardSlotIndex() { return cardSlotIndex; }
+
+    /** 0.1.11.76: the card goes back to the player (or drops at the player) when the screen closes. */
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (player instanceof net.minecraft.server.level.ServerPlayer) clearContainer(player, cardSlot);
     }
 
     @Override
@@ -168,6 +191,7 @@ public class FluidReactorMenu extends mio_icif_base_menu {
     @Override
     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
         if (blockEntity == null) return false;
+        if (ReactorLayoutGuide.isButton(id)) return ReactorLayoutGuide.click(id, player, blockEntity, cardSlot, guide);   // 0.1.11.76
         switch (id) {
             case 10 -> blockEntity.scram();
             case 11 -> blockEntity.resetTrip();
@@ -254,6 +278,15 @@ public class FluidReactorMenu extends mio_icif_base_menu {
         if (slot != null && slot.hasItem()) {
             ItemStack itemStack1 = slot.getItem();
             itemstack = itemStack1.copy();
+
+            // 0.1.11.76: a config card moves between the player inventory and the card slot only
+            if (index == cardSlotIndex || ReactorConfigCardItem.isCard(itemStack1)) {
+                boolean moved = index == cardSlotIndex ? this.moveItemStackTo(itemStack1, PLAYER_INVENTORY_START, cardSlotIndex, true)
+                    : this.moveItemStackTo(itemStack1, cardSlotIndex, cardSlotIndex + 1, false);
+                if (!moved) return ItemStack.EMPTY;
+                slot.setByPlayer(itemStack1.isEmpty() ? ItemStack.EMPTY : itemStack1);
+                return itemstack;
+            }
 
             if (index < FLUID_REACTOR_SLOT_COUNT) {
                 if (!this.moveItemStackTo(itemStack1, PLAYER_INVENTORY_START, this.slots.size(), true)) {

@@ -1,0 +1,37 @@
+{
+  "parent": "mio_icif:batbox",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_batbox_charger"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.charge_pad.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.charge_pad.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "pad": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:wiring/block_batbox_charger",
+              "mio_icif:wiring/block_cesu_charger",
+              "mio_icif:wiring/block_mfe_charger",
+              "mio_icif:wiring/block_mfsu_charger",
+              "mio_icif:wiring/block_lesu_charger",
+              "mio_icif:wiring/block_eesu_charger"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

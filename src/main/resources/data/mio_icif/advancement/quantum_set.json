@@ -1,0 +1,47 @@
+{
+  "parent": "mio_icif:nano_set",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_quantum_helmet"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.quantum_set.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.quantum_set.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "wearing": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "equipment": {
+                "head": {
+                  "items": "mio_icif:armor/item_armor_quantum_helmet"
+                },
+                "chest": {
+                  "items": "mio_icif:armor/item_armor_quantum_chestplate"
+                },
+                "legs": {
+                  "items": "mio_icif:armor/item_armor_quantum_leggings"
+                },
+                "feet": {
+                  "items": "mio_icif:armor/item_armor_quantum_boots"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

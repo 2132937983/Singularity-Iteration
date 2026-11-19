@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:clean_energy",
+  "display": {
+    "icon": {
+      "id": "mio_icif:reactor/block_reactor_fluid_port"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.fluid_reactor.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.fluid_reactor.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

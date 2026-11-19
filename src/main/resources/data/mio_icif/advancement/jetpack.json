@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_jetpack_electric"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.jetpack.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.jetpack.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "jetpack": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:armor/item_armor_jetpack_electric"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

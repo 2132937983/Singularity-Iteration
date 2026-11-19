@@ -1,0 +1,33 @@
+{
+  "parent": "mio_icif:hammer_time",
+  "display": {
+    "icon": {
+      "id": "mio_icif:upgrade/ejector_upgrade"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.ejector.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.ejector.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "ejector": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:upgrade/ejector_upgrade",
+              "mio_icif:upgrade/fluid_ejector_upgrade"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

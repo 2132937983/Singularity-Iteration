@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:diamond_drill",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_iridium_driller"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.iridium_drill.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.iridium_drill.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "drill": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_iridium_driller"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

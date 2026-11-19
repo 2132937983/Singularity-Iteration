@@ -1,0 +1,26 @@
+{
+  "parent": "mio_icif:teleporter",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_teleporter_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.far_teleport.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.far_teleport.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "far": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

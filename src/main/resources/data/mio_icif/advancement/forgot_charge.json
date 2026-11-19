@@ -1,0 +1,26 @@
+{
+  "parent": "mio_icif:quantum_set",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_quantum_helmet"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.forgot_charge.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.forgot_charge.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "died": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

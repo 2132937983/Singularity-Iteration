@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:suit_module",
+  "display": {
+    "icon": {
+      "id": "mio_icif:module/item_module_behavior_predictor_mk2"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.time_warp.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.time_warp.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "warp": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

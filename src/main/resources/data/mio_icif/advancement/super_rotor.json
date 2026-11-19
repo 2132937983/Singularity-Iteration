@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:rotor",
+  "display": {
+    "icon": {
+      "id": "mio_icif:rotors/item_super_iridium_alloy_rotor"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.super_rotor.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.super_rotor.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "rotor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:rotors/item_super_iridium_alloy_rotor"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 200
+  }
+}

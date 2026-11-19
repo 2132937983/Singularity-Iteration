@@ -44,10 +44,11 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
 
     public static final long ENERGY_GENERATION_RATE = (long) (FUEL_ENERGY_PER_TICK_BASE * PRODUCTION_MULTIPLIER);
     /**
-     * 0.1.11.12: 160 EU per mB of diesel (was 7.5, while the LV semifluid generator got 128 from the same diesel): the
-     * dedicated engine is the more efficient one. Fuel is drawn 3 mB (480 EU) at a time: 0.75 mB/t at 120 EU/t.
+     * 0.1.11.12: 160 EU per mB of diesel (was 7.5, while the LV semifluid generator got 128 from the same diesel).
+     * 0.1.11.77: 240 EU per mB (1.5 x): the advanced semifluid generator also gets 160 from diesel, so the dedicated engine
+     * is now the more efficient one. Fuel is drawn 3 mB (720 EU) at a time on the old grid: 0.5 mB/t at 120 EU/t.
      */
-    public static final int EU_PER_MB = 160, MB_PER_UNIT = 3;
+    public static final int EU_PER_MB = 240, MB_PER_UNIT = 3;
     public static final long ENERGY_PER_UNIT = (long) EU_PER_MB * MB_PER_UNIT;
     /** mB a tick at full output (for the manual). */
     public static final double FUEL_CONSUME_PER_TICK = (double) ENERGY_GENERATION_RATE / EU_PER_MB;
@@ -282,6 +283,14 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
     }
 
     public FluidTank getFuelTank() {
+        return fuelTank;
+    }
+
+    /**
+     * 0.1.11.77: the fuel tank as the block's fluid capability (every side), so pipes and a fluid ejector upgrade (an
+     * oil refinery next to it) can fill it, as the semifluid generators. The tank takes diesel only.
+     */
+    public IFluidHandler getFuelHandlerCapability(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         return fuelTank;
     }
 

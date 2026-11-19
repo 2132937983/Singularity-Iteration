@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:electric_rifle",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_tachyon_disruptor"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.tachyon.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.tachyon.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "tachyon": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_tachyon_disruptor"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

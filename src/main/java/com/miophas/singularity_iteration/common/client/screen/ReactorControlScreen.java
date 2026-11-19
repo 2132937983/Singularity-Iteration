@@ -34,10 +34,15 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
     };
     private static final String[] BUTTON_TEXT = {"SCRAM", "−", "+", null, "−", "+", "1x"};
 
+    /** 0.1.11.76: the config card controls, left of the player inventory (the card slot is at the menu's CARD_SLOT_X/Y). */
+    private static final int CARD_Y = NuclearReactorGeneratorMenu.CARD_SLOT_Y + 23;
+    private final ReactorCardPanel card;
+
     public ReactorControlScreen(NuclearReactorGeneratorMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 300;
         this.imageHeight = 284;
+        this.card = new ReactorCardPanel(menu, new int[][] {{10, CARD_Y}, {28, CARD_Y}, {46, CARD_Y}}, 0xA0A8ACB1);
     }
 
     private int v(int i) { return menu.value(i); }
@@ -74,7 +79,9 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
             drawPanel(g, x, y, u, mouseX, mouseY);
             drawRecord(g, x, y, u);
             drawLines(g, x, y, u);
+            card.drawButtons(g, x, y, mouseX, mouseY);
         });
+        card.drawGhosts(g, leftPos, topPos);   // items: outside the managed batch
     }
 
     private double hullShare() { return v(3) > 0 ? v(2) / (double) v(3) : 0; }
@@ -150,6 +157,12 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
         Component eta = delta > 0 ? Component.translatable(K + "eta", Math.max(0, (target - heat) / delta)) : Component.translatable(K + "eta_none");
         WindRoseView.line(g, Component.translatable(K + "line_balance", f("%,d", v(14)), f("%,d", v(15)), (delta >= 0 ? "+" : "") + f("%,d", delta)).append(" · ").append(eta),
             x + RX, y + LINE_Y + 9 * u, 0x5B6867, 278);
+        // 0.1.11.76: for a few seconds after a config card button, its result takes the status line
+        Component cardStatus = card.status();
+        if (cardStatus != null) {
+            WindRoseView.line(g, cardStatus, x + RX, y + LINE_Y + 18 * u, card.statusBad() ? 0xC0392B : 0x2F6E4F, 278);
+            return;
+        }
         String key = mio_icif_nuclear_reactor_generator.statusKey(v(11));
         Component state = key != null ? Component.translatable(key) : Component.translatable(K + (v(4) > 0 ? "running" : "no_output"));
         if (v(17) >= 0 && v(20) > 0)
@@ -160,6 +173,22 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(this.font, this.title, 8, 6, 0x2A2E33, false);
+        // 0.1.11.76: the card section's label, centred over the card slot
+        Component label = Component.translatable("gui.mio_icif.reactor_card.label");
+        int cx = NuclearReactorGeneratorMenu.CARD_SLOT_X + 8, w = Math.min(56, this.font.width(label));
+        drawFitted(g, this.font, label, cx - w / 2, NuclearReactorGeneratorMenu.CARD_SLOT_Y - 12, 56, 0xFF5B6867, false);
+        card.drawMismatches(g);
+    }
+
+    @Override
+    protected void renderCustomTooltips(GuiGraphics g, int mouseX, int mouseY) {
+        List<Component> lines = card.tooltip(leftPos, topPos, mouseX, mouseY, hoveredSlot);
+        if (lines != null) g.renderComponentTooltip(this.font, lines, mouseX, mouseY);
+    }
+
+    @Override
+    protected List<Component> getTooltipFromContainerItem(net.minecraft.world.item.ItemStack stack) {
+        return card.withMismatch(super.getTooltipFromContainerItem(stack), hoveredSlot);
     }
 
     @Override
@@ -175,6 +204,7 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (card.mouseClicked(leftPos, topPos, mouseX, mouseY, button)) return true;   // 0.1.11.76
         if (button == 0 && this.minecraft != null && this.minecraft.gameMode != null) {
             for (int[] b : BUTTONS) {
                 if (mouseX >= leftPos + b[0] && mouseX < leftPos + b[0] + b[2] && mouseY >= topPos + b[1] && mouseY < topPos + b[1] + b[3]) {

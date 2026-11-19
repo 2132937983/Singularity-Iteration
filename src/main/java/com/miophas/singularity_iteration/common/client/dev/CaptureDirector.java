@@ -2417,6 +2417,92 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "reactor_card" (-Dsi.capture.scene=reactor_card), 0.1.11.76: the reactor config card. Reactor A (nine columns)
+     * gets a layout and a blank card is imported; reactor B gets the card exported (faded parts, a wrong part in red),
+     * then the fill; a steam reactor shows the same controls on the fluid screen.
+     */
+    private static void sceneReactorCard() {
+        BlockPos a = new BlockPos(0, -57, 6), b = new BlockPos(5, -57, 6), s = new BlockPos(10, -57, 6);
+        ResourceLocation quadId = ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_uranium_quad");
+        ResourceLocation ventId = ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_golden_vent");
+        int[][] rods = {{1, 1}, {1, 4}, {1, 7}, {4, 1}, {4, 4}, {4, 7}};
+        java.util.function.Consumer<ServerPlayer> cardIn = sp -> {
+            var m = sp.containerMenu;
+            var inv = sp.getInventory();
+            for (int i = 0; i < inv.items.size(); i++)
+                if (inv.items.get(i).getItem() instanceof com.miophas.singularity_iteration.common.item.reactor.ReactorConfigCardItem) {
+                    m.getSlot(m.slots.size() - 1).set(inv.removeItemNoUpdate(i));
+                    return;
+                }
+        };
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            for (BlockPos core : new BlockPos[] {a, b}) {
+                level.setBlock(core, block("generator/block_nuclear_reactor_generator").defaultBlockState(), 3);
+                for (Direction d : Direction.values()) level.setBlock(core.relative(d), block("reactor/block_reactor_chamber").defaultBlockState(), 3);
+            }
+            level.setBlock(s, block("generator/block_steam_reactor").defaultBlockState(), 3);
+            for (Direction d : Direction.values()) level.setBlock(s.relative(d), block("reactor/block_steam_reactor_chamber").defaultBlockState(), 3);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 2.5, -57, 2.5, 0, 10);
+            sp.getInventory().clearContent();
+            sp.getInventory().add(new ItemStack(com.miophas.singularity_iteration.common.item.reactor.mio_icif_reactors.REACTOR_CONFIG_CARD.get()));
+        });
+        server(25, sp -> {
+            if (!(sp.serverLevel().getBlockEntity(a) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator r)) return;
+            for (int[] rc : rods) {
+                r.getItemHandler().insertItem(rc[0] * 9 + rc[1], new ItemStack(BuiltInRegistries.ITEM.get(quadId)), false);
+                for (int[] d : new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) {
+                    int row = rc[0] + d[0], col = rc[1] + d[1];
+                    if (row >= 0 && row < 6 && col >= 0 && col < 9) r.getItemHandler().insertItem(row * 9 + col, new ItemStack(BuiltInRegistries.ITEM.get(ventId)), false);
+                }
+            }
+        });
+        // 1: import on reactor A (the status line reports it)
+        server(1, sp -> openAt(sp, a));
+        server(20, sp -> { cardIn.accept(sp); sp.containerMenu.clickMenuButton(sp, 20); });
+        client(1, () -> hoverGui = new int[]{17, 248});   // over the import button
+        shot(20, "reactor_card/1_import");
+        // 2: export on reactor B: faded parts; one real rod, one wrong part (a vent where a rod goes)
+        client(1, () -> hoverGui = new int[]{-4000, 4000});
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> {
+            if (sp.serverLevel().getBlockEntity(b) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator r) {
+                r.getItemHandler().insertItem(13, new ItemStack(BuiltInRegistries.ITEM.get(quadId)), false);
+                r.getItemHandler().insertItem(10, new ItemStack(BuiltInRegistries.ITEM.get(ventId)), false);
+            }
+            openAt(sp, b);
+        });
+        server(20, sp -> {
+            cardIn.accept(sp);
+            sp.containerMenu.clickMenuButton(sp, 21);
+            sp.getInventory().add(new ItemStack(BuiltInRegistries.ITEM.get(quadId), 3));
+            sp.getInventory().add(new ItemStack(BuiltInRegistries.ITEM.get(ventId), 12));
+        });
+        client(1, () -> hoverGui = new int[]{14 + 4 * 18 + 8, 20 + 4 * 18 + 8});   // over the faded rod at row 4, column 4
+        shot(20, "reactor_card/2_export");
+        client(1, () -> hoverGui = new int[]{14 + 18 + 8, 20 + 18 + 8});   // over the wrong part
+        shot(5, "reactor_card/2b_wrong_part");
+        // 3: fill from the inventory (3 rods, 12 vents: not enough for all)
+        client(1, () -> hoverGui = new int[]{53, 248});   // over the fill button
+        server(1, sp -> sp.containerMenu.clickMenuButton(sp, 23));
+        shot(20, "reactor_card/3_fill");
+        // 4: the steam reactor's fluid screen with the card exported
+        client(1, () -> hoverGui = new int[]{-4000, 4000});
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> openAt(sp, s));
+        server(20, sp -> { cardIn.accept(sp); sp.containerMenu.clickMenuButton(sp, 21); });
+        shot(20, "reactor_card/4_steam_export");
+        client(1, () -> hoverGui = new int[]{13, 192});   // over the import button of the fluid screen
+        shot(5, "reactor_card/5_steam_tooltip");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
      * Scene "disguise" (-Dsi.capture.scene=disguise), 0.1.11.24: disguised construction foam and disguised wires, as the
      * chunk mesh now draws them. A row of foam as stone, glass, grass, oak leaves and bricks; foamlogged tin cables
      * disguised as planks and grass, a bare one; behind them a 32 x 12 wall of disguised foam and a layer of disguised
@@ -3909,6 +3995,13 @@ public final class CaptureDirector {
         if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneReactor();
+        }
+    }
+
+    static {
+        if (OUT != null && "reactor_card".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneReactorCard();
         }
     }
 

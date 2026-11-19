@@ -1,0 +1,36 @@
+{
+  "parent": "mio_icif:batbox",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_cesu"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.storage_upgrade.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.storage_upgrade.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "storage": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:wiring/block_cesu",
+              "mio_icif:wiring/block_mfe",
+              "mio_icif:wiring/block_mfsu",
+              "mio_icif:wiring/block_lesu",
+              "mio_icif:wiring/block_eesu"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

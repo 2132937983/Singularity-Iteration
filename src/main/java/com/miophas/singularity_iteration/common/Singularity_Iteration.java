@@ -121,6 +121,7 @@ public class Singularity_Iteration {
         mio_icif_blocks.register(modEventBus);
         // Armory (武装庫) system: block, items, entity, menus, data components
         com.miophas.singularity_iteration.common.armory.ArmoryRegistry.register(modEventBus);
+        com.miophas.singularity_iteration.common.advancement.CleanEnergy.init(modEventBus);   // 0.1.11.80: clean energy total
         // 0.1.8.0: Blueprint Builder (drone hangar) and Armory Material Interface
         com.miophas.singularity_iteration.common.builder.BuilderRegistry.register(modEventBus);
         // 0.1.8.0: Ejector Pipe

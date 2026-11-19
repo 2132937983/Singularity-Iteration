@@ -72,6 +72,9 @@ public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity imp
     // 待处理的方块更改队列
     private final List<BlockChange> pendingChanges = new ArrayList<>();
     private int tickCounter = 0;
+    /** 0.1.11.79: ticks of work in the End (not saved); 1200 = 60 s grant "The End as Paradise". */
+    private int endWorkTicks;
+    public static final int END_PARADISE_TICKS = 1200;
     private static final int BATCH_SIZE = 10;  // 每tick最多应用10个方块更改
     private static final int SKIP_TICKS = 2;   // 每2tick应用一次待处理更改
     // 方块更改记录类
@@ -283,6 +286,9 @@ public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity imp
 
         isWorking = true;
         tickCounter++;
+        // 0.1.11.79: after 60 s of work in the End, players nearby get "The End as Paradise" (again every 5 s for late comers)
+        if (serverLevel.dimension() == net.minecraft.world.level.Level.END && ++endWorkTicks >= END_PARADISE_TICKS && endWorkTicks % 100 == 0)
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(serverLevel, worldPosition, "end_paradise", "end_terraform");
 
         // 执行螺旋地形转换，从机器位置开始螺旋扩散
         performSpiralTransformation(serverLevel);

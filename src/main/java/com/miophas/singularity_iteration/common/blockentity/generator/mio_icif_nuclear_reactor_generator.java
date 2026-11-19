@@ -734,6 +734,24 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(level!=null)for(var side:Direction.values()){var at=worldPosition.relative(side);if(isChamber(at)&&level.getBlockEntity(at) instanceof IEnergyTile tile)out.add(tile);}return List.copyOf(out);
     }
     public NonNullList<ItemStack> getReactorItems(){return ((ReactorItems)itemHandler).contents();}
+    // ---- 0.1.11.76: the layout guide exported from a reactor config card (see ReactorLayoutGuide). Slot -> item id, null = no
+    // guide for the slot. It is only shown and used by the one-click fill; it never changes what the reactor accepts.
+    private final net.minecraft.resources.ResourceLocation[] layoutGuide=new net.minecraft.resources.ResourceLocation[SLOT_COUNT];
+    private static final String LAYOUT_GUIDE_TAG="scex_layout_guide";
+    /** The guided item id of a slot, or null. */
+    public @org.jetbrains.annotations.Nullable net.minecraft.resources.ResourceLocation layoutGuideAt(int slot){return slot>=0&&slot<SLOT_COUNT?layoutGuide[slot]:null;}
+    public boolean hasLayoutGuide(){for(var id:layoutGuide)if(id!=null)return true;return false;}
+    /** Replaces the guide with a layout (null or empty clears it). */
+    public void setLayoutGuide(@org.jetbrains.annotations.Nullable com.miophas.singularity_iteration.common.item.component.ReactorLayout layout){
+        java.util.Arrays.fill(layoutGuide,null);
+        if(layout!=null)for(var e:layout.entries())layoutGuide[e.slot()]=e.item();
+        dirty();
+    }
+    public com.miophas.singularity_iteration.common.item.component.ReactorLayout layoutGuide(){
+        var out=new ArrayList<com.miophas.singularity_iteration.common.item.component.ReactorLayout.Entry>();
+        for(int i=0;i<SLOT_COUNT;i++)if(layoutGuide[i]!=null)out.add(new com.miophas.singularity_iteration.common.item.component.ReactorLayout.Entry(i,layoutGuide[i]));
+        return new com.miophas.singularity_iteration.common.item.component.ReactorLayout(out);
+    }
     @Override public int getMaxStackSize(){return 1;}
     @Override public int[] getSlotsForFace(Direction side){return java.util.stream.IntStream.range(0,54).toArray();}
     @Override public boolean canPlaceItemThroughFace(int slot,ItemStack stack,Direction side){return operational()&&itemHandler.isItemValid(slot,stack);}
@@ -754,7 +772,12 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         @Override public int getSlotLimit(int slot){return 1;}
         @Override public boolean isItemValid(int slot,ItemStack stack){return operational()&&itemHandler.isItemValid(slot,stack);}
     }
-    public void setFluidReactorMultiblock(mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> manager){structure=manager;setReactorMode(manager!=null&&manager.isValid()?mio_icif_reactor_mode.FLUID:mio_icif_reactor_mode.GENERATOR);}
+    public void setFluidReactorMultiblock(mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> manager){
+        boolean wasFluid=mode==mio_icif_reactor_mode.FLUID;
+        structure=manager;setReactorMode(manager!=null&&manager.isValid()?mio_icif_reactor_mode.FLUID:mio_icif_reactor_mode.GENERATOR);
+        // 0.1.11.79: a reactor that just became a fluid reactor (not one loaded in fluid mode) grants "A More Advanced Reactor" nearby
+        if(!wasFluid&&mode==mio_icif_reactor_mode.FLUID&&level!=null&&!level.isClientSide)com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(level,worldPosition,"fluid_reactor","formed");
+    }
     public void onMultiblockBroken(){structure=null;setReactorMode(mio_icif_reactor_mode.GENERATOR);}
     public mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> getFluidReactorMultiblock(){return structure;}
     public mio_icif_reactor_mode getReactorMode(){return mode;}
@@ -798,11 +821,20 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(auditOwner!=null){tag.putUUID("AuditOwner",auditOwner);tag.putString("AuditOwnerName",auditOwnerName);}   // 0.1.10.12
         CompoundTag saved=new CompoundTag();saved.putInt("version",2);saved.putLong("rate",rate.whole());saved.putLong("rate_fraction",rate.fraction());saved.put("hold",hold.copy());saved.putString("failure",failure);saved.put("accident",saveAccident());tag.put("scex_reactor",saved);
         tag.putInt("scex_scram_setpoint",scramSetpoint);tag.putBoolean("scex_scram_tripped",tripped);   // 0.1.11.21
+        if(hasLayoutGuide()){   // 0.1.11.76: the layout guide, only when there is one
+            ListTag guide=new ListTag();
+            for(int i=0;i<SLOT_COUNT;i++)if(layoutGuide[i]!=null){CompoundTag entry=new CompoundTag();entry.putByte("Slot",(byte)i);entry.putString("Item",layoutGuide[i].toString());guide.add(entry);}
+            tag.put(LAYOUT_GUIDE_TAG,guide);
+        }
     }
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.loadAdditional(tag,provider);hold=new CompoundTag();failure="";lastHeat=0;accident=new ReactorAccidentLatch();closeAccess();frameAt=Long.MIN_VALUE;
         scramSetpoint=tag.contains("scex_scram_setpoint")?Math.max(MIN_SETPOINT,Math.min(MAX_SETPOINT,tag.getInt("scex_scram_setpoint"))):MAX_SETPOINT;   // 0.1.11.21
         tripped=tag.getBoolean("scex_scram_tripped");
+        // 0.1.11.76: the layout guide; a bad entry is skipped (the guide is advice, never a reason to hold the reactor)
+        java.util.Arrays.fill(layoutGuide,null);
+        for(Tag raw:tag.getList(LAYOUT_GUIDE_TAG,Tag.TAG_COMPOUND)){CompoundTag entry=(CompoundTag)raw;int slot=entry.getByte("Slot")&255;
+            var id=net.minecraft.resources.ResourceLocation.tryParse(entry.getString("Item"));if(slot<SLOT_COUNT&&id!=null)layoutGuide[slot]=id;}
         auditOwner=tag.hasUUID("AuditOwner")?tag.getUUID("AuditOwner"):null;auditOwnerName=tag.getString("AuditOwnerName");   // 0.1.10.12
         long stored=tag.getLong("HeatStored");if(stored<0){hold.put("invalid_heat",tag.get("HeatStored").copy());stored=0;}heat.setHeat(stored);
         long max=tag.getLong("MaxHeatStored");heat.setCapacity(max>0?max:10000);

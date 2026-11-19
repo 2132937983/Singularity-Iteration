@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:wind",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_windmeter"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.wind_meter.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.wind_meter.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "used": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

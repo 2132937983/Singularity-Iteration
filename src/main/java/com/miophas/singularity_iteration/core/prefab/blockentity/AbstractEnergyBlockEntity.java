@@ -73,13 +73,18 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
      */
     protected double produce(double eu) {
         if (!(eu > 0)) return 0;
-        if (energyStorage.scexNetworkControlled())
-            return energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(eu), false).toDouble();
-        double v = eu + produceCarry;
-        long whole = (long) Math.floor(v);
-        long room = Math.max(0, energyStorage.getCapacity() - energyStorage.getAmount());
-        if (whole > room) { whole = room; produceCarry = 0; } else produceCarry = v - whole;
-        return whole > 0 ? energyStorage.generateEnergyInternal(whole, false) : 0;
+        double stored;
+        if (energyStorage.scexNetworkControlled()) {
+            stored = energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(eu), false).toDouble();
+        } else {
+            double v = eu + produceCarry;
+            long whole = (long) Math.floor(v);
+            long room = Math.max(0, energyStorage.getCapacity() - energyStorage.getAmount());
+            if (whole > room) { whole = room; produceCarry = 0; } else produceCarry = v - whole;
+            stored = whole > 0 ? energyStorage.generateEnergyInternal(whole, false) : 0;
+        }
+        com.miophas.singularity_iteration.core.api.energy.EnergyProductionListeners.fire(this, stored);   // 0.1.11.80
+        return stored;
     }
     private double produceCarry;
 
@@ -333,7 +338,9 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
     }
 
     protected long apiGenerateEnergy(long amount, boolean simulate) {
-        return energyStorage.generateEnergyInternal(amount, simulate);
+        long stored = energyStorage.generateEnergyInternal(amount, simulate);
+        if (!simulate) com.miophas.singularity_iteration.core.api.energy.EnergyProductionListeners.fire(this, stored);   // 0.1.11.80
+        return stored;
     }
     
     protected CableTier apiGetCableTier() {

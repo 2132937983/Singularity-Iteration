@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:build/item_painter_red"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.painter.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.painter.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "painted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

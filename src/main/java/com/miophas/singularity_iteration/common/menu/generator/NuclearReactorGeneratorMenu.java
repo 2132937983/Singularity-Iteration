@@ -4,7 +4,11 @@ import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_n
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.item.reactor.mio_icif_reactor;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_generator_menu;
+import com.miophas.singularity_iteration.common.item.reactor.ReactorConfigCardItem;
+import com.miophas.singularity_iteration.common.reactor.ReactorLayoutGuide;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -12,7 +16,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
-public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
+public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu implements ReactorGuideMenu {
     public static final int REACTOR_SLOT_START = 0;
     public static final int MAX_REACTOR_SLOT_COUNT = 54;
     public static final int TOTAL_SLOT_COUNT = 54;
@@ -29,12 +33,47 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
         this(containerId, playerInventory, null, null, null);
     }
 
+    // 0.1.11.76: the reactor config card (ReactorLayoutGuide), left of the player inventory, after all other slots
+    public static final int CARD_SLOT_X = 27, CARD_SLOT_Y = 218;
+    private final SimpleContainer cardSlot = new SimpleContainer(1);
+    private final int cardSlotIndex;
+    private final ReactorLayoutGuide.Data guide;
+
     public NuclearReactorGeneratorMenu(int containerId, Inventory playerInventory,
                                         @Nullable mio_icif_nuclear_reactor_generator blockEntity,
                                         @Nullable IItemHandler itemHandler,
                                         @Nullable ContainerData data) {
         super(mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(), containerId, TOTAL_SLOT_COUNT,
               playerInventory, itemHandler, data, mio_icif_nuclear_reactor_generator.CONTROL_DATA, blockEntity);
+        this.cardSlotIndex = this.slots.size();
+        this.addSlot(new ReactorLayoutGuide.CardSlot(cardSlot, CARD_SLOT_X, CARD_SLOT_Y));
+        this.guide = new ReactorLayoutGuide.Data(blockEntity);
+        this.addDataSlots(guide);
+    }
+
+    @Override public ReactorLayoutGuide.Data guideData() { return guide; }
+    @Override public int cardSlotIndex() { return cardSlotIndex; }
+
+    /** 0.1.11.76: the card goes back to the player (or drops at the player) when the screen closes. */
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (player instanceof net.minecraft.server.level.ServerPlayer) clearContainer(player, cardSlot);
+    }
+
+    /** 0.1.11.76: Shift-click moves a config card between the player inventory and the card slot. */
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        if (index < 0 || index >= slots.size()) return ItemStack.EMPTY;
+        Slot slot = slots.get(index);
+        ItemStack stack = slot.getItem();
+        boolean fromCard = index == cardSlotIndex;
+        if (stack.isEmpty() || !(fromCard || index >= TOTAL_SLOT_COUNT && ReactorConfigCardItem.isCard(stack))) return super.quickMoveStack(player, index);
+        ItemStack before = stack.copy();
+        boolean moved = fromCard ? moveItemStackTo(stack, TOTAL_SLOT_COUNT, cardSlotIndex, true) : moveItemStackTo(stack, cardSlotIndex, cardSlotIndex + 1, false);
+        if (!moved) return ItemStack.EMPTY;
+        slot.setByPlayer(stack.isEmpty() ? ItemStack.EMPTY : stack);
+        return before;
     }
 
     @Override
@@ -95,6 +134,7 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
     @Override
     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
         if (!(blockEntity instanceof mio_icif_nuclear_reactor_generator gen)) return false;
+        if (ReactorLayoutGuide.isButton(id)) return ReactorLayoutGuide.click(id, player, gen, cardSlot, guide);   // 0.1.11.76
         int rate = gen.getFeedRate();
         switch (id) {
             case 10 -> gen.scram();                                            // 0.1.11.21: SCRAM, reset, setpoint

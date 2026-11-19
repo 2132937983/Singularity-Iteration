@@ -76,10 +76,17 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static final int OUTPUT_FLUID_X = 190;
     private static final int OUTPUT_FLUID_Y = 54;
 
+    // 0.1.11.76: the config card controls in the left column below the reactor grid: the card slot (menu CARD_SLOT_X/Y),
+    // then the three buttons under it
+    private static final int CARD_BUTTON_X = FluidReactorMenu.CARD_SLOT_X + 1, CARD_BUTTON_Y = FluidReactorMenu.CARD_SLOT_Y + 21;
+    private final ReactorCardPanel card;
+
     public mio_icif_gui_nuclear_reactor_fluid(FluidReactorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = GUI_WIDTH;
         this.imageHeight = GUI_HEIGHT;
+        this.card = new ReactorCardPanel(menu, new int[][] {{CARD_BUTTON_X, CARD_BUTTON_Y}, {CARD_BUTTON_X, CARD_BUTTON_Y + 17},
+            {CARD_BUTTON_X, CARD_BUTTON_Y + 34}}, 0xA08B8B8B);
     }
 
     @Override
@@ -125,6 +132,14 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
             // 0.1.10.6：移除旧热量条（188,145）。该位置没有槽框，图集区域几乎透明，只会在
             // 物品栏右侧画出一条灰线；热量改由下方信息面板的文字颜色表示。
         }
+
+        // 0.1.11.76: the card slot frame (the background texture has none there), the card buttons and the faded guide parts
+        int sx = x + FluidReactorMenu.CARD_SLOT_X - 1, sy = y + FluidReactorMenu.CARD_SLOT_Y - 1;
+        guiGraphics.fill(sx, sy, sx + 18, sy + 18, 0xFF373737);
+        guiGraphics.fill(sx + 1, sy + 1, sx + 18, sy + 18, 0xFFFFFFFF);
+        guiGraphics.fill(sx + 1, sy + 1, sx + 17, sy + 17, 0xFF8B8B8B);
+        card.drawButtons(guiGraphics, x, y, mouseX, mouseY);
+        card.drawGhosts(guiGraphics, x, y);
     }
 
     // 信息文本显示位置 - 与核反应堆发电模式相同
@@ -167,6 +182,15 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         // 发热功率在右（青色）。文字过长时自动缩小，不会越出面板。
         float heatFraction = maxHeat > 0 ? Math.max(0F, Math.min(1F, heat / (float) maxHeat)) : 0F;
         guiGraphics.fill(PANEL_X0, PANEL_Y0, PANEL_X1, PANEL_Y1, PANEL_BACKING);
+        // 0.1.11.76: for a few seconds after a config card button, its result takes the panel
+        Component cardStatus = card.status();
+        if (cardStatus != null) {
+            drawFitted(guiGraphics, this.font, cardStatus, INFO_TEXT_X, INFO_TEXT_Y, PANEL_X1 - 2 - INFO_TEXT_X,
+                card.statusBad() ? 0xFFFFB26A : 0xFFB8FFB0, true);
+            drawScramRow(guiGraphics);
+            card.drawMismatches(guiGraphics);
+            return;
+        }
         // 0.1.10.39: a reactor that makes nothing says why (off without a redstone signal, stopped, on hold) in place of the output
         String statusKey = com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator.statusKey(menu.getStatus());
         Component outputLine = statusKey != null ? Component.translatable(statusKey)
@@ -177,6 +201,18 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.nuclear_reactor.heat", heat, maxHeat),
             INFO_TEXT_X, INFO_TEXT_Y, PANEL_X1 - 2 - outputWidth - 8 - INFO_TEXT_X, heatInk(heatFraction), true);
         drawScramRow(guiGraphics);
+        card.drawMismatches(guiGraphics);
+    }
+
+    @Override
+    protected void renderCustomTooltips(GuiGraphics g, int mouseX, int mouseY) {
+        java.util.List<Component> lines = card.tooltip(leftPos, topPos, mouseX, mouseY, hoveredSlot);
+        if (lines != null) g.renderComponentTooltip(this.font, lines, mouseX, mouseY);
+    }
+
+    @Override
+    protected java.util.List<Component> getTooltipFromContainerItem(net.minecraft.world.item.ItemStack stack) {
+        return card.withMismatch(super.getTooltipFromContainerItem(stack), hoveredSlot);
     }
 
     // ---- 0.1.11.21: SCRAM, reset and the trip setpoint (the same controls as the generator's control room) -------------
@@ -199,6 +235,7 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (card.mouseClicked(leftPos, topPos, mouseX, mouseY, button)) return true;   // 0.1.11.76
         if (button == 0 && this.minecraft != null && this.minecraft.gameMode != null) {
             int left = (this.width - this.imageWidth) / 2, top = (this.height - this.imageHeight) / 2;
             for (int[] b : SCRAM_BUTTONS)

@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:ejector",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_tesla"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.tesla.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.tesla.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "fired": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

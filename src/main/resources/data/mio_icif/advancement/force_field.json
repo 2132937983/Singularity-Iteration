@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:suit_module",
+  "display": {
+    "icon": {
+      "id": "mio_icif:module/item_module_deflector_mk2"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.force_field.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.force_field.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "stopped": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

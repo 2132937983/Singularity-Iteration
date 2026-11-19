@@ -1,0 +1,36 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_iron_driller"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.energy_saving.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.energy_saving.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "enchanted": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "predicates": {
+              "minecraft:enchantments": [
+                {
+                  "enchantments": "mio_icif:energy_saving"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

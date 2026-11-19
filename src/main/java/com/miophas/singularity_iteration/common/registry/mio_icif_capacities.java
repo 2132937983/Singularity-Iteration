@@ -3189,7 +3189,14 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Diesel Generator");
+        // 0.1.11.77: the fuel tank, so pipes and fluid ejector upgrades can fill it (it had no fluid capability)
+        event.registerBlockEntity(
+            Capabilities.FluidHandler.BLOCK,
+            mio_icif_block_entities.DIESEL_GENERATOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator diesel
+                ? diesel.getFuelHandlerCapability(direction) : null
+        );
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Diesel Generator");
 
         // 注册青铜储罐的流体能力 (16桶 = 16000 mB)
         event.registerBlockEntity(

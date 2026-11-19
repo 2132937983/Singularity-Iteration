@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:circuit",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_canner_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.canner.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.canner.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "canner": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_canner_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

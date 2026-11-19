@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:jetpack",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_advanced_jetpack"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.advanced_jetpack.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.advanced_jetpack.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "jetpack": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:armor/item_armor_advanced_jetpack"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

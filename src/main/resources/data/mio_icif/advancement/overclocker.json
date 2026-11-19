@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:ejector",
+  "display": {
+    "icon": {
+      "id": "mio_icif:upgrade/overclocker_upgrade"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.overclocker.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.overclocker.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "overclocker": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:upgrade/overclocker_upgrade"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

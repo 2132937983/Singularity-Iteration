@@ -216,6 +216,10 @@ public class mio_icif_reactors {
         () -> new ReactorBlackboxItem(new Item.Properties().stacksTo(1).fireResistant()
             .rarity(net.minecraft.world.item.Rarity.UNCOMMON)));
 
+    /** 0.1.11.76: records a reactor layout and projects it onto other reactors as a guide (the card slot of the reactor screens). */
+    public static final DeferredItem<ReactorConfigCardItem> REACTOR_CONFIG_CARD = ITEMS.register("reactor/item_reactor_config_card",
+        () -> new ReactorConfigCardItem(new Item.Properties().stacksTo(1)));
+
     // ??
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

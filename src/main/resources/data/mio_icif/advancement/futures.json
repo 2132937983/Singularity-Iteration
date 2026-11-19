@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:ejector",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_future_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.futures.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.futures.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "futures": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_future_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:solar",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_quantum_solar_panel"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.quantum_solar.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.quantum_solar.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "solar": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:generator/block_quantum_solar_panel"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 500
+  }
+}

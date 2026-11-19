@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:compressor",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_industrial_diamond"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.industrial_diamond.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.industrial_diamond.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "diamond": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:normal/item_industrial_diamond"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

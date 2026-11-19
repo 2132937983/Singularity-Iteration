@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:kinetic_generator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:kugenerator/block_wind_kinetic_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.wind_kinetic.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.wind_kinetic.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "wind": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:kugenerator/block_wind_kinetic_generator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

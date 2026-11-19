@@ -76,6 +76,8 @@ public class mio_icif_kinetic_generator extends AbstractGeneratorBlockEntity {
         blockEntity.convertKineticToEnergy();
         long euAfter = blockEntity.getEnergyStorage().getAmount();
         blockEntity.lastProduction = euAfter - euBefore;
+        // 0.1.11.79: EU made from kinetic energy: "Full of Kinetics" for players nearby (checked once a second)
+        if (blockEntity.lastProduction > 0 && level.getGameTime() % 20 == 0) com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(level, pos, "kinetic_running", "running");
 
         blockEntity.chargeItems();
 

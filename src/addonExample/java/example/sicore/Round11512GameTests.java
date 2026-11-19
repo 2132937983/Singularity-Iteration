@@ -54,10 +54,13 @@ public final class Round11512GameTests {
         h.succeed();
     }
 
-    /** The diesel generator's fuel value is 160 EU/mB at full load (it was 7.5); 0.1.11.15 tests the engine running on it. */
+    /**
+     * The diesel generator's fuel value at full load: 160 EU/mB here (it was 7.5), 240 EU/mB since 0.1.11.77 (above the
+     * advanced semifluid generator's 160 from diesel); 0.1.11.15 tests the engine running on it.
+     */
     @GameTest(template = "empty", timeoutTicks = 20)
-    public static void dieselGeneratorGets160PerMb(GameTestHelper h) {
-        h.assertTrue(num("blockentity.generator.mio_icif_diesel_generator", "EU_PER_MB") == 160, "160 EU/mB");
+    public static void dieselGeneratorFuelValue(GameTestHelper h) {
+        h.assertTrue(num("blockentity.generator.mio_icif_diesel_generator", "EU_PER_MB") == 240, "240 EU/mB");
         h.succeed();
     }
 

@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:build/block_scaffold_iron"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.scaffold.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.scaffold.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "scaffold": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:build/block_scaffold_wood",
+              "mio_icif:build/block_scaffold_iron",
+              "mio_icif:build/block_scaffold_steel",
+              "mio_icif:build/block_scaffold_carbon"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

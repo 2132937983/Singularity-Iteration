@@ -141,7 +141,11 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock implements c
                 // 0.1.8.0: the hull follows the recipe (see MachineSalvage). A machine without a
                 // hull in its recipe (for example the BatBox) no longer drops a basic hull.
                 List<ItemStack> drops = new ArrayList<>();
-                drops.add(MachineSalvage.salvage(lootParams.getLevel(), this));
+                ItemStack salvage = MachineSalvage.salvage(lootParams.getLevel(), this);
+                drops.add(salvage);
+                // 0.1.11.79: a player who broke the machine without a wrench (it became its hull) gets "A Cold Shell"
+                if (!salvage.is(this.asItem()) && lootParams.getParamOrNull(LootContextParams.THIS_ENTITY) instanceof net.minecraft.world.entity.player.Player player)
+                    com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "broken_machine", "broken");
                 return drops;
             }
         }

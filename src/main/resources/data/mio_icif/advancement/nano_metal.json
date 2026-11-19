@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:ejector",
+  "display": {
+    "icon": {
+      "id": "mio_icif:resource/item_nano_living_metal"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.nano_metal.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.nano_metal.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "metal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:resource/item_nano_living_metal"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

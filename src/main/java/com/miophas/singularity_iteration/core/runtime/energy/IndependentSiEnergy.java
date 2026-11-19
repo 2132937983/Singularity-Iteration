@@ -3670,6 +3670,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 grid.accessibilityTick = Long.MIN_VALUE;
                 topology.changed(level, at); removed.add(at);
                 fusedWires = Math.incrementExact(fusedWires);
+                com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(level, at, "cable_burnt", "burnt");   // 0.1.11.79: "Mind the Current" for players nearby
                 double cx = at.getX() + 0.5, cy = at.getY() + 0.5, cz = at.getZ() + 0.5;
                 level.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE, cx, cy, cz, 30, 0.1, 0.1, 0.1, 0.05);
                 level.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, cx, cy, cz, 15, 0.15, 0.15, 0.15, 0.03);
@@ -3699,6 +3700,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (be instanceof IEnergyConductor conductor) {
                 afterCommit(level, be, conductor::removeInsulation);   // 0.1.11.32 (E-2)
                 stripped.add(at);
+                com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(level, at, "cable_burnt", "burnt");   // 0.1.11.79: burnt insulation counts too
             }
         }
         return stripped;

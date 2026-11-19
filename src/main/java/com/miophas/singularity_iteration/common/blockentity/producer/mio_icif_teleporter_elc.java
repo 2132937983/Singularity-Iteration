@@ -280,6 +280,9 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
     /**
      * 执行传送
      */
+    /** 0.1.11.79: a teleport of at least this many blocks grants "A Thousand Miles Away". */
+    public static final double FAR_TELEPORT = 1000;
+
     private void teleport(Entity entity, double distance) {
         if (targetPos == null || level == null || !(level instanceof ServerLevel serverLevel)) {
             sendMessageToEntity(entity, "block.mio_icif.teleporter_elc.error.invalid_target");
@@ -313,6 +316,7 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
 
         if (entity instanceof ServerPlayer player) {
             player.teleportTo(targetX, targetY, targetZ);
+            if (distance >= FAR_TELEPORT) com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "far_teleport", "far");   // 0.1.11.79
             // 发送传送成功消息
             player.displayClientMessage(
                 net.minecraft.network.chat.Component.translatable("block.mio_icif.teleporter_elc.success",

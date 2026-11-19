@@ -1,0 +1,41 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "curios"
+    }
+  ],
+  "parent": "mio_icif:advanced_jetpack",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_trinket_flight_ring"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.flight_ring.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.flight_ring.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "ring": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_trinket_flight_ring"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

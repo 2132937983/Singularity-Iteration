@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:wrench",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.broken_machine.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.broken_machine.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "broken": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

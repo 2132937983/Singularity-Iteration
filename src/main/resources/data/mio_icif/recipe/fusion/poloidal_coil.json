@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NCN",
+    "C C",
+    "NCN"
+  ],
+  "key": {
+    "N": {
+      "item": "mio_icif:resource/item_niobium_titanium_plate"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_coil"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_poloidal_coil",
+    "count": 8
+  }
+}

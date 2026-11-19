@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "mio_icif:block/fusion/central_solenoid_end",
+    "side": "mio_icif:block/fusion/central_solenoid_side"
+  }
+}

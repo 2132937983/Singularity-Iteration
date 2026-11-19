@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "TPT",
+    "PTP",
+    "TPT"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:resource/item_titanium_plate"
+    },
+    "P": {
+      "item": "mio_icif:resource/item_lead_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_vacuum_vessel",
+    "count": 16
+  }
+}

@@ -28,6 +28,7 @@ public final class BuiltinStructureBlueprints {
         dimensionOilRig();
         heated("blast_furnace", block("producer/block_blast_furnace"), block("producer/block_blast_furnace_advanced"));
         heated("fermenter", block("producer/block_fermenter_elc"));
+        fusionReactor();   // 0.1.11.92
     }
 
     /** Nuclear Reactor Generator with a Reactor Chamber on each face (chambers are optional: 3 + chambers columns). */
@@ -182,6 +183,34 @@ public final class BuiltinStructureBlueprints {
 
     private static BlockRef heater(String path) {
         return block(path).with("facing", "west");
+    }
+
+    /**
+     * 0.1.11.92: the fusion reactor (a tokamak), from the same layout file its controller checks
+     * (data/mio_icif/multiblock/fusion_tokamak.json): the torus with its coils, 25 x 11 x 25. A port slot takes any fusion port
+     * or a vacuum vessel block; the plasma channel inside the blanket must stay air.
+     */
+    private static void fusionReactor() {
+        StructureBlueprint.Builder plan = StructureBlueprint.builder(id("fusion_reactor"));
+        for (String[] rows : com.miophas.singularity_iteration.common.fusion.FusionStructure.tokamak().layers()) plan.layer(rows);
+        register(plan
+            .key('K', block("fusion/block_fusion_controller").with("facing", "east"))
+            .key('S', KEY + "fusion_reactor.solenoid", block("fusion/block_fusion_central_solenoid"))
+            // 0.1.11.94: the coil blocks face along their coil (the legend merges the two lines of the same block)
+            .key('T', KEY + "fusion_reactor.toroidal", block("fusion/block_fusion_toroidal_coil").with("facing", "east"))
+            .key(com.miophas.singularity_iteration.common.fusion.FusionStructure.COIL_NORTH_SOUTH, KEY + "fusion_reactor.toroidal",
+                block("fusion/block_fusion_toroidal_coil").with("facing", "north"))
+            .key('P', KEY + "fusion_reactor.poloidal", block("fusion/block_fusion_poloidal_coil"))
+            .key('V', KEY + "fusion_reactor.vessel", block("fusion/block_fusion_vacuum_vessel"))
+            .key('B', KEY + "fusion_reactor.blanket", block("fusion/block_fusion_blanket"))
+            .key('D', KEY + "fusion_reactor.divertor", block("fusion/block_fusion_divertor"))
+            .key('O', KEY + "fusion_reactor.port", block("fusion/block_fusion_power_port"), block("fusion/block_fusion_fuel_port"),
+                block("fusion/block_fusion_cryo_port"), block("fusion/block_fusion_nbi_port"), block("fusion/block_fusion_ecrh_port"),
+                block("fusion/block_fusion_exhaust_port"), block("fusion/block_fusion_mitigation_port"), block("fusion/block_fusion_vacuum_vessel"))
+            .controller('K')
+            .note(KEY + "fusion_reactor.note.plasma")
+            .note(KEY + "fusion_reactor.note.ports")
+            .note(KEY + "fusion_reactor.note.turn"));
     }
 
     private static BlockRef block(String path) {

@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "level=0": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=1": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=2": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=3": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=4": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=5": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=6": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=7": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=8": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=9": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=10": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=11": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=12": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=13": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=14": {
+      "model": "mio_icif:block/unstable_hotwater"
+    },
+    "level=15": {
+      "model": "mio_icif:block/unstable_hotwater"
+    }
+  }
+}

@@ -25,7 +25,7 @@ The screen is a plant mimic: the KU source on the front, the shaft turning at it
 
 | Item | Value |
 |---|---|
-| Output voltage tier | EV (2,048 EU) |
+| Output voltage tier | EV (2,048 EU); IV (8,192 EU) above 2,048 EU/t |
 | Production | 1.2 EU per KU from wind or water kinetic generators, 0.45 EU per KU from other sources |
 | KU input | up to 4,000 KU/t (up to 4,800 EU/t) |
 | Energy storage | 400,000 EU |
@@ -37,11 +37,12 @@ With a generator output multiplier other than 1.0 (config GeneratorOutput), the 
 ## Procedure
 
 1. Place the generator with its front face against the back face of a Wind Kinetic Generator.
-2. Connect an EV cable to the generator.
+2. Connect an IV cable to the generator (an EV cable is enough while it makes at most 2,048 EU/t).
 
 ## Notes
 
 - The machine has a higher KU to EU ratio than the Turbocharged Kinetic Generator.
+- The packet size follows the KU input: above 1,706 KU/t from wind or water (above 2,048 EU/t) the generator sends IV packets, which melt EV cables and blow up EV machines. Other sources give at most 4,000 × 0.45 = 1,800 EU/t and always stay at EV.
 
 ## Recipe
 

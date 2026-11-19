@@ -196,6 +196,8 @@ public class mio_icif_capacities {
             mio_icif_block_entities.SEMIFLUID_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
             mio_icif_block_entities.STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE.get(),   // 0.1.10.39
+            mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get(),   // 0.1.11.92
+            mio_icif_block_entities.FUSION_POWER_PORT_ENTITY_TYPE.get(),
             mio_icif_block_entities.HEAT_GENERATOR_ELC.get(),
             mio_icif_block_entities.SOLID_HEAT_GENERATOR.get(),
             mio_icif_block_entities.FLUID_HEAT_GENERATOR.get(),
@@ -1665,6 +1667,23 @@ public class mio_icif_capacities {
         registerAPIKineticCapability(event, mio_icif_block_entities.WIND_KINETIC_GENERATOR_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered KU kinetic and item capabilities for Wind Kinetic Generator");
 
+        // 0.1.11.86: Water Kinetic Generator (水力动能发生机), the one kinetic block without the capability. It pushes its
+        // KU out of its back itself; the capability (its internal storage, capacity 0: nothing to pull) lets the kinetic
+        // API and the kinetic generators' screens see it as a kinetic block.
+        event.registerBlockEntity(
+            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK,
+            mio_icif_block_entities.WATER_KINETIC_GENERATOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Water_Kinetic_Generator generator
+                ? generator.getKineticStorageCapability(direction) : null
+        );
+        // 0.1.11.87: its rotor slot for pipes and hoppers, as the Wind Kinetic Generator has (water-compatible rotors only)
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            mio_icif_block_entities.WATER_KINETIC_GENERATOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Water_Kinetic_Generator generator
+                ? generator.createItemHandler() : null
+        );
+
         // Register capabilities for Electric Kinetic Generator (电力动能机)
         // 注册 EU 能量存储能力（输入）
         event.registerBlockEntity(
@@ -2448,6 +2467,20 @@ public class mio_icif_capacities {
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TUNNEL_ENTITY_TYPE.get(), (blockEntity, direction) -> blockEntity);
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TUNNEL_FLUID_PORT_ENTITY_TYPE.get(), (blockEntity, direction) -> blockEntity);
         registerEnergyCapabilities(event, mio_icif_block_entities.STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE.get());
+        // 0.1.11.92: the fusion reactor: the controller takes EU, the power output ports send it; the fuel injection port and the
+        // disruption mitigation port (no block entity) hand pipes and hoppers the controller's fuel and ice slots
+        registerEnergyCapabilities(event, mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get());
+        registerEnergyCapabilities(event, mio_icif_block_entities.FUSION_POWER_PORT_ENTITY_TYPE.get());
+        event.registerBlock(Capabilities.ItemHandler.BLOCK, (level, pos, state, be, side) -> {
+            var controller = com.miophas.singularity_iteration.common.blockentity.fusion.FusionPortRegistry.controller(level, pos);
+            return controller == null ? null : controller.fuelHandler();
+        }, mio_icif_blocks.FUSION_FUEL_PORT.get());
+        event.registerBlock(Capabilities.ItemHandler.BLOCK, (level, pos, state, be, side) -> {
+            var controller = com.miophas.singularity_iteration.common.blockentity.fusion.FusionPortRegistry.controller(level, pos);
+            return controller == null ? null : controller.mitigationHandler();
+        }, mio_icif_blocks.FUSION_MITIGATION_PORT.get());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get(),
+            (be, side) -> be.fuelHandler());
         // 0.1.10.36: the steam turbine (EU, cell and battery slots, the steam tank)
         event.registerBlockEntity(EUApi.SIDED, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
             (blockEntity, direction) -> blockEntity.getEnergyStorageCapability(direction));
@@ -3293,7 +3326,9 @@ public class mio_icif_capacities {
             com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_SUPERHEATEDSTEAM.get(),
             com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_UUMATTER.get(),
             // the compressor makes this one: without the capability no fluid machine or pipe could empty it
-            com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_AIR.get()
+            com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_AIR.get(),
+            // 0.1.11.94
+            com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_UNSTABLE_HOTWATER.get()
         );
 
         for (var cellItem : cellItems) {

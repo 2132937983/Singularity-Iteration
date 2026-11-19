@@ -131,6 +131,8 @@ public final class GuideMeIntegration {
         public void compileBlockContext(PageCompiler compiler, LytBlockContainer parent, MdxJsxFlowElement el) {
             StructureBlueprint blueprint = blueprint(compiler, parent, el);
             if (blueprint == null) return;
+            // 0.1.11.94: keys of the same blocks and rule (one block in several facings) make one line
+            Map<String, Integer> lines = new java.util.LinkedHashMap<>();
             for (Map.Entry<StructureBlueprint.Key, Integer> entry : blueprint.counts().entrySet()) {
                 StringBuilder names = new StringBuilder();
                 for (StructureBlueprint.BlockRef ref : entry.getKey().blocks()) {
@@ -140,11 +142,10 @@ public final class GuideMeIntegration {
                     names.append(state.getBlock().getName().getString());
                 }
                 if (names.isEmpty()) continue;
-                String line = entry.getValue() + " × " + names;
                 String note = entry.getKey().noteKey();
-                if (note != null) line += " — " + Component.translatable(note).getString();
-                parent.append(LytParagraph.of(line));
+                lines.merge(note == null ? names.toString() : names + " — " + Component.translatable(note).getString(), entry.getValue(), Integer::sum);
             }
+            lines.forEach((text, count) -> parent.append(LytParagraph.of(count + " × " + text)));
             for (String note : blueprint.noteKeys()) parent.append(LytParagraph.of(Component.translatable(note).getString()));
         }
     }

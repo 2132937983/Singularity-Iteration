@@ -43,6 +43,10 @@ public class mio_icif_cells {
     public static final DeferredItem<mio_icif_cell> CELL_HOTWATER = ITEMS.register("cell/item_cell_hotwater",
             () -> new mio_icif_cell(new Item.Properties().stacksTo(64).craftRemainder(mio_icif_cells.CELL_EMPTY.get()), mio_icif_fluids.HOTWATER.get()));
 
+    // 0.1.11.94: unstable hot water cell (the thermal centrifuge makes it from a hot water cell; canned into a deuterium fuel rod)
+    public static final DeferredItem<mio_icif_cell> CELL_UNSTABLE_HOTWATER = ITEMS.register("cell/item_cell_unstable_hotwater",
+            () -> new mio_icif_cell(new Item.Properties().stacksTo(64).craftRemainder(mio_icif_cells.CELL_EMPTY.get()), mio_icif_fluids.UNSTABLE_HOTWATER.get()));
+
     // 生物质单元
     public static final DeferredItem<mio_icif_cell> CELL_BIOMASS = ITEMS.register("cell/item_cell_biomass",
             () -> new mio_icif_cell(new Item.Properties().stacksTo(64).craftRemainder(mio_icif_cells.CELL_EMPTY.get()), mio_icif_fluids.BIOMASS.get()));
@@ -129,6 +133,8 @@ public class mio_icif_cells {
                     "item.mio_icif.cell_uumatter", CELL_UUMATTER));
             definitions.add(new CellDefinition(mio_icif_fluids.AIR.get(), CELL_TYPE_AIR,
                     "item.mio_icif.cell_air", CELL_AIR));
+            definitions.add(new CellDefinition(mio_icif_fluids.UNSTABLE_HOTWATER.get(), CELL_TYPE_UNSTABLE_HOTWATER,
+                    "item.mio_icif.cell_unstable_hotwater", CELL_UNSTABLE_HOTWATER));
 
             Map<Fluid, CellDefinition> map = new IdentityHashMap<>();
             for (CellDefinition definition : definitions) {
@@ -199,6 +205,8 @@ public class mio_icif_cells {
     public static final int CELL_TYPE_UUMATTER = 13;
     public static final int CELL_TYPE_AIR = 14;
     public static final int CELL_TYPE_GENERIC = 15;
+    /** 0.1.11.94 (after the generic dynamic cell's 15). */
+    public static final int CELL_TYPE_UNSTABLE_HOTWATER = 16;
 
     public static int getCellTypeForFluid(Fluid fluid) {
         if (fluid == null || fluid == Fluids.EMPTY) return CELL_TYPE_EMPTY;

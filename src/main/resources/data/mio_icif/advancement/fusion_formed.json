@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:clean_energy",
+  "display": {
+    "icon": {
+      "id": "mio_icif:fusion/block_fusion_controller"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.fusion_formed.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.fusion_formed.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

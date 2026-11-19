@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " X ",
+    "VKV",
+    " A "
+  ],
+  "key": {
+    "X": {
+      "type": "mio_icif:fluid_cell",
+      "fluid": "minecraft:empty"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    },
+    "K": {
+      "item": "mio_icif:fusion/block_fusion_cryostat"
+    },
+    "A": {
+      "item": "mio_icif:normal/item_advcircuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_fuel_port",
+    "count": 1
+  }
+}

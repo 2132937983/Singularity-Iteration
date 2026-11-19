@@ -327,6 +327,13 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
             .comment("反应堆爆炸威力上限；最大水平半径为此值的两倍",
                      "默认 45 对应最大半径 90 格；0 暂停事故及高温环境效果，已提交事故不重算")
             .defineInRange("reactorExplosionPowerLimit", 45, 0, 1000);
+    // 0.1.11.94：聚变堆熔毁的核爆威力
+    public static final ModConfigSpec.DoubleValue FUSION_EXPLOSION_MULTIPLIER = NUCLEAR_BUILDER
+            .comment("聚变堆熔毁（包层热量到达上限）时的核爆威力倍率，相对核反应堆的爆炸威力上限 reactorExplosionPowerLimit",
+                     "威力 = 此倍率 × reactorExplosionPowerLimit，默认 50 × 45 = 2250（核反应堆最强爆炸的 50 倍）",
+                     "爆炸以环面中心为中心，最大水平半径为威力的两倍，但不超过 2000 格",
+                     "0：聚变堆不爆炸，包层过热只使等离子体破裂；enableNuclearExplosion=false 时退化为不破坏周围地形的局部爆炸")
+            .defineInRange("fusionExplosionMultiplier", 50.0, 0.0, 1000.0);
     // 0.1.10.37：核爆把深层矿石转为深层铱矿石的概率
     public static final ModConfigSpec.DoubleValue NUKE_IRIDIUM_ORE_CHANCE = NUCLEAR_BUILDER
             .comment("核弹与反应堆核爆把爆炸范围内每个深层矿石（#mio_icif:nuke_transmutable）转为深层铱矿石的概率",

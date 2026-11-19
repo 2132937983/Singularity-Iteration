@@ -1,0 +1,25 @@
+// 0.1.11.89: the server run that builds the fusion reactor sample world (example.sicore.FusionTokamakWorldBuilder).
+// ./gradlew --offline -I tools/fusion-world.init.gradle runFusionWorldBuild    (after: python tools/fusion_world.py prepare)
+// 0.1.11.93: runFusionWorldVerify builds the same world in a throwaway folder, pulls the lever and logs the controller for
+// 3,000 ticks (build/fusion-world/verify/FUSION_VERIFY.json)   (after: python tools/fusion_world.py prepare --verify)
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('fusionWorldBuild') {
+            type = 'server'
+            loadedMods = [project.neoForge.mods[project.mod_id], project.neoForge.mods.si_core_example]
+            gameDirectory = project.file('build/fusion-world/game')
+            systemProperty 'si.fusion.world', 'true'
+            programArgument '--nogui'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        project.neoForge.runs.register('fusionWorldVerify') {
+            type = 'server'
+            loadedMods = [project.neoForge.mods[project.mod_id], project.neoForge.mods.si_core_example]
+            gameDirectory = project.file('build/fusion-world/verify')
+            systemProperty 'si.fusion.world', 'true'
+            systemProperty 'si.fusion.verify', 'true'
+            programArgument '--nogui'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

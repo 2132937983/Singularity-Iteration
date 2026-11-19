@@ -504,6 +504,7 @@ public class mio_icif_cell extends Item implements IFluidCellItem {
         registerFilledCellDispenserBehavior(mio_icif_cells.CELL_SUPERHEATEDSTEAM.get());
         registerFilledCellDispenserBehavior(mio_icif_cells.CELL_UUMATTER.get());
         registerFilledCellDispenserBehavior(mio_icif_cells.CELL_AIR.get());
+        registerFilledCellDispenserBehavior(mio_icif_cells.CELL_UNSTABLE_HOTWATER.get());   // 0.1.11.94
 
         registerDynamicCellDispenserBehavior();
     }

@@ -1,0 +1,32 @@
+// Real COMMON TOML load and file-watcher audit in an isolated GameTest world.
+allprojects { project ->
+    afterEvaluate {
+        def game = project.file('build/common-config-audit-game')
+        def config = new File(game, 'config/mio_icif-common.toml')
+        def fixture = project.tasks.register('prepareCommonConfigAuditFixture') {
+            doLast {
+                config.parentFile.mkdirs()
+                config.setText('''[NuclearExplosion]
+enableNuclearExplosion = false
+nukeExplosionMultiplier = 1.5
+reactorExplosionMultiplier = 2.0
+reactorExplosionPowerLimit = 30
+[FutureMarket]
+energyCapacity = 32123
+maxReceive = 75
+[EnergyNet]
+enableVoltageOverload = false
+''', 'UTF-8')
+            }
+        }
+        project.neoForge.runs.register('commonConfigAudit') {
+            type = 'gameTestServer'
+            loadedMods = [project.neoForge.mods[project.mod_id], project.neoForge.mods.si_core_example]
+            gameDirectory = game
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'si_config_audit'
+            systemProperty 'si.config.audit.path', config.absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        project.tasks.matching { it.name == 'prepareCommonConfigAuditRun' }.configureEach { dependsOn fixture }
+    }
+}

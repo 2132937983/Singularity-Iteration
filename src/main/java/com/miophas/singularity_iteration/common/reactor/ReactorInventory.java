@@ -39,6 +39,14 @@ public final class ReactorInventory {
     /** 0.1.10.36: a decayed tritium rod leaves the empty fuel rod it was canned in (the helium-3 escapes). */
     public static final ResourceLocation TRITIUM_PRODUCT=ResourceLocation.parse("mio_icif:normal/item_fuel_rod");
     /**
+     * 0.1.11.94: the deuterium fuel rod (canned from unstable hot water, id {@code normal/item_deuterium_cell} kept from the
+     * deuterium cell it replaces) is a neutron source like the tritium rod, as a D-D neutron generator: D-D fusion yields far
+     * fewer neutrons than D-T, so it runs half as long (DEUTERIUM_LIFE cycles), and deuterium is stable (no decay heat). Spent,
+     * it leaves its empty fuel rod.
+     */
+    public static final ResourceLocation DEUTERIUM_ID=ResourceLocation.parse("mio_icif:normal/item_deuterium_cell");
+    public static final int DEUTERIUM_LIFE=5000,DEUTERIUM_HEAT_PER_CYCLE=0;
+    /**
      * 0.1.10.36: the proton rod (Industrial Upgrade style): 1.5x the heat of uranium, 40000 cycles. 0.1.10.38: like MOX, its EU
      * rises with the hull heat (x1 cold to x5 at full heat; it was a flat 3x), and in a fluid-mode reactor (the fluid and the
      * steam reactor) above half heat its heat doubles. 0.1.10.42: 30 EU per pulse cold (6x uranium's 5), so 30 to 150 EU per
@@ -50,13 +58,16 @@ public final class ReactorInventory {
     public static final int STEAM_VENT_HEAT=1100;
     /** 0.1.10.36: the tritium rod keeps its item id (normal/item_tritium_cell); its component key is "tritium_cell". */
     private static final String TRITIUM_KEY="tritium_cell";
+    /** 0.1.11.94: the deuterium rod's component key. */
+    private static final String DEUTERIUM_KEY="deuterium_cell";
     /**
      * 0.1.10.37: what each breeding or decaying component turns into (lithium cell -> tritium rod, isotope rod -> re-enriched
      * uranium, tritium rod -> empty fuel rod). One table for the reactor ({@link #write}) and for recipe viewers
      * ({@link #transformations}), in display order.
      */
     private static final Map<String,ResourceLocation> PRODUCTS=new java.util.LinkedHashMap<>();
-    static{PRODUCTS.put("lithium_cell",LITHIUM_PRODUCT);PRODUCTS.put("isotope_rod",ISOTOPE_PRODUCT);PRODUCTS.put(TRITIUM_KEY,TRITIUM_PRODUCT);}
+    static{PRODUCTS.put("lithium_cell",LITHIUM_PRODUCT);PRODUCTS.put("isotope_rod",ISOTOPE_PRODUCT);PRODUCTS.put(TRITIUM_KEY,TRITIUM_PRODUCT);
+        PRODUCTS.put(DEUTERIUM_KEY,TRITIUM_PRODUCT);}
     /** 0.1.10.36: the spent identity of each fuel rod (was a switch). */
     private static final Map<String,String> DEPLETED=Map.of(
         "uranium_simple","uranium_simple_depleted","uranium_dual","uranium_dual_depleted","uranium_quad","uranium_quad_deplete",
@@ -84,6 +95,7 @@ public final class ReactorInventory {
         Map.entry("lithium_cell",Profile.lithium(LITHIUM_THRESHOLD,LITHIUM_PULSE_BONUS,LITHIUM_HEAT_PER_PULSE)),
         Map.entry("isotope_rod",Profile.isotope(ISOTOPE_THRESHOLD,ISOTOPE_PULSE_BONUS)),
         Map.entry(TRITIUM_KEY,Profile.neutronSource(TRITIUM_LIFE,TRITIUM_HEAT_PER_CYCLE)),
+        Map.entry(DEUTERIUM_KEY,Profile.neutronSource(DEUTERIUM_LIFE,DEUTERIUM_HEAT_PER_CYCLE)),
         Map.entry("proton_simple",Profile.fuel(1,true,PROTON_EU,PROTON_HEAT)),Map.entry("proton_dual",Profile.fuel(2,true,PROTON_EU,PROTON_HEAT)),
         Map.entry("proton_quad",Profile.fuel(4,true,PROTON_EU,PROTON_HEAT)),
         // 0.1.10.38: two quads in one slot: a quad's pulses with twice its EU and heat
@@ -107,12 +119,15 @@ public final class ReactorInventory {
         // 0.1.10.36: proton fuel, the lithium breeder and the tritium neutron source
         "proton_simple","proton_dual","proton_quad","lithium_cell",TRITIUM_KEY,
         // 0.1.10.38
-        "proton_octuple");
+        "proton_octuple",
+        // 0.1.11.94
+        DEUTERIUM_KEY);
     /** The numeric profile of component {@code key}, or null. */
     public static Profile profile(String key){Profile p=PROFILES.get(key);return p==null||p.kind()==Kind.INERT?null:p;}
     /** Item id of component {@code key}. */
     public static ResourceLocation itemId(String key){
-        return key.equals(TRITIUM_KEY)?LITHIUM_PRODUCT:ResourceLocation.fromNamespaceAndPath("mio_icif","reactor/item_reactor_"+key);}
+        return key.equals(TRITIUM_KEY)?LITHIUM_PRODUCT:key.equals(DEUTERIUM_KEY)?DEUTERIUM_ID
+            :ResourceLocation.fromNamespaceAndPath("mio_icif","reactor/item_reactor_"+key);}
     /** 0.1.10.42: the life of the fuel rod whose profile is {@code profile} (for the simulator); 20000 for a profile of no rod. */
     static int fuelLife(Profile profile){
         for(var e:PROFILES.entrySet())if(e.getValue()==profile&&e.getValue().kind()==Kind.FUEL)return fuelLife(e.getKey());
@@ -124,6 +139,7 @@ public final class ReactorInventory {
     private static String key(ItemStack stack){return key(BuiltInRegistries.ITEM.getKey(stack.getItem()));}
     private static String key(ResourceLocation id){String prefix="reactor/item_reactor_";
         if(id.equals(LITHIUM_PRODUCT))return TRITIUM_KEY;
+        if(id.equals(DEUTERIUM_ID))return DEUTERIUM_KEY;
         return id.getNamespace().equals("mio_icif")&&id.getPath().startsWith(prefix)?id.getPath().substring(prefix.length()):"";}
     public static boolean supported(ItemStack stack){return stack.isEmpty()||PROFILES.containsKey(key(stack));}
     /**
@@ -224,8 +240,8 @@ public final class ReactorInventory {
             }
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));
         }else if(next.profile().kind()==Kind.NEUTRON_SOURCE){
-            // 0.1.10.36: a decayed tritium rod leaves its empty fuel rod
-            if(next.stored()>=next.profile().capacity())return new ItemStack(BuiltInRegistries.ITEM.get(PRODUCTS.get(TRITIUM_KEY)));
+            // 0.1.10.36: a decayed tritium rod leaves its empty fuel rod (0.1.11.94: so does a spent deuterium rod)
+            if(next.stored()>=next.profile().capacity())return new ItemStack(BuiltInRegistries.ITEM.get(PRODUCTS.get(key(previous))));
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));
         }else if(next.profile().storesHeat()||next.profile().kind()==Kind.REFLECTOR){
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));

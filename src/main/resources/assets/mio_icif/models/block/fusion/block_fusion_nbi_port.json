@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "mio_icif:block/fusion/cryostat",
+    "side": "mio_icif:block/fusion/cryostat",
+    "front": "mio_icif:block/fusion/nbi_port"
+  }
+}

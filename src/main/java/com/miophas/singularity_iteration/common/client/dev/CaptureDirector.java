@@ -2503,6 +2503,121 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "fusion_coils" (-Dsi.capture.scene=fusion_coils), 0.1.11.94: the tokamak as laid out, cold: the east column of
+     * ports (disruption mitigation, cryogenic, exhaust), a corner toroidal coil's outer leg (closed at y = +-2), the coil faces
+     * (narrow edge, copper sides, cross-section on top) and the whole torus.
+     */
+    private static void sceneFusionCoils() {
+        BlockPos c = new BlockPos(30, -55, 10);   // as in "fusion": the torus's centre at (18, -55, 6)
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            look(sp, 44.5, -45, 28.5, 130, 16);
+        });
+        server(20, sp -> {
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.placeStructure(sp.serverLevel(), c);
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.equip(sp.serverLevel(), c, false);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); hoverGui = null; mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "fusion_coils/1_overview");
+        server(1, sp -> look(sp, 35.5, -54, 6.5, 129, 8));
+        shot(40, "fusion_coils/2_east_ports");
+        server(1, sp -> look(sp, 31.5, -55, -6.5, 45, 0));
+        shot(40, "fusion_coils/3_corner_coil");
+        server(1, sp -> look(sp, 33.5, -48, -9.5, 40, 35));
+        shot(40, "fusion_coils/4_corner_from_above");
+        server(1, sp -> look(sp, 18.5, -44, 25.5, 180, 40));
+        shot(40, "fusion_coils/5_south_side");
+        client(80, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
+     * Scene "fusion" (-Dsi.capture.scene=fusion), 0.1.11.93: the tokamak demonstration of the sample world
+     * ({@code FusionDemo}): the reactor ready and cold, its instructions, then the lever is pulled and the controller screen is
+     * shot in each stage (magnet cooling, solenoid charging, heating, ignition, full power), then the running reactor from
+     * outside and the GESU it charges. Each shot logs the controller's values ("[fusioncapture]").
+     */
+    private static void sceneFusion() {
+        BlockPos c = new BlockPos(30, -55, 10);   // the structure stands on the grass (y -61) from x 6 to 30, z -6 to 18
+        BlockPos gesu = new BlockPos(22, -59, -9);
+        var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
+        var lever = new java.util.concurrent.atomic.AtomicReference<BlockPos>();
+        java.util.function.Function<com.miophas.singularity_iteration.common.fusion.FusionPlasma.State, java.util.function.BooleanSupplier> reached =
+            s -> () -> ref.get() != null && ref.get().plasma().state() == s;
+        java.util.function.Consumer<String> log = name -> {
+            var f = ref.get();
+            if (f == null) return;
+            org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[fusioncapture] {} | state {} | {} keV | fusion {} | output {} | stored {} | buffer {} | D {} | T {} | hull {}/{}",
+                name, f.plasma().state(), String.format("%.2f", f.plasma().kev()), f.plasma().lastFusion(), f.output(), f.screenValues()[5], f.buffer(),
+                f.deuterium(), f.tritium(), f.hull(), f.maxHull());
+        };
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            look(sp, 44.5, -45, 28.5, 130, 16);
+        });
+        server(20, sp -> {
+            var level = sp.serverLevel();
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.placeStructure(level, c);
+            lever.set(com.miophas.singularity_iteration.common.fusion.FusionDemo.equip(level, c, true));
+            if (level.getBlockEntity(c) instanceof com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity f) ref.set(f);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        until(400, () -> ref.get() != null && ref.get().isFormed());
+        shot(80, "fusion/1_overview_cold");
+        server(1, sp -> look(sp, 33.0, -59.6, 18.1, 180, 12));
+        shot(40, "fusion/2_instructions");
+        server(1, sp -> look(sp, 37.5, -53, 17.5, 135, 11));
+        shot(30, "fusion/3_controller_lever_supply");
+        // the lever is pulled; the controller screen from here on
+        server(1, sp -> {
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.lever(sp.serverLevel(), lever.get(), true);
+            look(sp, 32.5, -55, 10.5, 90, 0);
+        });
+        server(5, sp -> openAt(sp, c));
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        until(100, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.COOLING));
+        client(100, () -> log.accept("4_cooling"));
+        shot(1, "fusion/4_gui_cooling");
+        until(900, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.CHARGING));
+        client(40, () -> log.accept("5_charging"));
+        shot(1, "fusion/5_gui_charging");
+        until(900, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.HEATING));
+        client(30, () -> log.accept("6_heating"));
+        shot(1, "fusion/6_gui_heating");
+        until(1200, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.BURNING));
+        client(5, () -> log.accept("7_ignition"));
+        shot(1, "fusion/7_gui_ignition");
+        until(2400, () -> ref.get() != null && ref.get().output() >= com.miophas.singularity_iteration.common.fusion.FusionPlasma.OUTPUT_CAP);
+        client(40, () -> log.accept("8_full_power"));
+        shot(1, "fusion/8_gui_full_power");
+        // outside, running
+        // without a screen the virtual mouse would turn the camera when the game grabs the mouse again: park it
+        server(1, ServerPlayer::closeContainer);
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); hoverGui = null; mc.setScreen(null); mc.options.hideGui = true; });
+        server(10, sp -> look(sp, 44.5, -45, 28.5, 130, 16));
+        server(30, sp -> look(sp, 44.5, -45, 28.5, 130, 16));
+        shot(10, "fusion/9_overview_running");
+        server(1, sp -> look(sp, 27.5, -56, -13.5, 45, 14));
+        server(30, sp -> look(sp, 27.5, -56, -13.5, 45, 14));
+        shot(10, "fusion/10_output_gesu");
+        server(1, sp -> { look(sp, 24.5, -58.5, -12.5, 30, 10); openAt(sp, gesu); });
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        client(30, () -> log.accept("11_gesu"));
+        shot(1, "fusion/11_gesu_gui");
+        server(1, ServerPlayer::closeContainer);
+        client(80, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
      * Scene "disguise" (-Dsi.capture.scene=disguise), 0.1.11.24: disguised construction foam and disguised wires, as the
      * chunk mesh now draws them. A row of foam as stone, glass, grass, oak leaves and bricks; foamlogged tin cables
      * disguised as planks and grass, a bare one; behind them a 32 x 12 wall of disguised foam and a layer of disguised
@@ -3988,6 +4103,20 @@ public final class CaptureDirector {
         if (OUT != null && "guns".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneGuns();
+        }
+    }
+
+    static {
+        if (OUT != null && "fusion_coils".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneFusionCoils();
+        }
+    }
+
+    static {
+        if (OUT != null && "fusion".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneFusion();
         }
     }
 

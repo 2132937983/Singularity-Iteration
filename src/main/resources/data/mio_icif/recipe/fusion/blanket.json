@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CLC",
+    "LVL",
+    "CLC"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_carbon_plate"
+    },
+    "L": {
+      "item": "mio_icif:resource/item_lithium_dust"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_blanket",
+    "count": 8
+  }
+}

@@ -235,6 +235,7 @@ public class mio_icif_screens {
             mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(),
             ReactorControlScreen::new   // 0.1.11.21: control room
         );
+        event.register(mio_icif_menus.FUSION_CONTROLLER_MENU_TYPE.get(), FusionControllerScreen::new);   // 0.1.11.92
 
         // 注册电力发热机的 GUI 界面
         event.register(

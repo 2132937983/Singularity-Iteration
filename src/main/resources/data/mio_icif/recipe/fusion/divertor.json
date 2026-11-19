@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DDD",
+    "CVC",
+    "DDD"
+  ],
+  "key": {
+    "D": {
+      "item": "mio_icif:resource/item_titanium_denseplate"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_carbon_plate"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_divertor",
+    "count": 8
+  }
+}

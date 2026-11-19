@@ -1,0 +1,814 @@
+# Texture pack application
+
+pack: `resources.zip`
+
+## Applied (114)
+
+- `assets/mio_icif/textures/gui/gui_advanced_solar_generator.png` - 256x256 -> 256x256
+- `assets/mio_icif/textures/gui/gui_components_atlas.png` - 256x512 -> 256x512
+- `assets/mio_icif/textures/gui/gui_future.png` - 500x300 -> 500x300
+- `assets/mio_icif/textures/gui/gui_ncl_rct_fluid.png` - 256x256 -> 256x256
+- `assets/mio_icif/textures/gui/gui_solar_destiller.png` - 256x256 -> 256x256
+- `assets/mio_icif/textures/item/item_electric_fishing_rod.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_electric_wireless_manager.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_geomagnetic_detector.png` - 16x16 -> 16x64
+- `assets/mio_icif/textures/item/item_geomagnetic_detector.png.mcmeta` - animation meta
+- `assets/mio_icif/textures/item/item_rocket.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_advanced_electric_rifle.png` - 32x32 -> 40x40
+- `assets/mio_icif/textures/item/item_tool_cutter.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_diamond_driller.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_electric_plasma_gun.png` - 32x32 -> 40x40
+- `assets/mio_icif/textures/item/item_tool_electric_rifle.png` - 32x32 -> 40x40
+- `assets/mio_icif/textures/item/item_tool_hammer.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_iridium_driller.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_iron_chainsaw.png` - 16x16 -> 16x32
+- `assets/mio_icif/textures/item/item_tool_iron_chainsaw.png.mcmeta` - animation meta
+- `assets/mio_icif/textures/item/item_tool_iron_driller.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_meter.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_od_scanner.png` - 16x16 -> 16x48
+- `assets/mio_icif/textures/item/item_tool_od_scanner.png.mcmeta` - animation meta
+- `assets/mio_icif/textures/item/item_tool_ov_scanner.png` - 16x16 -> 16x48
+- `assets/mio_icif/textures/item/item_tool_ov_scanner.png.mcmeta` - animation meta
+- `assets/mio_icif/textures/item/item_tool_plasma_air_cannon.png` - 32x32 -> 40x40
+- `assets/mio_icif/textures/item/item_tool_power_unit.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_power_unit_small.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_rocket_launcher.png` - 32x32 -> 40x40
+- `assets/mio_icif/textures/item/item_tool_tactical_laser_rifle.png` - 32x32 -> 40x40
+- `assets/mio_icif/textures/item/item_tool_treetap_elc.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_windmeter.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_wooden_treetap.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_wrench.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_tool_wrench_elc.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_energy_crystal_belt.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_flight_ring.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_lapotron_crystal_belt.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_life_support_ring.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_life_support_ring_1.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_life_support_ring_2.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_life_support_ring_3.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/item_trinket_life_support_ring_4.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/reactor/item_reactor_lsotope_cell.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_adviron_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_adviron_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_adviron_ingot.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_adviron_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_ash.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_bronze_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_bronze_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_bronze_dust_small.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_bronze_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_copper_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_copper_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_copper_nugget.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_copper_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_copper_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_copper_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_gold_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_gold_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_golden_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_golden_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_golden_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_ingot_bronze.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_ingot_tin.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_iron_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_iron_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_iron_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_iron_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_iron_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lapi_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lapi_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_ingot.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_nugget.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_lead_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_ingot.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_titanium_ingot.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_niobium_titanium_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_obsidian_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_obsidian_dust_small.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_obsidian_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_raw_lead_ore.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_raw_niobium_ore.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_raw_silver_ore.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_raw_tin_ore.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_raw_titanium_ore.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_silver_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_silver_ingot.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_silver_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_silver_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_dust_small.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_nugget.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_tin_plate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_casing.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_denseplate.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_ingot.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_nugget.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_ore_crushed.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_ore_crushed_purified.png` - 16x16 -> 16x16
+- `assets/mio_icif/textures/item/resource/item_titanium_plate.png` - 16x16 -> 16x16
+
+## Skipped: identical pixels (1120)
+
+- `assets/mio_icif/textures/armor/advanced_jetpack_1.png`
+- `assets/mio_icif/textures/armor/advanced_quantum_1.png`
+- `assets/mio_icif/textures/armor/advanced_solar_helmet_1.png`
+- `assets/mio_icif/textures/armor/advbatpack_1.png`
+- `assets/mio_icif/textures/armor/alloy_1.png`
+- `assets/mio_icif/textures/armor/batpack_1.png`
+- `assets/mio_icif/textures/armor/bronze_1.png`
+- `assets/mio_icif/textures/armor/bronze_2.png`
+- `assets/mio_icif/textures/armor/diving_mask_1.png`
+- `assets/mio_icif/textures/armor/energypack_1.png`
+- `assets/mio_icif/textures/armor/hazmat_1.png`
+- `assets/mio_icif/textures/armor/hazmat_2.png`
+- `assets/mio_icif/textures/armor/heavy_quantum_1.png`
+- `assets/mio_icif/textures/armor/hybrid_solar_helmet_1.png`
+- `assets/mio_icif/textures/armor/jetpack_1.png`
+- `assets/mio_icif/textures/armor/lappack_1.png`
+- `assets/mio_icif/textures/armor/nano_1.png`
+- `assets/mio_icif/textures/armor/nano_2.png`
+- `assets/mio_icif/textures/armor/nightvision_1.png`
+- `assets/mio_icif/textures/armor/quantum_1.png`
+- `assets/mio_icif/textures/armor/quantum_2.png`
+- `assets/mio_icif/textures/armor/rubber_1.png`
+- `assets/mio_icif/textures/armor/solar_1.png`
+- `assets/mio_icif/textures/armor/ultimate_solar_helmet_1.png`
+- `assets/mio_icif/textures/block/block_adviron.png`
+- `assets/mio_icif/textures/block/block_adviron_storage.png`
+- `assets/mio_icif/textures/block/block_alloy.png`
+- `assets/mio_icif/textures/block/block_alloy_door_bottom.png`
+- `assets/mio_icif/textures/block/block_alloy_door_top.png`
+- `assets/mio_icif/textures/block/block_alloy_glass.png`
+- `assets/mio_icif/textures/block/block_barrel.png`
+- `assets/mio_icif/textures/block/block_barrel_bottom.png`
+- `assets/mio_icif/textures/block/block_barrel_top.png`
+- `assets/mio_icif/textures/block/block_bronze.png`
+- `assets/mio_icif/textures/block/block_bronze_storage.png`
+- `assets/mio_icif/textures/block/block_dynamite.png`
+- `assets/mio_icif/textures/block/block_dynamite_remote.png`
+- `assets/mio_icif/textures/block/block_fence_iron.png`
+- `assets/mio_icif/textures/block/block_harz.png`
+- `assets/mio_icif/textures/block/block_i_tnt.png`
+- `assets/mio_icif/textures/block/block_iridium_storage.png`
+- `assets/mio_icif/textures/block/block_iron_storage.png`
+- `assets/mio_icif/textures/block/block_lead.png`
+- `assets/mio_icif/textures/block/block_niobium.png`
+- `assets/mio_icif/textures/block/block_nuke.png`
+- `assets/mio_icif/textures/block/block_ore_lead.png`
+- `assets/mio_icif/textures/block/block_ore_lead_in_deep.png`
+- `assets/mio_icif/textures/block/block_ore_niobium.png`
+- `assets/mio_icif/textures/block/block_ore_niobium_in_deep.png`
+- `assets/mio_icif/textures/block/block_ore_tin.png`
+- `assets/mio_icif/textures/block/block_ore_tin_in_deep.png`
+- `assets/mio_icif/textures/block/block_ore_titanium.png`
+- `assets/mio_icif/textures/block/block_ore_titanium_in_deep.png`
+- `assets/mio_icif/textures/block/block_ore_uran.png`
+- `assets/mio_icif/textures/block/block_ore_uran_in_deep.png`
+- `assets/mio_icif/textures/block/block_raw_lead.png`
+- `assets/mio_icif/textures/block/block_raw_niobium.png`
+- `assets/mio_icif/textures/block/block_raw_tin.png`
+- `assets/mio_icif/textures/block/block_raw_titanium.png`
+- `assets/mio_icif/textures/block/block_raw_uranium.png`
+- `assets/mio_icif/textures/block/block_reactor_vessel.png`
+- `assets/mio_icif/textures/block/block_rub_leaves.png`
+- `assets/mio_icif/textures/block/block_rub_sapling.png`
+- `assets/mio_icif/textures/block/block_rub_wood.png`
+- `assets/mio_icif/textures/block/block_rub_wood_dry.png`
+- `assets/mio_icif/textures/block/block_rub_wood_wet.png`
+- `assets/mio_icif/textures/block/block_rubber.png`
+- `assets/mio_icif/textures/block/block_tin.png`
+- `assets/mio_icif/textures/block/block_titanium.png`
+- `assets/mio_icif/textures/block/block_titanium_storage.png`
+- `assets/mio_icif/textures/block/block_uranium.png`
+- `assets/mio_icif/textures/block/block_wood_storage.png`
+- `assets/mio_icif/textures/block/build/block_adviron_tank_bottom.png`
+- `assets/mio_icif/textures/block/build/block_adviron_tank_center.png`
+- `assets/mio_icif/textures/block/build/block_adviron_tank_single.png`
+- `assets/mio_icif/textures/block/build/block_adviron_tank_top.png`
+- `assets/mio_icif/textures/block/build/block_basalt.png`
+- `assets/mio_icif/textures/block/build/block_bronze_tank_bottom.png`
+- `assets/mio_icif/textures/block/build/block_bronze_tank_center.png`
+- `assets/mio_icif/textures/block/build/block_bronze_tank_single.png`
+- `assets/mio_icif/textures/block/build/block_bronze_tank_top.png`
+- `assets/mio_icif/textures/block/build/block_foam.png`
+- `assets/mio_icif/textures/block/build/block_foam_reinforced.png`
+- `assets/mio_icif/textures/block/build/block_iridium_tank_bottom.png`
+- `assets/mio_icif/textures/block/build/block_iridium_tank_center.png`
+- `assets/mio_icif/textures/block/build/block_iridium_tank_single.png`
+- `assets/mio_icif/textures/block/build/block_iridium_tank_top.png`
+- `assets/mio_icif/textures/block/build/block_iron_tank_bottom.png`
+- `assets/mio_icif/textures/block/build/block_iron_tank_center.png`
+- `assets/mio_icif/textures/block/build/block_iron_tank_single.png`
+- `assets/mio_icif/textures/block/build/block_iron_tank_top.png`
+- `assets/mio_icif/textures/block/build/block_scaffold_carbon.png`
+- `assets/mio_icif/textures/block/build/block_scaffold_iron.png`
+- `assets/mio_icif/textures/block/build/block_scaffold_steel.png`
+- `assets/mio_icif/textures/block/build/block_scaffold_titanium.png`
+- `assets/mio_icif/textures/block/build/block_scaffold_wood.png`
+- `assets/mio_icif/textures/block/build/block_titanium_tank.png`
+- `assets/mio_icif/textures/block/build/block_titanium_tank_bottom.png`
+- `assets/mio_icif/textures/block/build/block_titanium_tank_center.png`
+- `assets/mio_icif/textures/block/build/block_titanium_tank_single.png`
+- `assets/mio_icif/textures/block/build/block_titanium_tank_top.png`
+- `assets/mio_icif/textures/block/build/irradiant_uranium_glass.png`
+- `assets/mio_icif/textures/block/build/irradiant_uranium_glass_pane_top.png`
+- `assets/mio_icif/textures/block/build/rubber_door_bottom.png`
+- `assets/mio_icif/textures/block/build/rubber_door_top.png`
+- `assets/mio_icif/textures/block/build/rubber_planks.png`
+- `assets/mio_icif/textures/block/build/rubber_trapdoor.png`
+- `assets/mio_icif/textures/block/checker/block_checker.png`
+- `assets/mio_icif/textures/block/crop/acacia_sapling_1.png`
+- `assets/mio_icif/textures/block/crop/acacia_sapling_2.png`
+- `assets/mio_icif/textures/block/crop/acacia_sapling_3.png`
+- `assets/mio_icif/textures/block/crop/acacia_sapling_4.png`
+- `assets/mio_icif/textures/block/crop/acacia_sapling_5.png`
+- `assets/mio_icif/textures/block/crop/aurelia_1.png`
+- `assets/mio_icif/textures/block/crop/aurelia_2.png`
+- `assets/mio_icif/textures/block/crop/aurelia_3.png`
+- `assets/mio_icif/textures/block/crop/aurelia_4.png`
+- `assets/mio_icif/textures/block/crop/aurelia_5.png`
+- `assets/mio_icif/textures/block/crop/beetroots_0.png`
+- `assets/mio_icif/textures/block/crop/beetroots_1.png`
+- `assets/mio_icif/textures/block/crop/beetroots_2.png`
+- `assets/mio_icif/textures/block/crop/beetroots_3.png`
+- `assets/mio_icif/textures/block/crop/birch_sapling_1.png`
+- `assets/mio_icif/textures/block/crop/birch_sapling_2.png`
+- `assets/mio_icif/textures/block/crop/birch_sapling_3.png`
+- `assets/mio_icif/textures/block/crop/birch_sapling_4.png`
+- `assets/mio_icif/textures/block/crop/birch_sapling_5.png`
+- `assets/mio_icif/textures/block/crop/blackthorn_1.png`
+- `assets/mio_icif/textures/block/crop/blackthorn_2.png`
+- `assets/mio_icif/textures/block/crop/blackthorn_3.png`
+- `assets/mio_icif/textures/block/crop/blackthorn_4.png`
+- `assets/mio_icif/textures/block/crop/blazereed_1.png`
+- `assets/mio_icif/textures/block/crop/blazereed_2.png`
+- `assets/mio_icif/textures/block/crop/blazereed_3.png`
+- `assets/mio_icif/textures/block/crop/blazereed_4.png`
+- `assets/mio_icif/textures/block/crop/brown_mushroom_1.png`
+- `assets/mio_icif/textures/block/crop/brown_mushroom_2.png`
+- `assets/mio_icif/textures/block/crop/brown_mushroom_3.png`
+- `assets/mio_icif/textures/block/crop/carrots_1.png`
+- `assets/mio_icif/textures/block/crop/carrots_2.png`
+- `assets/mio_icif/textures/block/crop/carrots_3.png`
+- `assets/mio_icif/textures/block/crop/cocoa_1.png`
+- `assets/mio_icif/textures/block/crop/cocoa_2.png`
+- `assets/mio_icif/textures/block/crop/cocoa_3.png`
+- `assets/mio_icif/textures/block/crop/cocoa_4.png`
+- `assets/mio_icif/textures/block/crop/coffee_1.png`
+- `assets/mio_icif/textures/block/crop/coffee_2.png`
+- `assets/mio_icif/textures/block/crop/coffee_3.png`
+- `assets/mio_icif/textures/block/crop/coffee_4.png`
+- `assets/mio_icif/textures/block/crop/coffee_5.png`
+- `assets/mio_icif/textures/block/crop/cyazint_1.png`
+- `assets/mio_icif/textures/block/crop/cyazint_2.png`
+- `assets/mio_icif/textures/block/crop/cyazint_3.png`
+- `assets/mio_icif/textures/block/crop/cyazint_4.png`
+- `assets/mio_icif/textures/block/crop/cyprium_1.png`
+- `assets/mio_icif/textures/block/crop/cyprium_2.png`
+- `assets/mio_icif/textures/block/crop/cyprium_3.png`
+- `assets/mio_icif/textures/block/crop/cyprium_4.png`
+- `assets/mio_icif/textures/block/crop/dandelion_1.png`
+- `assets/mio_icif/textures/block/crop/dandelion_2.png`
+- `assets/mio_icif/textures/block/crop/dandelion_3.png`
+- `assets/mio_icif/textures/block/crop/dandelion_4.png`
+- `assets/mio_icif/textures/block/crop/dark_oak_sapling_1.png`
+- `assets/mio_icif/textures/block/crop/dark_oak_sapling_2.png`
+- `assets/mio_icif/textures/block/crop/dark_oak_sapling_3.png`
+- `assets/mio_icif/textures/block/crop/dark_oak_sapling_4.png`
+- `assets/mio_icif/textures/block/crop/dark_oak_sapling_5.png`
+- `assets/mio_icif/textures/block/crop/eatingplant_1.png`
+- `assets/mio_icif/textures/block/crop/eatingplant_2.png`
+- `assets/mio_icif/textures/block/crop/eatingplant_3.png`
+- `assets/mio_icif/textures/block/crop/eatingplant_4.png`
+- `assets/mio_icif/textures/block/crop/eatingplant_5.png`
+- `assets/mio_icif/textures/block/crop/eatingplant_6.png`
+- `assets/mio_icif/textures/block/crop/egg_plant_1.png`
+- `assets/mio_icif/textures/block/crop/egg_plant_2.png`
+- `assets/mio_icif/textures/block/crop/egg_plant_3.png`
+- `assets/mio_icif/textures/block/crop/ferru_1.png`
+- `assets/mio_icif/textures/block/crop/ferru_2.png`
+- `assets/mio_icif/textures/block/crop/ferru_3.png`
+- `assets/mio_icif/textures/block/crop/ferru_4.png`
+- `assets/mio_icif/textures/block/crop/flax_1.png`
+- `assets/mio_icif/textures/block/crop/flax_2.png`
+- `assets/mio_icif/textures/block/crop/flax_3.png`
+- `assets/mio_icif/textures/block/crop/flax_4.png`
+- `assets/mio_icif/textures/block/crop/hops_1.png`
+- `assets/mio_icif/textures/block/crop/hops_2.png`
+- `assets/mio_icif/textures/block/crop/hops_3.png`
+- `assets/mio_icif/textures/block/crop/hops_4.png`
+- `assets/mio_icif/textures/block/crop/hops_5.png`
+- `assets/mio_icif/textures/block/crop/hops_6.png`
+- `assets/mio_icif/textures/block/crop/hops_7.png`
+- `assets/mio_icif/textures/block/crop/infested_1.png`
+- `assets/mio_icif/textures/block/crop/infested_2.png`
+- `assets/mio_icif/textures/block/crop/infested_3.png`
+- `assets/mio_icif/textures/block/crop/infested_4.png`
+- `assets/mio_icif/textures/block/crop/infested_5.png`
+- `assets/mio_icif/textures/block/crop/jungle_sapling_1.png`
+- `assets/mio_icif/textures/block/crop/jungle_sapling_2.png`
+- `assets/mio_icif/textures/block/crop/jungle_sapling_3.png`
+- `assets/mio_icif/textures/block/crop/jungle_sapling_4.png`
+- `assets/mio_icif/textures/block/crop/jungle_sapling_5.png`
+- `assets/mio_icif/textures/block/crop/melon_1.png`
+- `assets/mio_icif/textures/block/crop/melon_2.png`
+- `assets/mio_icif/textures/block/crop/melon_3.png`
+- `assets/mio_icif/textures/block/crop/melon_4.png`
+- `assets/mio_icif/textures/block/crop/netherwart_1.png`
+- `assets/mio_icif/textures/block/crop/netherwart_2.png`
+- `assets/mio_icif/textures/block/crop/netherwart_3.png`
+- `assets/mio_icif/textures/block/crop/oak_sapling_1.png`
+- `assets/mio_icif/textures/block/crop/oak_sapling_2.png`
+- `assets/mio_icif/textures/block/crop/oak_sapling_3.png`
+- `assets/mio_icif/textures/block/crop/oak_sapling_4.png`
+- `assets/mio_icif/textures/block/crop/oak_sapling_5.png`
+- `assets/mio_icif/textures/block/crop/plumbiscus_1.png`
+- `assets/mio_icif/textures/block/crop/plumbiscus_2.png`
+- `assets/mio_icif/textures/block/crop/plumbiscus_3.png`
+- `assets/mio_icif/textures/block/crop/plumbiscus_4.png`
+- `assets/mio_icif/textures/block/crop/potato_1.png`
+- `assets/mio_icif/textures/block/crop/potato_2.png`
+- `assets/mio_icif/textures/block/crop/potato_3.png`
+- `assets/mio_icif/textures/block/crop/potato_4.png`
+- `assets/mio_icif/textures/block/crop/pumpkin_1.png`
+- `assets/mio_icif/textures/block/crop/pumpkin_2.png`
+- `assets/mio_icif/textures/block/crop/pumpkin_3.png`
+- `assets/mio_icif/textures/block/crop/pumpkin_4.png`
+- `assets/mio_icif/textures/block/crop/red_mushroom_1.png`
+- `assets/mio_icif/textures/block/crop/red_mushroom_2.png`
+- `assets/mio_icif/textures/block/crop/red_mushroom_3.png`
+- `assets/mio_icif/textures/block/crop/redwheat_1.png`
+- `assets/mio_icif/textures/block/crop/redwheat_2.png`
+- `assets/mio_icif/textures/block/crop/redwheat_3.png`
+- `assets/mio_icif/textures/block/crop/redwheat_4.png`
+- `assets/mio_icif/textures/block/crop/redwheat_5.png`
+- `assets/mio_icif/textures/block/crop/redwheat_6.png`
+- `assets/mio_icif/textures/block/crop/redwheat_7.png`
+- `assets/mio_icif/textures/block/crop/reed_1.png`
+- `assets/mio_icif/textures/block/crop/reed_2.png`
+- `assets/mio_icif/textures/block/crop/reed_3.png`
+- `assets/mio_icif/textures/block/crop/rose_1.png`
+- `assets/mio_icif/textures/block/crop/rose_2.png`
+- `assets/mio_icif/textures/block/crop/rose_3.png`
+- `assets/mio_icif/textures/block/crop/rose_4.png`
+- `assets/mio_icif/textures/block/crop/rubber_sapling.png`
+- `assets/mio_icif/textures/block/crop/shining_1.png`
+- `assets/mio_icif/textures/block/crop/shining_2.png`
+- `assets/mio_icif/textures/block/crop/shining_3.png`
+- `assets/mio_icif/textures/block/crop/shining_4.png`
+- `assets/mio_icif/textures/block/crop/shining_5.png`
+- `assets/mio_icif/textures/block/crop/spruce_sapling_1.png`
+- `assets/mio_icif/textures/block/crop/spruce_sapling_2.png`
+- `assets/mio_icif/textures/block/crop/spruce_sapling_3.png`
+- `assets/mio_icif/textures/block/crop/spruce_sapling_4.png`
+- `assets/mio_icif/textures/block/crop/spruce_sapling_5.png`
+- `assets/mio_icif/textures/block/crop/stagnium_1.png`
+- `assets/mio_icif/textures/block/crop/stagnium_2.png`
+- `assets/mio_icif/textures/block/crop/stagnium_3.png`
+- `assets/mio_icif/textures/block/crop/stagnium_4.png`
+- `assets/mio_icif/textures/block/crop/stick.png`
+- `assets/mio_icif/textures/block/crop/stick_upgraded.png`
+- `assets/mio_icif/textures/block/crop/stickreed_1.png`
+- `assets/mio_icif/textures/block/crop/stickreed_2.png`
+- `assets/mio_icif/textures/block/crop/stickreed_3.png`
+- `assets/mio_icif/textures/block/crop/stickreed_4.png`
+- `assets/mio_icif/textures/block/crop/terra_wart_1.png`
+- `assets/mio_icif/textures/block/crop/terra_wart_2.png`
+- `assets/mio_icif/textures/block/crop/terra_wart_3.png`
+- `assets/mio_icif/textures/block/crop/titanium_1.png`
+- `assets/mio_icif/textures/block/crop/titanium_2.png`
+- `assets/mio_icif/textures/block/crop/titanium_3.png`
+- `assets/mio_icif/textures/block/crop/titanium_4.png`
+- `assets/mio_icif/textures/block/crop/tulip_1.png`
+- `assets/mio_icif/textures/block/crop/tulip_2.png`
+- `assets/mio_icif/textures/block/crop/tulip_3.png`
+- `assets/mio_icif/textures/block/crop/tulip_4.png`
+- `assets/mio_icif/textures/block/crop/uranium_1.png`
+- `assets/mio_icif/textures/block/crop/uranium_2.png`
+- `assets/mio_icif/textures/block/crop/uranium_3.png`
+- `assets/mio_icif/textures/block/crop/uranium_4.png`
+- `assets/mio_icif/textures/block/crop/venomilia_1.png`
+- `assets/mio_icif/textures/block/crop/venomilia_2.png`
+- `assets/mio_icif/textures/block/crop/venomilia_3.png`
+- `assets/mio_icif/textures/block/crop/venomilia_4.png`
+- `assets/mio_icif/textures/block/crop/venomilia_5.png`
+- `assets/mio_icif/textures/block/crop/venomilia_6.png`
+- `assets/mio_icif/textures/block/crop/weed_1.png`
+- `assets/mio_icif/textures/block/crop/weed_2.png`
+- `assets/mio_icif/textures/block/crop/weed_3.png`
+- `assets/mio_icif/textures/block/crop/weed_4.png`
+- `assets/mio_icif/textures/block/crop/weed_5.png`
+- `assets/mio_icif/textures/block/crop/wheat_1.png`
+- `assets/mio_icif/textures/block/crop/wheat_2.png`
+- `assets/mio_icif/textures/block/crop/wheat_3.png`
+- `assets/mio_icif/textures/block/crop/wheat_4.png`
+- `assets/mio_icif/textures/block/crop/wheat_5.png`
+- `assets/mio_icif/textures/block/crop/wheat_6.png`
+- `assets/mio_icif/textures/block/crop/wheat_7.png`
+- `assets/mio_icif/textures/block/energy_converter/energy_converter_eu_to_fe.png`
+- `assets/mio_icif/textures/block/energy_converter/energy_converter_fe_to_eu.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_1.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_2.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_3.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_4.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_5.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_6.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_7.png`
+- `assets/mio_icif/textures/block/enriched_crop/copper_rich_8.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_1.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_2.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_3.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_4.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_5.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_6.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_7.png`
+- `assets/mio_icif/textures/block/enriched_crop/iron_rich_8.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_1.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_2.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_3.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_4.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_5.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_6.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_7.png`
+- `assets/mio_icif/textures/block/enriched_crop/lead_rich_8.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_1.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_2.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_3.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_4.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_5.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_6.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_7.png`
+- `assets/mio_icif/textures/block/enriched_crop/tin_rich_8.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_1.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_2.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_3.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_4.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_5.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_6.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_7.png`
+- `assets/mio_icif/textures/block/enriched_crop/titanium_rich_8.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_1.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_2.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_3.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_4.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_5.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_6.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_7.png`
+- `assets/mio_icif/textures/block/enriched_crop/uranium_rich_8.png`
+- `assets/mio_icif/textures/block/environment/block_radiating_deepslate.png`
+- `assets/mio_icif/textures/block/environment/block_radiating_dirt.png`
+- `assets/mio_icif/textures/block/environment/block_radiating_stone.png`
+- `assets/mio_icif/textures/block/fluids/air_flow.png`
+- `assets/mio_icif/textures/block/fluids/air_still.png`
+- `assets/mio_icif/textures/block/fluids/biogas_flow.png`
+- `assets/mio_icif/textures/block/fluids/biogas_still.png`
+- `assets/mio_icif/textures/block/fluids/biomass_flow.png`
+- `assets/mio_icif/textures/block/fluids/biomass_still.png`
+- `assets/mio_icif/textures/block/fluids/constructionfoam_flow.png`
+- `assets/mio_icif/textures/block/fluids/constructionfoam_still.png`
+- `assets/mio_icif/textures/block/fluids/coolant_flow.png`
+- `assets/mio_icif/textures/block/fluids/coolant_still.png`
+- `assets/mio_icif/textures/block/fluids/crude_oil_flow.png`
+- `assets/mio_icif/textures/block/fluids/crude_oil_still.png`
+- `assets/mio_icif/textures/block/fluids/diesel_oil_flow.png`
+- `assets/mio_icif/textures/block/fluids/diesel_oil_still.png`
+- `assets/mio_icif/textures/block/fluids/distilledwater_flow.png`
+- `assets/mio_icif/textures/block/fluids/distilledwater_still.png`
+- `assets/mio_icif/textures/block/fluids/hotcoolant_flow.png`
+- `assets/mio_icif/textures/block/fluids/hotcoolant_still.png`
+- `assets/mio_icif/textures/block/fluids/hotwater_flow.png`
+- `assets/mio_icif/textures/block/fluids/hotwater_still.png`
+- `assets/mio_icif/textures/block/fluids/pahoehoelava_still.png`
+- `assets/mio_icif/textures/block/fluids/steam_still.png`
+- `assets/mio_icif/textures/block/fluids/superheatedsteam_still.png`
+- `assets/mio_icif/textures/block/fluids/uumatter_flow.png`
+- `assets/mio_icif/textures/block/fluids/uumatter_still.png`
+- `assets/mio_icif/textures/block/generator/block_advanced_drop_generator.png`
+- `assets/mio_icif/textures/block/generator/block_advanced_experience_generator.png`
+- `assets/mio_icif/textures/block/generator/block_advanced_semifluid_generator.png`
+- `assets/mio_icif/textures/block/generator/block_advanced_solar_panel.png`
+- `assets/mio_icif/textures/block/generator/block_advanced_stirling_generator.png`
+- `assets/mio_icif/textures/block/generator/block_diesel_generator.png`
+- `assets/mio_icif/textures/block/generator/block_drop_generator.png`
+- `assets/mio_icif/textures/block/generator/block_experience_generator.png`
+- `assets/mio_icif/textures/block/generator/block_geo_generator.png`
+- `assets/mio_icif/textures/block/generator/block_geomagnetic_antenna.png`
+- `assets/mio_icif/textures/block/generator/block_geomagnetic_generator.png`
+- `assets/mio_icif/textures/block/generator/block_geomagnetic_pedestal.png`
+- `assets/mio_icif/textures/block/generator/block_hybrid_solar_panel.png`
+- `assets/mio_icif/textures/block/generator/block_kinetic_generator.png`
+- `assets/mio_icif/textures/block/generator/block_mets_advanced_solar_generator.png`
+- `assets/mio_icif/textures/block/generator/block_nuclear_reactor_generator.png`
+- `assets/mio_icif/textures/block/generator/block_photon_resonance_solar_generator.png`
+- `assets/mio_icif/textures/block/generator/block_quantum_generator.png`
+- `assets/mio_icif/textures/block/generator/block_quantum_solar_panel.png`
+- `assets/mio_icif/textures/block/generator/block_rt_generator.png`
+- `assets/mio_icif/textures/block/generator/block_semifluid_generator.png`
+- `assets/mio_icif/textures/block/generator/block_solar_generator.png`
+- `assets/mio_icif/textures/block/generator/block_stirling_generator.png`
+- `assets/mio_icif/textures/block/generator/block_thermal_generator.png`
+- `assets/mio_icif/textures/block/generator/block_turbo_kinetic_generator.png`
+- `assets/mio_icif/textures/block/generator/block_twin_turbo_kinetic_generator.png`
+
+## Skipped: identical mcmeta (29)
+
+- `assets/mio_icif/textures/block/fluids/air_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/air_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/biogas_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/biomass_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/biomass_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/constructionfoam_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/constructionfoam_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/coolant_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/coolant_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/crude_oil_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/crude_oil_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/diesel_oil_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/diesel_oil_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/distilledwater_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/distilledwater_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/hotcoolant_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/hotcoolant_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/hotwater_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/hotwater_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/pahoehoelava_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/steam_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/superheatedsteam_still.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/uumatter_flow.png.mcmeta`
+- `assets/mio_icif/textures/block/fluids/uumatter_still.png.mcmeta`
+- `assets/mio_icif/textures/entity/villager/profession/future_trader.png.mcmeta`
+- `assets/mio_icif/textures/entity/villager/type/desert.png.mcmeta`
+- `assets/mio_icif/textures/entity/villager/type/snow.png.mcmeta`
+- `assets/mio_icif/textures/item/item_nanosaber_active.png.mcmeta`
+- `assets/mio_icif/textures/item/item_tool_plasma_launcher.png.mcmeta`
+
+## Skipped: stale (equals our older revision) (2)
+
+- `assets/mio_icif/textures/item/item_electric_lighter.png (1f31592)`
+- `assets/mio_icif/textures/item/item_tool_tachyon_disruptor.png (1f31592)`
+
+## Skipped: unreadable png in the pack (not applied) (2)
+
+- `assets/mio_icif/textures/entity/chaos_boss_accent.png (unrecognized data stream contents when reading image file)`
+- `assets/mio_icif/textures/entity/chaos_boss_body.png (unrecognized data stream contents when reading image file)`
+
+## differs, not applied: META-INF/META-INF/services/me.shedaniel.rei.api.client.plugins.REIClientPlugin (1)
+
+- `META-INF/services/me.shedaniel.rei.api.client.plugins.REIClientPlugin`
+
+## differs, not applied: assets/blockstates (23)
+
+- `assets/mio_icif/blockstates/build/block_scaffold_carbon.json`
+- `assets/mio_icif/blockstates/build/block_scaffold_iron.json`
+- `assets/mio_icif/blockstates/build/block_scaffold_steel.json`
+- `assets/mio_icif/blockstates/build/block_scaffold_titanium.json`
+- `assets/mio_icif/blockstates/build/block_scaffold_wood.json`
+- `assets/mio_icif/blockstates/crop/stick.json`
+- `assets/mio_icif/blockstates/crop/stick_upgraded.json`
+- `assets/mio_icif/blockstates/generator/block_advanced_drop_generator.json`
+- `assets/mio_icif/blockstates/generator/block_advanced_experience_generator.json`
+- `assets/mio_icif/blockstates/generator/block_advanced_semifluid_generator.json`
+- `assets/mio_icif/blockstates/generator/block_drop_generator.json`
+- `assets/mio_icif/blockstates/generator/block_experience_generator.json`
+- `assets/mio_icif/blockstates/generator/block_kinetic_generator.json`
+- `assets/mio_icif/blockstates/generator/block_turbo_kinetic_generator.json`
+- `assets/mio_icif/blockstates/generator/block_twin_turbo_kinetic_generator.json`
+- `assets/mio_icif/blockstates/kugenerator/block_kinetic_generator_elc.json`
+- `assets/mio_icif/blockstates/kugenerator/block_manual_kinetic_generator.json`
+- `assets/mio_icif/blockstates/kugenerator/block_stirling_kinetic_generator.json`
+- `assets/mio_icif/blockstates/kugenerator/block_water_kinetic_generator.json`
+- `assets/mio_icif/blockstates/kugenerator/block_wind_kinetic_generator.json`
+- `assets/mio_icif/blockstates/producer/block_canner_elc.json`
+- `assets/mio_icif/blockstates/producer/block_pump_elc.json`
+- `assets/mio_icif/blockstates/producer/block_steam_kinetic_generator.json`
+
+## differs, not applied: assets/lang (2)
+
+- `assets/mio_icif/lang/en_us.json`
+- `assets/mio_icif/lang/zh_cn.json`
+
+## differs, not applied: assets/models (357)
+
+- `assets/mio_icif/models/block/checker/block_checker.json`
+- `assets/mio_icif/models/block/crop/weed.json`
+- `assets/mio_icif/models/block/energy_converter/energy_converter_eu_to_fe.json`
+- `assets/mio_icif/models/block/energy_converter/energy_converter_fe_to_eu.json`
+- `assets/mio_icif/models/block/generator/block_advanced_drop_generator.json`
+- `assets/mio_icif/models/block/generator/block_advanced_drop_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_advanced_experience_generator.json`
+- `assets/mio_icif/models/block/generator/block_advanced_experience_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_advanced_semifluid_generator.json`
+- `assets/mio_icif/models/block/generator/block_advanced_semifluid_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_advanced_solar_panel.json`
+- `assets/mio_icif/models/block/generator/block_advanced_stirling_generator.json`
+- `assets/mio_icif/models/block/generator/block_advanced_stirling_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_diesel_generator.json`
+- `assets/mio_icif/models/block/generator/block_diesel_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_drop_generator.json`
+- `assets/mio_icif/models/block/generator/block_drop_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_experience_generator.json`
+- `assets/mio_icif/models/block/generator/block_experience_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_geo_generator.json`
+- `assets/mio_icif/models/block/generator/block_geo_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_geomagnetic_generator.json`
+- `assets/mio_icif/models/block/generator/block_geomagnetic_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_hybrid_solar_panel.json`
+- `assets/mio_icif/models/block/generator/block_kinetic_generator.json`
+- `assets/mio_icif/models/block/generator/block_kinetic_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_mets_advanced_solar_generator.json`
+- `assets/mio_icif/models/block/generator/block_mets_advanced_solar_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_nuclear_reactor_generator.json`
+- `assets/mio_icif/models/block/generator/block_nuclear_reactor_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_photon_resonance_solar_generator.json`
+- `assets/mio_icif/models/block/generator/block_photon_resonance_solar_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_quantum_generator.json`
+- `assets/mio_icif/models/block/generator/block_quantum_solar_panel.json`
+- `assets/mio_icif/models/block/generator/block_rt_generator.json`
+- `assets/mio_icif/models/block/generator/block_rt_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_semifluid_generator.json`
+- `assets/mio_icif/models/block/generator/block_semifluid_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_solar_generator.json`
+- `assets/mio_icif/models/block/generator/block_stirling_generator.json`
+- `assets/mio_icif/models/block/generator/block_stirling_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_thermal_generator.json`
+- `assets/mio_icif/models/block/generator/block_thermal_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_turbo_kinetic_generator.json`
+- `assets/mio_icif/models/block/generator/block_turbo_kinetic_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_twin_turbo_kinetic_generator.json`
+- `assets/mio_icif/models/block/generator/block_twin_turbo_kinetic_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_ultimate_hybrid_solar_panel.json`
+- `assets/mio_icif/models/block/generator/block_ultimate_photon_resonance_solar_generator.json`
+- `assets/mio_icif/models/block/generator/block_ultimate_photon_resonance_solar_generator_on.json`
+- `assets/mio_icif/models/block/generator/block_unlimit_generator.json`
+- `assets/mio_icif/models/block/generator/block_water_generator.json`
+- `assets/mio_icif/models/block/generator/block_wind_generator.json`
+- `assets/mio_icif/models/block/hugenerator/block_fluid_heat_generator.json`
+- `assets/mio_icif/models/block/hugenerator/block_fluid_heat_generator_on.json`
+- `assets/mio_icif/models/block/hugenerator/block_heat_generator_elc.json`
+- `assets/mio_icif/models/block/hugenerator/block_heat_generator_elc_on.json`
+- `assets/mio_icif/models/block/hugenerator/block_heat_source_fluid.json`
+- `assets/mio_icif/models/block/hugenerator/block_heat_source_fluid_on.json`
+- `assets/mio_icif/models/block/hugenerator/block_rt_heat_generator.json`
+- ... 297 more
+
+## differs, not applied: assets/sounds (3)
+
+- `assets/mio_icif/sounds/sfx_cable_break.ogg`
+- `assets/mio_icif/sounds/sfx_demolish.ogg`
+- `assets/mio_icif/sounds/sfx_machine_work.ogg`
+
+## differs, not applied: assets/sounds.json (1)
+
+- `assets/mio_icif/sounds.json`
+
+## differs, not applied: data/curios (1)
+
+- `data/mio_icif/curios/entities/player.json`
+
+## differs, not applied: data/recipe (437)
+
+- `data/mio_icif/recipe/asp_enriched_sunnarium.json`
+- `data/mio_icif/recipe/asp_iridiumiron_reinforced_plate.json`
+- `data/mio_icif/recipe/asp_irradiant_glass_pane.json`
+- `data/mio_icif/recipe/asp_irradiant_reinforced_plate.json`
+- `data/mio_icif/recipe/asp_irradiant_uranium_ingot.json`
+- `data/mio_icif/recipe/blast_furnace/iron_ingot_to_adviron.json`
+- `data/mio_icif/recipe/blast_furnace/iron_ore_crushed_purified_to_adviron.json`
+- `data/mio_icif/recipe/blast_furnace/iron_ore_crushed_to_adviron.json`
+- `data/mio_icif/recipe/blast_furnace/item_iron_ore_crushed_purified.json`
+- `data/mio_icif/recipe/blast_furnace/niobium_titanium_dust_to_ingot.json`
+- `data/mio_icif/recipe/block_advanced_drop_generator.json`
+- `data/mio_icif/recipe/block_advanced_experience_generator.json`
+- `data/mio_icif/recipe/block_advanced_semifluid_generator.json`
+- `data/mio_icif/recipe/block_advanced_solar_panel.json`
+- `data/mio_icif/recipe/block_advanced_stirling_generator.json`
+- `data/mio_icif/recipe/block_drop_generator.json`
+- `data/mio_icif/recipe/block_experience_generator.json`
+- `data/mio_icif/recipe/block_hybrid_solar_panel.json`
+- `data/mio_icif/recipe/block_mets_advanced_solar_generator.json`
+- `data/mio_icif/recipe/block_photon_resonance_solar_generator.json`
+- `data/mio_icif/recipe/block_quantum_generator.json`
+- `data/mio_icif/recipe/block_quantum_solar_panel.json`
+- `data/mio_icif/recipe/block_raw_lead.json`
+- `data/mio_icif/recipe/block_raw_lead_uncraft.json`
+- `data/mio_icif/recipe/block_raw_tin.json`
+- `data/mio_icif/recipe/block_raw_tin_uncraft.json`
+- `data/mio_icif/recipe/block_raw_uranium.json`
+- `data/mio_icif/recipe/block_raw_uranium_uncraft.json`
+- `data/mio_icif/recipe/block_ultimate_hybrid_solar_panel.json`
+- `data/mio_icif/recipe/block_ultimate_photon_resonance_solar_generator.json`
+- `data/mio_icif/recipe/centrifuge/clay_dust.json`
+- `data/mio_icif/recipe/centrifuge/copper_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/copper_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/gold_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/gold_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/iron_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/iron_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/lead_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/lead_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/mox_quad_depleted.json`
+- `data/mio_icif/recipe/centrifuge/niobium_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/silver_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/silver_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/tin_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/tin_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/titanium_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/uran_ore_crushed.json`
+- `data/mio_icif/recipe/centrifuge/uran_ore_crushed_purified.json`
+- `data/mio_icif/recipe/centrifuge/uranium_quad_depleted.json`
+- `data/mio_icif/recipe/compressor/adviron_plate_to_dense.json`
+- `data/mio_icif/recipe/compressor/alloy_ingot_to_plate.json`
+- `data/mio_icif/recipe/compressor/bronze_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/copper_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/energium_dust_to_crystal.json`
+- `data/mio_icif/recipe/compressor/golden_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/iron_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/lapi_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/lead_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/lithium_dust_small_to_dust.json`
+- `data/mio_icif/recipe/compressor/obsidian_dust_small_to_dust.json`
+- ... 377 more
+
+## differs, not applied: data/tags (22)
+
+- `data/c/tags/block/cable.json`
+- `data/c/tags/block/machine.json`
+- `data/c/tags/block/needs_stone_tool.json`
+- `data/c/tags/block/ores.json`
+- `data/c/tags/block/storage_blocks.json`
+- `data/c/tags/block/wrench_can_damaged.json`
+- `data/c/tags/item/casings/adviron.json`
+- `data/c/tags/item/circuits.json`
+- `data/c/tags/item/dense_plates/adviron.json`
+- `data/c/tags/item/dusts.json`
+- `data/c/tags/item/dusts/cinder.json`
+- `data/c/tags/item/dusts/diamond.json`
+- `data/c/tags/item/ores.json`
+- `data/c/tags/item/plates/adviron.json`
+- `data/c/tags/item/storage_blocks.json`
+- `data/c/tags/item/storage_blocks/adviron.json`
+- `data/curios/tags/item/belt.json`
+- `data/curios/tags/item/necklace.json`
+- `data/curios/tags/item/ring.json`
+- `data/minecraft/tags/block/mineable/pickaxe.json`
+- `data/minecraft/tags/block/needs_stone_tool.json`
+- `data/mio_icif/tags/block/producer.json`
+
+## differs, not applied: data/worldgen (19)
+
+- `data/mio_icif/worldgen/placed_feature/lead_ore_deep_placed.json`
+- `data/mio_icif/worldgen/placed_feature/lead_ore_deep_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/lead_ore_placed.json`
+- `data/mio_icif/worldgen/placed_feature/lead_ore_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/niobium_ore_deep_placed.json`
+- `data/mio_icif/worldgen/placed_feature/niobium_ore_deep_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/niobium_ore_placed.json`
+- `data/mio_icif/worldgen/placed_feature/niobium_ore_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/tin_ore_deep_placed.json`
+- `data/mio_icif/worldgen/placed_feature/tin_ore_deep_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/tin_ore_placed.json`
+- `data/mio_icif/worldgen/placed_feature/tin_ore_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/titanium_ore_deep_placed.json`
+- `data/mio_icif/worldgen/placed_feature/titanium_ore_deep_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/titanium_ore_placed.json`
+- `data/mio_icif/worldgen/placed_feature/titanium_ore_twilight_forest_placed.json`
+- `data/mio_icif/worldgen/placed_feature/uran_ore_deep_placed.json`
+- `data/mio_icif/worldgen/placed_feature/uran_ore_placed.json`
+- `data/mio_icif/worldgen/placed_feature/uran_ore_twilight_forest_placed.json`
+
+## differs, not applied: mio_icif.mixins.json/mio_icif.mixins.json (1)
+
+- `mio_icif.mixins.json`
+
+## only in pack (18)
+
+- `.cache/0f493efb99552549def0bb9c64fbf7ebae32707d`
+- `.cache/103d9f3f36b01595f1aa5172191e60eff02e6924`
+- `.cache/568620fd54f6d311dc4397ad1020182682eaa40b`
+- `.cache/59eb3dbb5f86130e09b3c62d89b9525ee01cf52d`
+- `.cache/7e4b3e6fdb78a8e6803d052c7755974a97480cb2`
+- `.cache/8f4cd3d3709206e8a981bb6064924b9eb284e0c2`
+- `.cache/9a2de5f0d9c4b5cade5360c16c631d8e6d3b27fa`
+- `.cache/9fb1092f32d4fcbf9e061ffd718d4ec689c6c95e`
+- `.cache/ac34a2706edec68ac55df0f6213b8cc5617b2633`
+- `assets/mio_icif/config/uu_recipe_resolvers.ini`
+- `assets/mio_icif/config/uu_scan_values.ini`
+- `assets/mio_icif/models/item/item_tool_plasma_launcher_active.json`
+- `assets/mio_icif/textures/item/normal/depute.py`
+- `assets/mio_icif/textures/item/normal/itemmodel.py`
+- `assets/mio_icif/textures/item/resource/blocks_code.txt`
+- `assets/mio_icif/textures/item/resource/itemmodel.py`
+- `assets/mio_icif/textures/item/resource/tab.py`
+- `data/mio_icif/recipe/shaped_315_treetap_elc.json`

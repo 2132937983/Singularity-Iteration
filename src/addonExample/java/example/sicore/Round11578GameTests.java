@@ -36,9 +36,9 @@ public final class Round11578GameTests {
     /** 0.1.11.81: the only tab root, and the former tab roots that are its branches now (each still with several branches). */
     private static final String ROOT = "root";
     private static final List<String> BRANCH_ROOTS = List.of("root", "industrial_age", "wrench", "ejector");
-    /** 111 with Curios; the flight ring advancement needs Curios (its item is a Curios trinket). */
+    /** 114 with Curios; the flight ring advancement needs Curios (its item is a Curios trinket). 0.1.11.92: +3 for the fusion reactor. */
     private static boolean curios() { return net.neoforged.fml.ModList.get().isLoaded("curios"); }
-    private static int expected() { return curios() ? 111 : 110; }
+    private static int expected() { return curios() ? 114 : 113; }
 
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("mio_icif", path); }
 

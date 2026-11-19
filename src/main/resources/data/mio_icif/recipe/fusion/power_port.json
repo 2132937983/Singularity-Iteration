@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " X ",
+    "VKV",
+    " A "
+  ],
+  "key": {
+    "X": {
+      "item": "mio_icif:wiring/cable/block_superconducting_cable"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    },
+    "K": {
+      "item": "mio_icif:fusion/block_fusion_cryostat"
+    },
+    "A": {
+      "item": "mio_icif:normal/item_advcircuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_power_port",
+    "count": 1
+  }
+}

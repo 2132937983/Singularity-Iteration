@@ -852,7 +852,8 @@ public final class Round1138GameTests {
             "the octuple rod is not two quads: " + oct.euPerTick() + " / " + quad.euPerTick() + " EU, " + oct.generatedHeat() + " / " + quad.generatedHeat() + " HU");
         h.assertTrue(profiles.get("proton_octuple").mox(), "the octuple rod is not MOX-like");
         var palette = (java.util.List<String>) staticField(Round33GameTests.common("reactor.ReactorInventory"), "PALETTE");
-        h.assertTrue(palette.contains("proton_octuple") && palette.size() == 34, "the simulator palette lacks the octuple rod: " + palette.size());
+        // 0.1.11.94: 35 with the deuterium fuel rod
+        h.assertTrue(palette.contains("proton_octuple") && palette.size() == 35, "the simulator palette lacks the octuple rod: " + palette.size());
         h.succeed();
     }
 

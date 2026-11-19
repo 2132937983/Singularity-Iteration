@@ -236,6 +236,12 @@ public class JEIPlugin implements IModPlugin {
             net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.shock"),
             net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.colour"),
             net.minecraft.network.chat.Component.translatable("jei.mio_icif.cable_info.chunks"));
+        // 0.1.11.92: the fusion reactor (its layout is in the "Multiblock Structures" category)
+        registration.addItemStackInfo(new net.minecraft.world.item.ItemStack(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.FUSION_CONTROLLER.get()),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.1"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.2"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.3"),
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.4"));   // 0.1.11.94: coolant cells and the meltdown
         var level = Minecraft.getInstance().level;
         if (level == null) return;
 

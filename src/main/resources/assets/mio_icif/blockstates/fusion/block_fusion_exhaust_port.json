@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/fusion/block_fusion_exhaust_port"
+    },
+    "facing=east": {
+      "model": "mio_icif:block/fusion/block_fusion_exhaust_port",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mio_icif:block/fusion/block_fusion_exhaust_port",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mio_icif:block/fusion/block_fusion_exhaust_port",
+      "y": 270
+    }
+  }
+}

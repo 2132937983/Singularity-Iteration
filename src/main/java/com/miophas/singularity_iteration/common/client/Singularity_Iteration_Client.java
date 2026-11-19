@@ -311,6 +311,19 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.HOTWATER_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Hotwater fluid client extensions registered");
 
+        // 0.1.11.94: unstable hot water (hot water's textures, a little darker)
+        event.registerFluidType(new IClientFluidTypeExtensions() {
+            @Override
+            public ResourceLocation getStillTexture() {
+                return mio_icif_fluids.UNSTABLE_HOTWATER_STILL_TEXTURE;
+            }
+
+            @Override
+            public ResourceLocation getFlowingTexture() {
+                return mio_icif_fluids.UNSTABLE_HOTWATER_FLOWING_TEXTURE;
+            }
+        }, mio_icif_fluids.UNSTABLE_HOTWATER_TYPE.get());
+
         // 注册生物质流体客户端扩展
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "mio_icif:block/fusion/poloidal_coil_end",
+    "side": "mio_icif:block/fusion/poloidal_coil_side"
+  }
+}

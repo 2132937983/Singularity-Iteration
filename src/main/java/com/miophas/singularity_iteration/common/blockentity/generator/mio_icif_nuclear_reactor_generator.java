@@ -63,10 +63,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
      * 0.1.10.38: the reactor sends up to MAX_PACKETS IV packets (8192 EU, the packet of its energy profile) per tick, so an output
      * above 8192 EU/t (feed rate, output multiplier, big layouts) reaches the grid instead of being lost while the fuel burns. Each
      * packet stays at IV voltage, so IV cables and machines are as safe as before. MAX_EXTRACT is the per-tick budget.
+     * <p>0.1.11.88: the budget is the capacity (1,000,000 EU/t; it was 64 IV packets, 524,288 EU/t). 64 packets is the engine's
+     * limit per source, so an output above IV_CEILING goes out in LuV packets (REACTOR_PACKET_HIGH, 31 of them cover the
+     * budget): {@link #getSourceTier} follows the output, as the kinetic generators do (a dynamic-tier generator in
+     * BuiltinEnergyProfiles). A reactor at or below 524,288 EU/t still sends IV packets only.
      */
-    public static final long REACTOR_PACKET=8192;
+    public static final long REACTOR_PACKET=8192,REACTOR_PACKET_HIGH=32768;
     public static final int MAX_PACKETS=com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy.MAX_PACKETS_PER_ROUND;
-    public static final long ENERGY_GENERATION_RATE=0,ENERGY_CAPACITY=1000000,MAX_RECEIVE=0,MAX_EXTRACT=REACTOR_PACKET*MAX_PACKETS;
+    /** 0.1.11.88: the most the reactor sends in IV packets in one tick (64 x 8,192 EU); above it the packets are LuV. */
+    public static final long IV_CEILING=REACTOR_PACKET*MAX_PACKETS;
+    public static final long ENERGY_GENERATION_RATE=0,ENERGY_CAPACITY=1000000,MAX_RECEIVE=0,MAX_EXTRACT=ENERGY_CAPACITY;
     /** 0.1.10.38: a saved rate above this is corrupt (it was 8192, which held every reactor that ran faster after a reload). */
     private static final long MAX_SAVED_RATE=Integer.MAX_VALUE;
     private final PlatformHeatStorage heat=new PlatformHeatStorage(10000,0,1000,20,5000,0);
@@ -686,7 +692,8 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return !energyStorage.scexNetworkControlled()&&exportAllowed()&&super.emitsEnergyTo(acceptor,side);}
     public long extractPowerForConsumer(long amount,boolean simulate){return energyStorage.scexNetworkControlled()||!exportAllowed()?0:energyStorage.extract(Math.min(amount,MAX_EXTRACT),simulate);}
     public int getPacketCount(){return MAX_PACKETS;}   // 0.1.10.38: was 1 (8192 EU/t at most)
-    @Override public int getSourceTier(){return 5;}
+    /** 0.1.11.88: IV (tier 5, 8,192 EU packets) up to IV_CEILING EU/t of output, LuV (tier 6, 32,768 EU) above it. */
+    @Override public int getSourceTier(){return rate.compareTo(EnergyAmount.of(IV_CEILING))>0?6:5;}
     @Override public long getPowerOutput(){return MAX_EXTRACT;}
     @Override public int getFuelBurnTime(ItemStack stack){return 0;}
     public HeatStorage getHeatStorage(){return heat;}

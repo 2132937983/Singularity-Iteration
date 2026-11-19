@@ -1,0 +1,12 @@
+// Isolated world/config; run only steam repressurizer regressions.
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('steamRepressurizerAudit') {
+            type = 'gameTestServer'
+            loadedMods = [project.neoForge.mods[project.mod_id], project.neoForge.mods.si_core_example]
+            gameDirectory = project.file('build/steam-repressurizer-audit/game')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'si_steam_audit'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

@@ -484,6 +484,66 @@
     {
       "id": "mio_icif:generator/block_steam_tunnel_power_port",
       "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_controller",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_central_solenoid",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_toroidal_coil",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_vacuum_vessel",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_blanket",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_divertor",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_cryostat",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_nbi_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_ecrh_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_fuel_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_exhaust_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_cryo_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_power_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_mitigation_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:fusion/block_fusion_poloidal_coil",
+      "required": false
     }
   ]
 }

@@ -1,0 +1,15 @@
+// Optional development capture: isolated disposable flat world, never opens a user save.
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('nuclearCapture') {
+            client()
+            loadedMods = [project.neoForge.mods[project.mod_id]]
+            gameDirectory = project.file('build/nuclear-capture-game')
+            systemProperty 'si.capture', project.file('build/nuclear-capture').absolutePath
+            systemProperty 'si.capture.scene', project.findProperty('siCaptureScene') ?: 'nuclear'
+            programArguments.addAll '--width', '960', '--height', '540'
+            jvmArguments.addAll '-Xmx3G', '-Xms512m'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

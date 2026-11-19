@@ -887,6 +887,13 @@ public class mio_icif_block_entities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelPowerPortBlockEntity>> STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE =
         BLOCK_ENTITIES.register("steam_tunnel_power_port", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelPowerPortBlockEntity::new, mio_icif_blocks.STEAM_TUNNEL_POWER_PORT.get()).build(null));
+    // 0.1.11.92: the fusion reactor's controller and power output port
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>> FUSION_CONTROLLER_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("fusion_controller", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity::new, mio_icif_blocks.FUSION_CONTROLLER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.fusion.FusionPowerPortBlockEntity>> FUSION_POWER_PORT_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("fusion_power_port", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.fusion.FusionPowerPortBlockEntity::new, mio_icif_blocks.FUSION_POWER_PORT.get()).build(null));
 
     // 注册 reactor fluid port 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_fluid_port>> REACTOR_FLUID_PORT_ENTITY_TYPE =

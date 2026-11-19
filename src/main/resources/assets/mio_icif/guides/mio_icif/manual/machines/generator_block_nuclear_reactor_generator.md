@@ -24,8 +24,8 @@ With a Reactor Pressure Vessel structure, the machine changes to fluid mode and 
 
 | Item | Value |
 |---|---|
-| Output voltage tier | IV (8,192 EU) |
-| Output | 524,288 EU/t |
+| Output voltage tier | IV (8,192 EU); LuV (32,768 EU) above 524,288 EU/t |
+| Output | up to 1,000,000 EU/t (its energy storage) |
 | Energy storage | 1,000,000 EU |
 
 The game measured these values from the block entity of this version.
@@ -34,7 +34,7 @@ The game measured these values from the block entity of this version.
 
 1. Place Reactor Chambers against the faces of the reactor.
 2. Put fuel rods and cooling components into the slots.
-3. Connect a cable to the reactor.
+3. Connect a cable to the reactor. An IV cable is enough while it makes at most 524,288 EU/t; above that the reactor sends LuV packets, which need a Superconducting Cable or a Transformer IV→LuV to step them down, or they melt IV cables and blow up IV machines.
 4. Apply a redstone signal to the reactor to start it. A chamber or a redstone port of the pressure vessel also takes the signal. Without one the reactor does nothing, and its screen and Jade say "Off: no redstone signal".
 
 ## SCRAM and the control room

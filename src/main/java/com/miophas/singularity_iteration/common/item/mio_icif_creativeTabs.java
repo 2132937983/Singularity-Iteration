@@ -877,6 +877,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_reactors.HEATPACK.get());
                 output.accept(mio_icif_reactors.LITHIUM_CELL.get());
                 output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.TRITIUM_CELL.get());   // 0.1.10.36: neutron source
+                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.DEUTERIUM_CELL.get());   // 0.1.11.92: fusion fuel
                 output.accept(mio_icif_reactors.ISOTOPE_ROD.get());
 
                 // Uranium Fuel Rods
@@ -921,6 +922,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_fluids.DISTILLEDWATER_BUCKET.get());
                 output.accept(mio_icif_fluids.HOTCOOLANT_BUCKET.get());
                 output.accept(mio_icif_fluids.HOTWATER_BUCKET.get());
+                output.accept(mio_icif_fluids.UNSTABLE_HOTWATER_BUCKET.get());   // 0.1.11.94
                 output.accept(mio_icif_fluids.PAHOEHOELAVA_BUCKET.get());
                 output.accept(mio_icif_fluids.STEAM_BUCKET.get());
                 output.accept(mio_icif_fluids.SUPERHEATEDSTEAM_BUCKET.get());
@@ -943,6 +945,9 @@ public class mio_icif_creativeTabs {
                   output.accept(cell); }
                 { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
                   ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.HOTWATER.get(), 1000));
+                  output.accept(cell); }
+                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());   // 0.1.11.94
+                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.UNSTABLE_HOTWATER.get(), 1000));
                   output.accept(cell); }
                 { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
                   ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.BIOMASS.get(), 1000));
@@ -1170,6 +1175,21 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRON.get());
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_ADVIRON.get());
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_TITANIUM.get());
+                output.accept(mio_icif_blocks.FUSION_CONTROLLER.get());   // 0.1.11.89: fusion reactor
+                output.accept(mio_icif_blocks.FUSION_CENTRAL_SOLENOID.get());
+                output.accept(mio_icif_blocks.FUSION_TOROIDAL_COIL.get());
+                output.accept(mio_icif_blocks.FUSION_POLOIDAL_COIL.get());
+                output.accept(mio_icif_blocks.FUSION_VACUUM_VESSEL.get());
+                output.accept(mio_icif_blocks.FUSION_BLANKET.get());
+                output.accept(mio_icif_blocks.FUSION_DIVERTOR.get());
+                output.accept(mio_icif_blocks.FUSION_CRYOSTAT.get());
+                output.accept(mio_icif_blocks.FUSION_NBI_PORT.get());
+                output.accept(mio_icif_blocks.FUSION_ECRH_PORT.get());
+                output.accept(mio_icif_blocks.FUSION_FUEL_PORT.get());
+                output.accept(mio_icif_blocks.FUSION_EXHAUST_PORT.get());
+                output.accept(mio_icif_blocks.FUSION_CRYO_PORT.get());
+                output.accept(mio_icif_blocks.FUSION_POWER_PORT.get());
+                output.accept(mio_icif_blocks.FUSION_MITIGATION_PORT.get());
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRIDIUM.get());
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_NETHERITE.get());
                 // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive); use the Creative Generator

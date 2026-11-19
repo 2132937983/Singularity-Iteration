@@ -17,6 +17,13 @@ import java.util.Optional;
  *   <li>insert and extract heat</li>
  *   <li>query heat connections</li>
  * </ul>
+ *
+ * <p>A heat block is one whose block entity implements {@link IHeatStorage}, {@link IHeatSource} or
+ * {@link IHeatConductor}, or one that exposes
+ * {@link com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities#HEAT_STORAGE_BLOCK} on some face.
+ * SI's own heat blocks (heat generators, Stirling generators, boilers, blast furnaces, reactors...) are of the second
+ * kind; this API sees them since 0.1.11.87. Their storage can differ by face: the storage access moves HU through the
+ * first face that takes or gives it. To move HU through one particular face, query the capability on that face.
  */
 public interface IHeatAPI {
 
@@ -43,7 +50,8 @@ public interface IHeatAPI {
      *
      * @param world the world
      * @param pos the block position
-     * @return the connected directions
+     * @return the directions whose neighbour is a heat block; a neighbour that only exposes the capability counts when
+     *         it does so on its face turned to {@code pos}
      */
     Collection<Direction> getHeatConnections(Level world, BlockPos pos);
 

@@ -47,10 +47,11 @@ public final class BuiltinEnergyProfiles {
         packets.put(id("generator/block_kinetic_generator"), 512L);             // dynamic ceiling: tier 3 (HV)
         packets.put(id("generator/block_turbo_kinetic_generator"), 2048L);      // dynamic ceiling: tier 4 (EV)
         packets.put(id("generator/block_twin_turbo_kinetic_generator"), 8192L); // dynamic ceiling: tier 5 (IV)
-        packets.put(id("generator/block_nuclear_reactor_generator"), 8192L); // SI public extraction ceiling; actual per-tick offer is demand quoted.
+        packets.put(id("generator/block_nuclear_reactor_generator"), 32768L); // 0.1.11.88 dynamic ceiling: tier 6 (LuV); IV up to 524,288 EU/t; the per-tick offer is demand quoted
         packets.put(STIRLING, 128L); // Retained public SI packet setting; reference maximum remains open.
         packets.put(id("generator/block_advanced_stirling_generator"), 128L);   // 0.1.11.11: was missing (not an endpoint of the independent network)
         packets.put(id("generator/block_steam_tunnel_power_port"), 512L);   // 0.1.10.39: HV, up to 4 packets a tick
+        packets.put(id("fusion/block_fusion_power_port"), 2_097_152L);   // 0.1.11.92 dynamic ceiling: tier 9 (UHV); IV at low output
         for (var type : AMBIENT_GENERATORS) packets.put(type, 32L);
         packets.putAll(FUEL_GENERATOR_PACKETS);
         packets.putAll(WORLD_FUEL_GENERATOR_PACKETS);
@@ -66,10 +67,14 @@ public final class BuiltinEnergyProfiles {
     // IC2 TileEntityConversionGenerator semantics: a KU->EU conversion generator reports a
     // packet of min(live offer, getPowerFromTier(live source tier)), so an EV wire melts only
     // above its own rated voltage instead of at one fixed packet size.
+    // 0.1.11.88: the nuclear reactor too: IV packets up to 64 x 8,192 = 524,288 EU/t (the engine's
+    // 64 packets per source), LuV packets above it, up to its 1,000,000 EU/t budget.
     private static final Set<ResourceLocation> DYNAMIC_TIER_GENERATORS = Set.of(
         id("generator/block_kinetic_generator"),
         id("generator/block_turbo_kinetic_generator"),
-        id("generator/block_twin_turbo_kinetic_generator"));
+        id("generator/block_twin_turbo_kinetic_generator"),
+        id("generator/block_nuclear_reactor_generator"),
+        id("fusion/block_fusion_power_port"));   // 0.1.11.92: the lowest tier whose 64 packets carry its share
     private static final Set<ResourceLocation> EXTENDED_PROCESSORS = Set.of(id("producer/block_matter_elc"), id("hugenerator/block_heat_generator_elc"), id("producer/block_scanner_elc"),
         id("producer/block_replicator_elc"), id("producer/block_centrifuge_elc"),
         id("producer/block_washer_elc"), id("producer/block_molecular_transformer"),

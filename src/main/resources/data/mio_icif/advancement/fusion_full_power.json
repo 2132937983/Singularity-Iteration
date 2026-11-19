@@ -1,0 +1,26 @@
+{
+  "parent": "mio_icif:fusion_ignition",
+  "display": {
+    "icon": {
+      "id": "mio_icif:fusion/block_fusion_power_port"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.fusion_full_power.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.fusion_full_power.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "full": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "experience": 500
+  }
+}

@@ -165,6 +165,45 @@ public static final DeferredHolder<Fluid, FlowingFluid> HOTWATER = FLUIDS.regist
 public static final DeferredItem<BucketItem> HOTWATER_BUCKET = FLUID_ITEMS.register("hotwater_bucket",
         () -> new BucketItem(HOTWATER.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
+    // ==================== Unstable hot water (0.1.11.94) ====================
+    // Hot water the thermal centrifuge has enriched in deuterium (heavy water): a canner cans it into an empty fuel rod as a
+    // deuterium fuel rod. It behaves as hot water (it scalds); its textures are hot water's, a little darker.
+    public static final ResourceLocation UNSTABLE_HOTWATER_STILL_TEXTURE =
+        ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/unstable_hotwater_still");
+    public static final ResourceLocation UNSTABLE_HOTWATER_FLOWING_TEXTURE =
+        ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/unstable_hotwater_flow");
+
+    public static final DeferredHolder<FluidType, FluidType> UNSTABLE_HOTWATER_TYPE = FLUID_TYPES.register("unstable_hotwater",
+        () -> new FluidType(FluidType.Properties.create()
+            .canSwim(true)
+            .canDrown(true)
+            .canPushEntity(true)
+            .canExtinguish(false)
+            .viscosity(1000)
+            .density(1100)       // heavy water is about a tenth denser
+            .temperature(343)    // 70 °C, as hot water
+            .canConvertToSource(false)));
+
+    private static final BaseFlowingFluid.Properties UNSTABLE_HOTWATER_PROPERTIES = new BaseFlowingFluid.Properties(
+        UNSTABLE_HOTWATER_TYPE,
+        () -> mio_icif_fluids.UNSTABLE_HOTWATER.get(),
+        () -> mio_icif_fluids.UNSTABLE_HOTWATER_FLOWING.get())
+        .block(() -> mio_icif_fluids.UNSTABLE_HOTWATER_BLOCK.get())
+        .bucket(() -> mio_icif_fluids.UNSTABLE_HOTWATER_BUCKET.get());
+
+    public static final DeferredHolder<Fluid, FlowingFluid> UNSTABLE_HOTWATER = FLUIDS.register("unstable_hotwater",
+        () -> new BaseFlowingFluid.Source(UNSTABLE_HOTWATER_PROPERTIES));
+    public static final DeferredHolder<Fluid, FlowingFluid> UNSTABLE_HOTWATER_FLOWING = FLUIDS.register("unstable_hotwater_flowing",
+        () -> new BaseFlowingFluid.Flowing(UNSTABLE_HOTWATER_PROPERTIES));
+    public static final DeferredBlock<LiquidBlock> UNSTABLE_HOTWATER_BLOCK = FLUID_BLOCKS.register("unstable_hotwater",
+        () -> new mio_icif_block_fluid_effect(UNSTABLE_HOTWATER.get(), BlockBehaviour.Properties.of()
+            .noCollission()
+            .strength(100.0F)
+            .noLootTable()
+            .replaceable(), mio_icif_block_fluid_effect.HOT_WATER));
+    public static final DeferredItem<BucketItem> UNSTABLE_HOTWATER_BUCKET = FLUID_ITEMS.register("unstable_hotwater_bucket",
+        () -> new BucketItem(UNSTABLE_HOTWATER.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+
     // ==================== Biomass ====================
     public static final ResourceLocation BIOMASS_STILL_TEXTURE =
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/biomass_still");

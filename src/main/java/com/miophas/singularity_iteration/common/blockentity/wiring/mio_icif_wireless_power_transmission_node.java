@@ -92,22 +92,33 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
     private long outputPacket = 32;
     private long packetCheckedTick = Long.MIN_VALUE;
 
+    /**
+     * 0.1.11.83: "something is attached" is its own flag. A superconducting cable (and a machine of an unlimited tier)
+     * rates Long.MAX_VALUE, the value this method also used for "nothing attached", so a node next to a superconductor
+     * sent LV packets: 64 x 32 = 2,048 EU/t into the cable however fast the wireless link was. It now sends the node's
+     * largest packet (LuV) there, as many per tick as the link carries (up to 64).
+     */
     private long neighbourPacket() {
-        long packet = Long.MAX_VALUE;
         if (level == null) return 32;
+        long packet = Long.MAX_VALUE;
+        boolean attached = false;
         for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
             BlockPos at = worldPosition.relative(side);
             if (!level.isLoaded(at)) continue;
             var be = level.getBlockEntity(at);
             if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractWireBlockEntity wire && wire.getCableTier() != null) {
+                attached = true;
                 packet = Math.min(packet, Math.max(1, wire.getCableTier().getPowerRating()));
             } else if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity machine
                     && !(be instanceof mio_icif_wireless_power_transmission_node) && !machine.isPowerSource()) {
                 double power = com.miophas.singularity_iteration.core.runtime.energy.grid.EnergyNetGlobal.getPowerFromTier(machine.getSinkTier());
-                if (power >= 1) packet = Math.min(packet, (long) Math.min(power, Long.MAX_VALUE));
+                if (power >= 1) {
+                    attached = true;
+                    packet = Math.min(packet, (long) Math.min(power, Long.MAX_VALUE));
+                }
             }
         }
-        return packet == Long.MAX_VALUE ? 32 : Math.min(packet, TRANSFER_SPEED);   // one packet stays at most LuV
+        return attached ? Math.min(packet, TRANSFER_SPEED) : 32;   // one packet stays at most LuV; LV when nothing is attached
     }
 
     private void refreshPacket() {

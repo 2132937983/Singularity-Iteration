@@ -174,6 +174,15 @@ public class mio_icif_normal {
             com.miophas.singularity_iteration.common.registry.mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
             com.miophas.singularity_iteration.common.item.component.ReactorComponentData.full(
                 com.miophas.singularity_iteration.common.reactor.ReactorInventory.TRITIUM_LIFE))));
+    /**
+     * 0.1.11.92: deuterium for the fusion reactor. 0.1.11.94: the deuterium fuel rod (the id stays for saves and recipes): canned
+     * from unstable hot water into an empty fuel rod; a neutron source in a fission reactor, fuel in the fusion reactor.
+     */
+    public static final DeferredItem<Item> DEUTERIUM_CELL = ITEMS.register("normal/item_deuterium_cell",
+        () -> new com.miophas.singularity_iteration.common.item.reactor.mio_icif_deuterium_rod(new Item.Properties().component(
+            com.miophas.singularity_iteration.common.registry.mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
+            com.miophas.singularity_iteration.common.item.component.ReactorComponentData.full(
+                com.miophas.singularity_iteration.common.reactor.ReactorInventory.DEUTERIUM_LIFE))));
     public static final DeferredItem<Item> URAN_ENRICHED_CELL = ITEMS.register("normal/item_uran_enriched_cell", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> WEED = ITEMS.register("normal/item_weed", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> WEEDEX = ITEMS.register("normal/item_weedex", () -> new MatronHerbicideItem(new Item.Properties()));

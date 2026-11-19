@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CXC",
+    "VKV",
+    "CAC"
+  ],
+  "key": {
+    "X": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_coil"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    },
+    "K": {
+      "item": "mio_icif:fusion/block_fusion_cryostat"
+    },
+    "A": {
+      "item": "mio_icif:normal/item_advcircuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_ecrh_port",
+    "count": 1
+  }
+}

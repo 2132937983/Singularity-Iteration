@@ -79,6 +79,9 @@ public class mio_icif_menus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<NuclearReactorGeneratorMenu>> NUCLEAR_REACTOR_GENERATOR_MENU_TYPE =
         MENU_TYPES.register("nuclear_reactor_generator_menu", () -> new MenuType<>(NuclearReactorGeneratorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+    // 0.1.11.92: the fusion reactor controller
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.fusion.FusionControllerMenu>> FUSION_CONTROLLER_MENU_TYPE =
+        MENU_TYPES.register("fusion_controller_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.fusion.FusionControllerMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
     public static final DeferredHolder<MenuType<?>, MenuType<ReactorFluidPortMenu>> REACTOR_FLUID_PORT_MENU_TYPE =
         MENU_TYPES.register("reactor_fluid_port_menu", () -> new MenuType<>(ReactorFluidPortMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));

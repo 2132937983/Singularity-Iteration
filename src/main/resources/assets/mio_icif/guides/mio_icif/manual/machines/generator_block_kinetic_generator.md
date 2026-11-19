@@ -24,7 +24,7 @@ The screen is a plant mimic: the KU source on the front, the shaft turning at it
 
 | Item | Value |
 |---|---|
-| Output voltage tier | MV (128 EU) |
+| Output voltage tier | MV (128 EU); HV (512 EU) above 128 EU/t |
 | Production | 1 EU per 4 KU, up to 250 EU/t |
 | KU input | up to 1,000 KU/t |
 | Energy storage | 100,000 EU |
@@ -36,7 +36,11 @@ With a generator output multiplier other than 1.0 (config GeneratorOutput), the 
 ## Procedure
 
 1. Place the generator with its front face against the back face of a Wind Kinetic Generator.
-2. Connect an MV cable to the generator.
+2. Connect an HV cable to the generator (an MV cable is enough while it makes at most 128 EU/t).
+
+## Notes
+
+- The packet size follows the KU input: above 512 KU/t (above 128 EU/t) the generator sends HV packets, which melt MV cables and blow up MV machines.
 
 ## Recipe
 

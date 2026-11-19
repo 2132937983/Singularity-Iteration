@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "mio_icif:block/fusion/toroidal_coil",
+    "north": "mio_icif:block/fusion/toroidal_coil_edge",
+    "south": "mio_icif:block/fusion/toroidal_coil_edge",
+    "east": "mio_icif:block/fusion/toroidal_coil",
+    "west": "mio_icif:block/fusion/toroidal_coil",
+    "up": "mio_icif:block/fusion/toroidal_coil_end",
+    "down": "mio_icif:block/fusion/toroidal_coil_end"
+  }
+}

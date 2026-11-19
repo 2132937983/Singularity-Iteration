@@ -17,6 +17,14 @@ import java.util.Optional;
  *   <li>Insert or extract kinetic energy</li>
  *   <li>Query kinetic connections</li>
  * </ul>
+ *
+ * <p>A kinetic block is one whose block entity implements {@link IKineticStorage}, {@link IKineticSource} or
+ * {@link IKineticConductor}, or one that exposes
+ * {@link com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities#KINETIC_STORAGE_BLOCK} on some face.
+ * SI's own kinetic blocks (the kinetic sources and the kinetic generators) are of the second kind; this API sees them
+ * since 0.1.11.86. Their storage can differ by face (a generator takes KU only at its front, a wind kinetic generator
+ * gives it only at its back): the storage access moves KU through the first face that takes or gives it. To move KU
+ * through one particular face, query the capability on that face.
  */
 public interface IKineticAPI {
 
@@ -43,7 +51,8 @@ public interface IKineticAPI {
      *
      * @param world the level
      * @param pos the block position
-     * @return the collection of connected directions
+     * @return the directions whose neighbour is a kinetic block; a neighbour that only exposes the capability counts
+     *         when it does so on its face turned to {@code pos}
      */
     Collection<Direction> getKineticConnections(Level world, BlockPos pos);
 

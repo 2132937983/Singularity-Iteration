@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ALA",
+    "RHR",
+    "AIA"
+  ],
+  "key": {
+    "A": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "R": {
+      "item": "mio_icif:reactor/block_reactor_chamber"
+    },
+    "H": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_controller",
+    "count": 1
+  }
+}

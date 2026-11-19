@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "TTT",
+    "TVT",
+    "TTT"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:resource/item_titanium_plate"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_cryostat",
+    "count": 8
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:fusion_formed",
+  "display": {
+    "icon": {
+      "id": "mio_icif:fusion/block_fusion_toroidal_coil"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.fusion_ignition.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.fusion_ignition.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "ignited": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

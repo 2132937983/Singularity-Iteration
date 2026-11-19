@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NSN",
+    "S S",
+    "NSN"
+  ],
+  "key": {
+    "N": {
+      "item": "mio_icif:resource/item_niobium_titanium_plate"
+    },
+    "S": {
+      "item": "mio_icif:wiring/cable/block_superconducting_cable"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_central_solenoid",
+    "count": 8
+  }
+}

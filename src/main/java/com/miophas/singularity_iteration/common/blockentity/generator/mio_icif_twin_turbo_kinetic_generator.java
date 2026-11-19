@@ -7,7 +7,6 @@ import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;
-import com.miophas.singularity_iteration.core.api.kinetic.IKineticAPI;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 import com.miophas.singularity_iteration.core.api.energy.grid.*;
 import com.miophas.singularity_iteration.core.runtime.energy.grid.*;
@@ -110,27 +109,17 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
         com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
+    /**
+     * 0.1.11.85: the rate follows the block entity in front. A wind or water kinetic generator gives the full rate,
+     * any other block entity the other-source rate. The check went through IKineticAPI.hasKineticTile, which knows
+     * only the core API kinetic interfaces; no kinetic source of the mod implements them, so every source counted as
+     * "nothing in front" and got the full rate. With nothing in front the rate stays, for the KU left in the buffer.
+     */
     private void updateEffectivePercent(Level level, BlockPos pos, BlockState state) {
         Direction facing = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
-        BlockPos adjacentPos = pos.relative(facing);
-
-        IKineticAPI kineticAPI = MioIcifAPI.instance().getKineticAPI();
-        if (!kineticAPI.hasKineticTile(level, adjacentPos)) {
-            effectivePercent = 1.0D;
-            return;
-        }
-
-        net.minecraft.world.level.block.entity.BlockEntity adjacentBe = level.getBlockEntity(adjacentPos);
-        if (adjacentBe == null) {
-            effectivePercent = 1.0D;
-            return;
-        }
-
-        if (isNaturalKineticSource(adjacentBe)) {
-            effectivePercent = EFFECTIVE_PERCENT_NATURAL;
-        } else {
-            effectivePercent = EFFECTIVE_PERCENT_ARTIFICIAL;
-        }
+        net.minecraft.world.level.block.entity.BlockEntity adjacentBe = level.getBlockEntity(pos.relative(facing));
+        if (adjacentBe == null) return;
+        effectivePercent = isNaturalKineticSource(adjacentBe) ? EFFECTIVE_PERCENT_NATURAL : EFFECTIVE_PERCENT_ARTIFICIAL;
     }
 
     private boolean isNaturalKineticSource(net.minecraft.world.level.block.entity.BlockEntity be) {

@@ -3776,6 +3776,10 @@ public final class CaptureDirector {
         client(30, CaptureDirector::releaseKeys);
         for (int i = 0; i < 6; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 9); });
         shot(1, "rcs/1_hover_yaw_right");
+        client(0, () -> { var pl = Minecraft.getInstance().player;   // 0.1.11.127 (E4): which ports fire at the shot
+            var nz = com.miophas.singularity_iteration.common.client.suit.NozzleDraw.worn(pl, 0F);
+            Singularity_Iteration.LOGGER.info("capture rcs outputs {}", java.util.Arrays.toString(
+                com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.nozzleOutput(pl, nz, 0F))); });
         // hover, strafing left
         client(10, () -> { releaseKeys(); Minecraft.getInstance().options.keyLeft.setDown(true); });
         shot(6, "rcs/2_hover_strafe_left");

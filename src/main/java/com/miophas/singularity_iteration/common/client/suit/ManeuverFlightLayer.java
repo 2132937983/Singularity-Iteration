@@ -25,7 +25,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * the old drawing is archived in {@link com.miophas.singularity_iteration.common.client.legacy.flight.LegacyManeuverJets}
  * (see {@link com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx}). It samples the back nozzles
  * for the light trails ({@link LightTrails}), draws the sole rings of the electromagnetic hover ({@link HoverField},
- * 0.1.11.126) and the field rings of a graviton core. The attitude pulses follow in the next batch.
+ * 0.1.11.126), the electromagnetic pulses of the firing attitude ports ({@link RcsPulse}, 0.1.11.127) and the field rings of
+ * a graviton core.
  *
  * <p>Model space: 1 unit = 1 block after the 1/16 scale of the parts; y points down. The local player in first person is
  * not rendered by vanilla, so this layer does not run then.
@@ -61,11 +62,21 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);
         float seconds = (player.tickCount + partial) / 20F;
         VertexConsumer vc = null;
+        boolean near = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player)
+            != com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR;
         for (int i = 0; outs != null && i < outs.length; i++) {
             QuantumNozzles.Nozzle n = nozzles.get(i);
-            if (n.kind() != QuantumNozzles.Kind.FIELD || outs[i] <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
+            boolean field = n.kind() == QuantumNozzles.Kind.FIELD, rcs = n.kind() == QuantumNozzles.Kind.RCS && near;
+            float pulseAge = Float.NaN;
+            float[] power = {0};
+            // 0.1.11.127 (E4): a firing attitude port shows one electromagnetic pulse a tick, lasting two ticks
+            if (rcs) pulseAge = RcsPulse.age(player.getId(), i, player.tickCount, partial, outs[i], power);
+            if (field ? outs[i] <= 0.02F : !rcs || Float.isNaN(pulseAge)) continue;
+            if (!NozzleDraw.push(pose, model, n)) continue;
             if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
-            NozzleDraw.fieldPhase(vc, pose, n.size(), outs[i], seconds);
+            if (field) NozzleDraw.fieldPhase(vc, pose, n.size(), outs[i], seconds);
+            else RcsPulse.draw(vc, pose.last().pose(), power[0], pulseAge,
+                player.getId() * 1_000_003L + (player.tickCount - (long) Math.floor(pulseAge)) * 31L + i);
             pose.popPose();
         }
     }

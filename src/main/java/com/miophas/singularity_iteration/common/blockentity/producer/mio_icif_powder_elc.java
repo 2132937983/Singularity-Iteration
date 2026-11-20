@@ -202,6 +202,31 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity impl
             findRecipe().map(RecipeHolder::value).orElse(null), DEFAULT_ENERGY_PER_TICK, 1.0);
     }
 
+    /**
+     * 0.1.11.110 (processing overhaul M3): why the macerator runs or stands, a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus}
+     * code for the screen.
+     */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        var recipe = findRecipe();
+        if (recipe.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        ItemStack result = recipe.get().value().getResultItem(level.registryAccess());
+        ItemStack out = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (!out.isEmpty() && (!ItemStack.isSameItemSameComponents(out, result) || out.getCount() + result.getCount() > out.getMaxStackSize()))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
+    /** 0.1.11.110: the work index of the input ×10 (0 without input), for the screen. */
+    public int workIndexTenths() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        return input.isEmpty() ? 0 : (int) Math.round(com.miophas.singularity_iteration.common.processing.SiMaterials.workIndexOrDefault(input) * 10);
+    }
+
     /** 0.1.11.108: the energy of the hardest common operation (gravel, about 1,191 EU) sizes the buffer. */
     public static final long MAX_OPERATION_ENERGY = 1200L;
 

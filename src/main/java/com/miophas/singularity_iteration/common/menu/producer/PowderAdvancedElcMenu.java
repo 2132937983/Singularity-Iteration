@@ -17,12 +17,12 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
 
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 55;
-    private static final int INPUT_Y = 35;
-    private static final int BATTERY_X = 17;
-    private static final int BATTERY_Y = 58;
-    private static final int OUTPUT_X = 115;
-    private static final int OUTPUT_Y = 35;
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 38;
+    private static final int OUTPUT_X = 10;
+    private static final int OUTPUT_Y = 58;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -46,8 +46,15 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
         registerMachineMoveRules();
     }
 
-    /** 0.1.11.109: data 5 rotor speed ‰, 6 hold speed on, 7 held now (the first five as before). */
-    public static final int DATA_COUNT = 8;
+    /**
+     * 0.1.11.109: data 5 rotor speed ‰, 6 hold speed on, 7 held now (the first five as before); 0.1.11.110: 8 status
+     * (ProcessStatus), 9 EU per operation, 10 work index x10.
+     */
+    public static final int DATA_COUNT = 11;
+
+    public int getStatus() { return data.get(8); }
+    public int getEnergyPerOperation() { return data.get(9); }
+    public int getWorkIndexTenths() { return data.get(10); }
     /** 0.1.11.109: menu button that switches hold speed. */
     public static final int BUTTON_HOLD_SPEED = 0;
 
@@ -133,6 +140,24 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
             true);
     }
 
+
+    // ---- 0.1.11.110: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
@@ -147,6 +172,9 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
             this.setSyncData(5, (int) Math.round(blockEntity.getRotorSpeed() * 1000));
             this.setSyncData(6, blockEntity.isHoldingSpeed() ? 1 : 0);
             this.setSyncData(7, blockEntity.isHolding() ? 1 : 0);
+            this.setSyncData(8, blockEntity.processStatus());
+            this.setSyncData(9, (int) Math.min(Short.MAX_VALUE, blockEntity.processCost().energy()));
+            this.setSyncData(10, blockEntity.workIndexTenths());
         }
     }
 

@@ -286,11 +286,20 @@ public final class CaptureDirector {
                 var level = sp.serverLevel();
                 level.setBlock(at, block(id).defaultBlockState(), 3);
                 if (level.getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity() / 2);
+                // 0.1.11.110: -Dsi.capture.galleryInput=item_id puts 32 of it in slot 0 (machines shot while working)
+                String input = System.getProperty("si.capture.galleryInput");
+                if (input != null && level.getBlockEntity(at) != null) {
+                    var handler = level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity pm
+                        ? pm.getItemHandler() : null;
+                    var item = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(input));
+                    if (handler instanceof net.neoforged.neoforge.items.IItemHandlerModifiable m) m.setStackInSlot(0, new net.minecraft.world.item.ItemStack(item, 32));
+                    if (level.getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+                }
                 sp.teleportTo(level, at.getX() + 0.5, -60, at.getZ() - 2.5, 0, 20);
                 var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
                 level.getBlockState(at).useWithoutItem(level, sp, hit);
             });
-            client(20, () -> dumpUpgradeLayout(id));
+            client(Integer.getInteger("si.capture.galleryWait", 20), () -> dumpUpgradeLayout(id));   // 0.1.11.110: longer wait on request
             shot(5, "gallery/" + id.replace('/', '_'));
             server(1, ServerPlayer::closeContainer);
         }

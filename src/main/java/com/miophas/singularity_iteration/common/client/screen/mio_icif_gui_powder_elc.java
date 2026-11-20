@@ -1,74 +1,80 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.menu.producer.PowderElcMenu;
+import com.miophas.singularity_iteration.common.processing.ProcessStatus;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * æç²æºæ¹åç GUI ç±?
+ * 打粉机界面. 0.1.11.110 (processing overhaul M3): the instrument screen (docs/gui_processing_machines.md). The figure is
+ * the hammer mill seen from above: a round chamber with the screen holes around it and the rotor with four swing hammers,
+ * turning while the machine runs (a fixed speed: the macerator has no rotor inertia). The readouts give the input and its
+ * work index, the energy of the operation, the power and the time.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
-public class mio_icif_gui_powder_elc extends mio_icif_screen<PowderElcMenu> {
+public class mio_icif_gui_powder_elc extends ProcessInstrumentScreen<PowderElcMenu> {
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_powder_elc.png");
-
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    private static final int PROGRESS_X = 79;
-    private static final int PROGRESS_Y = 35;
-
-    private static final int ENERGY_ICON_X = 56;
-    private static final int ENERGY_ICON_Y = 36;
+    /** Rotor turns per second while running (the figure; about 1,450 rpm would be a blur). */
+    private static final float TURNS_PER_SECOND = 1.1F;
+    private float angle;
 
     public mio_icif_gui_powder_elc(PowderElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+    }
+
+    private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
+
+    @Override
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
+        if (running()) angle = (angle + dt * TURNS_PER_SECOND * 2 * (float) Math.PI) % (2 * (float) Math.PI);
+        float r = 34;
+        FcsDraw.disc(g, cx, cy, r + 5, SHELL);
+        FcsDraw.disc(g, cx, cy, r, CHAMBER);
+        for (int k = 0; k < 24; k++) {   // the screen (grate) holes
+            double a = k / 24.0 * Math.PI * 2;
+            FcsDraw.disc(g, cx + (float) Math.cos(a) * (r - 2.5F), cy + (float) Math.sin(a) * (r - 2.5F), 1.2F, SHELL);
+        }
+        int hammer = running() ? 0xFF000000 | AMBER : STEEL_LIGHT;
+        for (int k = 0; k < 4; k++) {
+            float a = angle + k * (float) Math.PI / 2;
+            blade(g, cx, cy, a, 8, 18, 2, 2, STEEL);        // the arm
+            blade(g, cx, cy, a, 17, 26, 4, 4, hammer);      // the hammer
+        }
+        FcsDraw.disc(g, cx, cy, 9, STEEL);
+        FcsDraw.disc(g, cx, cy, 3, STEEL_LIGHT);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        // ç»å¶èæ¯
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        PowderElcMenu menu = this.getMenu();
-        if (menu != null) {
-            drawProgressArrow(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, menu.getProgressPixels(ARROW_WIDTH));
-
-            drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());
-        }
+    protected Component headline() {
+        return Component.translatable(K + (running() ? "turning" : "stopped"));
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
+    protected int headlineColour() { return running() ? INK : DIM; }
 
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        PowderElcMenu menu = this.getMenu();
-        if (menu == null) return;
-
-        if (isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, ARROW_WIDTH, ARROW_HEIGHT)) {
-            renderProgressTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getProgress(), menu.getMaxProgress());
-        }
-
-        if (isHovering(mouseX, mouseY, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
-            renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
-        }
+    @Override
+    protected List<Component> readouts() {
+        List<Component> lines = new ArrayList<>();
+        ItemStack input = menu.getSlot(PowderElcMenu.INPUT_SLOT).getItem();
+        if (input.isEmpty()) lines.add(Component.translatable(K + "no_material"));
+        else lines.add(Component.translatable(K + "material", input.getHoverName(), f1(menu.getWorkIndexTenths() / 10.0)));
+        lines.add(Component.translatable(K + "energy_line", menu.getEnergyPerOperation(), 2, menu.getMaxProgress()));
+        return lines;
     }
 
-    // 0.1.11.107: the menu's data comes from the server (the menu's broadcastChanges); the client menu has no block
-    // entity, so the copy that was here never ran.
+    @Override
+    protected int status() { return menu.getStatus(); }
 
+    @Override
+    protected List<Component> figureTooltip() {
+        return List.of(Component.translatable(K + "tip.hammer.1"), Component.translatable(K + "tip.hammer.2"), Component.translatable(K + "tip.bond"));
+    }
 }

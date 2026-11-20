@@ -245,7 +245,7 @@ def gecko_quads(e, res_w, res_h):
     return out
 
 
-def convert_gecko(path):
+def convert_gecko(path, *, apply_arm_clearance=True):
     """All pieces of a GeckoLib armour model: {piece: model}, texture bytes."""
     with open(path, encoding='utf-8') as fh:
         d = json.load(fh)
@@ -311,7 +311,7 @@ def convert_gecko(path):
     for piece, parts in pieces.items():
         for k in parts:
             parts[k] = [q for q in parts[k] if area(q['v']) > 1e-6]
-        if piece == 'chestplate':
+        if piece == 'chestplate' and apply_arm_clearance:
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
             from armor_clearance import clear
             clear(parts)

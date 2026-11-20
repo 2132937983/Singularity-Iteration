@@ -32,15 +32,30 @@ public final class Round183GameTests {
         {"hybrid_solar_helmet", "armor/item_armor_hybrid_solar_helmet"},
         {"ultimate_solar_helmet", "armor/item_armor_ultimate_solar_helmet"}};
 
-    /**
-     * Checks the item model of a Blockbench armor piece as 0.1.10.11 made it: builtin/entity (BakedArmorItemRenderer draws the 3D
-     * piece in the inventory, the hand, on the ground and in frames), its own display transforms with a gui one, the 32x32
-     * texture as its particle, no loader wrapper and no models/item/3d copy. Returns null when it is right.
-     */
+    /** Check the 3D item transforms and the flat GUI sprites of the nano and quantum suits. */
     static String bakedArmorItemModel(String itemPath) {
         String json = Round33GameTests.resource("/assets/mio_icif/models/item/" + itemPath + ".json");
         if (json == null) return "item model missing";
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        if (itemPath.startsWith("armor/item_armor_nano_") || itemPath.startsWith("armor/item_armor_quantum_")) {
+            String icon = itemPath.substring("armor/item_armor_".length());
+            if (!root.has("loader") || !"neoforge:separate_transforms".equals(root.get("loader").getAsString()))
+                return "missing inventory perspective for " + icon;
+            var views = root.getAsJsonObject("perspectives");
+            if (views == null || !views.keySet().equals(java.util.Set.of("gui"))
+                    || !("mio_icif:item/" + icon).equals(views.getAsJsonObject("gui").get("parent").getAsString()))
+                return "the flat icon must only replace the GUI perspective";
+            String flat = Round33GameTests.resource("/assets/mio_icif/models/item/" + icon + ".json");
+            if (flat == null) return "missing inventory model " + icon;
+            var sprite = JsonParser.parseString(flat).getAsJsonObject();
+            if (!"minecraft:item/generated".equals(sprite.get("parent").getAsString())
+                    || !("mio_icif:item/" + icon).equals(sprite.getAsJsonObject("textures").get("layer0").getAsString()))
+                return "incorrect inventory sprite " + icon;
+            if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + icon + ".png"))
+                return "missing inventory sprite texture " + icon;
+            root = root.getAsJsonObject("base");
+            if (root == null) return "missing 3D item base";
+        }
         if (root.has("loader")) return "item model still has the loader " + root.get("loader");
         if (!root.has("parent") || !"builtin/entity".equals(root.get("parent").getAsString())) return "item model is not builtin/entity";
         if (!root.has("display") || !root.getAsJsonObject("display").has("gui")) return "item model has no gui transform";
@@ -77,24 +92,38 @@ public final class Round183GameTests {
         h.succeed();
     }
 
-    /** No arm or hand vertex of a chestplate lies on the skin or sleeve planes (first-person flicker). */
+    /** A gauntlet must not lay a face over a coplanar skin or sleeve face (classic and slim arms). */
     @GameTest(template = "empty", batch = "round183_data")
     public static void gauntletsClearTheSkin(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
-        double[][] right = {{0, -3, -1}, {0, 1, 1}, {1, 10, 1}, {2, -2, -1}, {2, 2, 1}};
-        double[][] left = {{0, -1, -1}, {0, 3, 1}, {1, 10, 1}, {2, -2, -1}, {2, 2, 1}};
         for (String chest : new String[]{"nano_chestplate", "quantum_chestplate", "advanced_quantum_chestplate", "heavy_quantum_chestplate"}) {
             String json = Round33GameTests.resource("/assets/mio_icif/armor_models/" + chest + ".json");
             if (json == null) { problems.add(chest + " missing"); continue; }
             JsonObject parts = JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("parts");
             for (String part : new String[]{"right_arm", "left_arm", "right_hand", "left_hand"}) {
                 if (!parts.has(part)) continue;
-                double[][] planes = part.startsWith("right") ? right : left;
-                for (var q : parts.getAsJsonArray(part)) {
-                    var v = q.getAsJsonObject().getAsJsonArray("v");
-                    for (int i = 0; i < 4; i++) for (double[] p : planes) {
-                        double off = (v.get(i * 5 + (int) p[0]).getAsDouble() - p[1]) * p[2];
-                        if (off >= -0.02 && off < 0.30) { problems.add(chest + "/" + part + " on plane " + p[1]); break; }
+                boolean right = part.startsWith("right");
+                for (int width : new int[]{3, 4}) for (double inflate : new double[]{0, 0.25}) {
+                    double[] lo = {(right ? 1 - width : -1) - inflate, -2 - inflate, -2 - inflate};
+                    double[] hi = {(right ? 1 : width - 1) + inflate, 10 + inflate, 2 + inflate};
+                    for (var q : parts.getAsJsonArray(part)) {
+                        var v = q.getAsJsonObject().getAsJsonArray("v");
+                        for (int axis = 0; axis < 3; axis++) {
+                            int u = (axis + 1) % 3, w = (axis + 2) % 3;
+                            for (double plane : new double[]{lo[axis], hi[axis]}) {
+                                var polygon = new java.awt.geom.Path2D.Double();
+                                boolean coplanar = true;
+                                for (int k = 0; k < 20; k += 5) {
+                                    if (Math.abs(v.get(k + axis).getAsDouble() - plane) > 0.001) { coplanar = false; break; }
+                                    double x = v.get(k + u).getAsDouble(), y = v.get(k + w).getAsDouble();
+                                    if (k == 0) polygon.moveTo(x, y); else polygon.lineTo(x, y);
+                                }
+                                if (!coplanar) continue;
+                                polygon.closePath();
+                                if (polygon.intersects(lo[u], lo[w], hi[u] - lo[u], hi[w] - lo[w]))
+                                    problems.add(chest + "/" + part + " overlaps skin/sleeve plane " + axis + "=" + plane);
+                            }
+                        }
                     }
                 }
             }

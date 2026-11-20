@@ -1,0 +1,798 @@
+{
+  "format_version": 1,
+  "model_id": "geometry.quantum_armor",
+  "source_mod_version": "0.1.11.74",
+  "unit_capacity": {
+    "head": 4,
+    "chest": 3,
+    "legs": 2,
+    "feet": 2
+  },
+  "bay_extra_slots": 1,
+  "modules": [
+    {
+      "kind": "unit",
+      "id": "entity_esp",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_entity_esp_head",
+      "glow_bone": "module_entity_esp_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "grid_telemetry",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_grid_telemetry_head",
+      "glow_bone": "module_grid_telemetry_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "behavior_predictor",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_behavior_predictor_head",
+      "glow_bone": "module_behavior_predictor_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "blast_warning",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_blast_warning_head",
+      "glow_bone": "module_blast_warning_head_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "holomap",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_holomap_head",
+      "glow_bone": "module_holomap_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "ballistic",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_ballistic_head",
+      "glow_bone": "module_ballistic_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "smart_guidance",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_smart_guidance_head",
+      "glow_bone": "module_smart_guidance_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "self_repair",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_self_repair_head",
+      "glow_bone": "module_self_repair_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "toxin_filter",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_toxin_filter_head",
+      "glow_bone": "module_toxin_filter_head_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "blast_warning",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_blast_warning_chest",
+      "glow_bone": "module_blast_warning_chest_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "threat_sensor",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_threat_sensor_chest",
+      "glow_bone": "module_threat_sensor_chest_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "deflector",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_deflector_chest",
+      "glow_bone": "module_deflector_chest_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "phase_modulator",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_phase_modulator_chest",
+      "glow_bone": "module_phase_modulator_chest_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "entanglement_relay",
+      "slot": "chest",
+      "parent": "armorRightArm",
+      "bone": "module_entanglement_relay_chest",
+      "glow_bone": "module_entanglement_relay_chest_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "compute_core",
+      "slot": "chest",
+      "parent": "armorLeftArm",
+      "bone": "module_compute_core_chest",
+      "glow_bone": "module_compute_core_chest_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "self_repair",
+      "slot": "chest",
+      "parent": "armorRightArm",
+      "bone": "module_self_repair_chest",
+      "glow_bone": "module_self_repair_chest_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "hydrophobic",
+      "slot": "chest",
+      "parent": "armorLeftArm",
+      "bone": "module_hydrophobic_chest",
+      "glow_bone": "module_hydrophobic_chest_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "ore_scanner",
+      "slot": "legs",
+      "parent": "armorLeftLeg",
+      "bone": "module_ore_scanner_legs",
+      "glow_bone": "module_ore_scanner_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "grid_telemetry",
+      "slot": "legs",
+      "parent": "armorLeftLeg",
+      "bone": "module_grid_telemetry_legs",
+      "glow_bone": "module_grid_telemetry_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "resonance_field",
+      "slot": "legs",
+      "parent": "armorRightLeg",
+      "bone": "module_resonance_field_legs",
+      "glow_bone": "module_resonance_field_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "self_repair",
+      "slot": "legs",
+      "parent": "armorRightLeg",
+      "bone": "module_self_repair_legs",
+      "glow_bone": "module_self_repair_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "hydrophobic",
+      "slot": "legs",
+      "parent": "armorLeftLeg",
+      "bone": "module_hydrophobic_legs",
+      "glow_bone": "module_hydrophobic_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "kinetic_generator",
+      "slot": "legs",
+      "parent": "armorRightLeg",
+      "bone": "module_kinetic_generator_legs",
+      "glow_bone": "module_kinetic_generator_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "phase_jump_drive",
+      "slot": "legs",
+      "parent": "armorLeftLeg",
+      "bone": "module_phase_jump_drive_legs",
+      "glow_bone": "module_phase_jump_drive_legs_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "coherence_capacitor",
+      "slot": "legs",
+      "parent": "armorRightLeg",
+      "bone": "module_coherence_capacitor_legs",
+      "glow_bone": "module_coherence_capacitor_legs_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "entanglement_relay",
+      "slot": "legs",
+      "parent": "armorLeftLeg",
+      "bone": "module_entanglement_relay_legs",
+      "glow_bone": "module_entanglement_relay_legs_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "compute_core",
+      "slot": "legs",
+      "parent": "armorRightLeg",
+      "bone": "module_compute_core_legs",
+      "glow_bone": "module_compute_core_legs_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "unit",
+      "id": "ore_scanner",
+      "slot": "feet",
+      "parent": "armorRightBoot",
+      "bone": "module_ore_scanner_feet",
+      "glow_bone": "module_ore_scanner_feet_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "resonance_field",
+      "slot": "feet",
+      "parent": "armorLeftBoot",
+      "bone": "module_resonance_field_feet",
+      "glow_bone": "module_resonance_field_feet_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "self_repair",
+      "slot": "feet",
+      "parent": "armorLeftBoot",
+      "bone": "module_self_repair_feet",
+      "glow_bone": "module_self_repair_feet_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "phase_jump_drive",
+      "slot": "feet",
+      "parent": "armorRightBoot",
+      "bone": "module_phase_jump_drive_feet",
+      "glow_bone": "module_phase_jump_drive_feet_glow",
+      "default_visible": false,
+      "max_tier": 2
+    },
+    {
+      "kind": "unit",
+      "id": "coherence_capacitor",
+      "slot": "feet",
+      "parent": "armorLeftBoot",
+      "bone": "module_coherence_capacitor_feet",
+      "glow_bone": "module_coherence_capacitor_feet_glow",
+      "default_visible": false,
+      "max_tier": 1
+    },
+    {
+      "kind": "frame_core",
+      "id": "solar_array_1",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_solar_array_1",
+      "glow_bone": "module_solar_array_1_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "frame_core",
+      "id": "solar_array_2",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_solar_array_2",
+      "glow_bone": "module_solar_array_2_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "frame_core",
+      "id": "solar_array_3",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_solar_array_3",
+      "glow_bone": "module_solar_array_3_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "frame_core",
+      "id": "graviton",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_graviton",
+      "glow_bone": "module_graviton_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "frame_core",
+      "id": "propulsion",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_propulsion",
+      "glow_bone": "module_propulsion_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "bay",
+      "id": "quantum_bay_expander",
+      "slot": "head",
+      "parent": "armorHead",
+      "bone": "module_quantum_bay_expander_head",
+      "glow_bone": "module_quantum_bay_expander_head_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "bay",
+      "id": "quantum_bay_expander",
+      "slot": "chest",
+      "parent": "armorBody",
+      "bone": "module_quantum_bay_expander_chest",
+      "glow_bone": "module_quantum_bay_expander_chest_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "bay",
+      "id": "quantum_bay_expander",
+      "slot": "legs",
+      "parent": "armorRightLeg",
+      "bone": "module_quantum_bay_expander_legs",
+      "glow_bone": "module_quantum_bay_expander_legs_glow",
+      "default_visible": false
+    },
+    {
+      "kind": "bay",
+      "id": "quantum_bay_expander",
+      "slot": "feet",
+      "parent": "armorRightBoot",
+      "bone": "module_quantum_bay_expander_feet",
+      "glow_bone": "module_quantum_bay_expander_feet_glow",
+      "default_visible": false
+    }
+  ],
+  "flight": {
+    "space": "Geometry rest pixels, +X wearer left, +Y up, +Z back. Transform outward as a direction; pivot as a point.",
+    "particle_forward_axis": "Use socket.outward in the socket's local frame; all locator bind rotations are zero.",
+    "sockets": [
+      {
+        "bone": "rcs_locator_shoulder_left_up",
+        "parent": "module_rcs_shoulder_left",
+        "emitter": "module_rcs_shoulder_left_glow",
+        "part": "rcs_shoulder_left",
+        "equipment_slot": "chest",
+        "follow_bone": "armorLeftArm",
+        "pivot": [
+          8.32,
+          24.87,
+          2.58
+        ],
+        "outward": [
+          0,
+          1,
+          0
+        ],
+        "face": "up",
+        "local_rect": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          48,
+          105,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_shoulder_left_front",
+        "parent": "module_rcs_shoulder_left",
+        "emitter": "module_rcs_shoulder_left_glow",
+        "part": "rcs_shoulder_left",
+        "equipment_slot": "chest",
+        "follow_bone": "armorLeftArm",
+        "pivot": [
+          9.32,
+          24.34,
+          2.05
+        ],
+        "outward": [
+          0,
+          0,
+          -1
+        ],
+        "face": "north",
+        "local_rect": [
+          1,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          43,
+          105,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_waist_left_out",
+        "parent": "module_rcs_waist_left",
+        "emitter": "module_rcs_waist_left_glow",
+        "part": "rcs_waist_left",
+        "equipment_slot": "chest",
+        "follow_bone": "armorBody",
+        "pivot": [
+          3.83,
+          15.03,
+          3.68
+        ],
+        "outward": [
+          1,
+          0,
+          0
+        ],
+        "face": "west",
+        "local_rect": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          117,
+          101,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_calf_left_back",
+        "parent": "module_rcs_calf_left",
+        "emitter": "module_rcs_calf_left_glow",
+        "part": "rcs_calf_left",
+        "equipment_slot": "feet",
+        "follow_bone": "armorLeftBoot",
+        "pivot": [
+          2.09,
+          4.38,
+          4.24
+        ],
+        "outward": [
+          0,
+          0,
+          1
+        ],
+        "face": "south",
+        "local_rect": [
+          1,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          103,
+          94,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_calf_left_down",
+        "parent": "module_rcs_calf_left",
+        "emitter": "module_rcs_calf_left_glow",
+        "part": "rcs_calf_left",
+        "equipment_slot": "feet",
+        "follow_bone": "armorLeftBoot",
+        "pivot": [
+          3.09,
+          3.85,
+          3.71
+        ],
+        "outward": [
+          0,
+          -1,
+          0
+        ],
+        "face": "down",
+        "local_rect": [
+          2,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          51,
+          94,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_shoulder_right_up",
+        "parent": "module_rcs_shoulder_right",
+        "emitter": "module_rcs_shoulder_right_glow",
+        "part": "rcs_shoulder_right",
+        "equipment_slot": "chest",
+        "follow_bone": "armorRightArm",
+        "pivot": [
+          -8.32,
+          24.87,
+          2.58
+        ],
+        "outward": [
+          0,
+          1,
+          0
+        ],
+        "face": "up",
+        "local_rect": [
+          1,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          61,
+          105,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_shoulder_right_front",
+        "parent": "module_rcs_shoulder_right",
+        "emitter": "module_rcs_shoulder_right_glow",
+        "part": "rcs_shoulder_right",
+        "equipment_slot": "chest",
+        "follow_bone": "armorRightArm",
+        "pivot": [
+          -9.32,
+          24.34,
+          2.05
+        ],
+        "outward": [
+          0,
+          0,
+          -1
+        ],
+        "face": "north",
+        "local_rect": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          54,
+          105,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_waist_right_out",
+        "parent": "module_rcs_waist_right",
+        "emitter": "module_rcs_waist_right_glow",
+        "part": "rcs_waist_right",
+        "equipment_slot": "chest",
+        "follow_bone": "armorBody",
+        "pivot": [
+          -3.83,
+          15.03,
+          3.68
+        ],
+        "outward": [
+          -1,
+          0,
+          0
+        ],
+        "face": "east",
+        "local_rect": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          119,
+          101,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_calf_right_back",
+        "parent": "module_rcs_calf_right",
+        "emitter": "module_rcs_calf_right_glow",
+        "part": "rcs_calf_right",
+        "equipment_slot": "feet",
+        "follow_bone": "armorRightBoot",
+        "pivot": [
+          -2.09,
+          4.38,
+          4.24
+        ],
+        "outward": [
+          0,
+          0,
+          1
+        ],
+        "face": "south",
+        "local_rect": [
+          1,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          82,
+          95,
+          1,
+          1
+        ]
+      },
+      {
+        "bone": "rcs_locator_calf_right_down",
+        "parent": "module_rcs_calf_right",
+        "emitter": "module_rcs_calf_right_glow",
+        "part": "rcs_calf_right",
+        "equipment_slot": "feet",
+        "follow_bone": "armorRightBoot",
+        "pivot": [
+          -3.09,
+          3.85,
+          3.71
+        ],
+        "outward": [
+          0,
+          -1,
+          0
+        ],
+        "face": "down",
+        "local_rect": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "atlas_rect": [
+          73,
+          95,
+          1,
+          1
+        ]
+      }
+    ],
+    "main_nozzles": [
+      {
+        "bone": "thruster_nozzle_left",
+        "parent": "module_mach_pod_left",
+        "pivot": [
+          2.83,
+          12.57,
+          7.29
+        ],
+        "outward": [
+          0,
+          -1,
+          0
+        ]
+      },
+      {
+        "bone": "thruster_nozzle_right",
+        "parent": "module_mach_pod_right",
+        "pivot": [
+          -2.83,
+          12.57,
+          7.29
+        ],
+        "outward": [
+          0,
+          -1,
+          0
+        ]
+      }
+    ],
+    "stowed_hidden": [
+      "module_mach_pod_left_glow",
+      "module_mach_pod_right_glow",
+      "module_flight_boots_left_glow",
+      "module_flight_boots_right_glow"
+    ],
+    "chest_roots": [
+      "module_flight_system",
+      "module_rcs_shoulder_left",
+      "module_rcs_shoulder_right"
+    ],
+    "boot_roots": [
+      "module_flight_boots_left_glow",
+      "module_flight_boots_right_glow",
+      "module_rcs_calf_left",
+      "module_rcs_calf_right"
+    ],
+    "boot_signal": "module_flight_boots_glow",
+    "boot_signal_targets": [
+      "module_flight_boots_left_glow",
+      "module_flight_boots_right_glow"
+    ],
+    "variant": "BASE and PROPULSION emit jets; GRAVITON uses field rings and suppresses conventional particles.",
+    "hud": "Gate special manoeuvre on the equipped quantum chest, feature switch and available power; keep physical boots tied to the equipped boots.",
+    "rcs": "Insert sockets into the RCS allocation in the owning limb frame, translating the model Y axis once. HUD/world exhaust samples use the same per-socket nozzleOutput value. Illuminate only the chosen face rectangle, and emit only while its output is positive.",
+    "rcs_sample_event": "Run rcs_flight on an overlay controller with the stowed or hover base pose. Its single quantum_rcs_sample event polls every socket once per four ticks. Illuminate or emit only at sockets with positive allocator output; omit the event handler when polling continuously.",
+    "boost": "Use an independent boost state. Start mach4_boost, continue with mach4_sustain while held, end with mach4_retract, then restore the current flight state. Keep controller transitions at zero for the discrete rail gates. Sample the two main_nozzles after the pod transforms for code-driven effects.",
+    "preview": {
+      "stowed": {
+        "clip": "animation.quantum.stowed",
+        "time": 0
+      },
+      "mach4": {
+        "clip": "animation.quantum.mach4_boost",
+        "time": 1.2
+      }
+    }
+  }
+}

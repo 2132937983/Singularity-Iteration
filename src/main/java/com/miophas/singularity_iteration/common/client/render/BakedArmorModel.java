@@ -78,10 +78,17 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
      */
     private static final java.util.Set<ResourceLocation> STILL = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    private boolean moving() {
+    public boolean supportsChestGimmicks() {
+        if (!source.getPath().endsWith("/quantum_chestplate.json")) return false;
         geometry();   // loads the file, and with it the gimmicks flag
-        return wearer != null && source.getPath().endsWith("/quantum_chestplate.json") && !STILL.contains(source)
-            && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGimmicks();
+        return !STILL.contains(source);
+    }
+
+    /** Item views use the complete stowed mesh; worn flight hardware is posed by the attachment layer. */
+    public Map<String, float[][]> wornGeometry(@org.jetbrains.annotations.Nullable LivingEntity entity, float partial) {
+        var complete = geometry();
+        return entity == null ? complete
+            : com.miophas.singularity_iteration.common.client.suit.QuantumWornMounts.stationaryGeometry(source, complete, entity, partial);
     }
 
     /** Baked quads per part ("head", "body", "right_arm", ...), each float[23]: 4 x (x y z u v) + normal. */
@@ -134,13 +141,14 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
 
     @Override
     public void renderToBuffer(PoseStack pose, VertexConsumer vc, int light, int overlay, int color) {
-        Map<String, float[][]> geo = geometry();
+        float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        Map<String, float[][]> geo = wornGeometry(wearer, partial);
         if (geo.isEmpty()) return;
         draw(pose, vc, head, geo.get("head"), light, overlay, color);
         // 0.1.10.32 (S-8): the vents slide out in flight, the shoulder plates slide back while sprinting
-        float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-        float vent = moving() ? com.miophas.singularity_iteration.common.client.suit.SuitGimmicks.vent(wearer, partial) : 0F;
-        float shoulder = moving() ? com.miophas.singularity_iteration.common.client.suit.SuitGimmicks.shoulder(wearer, partial) : 0F;
+        boolean moving = wearer != null && supportsChestGimmicks() && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGimmicks();
+        float vent = moving ? com.miophas.singularity_iteration.common.client.suit.SuitGimmicks.vent(wearer, partial) : 0F;
+        float shoulder = moving ? com.miophas.singularity_iteration.common.client.suit.SuitGimmicks.shoulder(wearer, partial) : 0F;
         if (vent > 0.001F && geo.get("body") != null) {
             float slide = com.miophas.singularity_iteration.common.client.suit.SuitFxRules.VENT_SLIDE * vent;
             drawOffset(pose, vc, body, filtered(geo.get("body"), BODY_REST), 0, 0, 0, light, overlay, color);

@@ -157,6 +157,7 @@ public final class NanoClient {
     static void acceptFx(NanoPackets.Fx fx) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
+        NanoModuleSignals.onFx(fx);
         boolean self = mc.player != null && fx.entityId() == mc.player.getId();
         switch (fx.kind()) {
             case NanoPackets.FX_DASH -> {

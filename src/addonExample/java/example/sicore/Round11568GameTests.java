@@ -80,16 +80,18 @@ public final class Round11568GameTests {
         Class<?> rcs = Round33GameTests.common("suit.RcsAllocator");
         Object weak = Round33GameTests.call(rcs, "command", 1F, 0F, 0F, new float[3], 0F, 0F, 0.3F);
         Object hard = Round33GameTests.call(rcs, "command", 1F, 0F, 0F, new float[3], 0F, 0F, 1F);
-        int crown = -1;
-        for (int i = 0; i < base.size(); i++) if ("crown".equals(String.valueOf(Round33GameTests.call(base.get(i), "name")))) crown = i;
-        int weakOn = 0, hardOn = 0;
-        for (int t = 0; t < 4; t++) {
-            float[] w = (float[]) Round33GameTests.call(rcs, "allocate", base, weak, new float[]{1, 1, 1, 1}, 1F, 0.3F, t);
-            float[] s = (float[]) Round33GameTests.call(rcs, "allocate", base, hard, new float[]{1, 1, 1, 1}, 1F, 1F, t);
-            if (w[crown] > 0) weakOn++;
-            if (s[crown] > 0) hardOn++;
+        var names = base.stream().map(port -> String.valueOf(Round33GameTests.call(port, "name"))).toList();
+        int left = names.indexOf("rcs_locator_shoulder_left_up"), right = names.indexOf("rcs_locator_shoulder_right_up");
+        h.assertTrue(left >= 0 && right >= 0, "missing paired cruise brakes: " + names);
+        int weakLeft = 0, weakRight = 0;
+        for (int tick = 0; tick < 4; tick++) {
+            float[] w = (float[]) Round33GameTests.call(rcs, "allocate", base, weak, new float[]{1, 1, 1, 1}, 1F, 0.3F, tick);
+            float[] s = (float[]) Round33GameTests.call(rcs, "allocate", base, hard, new float[]{1, 1, 1, 1}, 1F, 1F, tick);
+            if (w[left] > 0) weakLeft++;
+            if (w[right] > 0) weakRight++;
+            h.assertTrue(s[left] == 1F && s[right] == 1F, "both shoulder brakes must burn together on tick " + tick);
         }
-        h.assertTrue(weakOn > 0 && weakOn < 4 && hardOn == 4, "a hard brake still pulses: " + weakOn + "/" + hardOn);
+        h.assertTrue(weakLeft == 1 && weakRight == 1, "30% brake should pulse once per four ticks on each side");
         h.succeed();
     }
 }

@@ -71,7 +71,8 @@ public final class SuitHandRenderer {
         if (name == null) return;
         if (!(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(player) instanceof PlayerRenderer renderer)) return;
         BakedArmorModel baked = MODELS.computeIfAbsent(name, n -> new BakedArmorModel(id("armor_models/" + n + ".json")));
-        var geometry = baked.geometry();
+        float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        var geometry = baked.wornGeometry(player, partial);
         if (geometry.isEmpty()) return;
 
         boolean right = event.getArm() == HumanoidArm.RIGHT;
@@ -101,6 +102,8 @@ public final class SuitHandRenderer {
         }
         // 0.1.10.30: the light of the gauntlet (suit glow)
         SuitGlowLayer.drawArm(pose, buffers, player, arm, right, FcsClientConfig.handArmorFirstPerson());
+        com.miophas.singularity_iteration.common.client.suit.nano.NanoModuleLayer.drawArm(pose, buffers, light, player, arm, right, partial);
+        QuantumWornMounts.drawArm(model, pose, buffers, light, player, partial, right);
         // 0.1.10.31 (S-9): the palm thruster while hovering in Special Maneuver flight
         SuitThrustLayer.drawPalm(pose, buffers, player, arm, right);
         event.setCanceled(true);

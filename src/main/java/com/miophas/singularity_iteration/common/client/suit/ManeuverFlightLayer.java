@@ -87,7 +87,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         int id = player.getId();
         strips.clear();
         // 0.1.11.66 (R0): every flame leaves a port of the worn suit (QuantumNozzles), the way the port looks
-        java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
+        java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player, partial);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
         float kickClassic = ManeuverModeClient.boostKick(player);                       // 0.1.11.68 (R2)
         for (int i = 0; outs != null && i < outs.length; i++) {
@@ -133,7 +133,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             new net.minecraft.world.phys.Vec3(chest.x, chest.y, chest.z), 1.1F, 1F);
         if (buffers instanceof MultiBufferSource.BufferSource bs) bs.endBatch(SiRenderTypes.FLAT);
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
-        java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
+        java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player, partial);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
         float kick = ManeuverModeClient.boostKick(player);
         boolean hardBrake = ManeuverModeClient.brake(player) >= com.miophas.singularity_iteration.common.suit.RcsAllocator.HARD_BRAKE;

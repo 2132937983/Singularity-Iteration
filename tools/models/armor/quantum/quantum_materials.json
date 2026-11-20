@@ -1,0 +1,1808 @@
+{
+  "bones": {
+    "armorHead": [
+      {
+        "name": "obsidian_shell",
+        "mat": "liner",
+        "style": "obsidian_shell"
+      },
+      {
+        "name": "nape_gasket",
+        "mat": "liner",
+        "style": "nape_gasket"
+      }
+    ],
+    "armorHead_plates": [
+      {
+        "name": "face_keel",
+        "mat": "ceramic",
+        "style": "face_keel",
+        "lights": {
+          "north": [
+            [
+              0,
+              2,
+              4,
+              1
+            ],
+            [
+              0,
+              4,
+              4,
+              1
+            ],
+            [
+              0,
+              6,
+              4,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "crest_fore",
+        "mat": "ceramic",
+        "style": "crest_fore"
+      },
+      {
+        "name": "crest_aft",
+        "mat": "ceramic",
+        "style": "crest_aft"
+      },
+      {
+        "name": "left_comms_antenna",
+        "style": "comms_antenna",
+        "mat": "ceramic"
+      },
+      {
+        "name": "right_comms_antenna",
+        "style": "comms_antenna",
+        "mat": "ceramic"
+      },
+      {
+        "name": "left_crown_chamfer",
+        "style": "crown_chamfer",
+        "mat": "ceramic"
+      },
+      {
+        "name": "left_mandible_intake",
+        "style": "mandible_intake",
+        "mat": "ceramic"
+      },
+      {
+        "name": "right_crown_chamfer",
+        "style": "crown_chamfer",
+        "mat": "ceramic"
+      },
+      {
+        "name": "right_mandible_intake",
+        "style": "mandible_intake",
+        "mat": "ceramic"
+      }
+    ],
+    "armorHead_glow": [
+      {
+        "name": "left_face_fold",
+        "mat": "ceramic",
+        "style": "left_face_fold",
+        "lights": {
+          "west": [
+            [
+              0,
+              2,
+              1,
+              3
+            ]
+          ]
+        }
+      },
+      {
+        "name": "right_face_fold",
+        "mat": "ceramic",
+        "style": "right_face_fold",
+        "lights": {
+          "east": [
+            [
+              1,
+              2,
+              1,
+              3
+            ]
+          ]
+        }
+      },
+      {
+        "name": "left_ear_receiver",
+        "style": "ear_receiver",
+        "mat": "ceramic",
+        "lights": {
+          "west": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "right_ear_receiver",
+        "style": "ear_receiver",
+        "mat": "ceramic",
+        "lights": {
+          "east": [
+            [
+              3,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "armorBody": [
+      {
+        "name": "hip_front",
+        "mat": "ceramic",
+        "style": "waist_shell"
+      },
+      {
+        "name": "hip_back",
+        "mat": "ceramic",
+        "style": "waist_shell"
+      },
+      {
+        "name": "right_hip_flank",
+        "mat": "ceramic",
+        "style": "waist_shell"
+      },
+      {
+        "name": "left_hip_flank",
+        "mat": "ceramic",
+        "style": "waist_shell"
+      },
+      {
+        "name": "abdominal_front",
+        "mat": "liner",
+        "style": "waist_joint"
+      },
+      {
+        "name": "abdominal_back",
+        "mat": "liner",
+        "style": "waist_joint"
+      },
+      {
+        "name": "right_abdominal_flank",
+        "mat": "liner",
+        "style": "waist_joint"
+      },
+      {
+        "name": "left_abdominal_flank",
+        "mat": "liner",
+        "style": "waist_joint"
+      },
+      {
+        "name": "scapular_back",
+        "mat": "ceramic",
+        "style": "torso_shell"
+      },
+      {
+        "name": "right_scapular_flank",
+        "mat": "ceramic",
+        "style": "torso_shell"
+      },
+      {
+        "name": "left_scapular_flank",
+        "mat": "ceramic",
+        "style": "torso_shell"
+      },
+      {
+        "name": "pelvic_slope",
+        "mat": "titanium",
+        "style": "waist_joint"
+      },
+      {
+        "name": "pelvic_back",
+        "mat": "titanium",
+        "style": "waist_shell"
+      },
+      {
+        "name": "gorge_front",
+        "mat": "liner",
+        "style": "collar"
+      },
+      {
+        "name": "gorge_rear",
+        "mat": "liner",
+        "style": "collar"
+      },
+      {
+        "name": "right_gorge_flank",
+        "mat": "titanium",
+        "style": "collar"
+      },
+      {
+        "name": "left_gorge_flank",
+        "mat": "titanium",
+        "style": "collar"
+      },
+      {
+        "name": "right_pectoral_bed",
+        "mat": "ceramic",
+        "style": "torso_shell"
+      },
+      {
+        "name": "left_pectoral_bed",
+        "mat": "ceramic",
+        "style": "torso_shell"
+      },
+      {
+        "name": "torso_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorBody_plates": [
+      {
+        "name": "costal_return",
+        "mat": "ceramic",
+        "style": "costal_plate"
+      },
+      {
+        "name": "xiphoid_keel",
+        "mat": "ceramic",
+        "style": "abdomen"
+      }
+    ],
+    "armorBody_glow": [
+      {
+        "name": "sternal_bus",
+        "mat": "visor",
+        "style": "sternal_channel",
+        "lights": {
+          "north": [
+            [
+              1,
+              0,
+              1,
+              3
+            ]
+          ]
+        }
+      },
+      {
+        "name": "dorsal_field_socket",
+        "mat": "titanium",
+        "style": "field_socket",
+        "lights": {
+          "south": [
+            [
+              2,
+              2,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "armorBody_float": [],
+    "armorBody_float_glow": [
+      {
+        "name": "right_field_blade",
+        "mat": "ceramic",
+        "style": "energy_blade",
+        "lights": {
+          "south": [
+            [
+              0,
+              1,
+              1,
+              5
+            ]
+          ]
+        }
+      },
+      {
+        "name": "left_field_blade",
+        "mat": "ceramic",
+        "style": "energy_blade",
+        "lights": {
+          "south": [
+            [
+              1,
+              1,
+              1,
+              5
+            ]
+          ]
+        }
+      }
+    ],
+    "armorRightArm": [
+      {
+        "name": "right_upper_sleeve",
+        "mat": "ceramic",
+        "style": "upper_arm"
+      },
+      {
+        "name": "right_upper_rear_return",
+        "mat": "ceramic",
+        "style": "upper_arm"
+      },
+      {
+        "name": "right_shoulder_inner_step",
+        "mat": "ceramic",
+        "style": "shoulder"
+      },
+      {
+        "name": "right_elbow",
+        "mat": "liner",
+        "style": "elbow"
+      },
+      {
+        "name": "right_arm_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorRightArm_plates": [
+      {
+        "name": "right_shoulder_cap",
+        "mat": "ceramic",
+        "style": "shoulder"
+      },
+      {
+        "name": "right_shoulder_apron",
+        "mat": "ceramic",
+        "style": "shoulder"
+      },
+      {
+        "name": "right_deltoid_return",
+        "mat": "ceramic",
+        "style": "upper_arm"
+      },
+      {
+        "name": "right_bracer_face",
+        "mat": "ceramic",
+        "style": "forearm"
+      }
+    ],
+    "armorRightArm_glow": [],
+    "armorLeftArm": [
+      {
+        "name": "left_upper_sleeve",
+        "mat": "ceramic",
+        "style": "upper_arm"
+      },
+      {
+        "name": "left_upper_rear_return",
+        "mat": "ceramic",
+        "style": "upper_arm"
+      },
+      {
+        "name": "left_shoulder_inner_step",
+        "mat": "ceramic",
+        "style": "shoulder"
+      },
+      {
+        "name": "left_elbow",
+        "mat": "liner",
+        "style": "elbow"
+      },
+      {
+        "name": "left_arm_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorLeftArm_plates": [
+      {
+        "name": "left_shoulder_cap",
+        "mat": "ceramic",
+        "style": "shoulder"
+      },
+      {
+        "name": "left_shoulder_apron",
+        "mat": "ceramic",
+        "style": "shoulder"
+      },
+      {
+        "name": "left_deltoid_return",
+        "mat": "ceramic",
+        "style": "upper_arm"
+      },
+      {
+        "name": "left_bracer_face",
+        "mat": "ceramic",
+        "style": "forearm"
+      }
+    ],
+    "armorLeftArm_glow": [],
+    "armorRightLeg": [
+      {
+        "name": "right_hip_joint",
+        "mat": "liner",
+        "style": "hip"
+      },
+      {
+        "name": "right_thigh_casting",
+        "mat": "ceramic",
+        "style": "thigh"
+      },
+      {
+        "name": "right_thigh_back",
+        "mat": "ceramic",
+        "style": "thigh"
+      },
+      {
+        "name": "right_knee_joint",
+        "mat": "liner",
+        "style": "knee_joint"
+      },
+      {
+        "name": "right_leg_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorRightLeg_plates": [
+      {
+        "name": "right_thigh_back_guard",
+        "mat": "ceramic",
+        "style": "thigh"
+      },
+      {
+        "name": "right_thigh_chine",
+        "mat": "ceramic",
+        "style": "thigh"
+      }
+    ],
+    "armorRightLeg_glow": [
+      {
+        "name": "right_knee_shield",
+        "mat": "ceramic",
+        "style": "knee",
+        "lights": {
+          "north": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "armorLeftLeg": [
+      {
+        "name": "left_hip_joint",
+        "mat": "liner",
+        "style": "hip"
+      },
+      {
+        "name": "left_thigh_casting",
+        "mat": "ceramic",
+        "style": "thigh"
+      },
+      {
+        "name": "left_thigh_back",
+        "mat": "ceramic",
+        "style": "thigh"
+      },
+      {
+        "name": "left_knee_joint",
+        "mat": "liner",
+        "style": "knee_joint"
+      },
+      {
+        "name": "left_leg_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorLeftLeg_plates": [
+      {
+        "name": "left_thigh_back_guard",
+        "mat": "ceramic",
+        "style": "thigh"
+      },
+      {
+        "name": "left_thigh_chine",
+        "mat": "ceramic",
+        "style": "thigh"
+      }
+    ],
+    "armorLeftLeg_glow": [
+      {
+        "name": "left_knee_shield",
+        "mat": "ceramic",
+        "style": "knee",
+        "lights": {
+          "north": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "armorRightBoot": [
+      {
+        "name": "right_foot_tread",
+        "mat": "liner",
+        "style": "sole"
+      },
+      {
+        "name": "right_upper_instep",
+        "mat": "ceramic",
+        "style": "boot"
+      },
+      {
+        "name": "right_greave",
+        "mat": "ceramic",
+        "style": "shin"
+      },
+      {
+        "name": "right_heel",
+        "mat": "ceramic",
+        "style": "heel"
+      },
+      {
+        "name": "right_boot_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorRightBoot_plates": [
+      {
+        "name": "right_toe_bevel",
+        "mat": "ceramic",
+        "style": "boot"
+      },
+      {
+        "name": "right_greave_face",
+        "mat": "ceramic",
+        "style": "shin"
+      }
+    ],
+    "armorRightBoot_glow": [],
+    "armorLeftBoot": [
+      {
+        "name": "left_foot_tread",
+        "mat": "liner",
+        "style": "sole"
+      },
+      {
+        "name": "left_upper_instep",
+        "mat": "ceramic",
+        "style": "boot"
+      },
+      {
+        "name": "left_greave",
+        "mat": "ceramic",
+        "style": "shin"
+      },
+      {
+        "name": "left_heel",
+        "mat": "ceramic",
+        "style": "heel"
+      },
+      {
+        "name": "left_boot_pressure_liner",
+        "mat": "liner",
+        "style": "pressure_liner"
+      }
+    ],
+    "armorLeftBoot_plates": [
+      {
+        "name": "left_toe_bevel",
+        "mat": "ceramic",
+        "style": "boot"
+      },
+      {
+        "name": "left_greave_face",
+        "mat": "ceramic",
+        "style": "shin"
+      }
+    ],
+    "armorLeftBoot_glow": [],
+    "armorHead_float": [
+      {
+        "name": "right_phase_terminal",
+        "mat": "ceramic",
+        "style": "right_phase_terminal"
+      },
+      {
+        "name": "left_phase_terminal",
+        "mat": "ceramic",
+        "style": "left_phase_terminal"
+      }
+    ],
+    "armorHead_float_glow": [
+      {
+        "name": "phase_bridge",
+        "mat": "ceramic",
+        "style": "phase_bridge",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              3,
+              1
+            ]
+          ],
+          "up": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "right_phase_elbow",
+        "mat": "ceramic",
+        "style": "right_phase_elbow",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              3,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "left_phase_elbow",
+        "mat": "ceramic",
+        "style": "left_phase_elbow",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              3,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_entity_esp_head": [],
+    "module_entity_esp_head_glow": [
+      {
+        "name": "entity_esp_head_panel",
+        "style": "entity_esp",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_grid_telemetry_head": [],
+    "module_grid_telemetry_head_glow": [
+      {
+        "name": "grid_telemetry_head_panel",
+        "style": "grid_telemetry",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_behavior_predictor_head": [],
+    "module_behavior_predictor_head_glow": [
+      {
+        "name": "behavior_predictor_head_panel",
+        "style": "behavior_predictor",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_blast_warning_head": [],
+    "module_blast_warning_head_glow": [
+      {
+        "name": "blast_warning_head_panel",
+        "style": "blast_warning",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_holomap_head": [],
+    "module_holomap_head_glow": [
+      {
+        "name": "holomap_head_panel",
+        "style": "holomap",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_ballistic_head": [],
+    "module_ballistic_head_glow": [
+      {
+        "name": "ballistic_head_panel",
+        "style": "ballistic",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_smart_guidance_head": [],
+    "module_smart_guidance_head_glow": [
+      {
+        "name": "smart_guidance_head_panel",
+        "style": "smart_guidance",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_self_repair_head": [],
+    "module_self_repair_head_glow": [
+      {
+        "name": "self_repair_head_panel",
+        "style": "self_repair",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_toxin_filter_head": [],
+    "module_toxin_filter_head_glow": [
+      {
+        "name": "toxin_filter_head_panel",
+        "style": "toxin_filter",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_blast_warning_chest": [],
+    "module_blast_warning_chest_glow": [
+      {
+        "name": "blast_warning_chest_panel",
+        "style": "blast_warning",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_threat_sensor_chest": [],
+    "module_threat_sensor_chest_glow": [
+      {
+        "name": "threat_sensor_chest_panel",
+        "style": "threat_sensor",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_deflector_chest": [],
+    "module_deflector_chest_glow": [
+      {
+        "name": "deflector_chest_panel",
+        "style": "deflector",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_phase_modulator_chest": [],
+    "module_phase_modulator_chest_glow": [
+      {
+        "name": "phase_modulator_chest_panel",
+        "style": "phase_modulator",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_entanglement_relay_chest": [],
+    "module_entanglement_relay_chest_glow": [
+      {
+        "name": "entanglement_relay_chest_panel",
+        "style": "entanglement_relay",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_compute_core_chest": [],
+    "module_compute_core_chest_glow": [
+      {
+        "name": "compute_core_chest_panel",
+        "style": "compute_core",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_self_repair_chest": [],
+    "module_self_repair_chest_glow": [
+      {
+        "name": "self_repair_chest_panel",
+        "style": "self_repair",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_hydrophobic_chest": [],
+    "module_hydrophobic_chest_glow": [
+      {
+        "name": "hydrophobic_chest_panel",
+        "style": "hydrophobic",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_ore_scanner_legs": [],
+    "module_ore_scanner_legs_glow": [
+      {
+        "name": "ore_scanner_legs_panel",
+        "style": "ore_scanner",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_grid_telemetry_legs": [],
+    "module_grid_telemetry_legs_glow": [
+      {
+        "name": "grid_telemetry_legs_panel",
+        "style": "grid_telemetry",
+        "mat": "ceramic",
+        "display_face": "west",
+        "mirror": false,
+        "lights": {
+          "west": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_resonance_field_legs": [],
+    "module_resonance_field_legs_glow": [
+      {
+        "name": "resonance_field_legs_panel",
+        "style": "resonance_field",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_self_repair_legs": [],
+    "module_self_repair_legs_glow": [
+      {
+        "name": "self_repair_legs_panel",
+        "style": "self_repair",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_hydrophobic_legs": [],
+    "module_hydrophobic_legs_glow": [
+      {
+        "name": "hydrophobic_legs_panel",
+        "style": "hydrophobic",
+        "mat": "ceramic",
+        "display_face": "west",
+        "mirror": false,
+        "lights": {
+          "west": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_kinetic_generator_legs": [],
+    "module_kinetic_generator_legs_glow": [
+      {
+        "name": "kinetic_generator_legs_panel",
+        "style": "kinetic_generator",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_phase_jump_drive_legs": [],
+    "module_phase_jump_drive_legs_glow": [
+      {
+        "name": "phase_jump_drive_legs_panel",
+        "style": "phase_jump_drive",
+        "mat": "ceramic",
+        "display_face": "west",
+        "mirror": false,
+        "lights": {
+          "west": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_coherence_capacitor_legs": [],
+    "module_coherence_capacitor_legs_glow": [
+      {
+        "name": "coherence_capacitor_legs_panel",
+        "style": "coherence_capacitor",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_entanglement_relay_legs": [],
+    "module_entanglement_relay_legs_glow": [
+      {
+        "name": "entanglement_relay_legs_panel",
+        "style": "entanglement_relay",
+        "mat": "ceramic",
+        "display_face": "west",
+        "mirror": false,
+        "lights": {
+          "west": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_compute_core_legs": [],
+    "module_compute_core_legs_glow": [
+      {
+        "name": "compute_core_legs_panel",
+        "style": "compute_core",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_ore_scanner_feet": [],
+    "module_ore_scanner_feet_glow": [
+      {
+        "name": "ore_scanner_feet_panel",
+        "style": "ore_scanner",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_resonance_field_feet": [],
+    "module_resonance_field_feet_glow": [
+      {
+        "name": "resonance_field_feet_panel",
+        "style": "resonance_field",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_self_repair_feet": [],
+    "module_self_repair_feet_glow": [
+      {
+        "name": "self_repair_feet_panel",
+        "style": "self_repair",
+        "mat": "ceramic",
+        "display_face": "west",
+        "mirror": false,
+        "lights": {
+          "west": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_phase_jump_drive_feet": [],
+    "module_phase_jump_drive_feet_glow": [
+      {
+        "name": "phase_jump_drive_feet_panel",
+        "style": "phase_jump_drive",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_coherence_capacitor_feet": [],
+    "module_coherence_capacitor_feet_glow": [
+      {
+        "name": "coherence_capacitor_feet_panel",
+        "style": "coherence_capacitor",
+        "mat": "ceramic",
+        "display_face": "west",
+        "mirror": false,
+        "lights": {
+          "west": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_solar_array_1": [],
+    "module_solar_array_1_glow": [
+      {
+        "name": "solar_array_1_left_panel",
+        "style": "solar_array_1",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "solar_array_1_right_panel",
+        "style": "solar_array_1",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": true,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_solar_array_2": [],
+    "module_solar_array_2_glow": [
+      {
+        "name": "solar_array_2_left_panel",
+        "style": "solar_array_2",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "solar_array_2_right_panel",
+        "style": "solar_array_2",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": true,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_solar_array_3": [],
+    "module_solar_array_3_glow": [
+      {
+        "name": "solar_array_3_left_panel",
+        "style": "solar_array_3",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "name": "solar_array_3_right_panel",
+        "style": "solar_array_3",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": true,
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_graviton": [],
+    "module_graviton_glow": [
+      {
+        "name": "graviton_frame_panel",
+        "style": "graviton",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_propulsion": [],
+    "module_propulsion_glow": [
+      {
+        "name": "propulsion_frame_panel",
+        "style": "propulsion",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_quantum_bay_expander_head": [],
+    "module_quantum_bay_expander_head_glow": [
+      {
+        "name": "quantum_bay_expander_head_tab",
+        "style": "quantum_bay_expander",
+        "mat": "ceramic",
+        "display_face": "south",
+        "mirror": false,
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_quantum_bay_expander_chest": [],
+    "module_quantum_bay_expander_chest_glow": [
+      {
+        "name": "quantum_bay_expander_chest_tab",
+        "style": "quantum_bay_expander",
+        "mat": "ceramic",
+        "display_face": "north",
+        "mirror": false,
+        "lights": {
+          "north": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_quantum_bay_expander_legs": [],
+    "module_quantum_bay_expander_legs_glow": [
+      {
+        "name": "quantum_bay_expander_legs_tab",
+        "style": "quantum_bay_expander",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_quantum_bay_expander_feet": [],
+    "module_quantum_bay_expander_feet_glow": [
+      {
+        "name": "quantum_bay_expander_feet_tab",
+        "style": "quantum_bay_expander",
+        "mat": "ceramic",
+        "display_face": "east",
+        "mirror": false,
+        "lights": {
+          "east": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "module_flight_system": [],
+    "module_flight_boots_glow": [],
+    "module_flight_boots_left_glow": [
+      {
+        "name": "hover_strip_left",
+        "style": "hover_strip",
+        "mat": "ceramic",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              2
+            ]
+          ]
+        }
+      }
+    ],
+    "module_rcs_shoulder_left": [],
+    "module_rcs_shoulder_left_glow": [
+      {
+        "name": "rcs_shoulder_left",
+        "style": "rcs_shoulder",
+        "mat": "liner",
+        "lights": {
+          "up": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "north": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "rcs_locator_shoulder_left_up": [],
+    "rcs_locator_shoulder_left_front": [],
+    "module_rcs_waist_left": [],
+    "module_rcs_waist_left_glow": [
+      {
+        "name": "rcs_waist_left",
+        "style": "rcs_waist",
+        "mat": "liner",
+        "lights": {
+          "west": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "rcs_locator_waist_left_out": [],
+    "module_rcs_calf_left": [],
+    "module_rcs_calf_left_glow": [
+      {
+        "name": "rcs_calf_left",
+        "style": "rcs_calf",
+        "mat": "liner",
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "down": [
+            [
+              2,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "rcs_locator_calf_left_back": [],
+    "rcs_locator_calf_left_down": [],
+    "module_mach_pod_left": [
+      {
+        "name": "mach_pod_left",
+        "style": "mach_pod",
+        "mat": "ceramic"
+      }
+    ],
+    "module_mach_pod_left_glow": [
+      {
+        "name": "mach_rail_left",
+        "style": "mach_rail",
+        "mat": "ceramic",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              2
+            ]
+          ],
+          "down": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "thruster_nozzle_left": [],
+    "module_flight_boots_right_glow": [
+      {
+        "name": "hover_strip_right",
+        "style": "hover_strip",
+        "mat": "ceramic",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              2
+            ]
+          ]
+        }
+      }
+    ],
+    "module_rcs_shoulder_right": [],
+    "module_rcs_shoulder_right_glow": [
+      {
+        "name": "rcs_shoulder_right",
+        "style": "rcs_shoulder",
+        "mat": "liner",
+        "lights": {
+          "up": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "north": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "rcs_locator_shoulder_right_up": [],
+    "rcs_locator_shoulder_right_front": [],
+    "module_rcs_waist_right": [],
+    "module_rcs_waist_right_glow": [
+      {
+        "name": "rcs_waist_right",
+        "style": "rcs_waist",
+        "mat": "liner",
+        "lights": {
+          "east": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "rcs_locator_waist_right_out": [],
+    "module_rcs_calf_right": [],
+    "module_rcs_calf_right_glow": [
+      {
+        "name": "rcs_calf_right",
+        "style": "rcs_calf",
+        "mat": "liner",
+        "lights": {
+          "south": [
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "down": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "rcs_locator_calf_right_back": [],
+    "rcs_locator_calf_right_down": [],
+    "module_mach_pod_right": [
+      {
+        "name": "mach_pod_right",
+        "style": "mach_pod",
+        "mat": "ceramic"
+      }
+    ],
+    "module_mach_pod_right_glow": [
+      {
+        "name": "mach_rail_right",
+        "style": "mach_rail",
+        "mat": "ceramic",
+        "lights": {
+          "south": [
+            [
+              0,
+              0,
+              1,
+              2
+            ]
+          ],
+          "down": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      }
+    ],
+    "thruster_nozzle_right": []
+  }
+}

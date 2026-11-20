@@ -137,7 +137,7 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
 
     // ---- 0.1.11.112: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

@@ -121,12 +121,15 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        int by = Math.min(y - topPos, PROGRESS_Y - 14);
-        menuButton(g, x - leftPos, by, 44, 11, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
+        int by = y - topPos;   // 0.1.11.120: the button column
+        menuButton(g, x - leftPos, by, BUTTON_W, BUTTON_H, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
             List.of(Component.translatable(K + "tip.switch_mode")));
-        menuButton(g, x - leftPos + 46, by, 44, 11, Component.translatable(K + "swap"), false, 1, mouseX, mouseY,
+        menuButton(g, x - leftPos, by + BUTTON_H + 1, BUTTON_W, BUTTON_H, Component.translatable(K + "swap"), false, 1, mouseX, mouseY,
             List.of(Component.translatable("gui.mio_icif.canner.swap_fluids")));
     }
+
+    @Override
+    protected int buttonCount() { return 2; }
 
     @Override
     protected List<Component> figureTooltip() {

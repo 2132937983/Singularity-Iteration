@@ -60,10 +60,13 @@ public class mio_icif_gui_metal_former_advanced extends ProcessInstrumentScreen<
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        int by = Math.min(y - topPos, PROGRESS_Y - 14);
-        menuButton(g, x - leftPos, by, 60, 11, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
+        int by = y - topPos;   // 0.1.11.120: the button column
+        menuButton(g, x - leftPos, by, BUTTON_W, BUTTON_H, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
             List.of(Component.translatable(K + "tip.switch_mode")));
     }
+
+    @Override
+    protected int buttonCount() { return 1; }
 
     @Override
     protected List<Component> figureTooltip() {

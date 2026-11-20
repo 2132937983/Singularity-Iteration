@@ -29,15 +29,20 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         SHELL = 0xFFD5DAD8, CHAMBER = 0xFFE6E9E7, STEEL = 0xFF5B6867, STEEL_LIGHT = 0xFFB9C1BF, TRACK = 0xFFE1E5E3;
     /** RGB (no alpha) for text. */
     public static final int INK = 0x1C2524, DIM = 0x5B6867, BLUE = 0x2A5D8A, AMBER = 0xD49A12, RED = 0xC0392B, GREEN = 0x2F6E4F;
-    public static final int W = 248, H = 204, SPLIT = 116;
+    public static final int W = 248, H = 240, SPLIT = 116;
     /** The figure's centre and the readout column. */
-    public static final int FIG_X = 113, FIG_Y = 64, READ_X = 150, READ_W = 90, PROGRESS_Y = 100, ENERGY_Y = 108;
+    public static final int FIG_X = 162, FIG_Y = 56, READ_X = 12, READ_W = 226, PROGRESS_Y = 112, ENERGY_Y = 112;
     /**
      * 0.1.11.118: the vanilla layout. The figure window and the readout window (outer edges), the furnace block on the left:
      * the energy bolt between the input and the battery, the progress arrow from the inputs to the outputs.
      */
-    public static final int FIG_WIN_X = 82, FIG_WIN_Y = 17, FIG_WIN_W = 62, FIG_WIN_H = 95,
-        READ_WIN_X = 146, READ_WIN_Y = 17, READ_WIN_W = 96, READ_WIN_H = 95, BOLT_X = 14, BOLT_Y = 38, ARROW_X = 33, ARROW_Y = 37;
+    public static final int FIG_WIN_X = 82, FIG_WIN_Y = 17, FIG_WIN_W = 160, FIG_WIN_H = 78,
+        READ_WIN_X = 8, READ_WIN_Y = 97, READ_WIN_W = 234, READ_WIN_H = 56, BOLT_X = 14, BOLT_Y = 38, ARROW_X = 33, ARROW_Y = 37;
+    /**
+     * 0.1.11.120: the readouts in the vanilla font (one font pixel a GUI pixel): the headline row (headline, its bar, the
+     * status on the right), then up to four lines; the buttons stack in a column on the right of the lines.
+     */
+    public static final int HEAD_Y = 101, LINE_Y = 112, LINE_H = 10, BUTTON_W = 76, BUTTON_H = 12, TEXT = 0x404040;
     protected static final String K = "gui.mio_icif.process.";
 
     private long lastNanos;
@@ -85,7 +90,10 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     protected abstract List<Component> figureTooltip();
 
     /** 0.1.11.118: the figure's scale in its window (the figures were drawn for a radius of about 40). */
-    protected float figureScale() { return 0.75F; }
+    protected float figureScale() { return 0.85F; }
+
+    /** 0.1.11.120: how many buttons the screen stacks on the right of the readout lines (they get the column). */
+    protected int buttonCount() { return 0; }
 
     /** 0.1.11.118: whether the furnace block (energy bolt, progress arrow) is drawn on the left. */
     protected boolean furnaceBlock() { return true; }
@@ -126,35 +134,51 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
             FcsDraw.endPixels(g);
         }
 
-        float u = u(), lh = 9 * u + 1;
-        int rx = x + READ_X;
-        float ty = y + 22;
-        PumpCrossSection.text(g, headline(), rx, ty, headlineColour(), u * 1.25F);
-        ty += 12 * u + 2;
+        // 0.1.11.120: the readout window in the vanilla look and font
+        VanillaFrame.inset(g, x + READ_WIN_X, y + READ_WIN_Y, READ_WIN_W, READ_WIN_H, VanillaFrame.PANEL);
+        int left = x + READ_X, right = x + READ_WIN_X + READ_WIN_W - 4;
+        int code = status();
+        int colour = code == ProcessStatus.RUNNING ? GREEN : ProcessStatus.isFault(code) ? RED : TEXT;
+        Component st = Component.translatable(K + "status." + ProcessStatus.KEYS[Math.max(0, Math.min(ProcessStatus.KEYS.length - 1, code))]);
+        Component head = fit(headline(), READ_W / 2);
+        int headEnd = left + font.width(head);
+        st = fit(st, right - headEnd - 8);
+        int stX = right - font.width(st);
+        g.drawString(font, head, left, y + HEAD_Y, headlineColour(), false);
+        g.drawString(font, st, stX, y + HEAD_Y, colour, false);
         float hb = headlineBar();
-        if (hb >= 0) {
-            bar(g, rx, (int) ty - 1, READ_W, 3, hb, 0xFF000000 | AMBER);
+        if (hb >= 0 && stX - headEnd > 24) {
+            int bx = headEnd + 6, bw = stX - 6 - bx;
+            furnaceBar(g, bx, y + HEAD_Y + 1, bw, 7, hb);
             float mark = headlineBarMarker();
             if (mark >= 0) {
-                int mx = rx + Math.round(READ_W * Math.min(1, mark));
-                g.fill(mx, (int) ty - 2, mx + 1, (int) ty + 3, 0xFF000000 | RED);
+                int mx = bx + 1 + Math.round((bw - 2) * Math.min(1, mark));
+                g.fill(mx, y + HEAD_Y, mx + 1, y + HEAD_Y + 9, 0xFF000000 | RED);
             }
-            ty += 4;
         }
+        int lineW = READ_W - (buttonCount() > 0 ? BUTTON_W + 4 : 0);
+        int ty = y + LINE_Y;
         for (Component c : readouts()) {
-            WindRoseView.line(g, c, rx, ty, DIM, READ_W);
-            ty += lh;
+            if (ty > y + LINE_Y + 3 * LINE_H) break;
+            g.drawString(font, fit(c, lineW), left, ty, TEXT, false);
+            ty += LINE_H;
         }
-        int code = status();
-        int colour = code == ProcessStatus.RUNNING ? GREEN : ProcessStatus.isFault(code) ? RED : DIM;
-        WindRoseView.line(g, Component.translatable(K + "status." + ProcessStatus.KEYS[Math.max(0, Math.min(ProcessStatus.KEYS.length - 1, code))]),
-            rx, ty, colour, READ_W);
-        drawExtras(g, rx, (int) (ty + lh + 1), mouseX, mouseY);
+        drawExtras(g, right - BUTTON_W, y + LINE_Y - 1, mouseX, mouseY);
+    }
 
-        // progress and stored energy
-        int max = menu.getMaxProgress(), p = menu.getProgress();
-        bar(g, rx, y + PROGRESS_Y, READ_W, 5, max > 0 ? (double) p / max : 0, 0xFF000000 | BLUE);
-        bar(g, rx, y + ENERGY_Y, READ_W, 3, energyFraction(), 0xFF000000 | AMBER);
+    /** {@code c} cut to {@code maxW} pixels with an ellipsis. */
+    protected Component fit(Component c, int maxW) {
+        if (font.width(c) <= maxW) return c;
+        String s = c.getString();
+        String cut = font.plainSubstrByWidth(s, Math.max(0, maxW - font.width("…")));
+        return Component.literal(cut + "…").withStyle(c.getStyle());
+    }
+
+    /** 0.1.11.120: a bar like the furnace's: sunk grey track, filled white from the left. */
+    protected static void furnaceBar(GuiGraphics g, int x, int y, int w, int h, double fraction) {
+        VanillaFrame.inset(g, x, y, w, h, VanillaFrame.SLOT);
+        int fill = (int) Math.round((w - 2) * Math.max(0, Math.min(1, fraction)));
+        if (fill > 0) g.fill(x + 1, y + 1, x + 1 + fill, y + h - 1, VanillaFrame.LIGHT);
     }
 
     protected static void bar(GuiGraphics g, int x, int y, int w, int h, double fraction, int argb) {
@@ -163,12 +187,20 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         if (fill > 0) g.fill(x, y, x + fill, y + h, argb);
     }
 
-    /** A flat button (no outline): blue with white text when on, a light fill otherwise, a shade darker on hover. */
+    /**
+     * 0.1.11.120: a vanilla-like button: raised (white upper left, dark lower right) with dark text, lighter on hover;
+     * pressed in (sunk, darker, white text) when on.
+     */
     protected void button(GuiGraphics g, int x, int y, int w, int h, Component label, boolean on, boolean hover) {
-        int fill = on ? (hover ? 0xFF234E74 : 0xFF000000 | BLUE) : (hover ? 0xFFD3D8D6 : TRACK);
-        g.fill(x, y, x + w, y + h, fill);
-        float u = u();
-        PumpCrossSection.text(g, label, x + (w - AsciiHud.width(label, u)) / 2F, y + (h - 8 * u) / 2F, on ? 0xFFFFFF : DIM, u);
+        if (on) {
+            VanillaFrame.inset(g, x, y, w, h, hover ? 0xFF7A7A7A : 0xFF6B6B6B);
+        } else {
+            g.fill(x, y, x + w, y + h, VanillaFrame.SHADOW);
+            g.fill(x, y, x + w - 1, y + h - 1, VanillaFrame.LIGHT);
+            g.fill(x + 1, y + 1, x + w - 1, y + h - 1, hover ? 0xFFD8D8E8 : 0xFFB8B8B8);
+        }
+        Component c = fit(label, w - 4);
+        g.drawString(font, c, x + (w - font.width(c)) / 2, y + (h - 8) / 2 + 1, on ? 0xFFFFFF : TEXT, false);
     }
 
     // ---- 0.1.11.113: menu buttons drawn in the panel (flat, no outline) ----
@@ -234,9 +266,9 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         }
         if (inside(rx, ry, FIG_WIN_X, FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H)) {
             g.renderComponentTooltip(this.font, figureTooltip(), mouseX, mouseY);
-        } else if (inside(rx, ry, READ_X, PROGRESS_Y - 1, READ_W, 7)) {
+        } else if (inside(rx, ry, ARROW_X, ARROW_Y, 22, 15)) {   // 0.1.11.120: the arrow is the progress
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.progress", menu.getProgress(), menu.getMaxProgress())), mouseX, mouseY);
-        } else if (inside(rx, ry, READ_X, ENERGY_Y - 1, READ_W, 5)) {
+        } else if (inside(rx, ry, BOLT_X - 2, BOLT_Y - 1, 13, 15)) {   // the bolt is the stored energy
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.energy",
                 String.format(Locale.ROOT, "%,d", Integer.toUnsignedLong(menu.getEnergy())),
                 String.format(Locale.ROOT, "%,d", Integer.toUnsignedLong(menu.getMaxEnergy())))), mouseX, mouseY);

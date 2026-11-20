@@ -82,8 +82,8 @@ public final class Round111110GameTests {
                 var input = menu.getSlot(0);
                 h.assertTrue(input.x == 10 && input.y == 18, "input slot at " + input.x + "," + input.y);
                 boolean inventoryAt = false;
-                for (var s : menu.slots) if (s.container == player.getInventory() && s.getContainerSlot() == 9) inventoryAt = s.x == 44 && s.y == 124;
-                h.assertTrue(inventoryAt, "the player inventory does not start at 44,124");
+                for (var s : menu.slots) if (s.container == player.getInventory() && s.getContainerSlot() == 9) inventoryAt = s.x == 44 && s.y == 160;   // 0.1.11.120: under the readout window
+                h.assertTrue(inventoryAt, "the player inventory does not start at 44,160");
             }
             h.assertTrue(!(boolean) call(cyclone, "isHoldingSpeed"), "hold starts off");
             h.assertTrue(b.clickMenuButton(player, 0) && (boolean) call(cyclone, "isHoldingSpeed"), "the hold button switches hold speed on");

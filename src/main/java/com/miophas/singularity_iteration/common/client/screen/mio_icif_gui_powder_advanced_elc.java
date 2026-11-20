@@ -23,7 +23,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class mio_icif_gui_powder_advanced_elc extends ProcessInstrumentScreen<PowderAdvancedElcMenu> {
 
     private static final float CLASSIFIER_TURNS_PER_SECOND = 1.4F, ROLLER_ORBITS_PER_SECOND = 0.35F;
-    private static final int HOLD_W = 52, HOLD_H = 11;
+    private static final int HOLD_W = BUTTON_W, HOLD_H = BUTTON_H;   // 0.1.11.120
     private float classifier, orbit;
     private int holdX, holdY;
 
@@ -84,13 +84,16 @@ public class mio_icif_gui_powder_advanced_elc extends ProcessInstrumentScreen<Po
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
         holdX = x - leftPos;
-        holdY = Math.min(y - topPos, PROGRESS_Y - HOLD_H - 3);
+        holdY = y - topPos;   // 0.1.11.120: the button column
         boolean hover = inside(mouseX - leftPos, mouseY - topPos, holdX, holdY, HOLD_W, HOLD_H);
         button(g, leftPos + holdX, topPos + holdY, HOLD_W, HOLD_H, Component.translatable(K + "hold"), menu.isHoldSpeedOn(), hover);
     }
 
     @Override
     protected float headlineBar() { return speed(); }
+
+    @Override
+    protected int buttonCount() { return 1; }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {

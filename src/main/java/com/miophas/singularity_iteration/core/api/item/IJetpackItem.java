@@ -53,6 +53,12 @@ public interface IJetpackItem extends IBatteryItem, IArmorModeFeatureItem {
 
     /** EN: Built-in thruster sound profiles. ZH: 内置推进器音效档。JA: 組み込みのスラスター音プロファイル。 */
     String THRUSTER_ELECTRIC = "electric", THRUSTER_ADVANCED = "advanced", THRUSTER_IONIC = "ionic";
+    /**
+     * EN: 0.1.11.129: an electromagnetic drive (no reaction mass): a field hum that follows the thrust, no ignition or
+     * shutdown cue. ZH: 0.1.11.129：电磁推进（无工质），随推力变化的场嗡鸣，没有点火音和熄火音。
+     * JA: 0.1.11.129：電磁推進（推進剤なし）。推力に追従するフィールドのうなり、点火音と停止音はない。
+     */
+    String THRUSTER_ELECTROMAGNETIC = "electromagnetic";
 
     /**
      * <p><b>EN:</b> Thruster sound profile (since 0.1.8.1). The client plays an ignition cue, a loop

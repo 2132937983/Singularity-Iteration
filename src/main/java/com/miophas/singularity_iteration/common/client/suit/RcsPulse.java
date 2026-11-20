@@ -12,7 +12,7 @@ import org.joml.Matrix4f;
  * the quantum suit, in the port's frame {@code m} (+y out of the port, as {@link NozzleDraw#push} sets it): a point of light,
  * a ring snapping out across the axis, and micro arcs bulging out along it. Additive ({@code FIELD_GLOW}).
  */
-final class RcsPulse {
+public final class RcsPulse {
     private RcsPulse() {}
 
     private static final float[] ARC = {0.78F, 0.72F, 1F};
@@ -44,7 +44,7 @@ final class RcsPulse {
     }
 
     /** A pulse of strength {@code power} {@code age} ticks old; {@code seed} picks the arcs (port and firing tick). */
-    static void draw(VertexConsumer vc, Matrix4f m, float power, float age, long seed) {
+    public static void draw(VertexConsumer vc, Matrix4f m, float power, float age, long seed) {
         float fade = RcsPulseRules.fade(age) * Math.min(1F, power);
         if (fade <= 0.01F) return;
         NozzleDraw.flare(vc, m, RcsPulseRules.FLASH_RADIUS, RcsPulseRules.FLASH_ALPHA * fade);

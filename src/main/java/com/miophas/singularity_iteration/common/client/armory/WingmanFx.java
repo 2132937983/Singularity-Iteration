@@ -257,6 +257,7 @@ public final class WingmanFx {
         Vec3 aft = ahead.scale(-Math.sin(pitch)).add(0, -Math.cos(pitch), 0);
         float prone = w.proneBlend(partial);
         float rate = com.miophas.singularity_iteration.common.suit.PhaseRules.rate(Math.min(1F, speed));
+        if (!w.landed()) electromagnetic(vc, w, s, pos, feet, aft, right, ahead, pitch, speed, partial, cam);   // 0.1.11.129 (E6)
         if (com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED && !w.landed()) {   // 0.1.11.124 (E1): the sole cones are archived (electromagnetic flight)
             float len = com.miophas.singularity_iteration.common.armory.WingmanPose.thrustLength(speed, prone, ticks) * 0.9F;
             for (int side = -1; side <= 1; side += 2) {
@@ -300,6 +301,50 @@ public final class WingmanFx {
     }
 
     /** A frame at {@code at} (camera-relative) with +y along {@code dir}. */
+    /**
+     * 0.1.11.129 (armour and flight overhaul E6): a Wingman flies electromagnetically, like the quantum suit: slow or
+     * hovering, a breathing ring under each sole with a ripple on the beat ({@link
+     * com.miophas.singularity_iteration.common.suit.HoverFieldRules}); manoeuvring, an electromagnetic pulse at each shoulder
+     * port on the pulse frames of its attitude control ({@code RcsPulse}); past the barrier, the arc net of the ionised sheath
+     * ({@code ArcNet}). Its light trails are drawn by {@code LightTrails}.
+     */
+    private static void electromagnetic(VertexConsumer vc, WingmanEntity w, State s, Vec3 pos, Vec3 feet, Vec3 aft, Vec3 right, Vec3 ahead,
+                                        double pitch, float speed, float partial, Vec3 cam) {
+        double t = (w.tickCount + partial) / 20.0;
+        float hover = Mth.clamp(1F - speed / 0.35F, 0F, 1F);
+        if (hover > 0.02F) {
+            float phase = com.miophas.singularity_iteration.common.suit.HoverFieldRules.phase(t), breath = com.miophas.singularity_iteration.common.suit.HoverFieldRules.soleBreath(t);
+            for (int side = -1; side <= 1; side += 2) {
+                Vec3 sole = feet.add(right.scale(0.13 * side)).add(aft.scale(0.02)).subtract(cam);
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, sole, aft, com.miophas.singularity_iteration.common.suit.HoverFieldRules.SOLE_RADIUS,
+                    com.miophas.singularity_iteration.common.suit.HoverFieldRules.SOLE_WIDTH, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN,
+                    com.miophas.singularity_iteration.common.suit.HoverFieldRules.SOLE_ALPHA * breath * hover);
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, sole, aft, com.miophas.singularity_iteration.common.suit.HoverFieldRules.soleRippleRadius(phase),
+                    com.miophas.singularity_iteration.common.suit.HoverFieldRules.SOLE_WIDTH * 0.8F, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN,
+                    com.miophas.singularity_iteration.common.suit.HoverFieldRules.soleRippleAlpha(phase) * hover);
+            }
+        }
+        double acc = s.accel.length();
+        if (acc > 0.03 && ((w.tickCount >> 1) & 1) == 0) {   // the attitude control's pulse frames, as the archived jets
+            Vec3 axis = s.accel.normalize().scale(-1);
+            float power = (float) Math.min(1, acc * 9), age = (w.tickCount & 1) + partial;
+            Vec3[] ports = {pos.add(right.scale(0.36)).add(0, 1.38, 0), pos.add(right.scale(-0.36)).add(0, 1.38, 0)};
+            for (int i = 0; i < ports.length; i++)
+                com.miophas.singularity_iteration.common.client.suit.RcsPulse.draw(vc, frame(ports[i].subtract(cam), axis), power, age,
+                    w.getId() * 1_000_003L + (w.tickCount >> 1) * 31L + i);
+        }
+        float net = com.miophas.singularity_iteration.common.suit.ArcNetRules.level(com.miophas.singularity_iteration.common.suit.ManeuverMode.mach(speed));
+        if (net > 0.02F) {
+            Vec3 bodyUp = ahead.scale(Math.sin(pitch)).add(0, Math.cos(pitch), 0), back = ahead.scale(-Math.cos(pitch)).add(0, Math.sin(pitch), 0);
+            Vec3 neck = pos.add(0, 0.9, 0).add(bodyUp.scale(0.6)).subtract(cam), down = bodyUp.scale(-1), side = down.cross(back);
+            Matrix4f m = new Matrix4f((float) side.x, (float) side.y, (float) side.z, 0, (float) down.x, (float) down.y, (float) down.z, 0,
+                (float) back.x, (float) back.y, (float) back.z, 0, (float) neck.x, (float) neck.y, (float) neck.z, 1);
+            long tick = w.tickCount;
+            com.miophas.singularity_iteration.common.client.suit.ArcNet.drawFrame(vc, m,
+                w.getId() * 0x5851F42D4C957F2DL + com.miophas.singularity_iteration.common.suit.ArcNetRules.generation(tick), tick, net);
+        }
+    }
+
     private static Matrix4f frame(Vec3 at, Vec3 dir) {
         Vec3 d = dir.lengthSqr() < 1.0E-8 ? new Vec3(0, -1, 0) : dir.normalize();
         return new Matrix4f().translate((float) at.x, (float) at.y, (float) at.z)

@@ -35,7 +35,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class JetpackThrustSync {
     /** EN: Ticks after the last thrust that still count as active. ZH: 最后一次推力后仍视为活动的 tick 数。JA: 最後の推力から活動中とみなす tick 数。 */
     public static final int GRACE_TICKS = 2;
-    private static final String[] PROFILES = {IJetpackItem.THRUSTER_ELECTRIC, IJetpackItem.THRUSTER_ADVANCED, IJetpackItem.THRUSTER_IONIC};
+    private static final String[] PROFILES = {IJetpackItem.THRUSTER_ELECTRIC, IJetpackItem.THRUSTER_ADVANCED, IJetpackItem.THRUSTER_IONIC,
+        IJetpackItem.THRUSTER_ELECTROMAGNETIC};   // 0.1.11.129: appended
     private static final Map<UUID, Integer> SENT = new HashMap<>();
 
     private JetpackThrustSync() {}

@@ -133,7 +133,7 @@ public final class FcsClientConfig {
             .define("vapor_effects", true);
         VAPOR_INTENSITY = b.comment("Opacity of the flight vapour effects (1.0 = default).").defineInRange("vapor_intensity", 1.0, 0.25, 1.5);
         // 0.1.11.124 (E1): "thruster_fx" removed: the flames, heat haze and dust it switched are archived (LegacyFlightFx)
-        MOTION_FX = b.comment("Quantum suit motion in normal mode: back and sole jets in jetpack flight, the take-off ring and sole burst",
+        MOTION_FX = b.comment("Quantum suit motion in normal mode (0.1.11.129: the jetpack jets and sole burst are archived): the take-off ring",
                 "of a boost jump, the shock ring of a hard landing, the air streaks of the sprint (also seen on other players).")
             .define("motion_fx", true);
         b.pop();
@@ -169,7 +169,7 @@ public final class FcsClientConfig {
                 "off: in the action bar.").define("wingman_callouts", true);
         WINGMAN_CALLOUT_SOUND = b.comment("A short chirp with each Wingman callout.").define("wingman_callout_sound", true);
         // 0.1.11.124 (E1): "classic_flight_fx" removed: the classic style is archived (LegacyFlightFx)
-        WINGMAN_ENGINE_SOUND = b.comment("The engine of a flying Wingman: a turbine drone that rises with its speed.")
+        WINGMAN_ENGINE_SOUND = b.comment("The drive of a flying Wingman: an electromagnetic hum that rises with its speed.")
             .define("wingman_engine_sound", true);
         IMPACT_SHAKE = b.comment("Camera shake of a hard landing, a wall hit and a take-off in quantum flight (0 = off, 1 = default, 2 = strong).")
             .defineInRange("impact_shake", 1.0, 0.0, 2.0);

@@ -2702,8 +2702,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "Доклады ведомых (захват, уничтожение, повреждения, энергия, спасение...) субтитрами рядом с HUD звена; выкл.: в строке действий.",
   "mio_icif.configuration.wingman_callout_sound": "Сигнал докладов",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "Короткий сигнал при каждом докладе ведомого.",
-  "mio_icif.configuration.wingman_engine_sound": "Звук двигателя ведомого",
-  "mio_icif.configuration.wingman_engine_sound.tooltip": "Турбинный гул летящего ведомого; громкость и высота растут со скоростью.",
+  "mio_icif.configuration.wingman_engine_sound": "Звук привода ведомого",
+  "mio_icif.configuration.wingman_engine_sound.tooltip": "Электромагнитный гул летящего ведомого; громкость и высота растут со скоростью.",
   "mio_icif.configuration.impact_shake": "Тряска камеры при ударах",
   "mio_icif.configuration.impact_shake.tooltip": "Тряска камеры при жёсткой посадке, ударе о стену на скорости и взлёте в квантовом полёте (0 = выкл., 1 = по умолчанию, 2 = сильно).",
   "mio_icif.configuration.impact_fov": "Рывок обзора при ускорении и торможении",
@@ -4355,7 +4355,7 @@
   "mio_icif.configuration.suit_glow_strength.tooltip": "Интенсивность свечения костюма. 1.0 = значение по умолчанию.",
   "gui.mio_icif.equipment_console.appearance.suit_glow": "Свечение костюма (подсветка и линии схемы)",
   "mio_icif.configuration.motion_fx": "Эффекты движения костюма",
-  "mio_icif.configuration.motion_fx.tooltip": "Квантовый костюм в обычном режиме: струи из спины и подошв во время полёта с реактивным ранцем, кольцо при взлёте с ускорением, ударное кольцо при жёстком приземлении, воздушные следы во время спринта. Также ионный след, свечение при входе в атмосферу и подсветка швов деталей арсенала.",
+  "mio_icif.configuration.motion_fx.tooltip": "Квантовый костюм в обычном режиме: кольцо взлёта при усиленном прыжке, кольцо удара при жёстком приземлении, воздушные полосы при беге (видны и другим игрокам).",
   "mio_icif.configuration.visor_glass": "Стекло визора",
   "mio_icif.configuration.visor_glass.tooltip": "По умолчанию выключено. В режиме от первого лица с нано- или квантовым шлемом: слабое свечение по краю, цветные каёмки, отражение, смещающееся при повороте, капли дождя во время дождя и трещины, когда шлем почти разряжен.",
   "gui.mio_icif.equipment_console.appearance.visor_glass": "Стекло визора (вид от первого лица)",
@@ -5895,5 +5895,6 @@
   "gui.mio_icif.process.tip.recycler.1": "Двухвальный шредер: два встречных ротора рвут предмет, полезная часть отделяется из обрезков.",
   "gui.mio_icif.process.tip.recycler.2": "Выход накапливается: каждый предмет добавляет долю, целая единица даёт продукт. Без случайности.",
   "gui.mio_icif.process.tip.canner.1": "По режиму: консервирует, сливает ячейку в правый бак, наполняет ячейку из левого или смешивает левый бак в правый.",
-  "gui.mio_icif.process.tip.canner.2": "Слева входной бак, справа выходной, по 8 000 mB; «Обмен» меняет их местами."
+  "gui.mio_icif.process.tip.canner.2": "Слева входной бак, справа выходной, по 8 000 mB; «Обмен» меняет их местами.",
+  "mio_icif.subtitle.suit.em_hum": "Электромагнитный привод гудит"
 }

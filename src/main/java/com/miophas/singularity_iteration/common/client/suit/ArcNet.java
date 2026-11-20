@@ -18,7 +18,7 @@ import org.joml.Matrix4f;
  * of the posed body (it follows the flight pose). Additive. Third person and other players only (the flight layer does not
  * run for the own first-person view).
  */
-final class ArcNet {
+public final class ArcNet {
     private ArcNet() {}
 
     static void draw(PoseStack pose, MultiBufferSource buffers, HumanoidModel<?> model, Player player) {
@@ -28,7 +28,15 @@ final class ArcNet {
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         pose.pushPose();
         model.body.translateAndRotate(pose);
-        Matrix4f m = pose.last().pose();
+        drawFrame(vc, pose.last().pose(), seed, tick, level);
+        pose.popPose();
+    }
+
+    /**
+     * 0.1.11.129 (E6): the net in a body frame {@code m} (origin at the neck, +y down the body, +z the back), for a flyer drawn
+     * without a model pose (the Wingmen).
+     */
+    public static void drawFrame(VertexConsumer vc, Matrix4f m, long seed, long tick, float level) {
         var arcs = ArcNetRules.arcs(seed);
         for (int a = 0; a < arcs.size(); a++) {
             float[] c = ArcNetRules.colour(a, tick);
@@ -39,7 +47,6 @@ final class ArcNet {
                 segment(vc, m, pts[k], pts[k + 1], ArcNetRules.WIDTH, c, alpha * (0.45F + 0.55F * edge));
             }
         }
-        pose.popPose();
     }
 
     /** A thin line of light: two crossed quads square to the segment. */

@@ -86,6 +86,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> JETPACK_SHUTDOWN = sound("jetpack.shutdown");
 
     // 0.1.7.34 Special Maneuver Mode and FCS cues (original synthesized effects, tools/gen_sfx_034.py)
+    /** 0.1.11.129 (armour and flight overhaul E6): the field hum of the quantum suit's electromagnetic drive and of the Wingmen;
+     *  a placeholder on the vanilla beacon hum until its own sound comes (sounds.json). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EM_HUM = sound("suit.em_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_BOOM = sound("maneuver.boom");
     public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_WIND = sound("maneuver.wind");
     public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_TAKEOFF = sound("maneuver.takeoff");

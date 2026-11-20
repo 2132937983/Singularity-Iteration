@@ -80,14 +80,18 @@ public final class JetpackSoundClient {
     public static final int CUE_GAP_TICKS = 16;
 
     /** EN: Sound set of one thruster profile. ZH: 一个推进器音效档的声音组。JA: 1 つのスラスター音プロファイルの音のセット。 */
-    record Profile(Supplier<SoundEvent> loop, float volume, float pitch) {}
+    record Profile(Supplier<SoundEvent> loop, float volume, float pitch, boolean cues) {
+        Profile(Supplier<SoundEvent> loop, float volume, float pitch) { this(loop, volume, pitch, true); }
+    }
     // EN: 0.1.10.3: volumes lowered (0.55 / 0.7 / 0.62 before); the electric pitch is no longer raised (it sharpened the fan tone).
     // ZH: 0.1.10.3：降低音量（原为 0.55 / 0.7 / 0.62）；电动档不再升高音高（会使风扇音变尖）。
     // JA: 0.1.10.3：音量を下げた（以前は 0.55 / 0.7 / 0.62）。電動の音程はもう上げない（ファン音が鋭くなっていた）。
     private static final Map<String, Profile> PROFILES = Map.of(
         IJetpackItem.THRUSTER_ELECTRIC, new Profile(mio_icif_sounds.JETPACK_ELECTRIC_LOOP::get, 0.36F, 1.0F),
         IJetpackItem.THRUSTER_ADVANCED, new Profile(mio_icif_sounds.JETPACK_ADVANCED_LOOP::get, 0.44F, 0.95F),
-        IJetpackItem.THRUSTER_IONIC, new Profile(mio_icif_sounds.JETPACK_IONIC_LOOP::get, 0.4F, 0.85F));
+        IJetpackItem.THRUSTER_IONIC, new Profile(mio_icif_sounds.JETPACK_IONIC_LOOP::get, 0.4F, 0.85F),
+        // 0.1.11.129 (E6): the electromagnetic drive: a field hum, no ignition or shutdown
+        IJetpackItem.THRUSTER_ELECTROMAGNETIC, new Profile(mio_icif_sounds.SUIT_EM_HUM::get, 0.55F, 0.9F, false));
     /** EN: Fade-out length in ticks. ZH: 淡出时长（tick）。JA: フェードアウトの長さ（tick）。 */
     static final int FADE_TICKS = 10;
 
@@ -212,11 +216,8 @@ public final class JetpackSoundClient {
     private static void cue(Minecraft mc, Entity entity, SoundEvent sound, Profile profile, float volume) {
         // 0.1.8.3: client options jetpack_cues and jetpack_volume
         if (!FcsClientConfig.jetpackCues()) return;
-        // 0.1.11.124 (armour and flight overhaul E1): the quantum chestplate flies electromagnetically, no jet ignition or
-        // shutdown (its ion hum stays until its own sound comes); the jetpacks keep their cues
-        if (!com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED && entity instanceof net.minecraft.world.entity.LivingEntity le
-            && le.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).getItem() instanceof com.miophas.singularity_iteration.common.item.armor.mio_icif_chestplate_quantum)
-            return;
+        // 0.1.11.124 (E1), 0.1.11.129 (E6): an electromagnetic drive (the quantum chestplate) has no ignition or shutdown
+        if (!profile.cues()) return;
         float scale = FcsClientConfig.jetpackVolume();
         if (scale <= 0) return;
         float v = volume * scale * profile.volume / 0.4F;

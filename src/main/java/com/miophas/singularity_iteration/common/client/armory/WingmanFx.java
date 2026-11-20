@@ -257,7 +257,7 @@ public final class WingmanFx {
         Vec3 aft = ahead.scale(-Math.sin(pitch)).add(0, -Math.cos(pitch), 0);
         float prone = w.proneBlend(partial);
         float rate = com.miophas.singularity_iteration.common.suit.PhaseRules.rate(Math.min(1F, speed));
-        if (!w.landed()) {
+        if (com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED && !w.landed()) {   // 0.1.11.124 (E1): the sole cones are archived (electromagnetic flight)
             float len = com.miophas.singularity_iteration.common.armory.WingmanPose.thrustLength(speed, prone, ticks) * 0.9F;
             for (int side = -1; side <= 1; side += 2) {
                 Vec3 sole = feet.add(right.scale(0.13 * side)).subtract(cam);
@@ -270,13 +270,14 @@ public final class WingmanFx {
         if (ring > 0) {
             float k = boostAge / com.miophas.singularity_iteration.common.armory.WingmanPose.BOOST_CUT;
             Vec3 centre = pos.add(0, 0.95, 0).subtract(cam);
-            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, frame(centre, s.boostDir.scale(-1)), 2.2F * (1 - k) + 0.4F, 0.4F,
-                seconds, rate * 2, 1F, 1F - 0.6F * k);
+            if (com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED)   // 0.1.11.124 (E1): the boost cone is archived; its ring of light stays
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, frame(centre, s.boostDir.scale(-1)), 2.2F * (1 - k) + 0.4F, 0.4F,
+                    seconds, rate * 2, 1F, 1F - 0.6F * k);
             com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, centre, s.boostDir, ring, 0.07F,
                 com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, 1F - k);
         }
         double acc = s.accel.length();
-        if (acc > 0.03 && ((w.tickCount >> 1) & 1) == 0) {   // attitude jets blink on a pulse
+        if (com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED && acc > 0.03 && ((w.tickCount >> 1) & 1) == 0) {   // attitude jets blink on a pulse (0.1.11.124, E1: archived)
             Vec3 jet = s.accel.normalize().scale(-1);
             float a = (float) Math.min(1, acc * 9);
             Vec3[] ports = {pos.add(right.scale(0.36)).add(0, 1.38, 0), pos.add(right.scale(-0.36)).add(0, 1.38, 0)};

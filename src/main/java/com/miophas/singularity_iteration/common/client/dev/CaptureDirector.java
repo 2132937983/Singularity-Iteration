@@ -3662,18 +3662,16 @@ public final class CaptureDirector {
             level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
             sp.setGameMode(GameType.SURVIVAL);
         });
-        String[] cores = {null, "PROPULSION", "GRAVITON", null};
-        String[] names = {"base", "propulsion", "graviton", "base_classic"};
+        // 0.1.11.124 (E1): no "base_classic" pass any more (the classic style is archived)
+        String[] cores = {null, "PROPULSION", "GRAVITON"};
+        String[] names = {"base", "propulsion", "graviton"};
         for (int i = 0; i < cores.length; i++) {
             final String core = cores[i], name = names[i];
-            final boolean classic = name.endsWith("classic");
             client(1, () -> {
                 Minecraft mc = Minecraft.getInstance();
                 mc.setScreen(null);   // another scene's timer opened the management screen here
                 mc.options.keyUp.setDown(false);
                 mc.options.keySprint.setDown(false);
-                if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
-                    com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.CLASSIC_FLIGHT_FX.set(classic);
             });
             server(5, sp -> {
                 sp.getAbilities().flying = false;
@@ -3715,8 +3713,6 @@ public final class CaptureDirector {
             Minecraft mc = Minecraft.getInstance();
             mc.options.keyUp.setDown(false);
             mc.options.keySprint.setDown(false);
-            if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
-                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.CLASSIC_FLIGHT_FX.set(false);
         });
         client(10, () -> Minecraft.getInstance().stop());
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-package com.miophas.singularity_iteration.common.client.suit;
+package com.miophas.singularity_iteration.common.client.legacy.flight;
 
 /**
  * 0.1.10.31 (S-5): the look of a thruster flame. Pure (java.* only); {@code ThrusterFlame} draws with it.

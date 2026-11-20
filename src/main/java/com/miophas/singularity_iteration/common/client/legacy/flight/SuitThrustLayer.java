@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-package com.miophas.singularity_iteration.common.client.suit;
+package com.miophas.singularity_iteration.common.client.legacy.flight;
+
+import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
+import com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient;
+import com.miophas.singularity_iteration.common.client.suit.NozzleDraw;
+import com.miophas.singularity_iteration.common.client.suit.SuitGlowLayer;
+import com.miophas.singularity_iteration.common.client.suit.SuitMotionFx;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.client.flight.JetpackSoundClient;
@@ -22,9 +28,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -41,8 +44,10 @@ import org.joml.Vector3f;
  * The flames are those of {@link ThrusterFlame} (thrust colour, animated strip, sparks, heat haze through {@link ThrusterFx}).
  * Special Maneuver flight draws its own thrusters ({@link ManeuverFlightLayer}). The first-person palm light of the hover is
  * {@link #drawPalm} (S-9). Option {@code motion_fx}.
+ *
+ * <p>0.1.11.124 (armour and flight overhaul E1): archived, see {@link LegacyFlightFx}. The layer is no longer registered
+ * ({@link #addLayers} is not an event handler any more) and {@link #drawPalm} draws nothing while the archive is off.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     private static final ResourceLocation CHEST = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_chestplate");
     private static final ResourceLocation BOOTS = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor/item_armor_quantum_boots");
@@ -55,7 +60,6 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         super(parent);
     }
 
-    @SubscribeEvent
     public static void addLayers(EntityRenderersEvent.AddLayers event) {
         for (PlayerSkin.Model skin : event.getSkins()) {
             if (event.getSkin(skin) instanceof PlayerRenderer renderer) renderer.addLayer(new SuitThrustLayer(renderer));
@@ -129,7 +133,7 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
      * flight layer does not run in first person). The pose is the posed arm of {@code SuitHandRenderer}.
      */
     public static void drawPalm(PoseStack pose, MultiBufferSource buffers, Player player, ModelPart arm, boolean right) {
-        if (!ManeuverModeClient.inManeuver(player)) return;
+        if (!LegacyFlightFx.ENABLED || !ManeuverModeClient.inManeuver(player)) return;
         float[] output = ManeuverModeClient.thrusterOutput(player);
         if (output == null) return;
         float power = output[right ? 0 : 1];

@@ -212,6 +212,11 @@ public final class JetpackSoundClient {
     private static void cue(Minecraft mc, Entity entity, SoundEvent sound, Profile profile, float volume) {
         // 0.1.8.3: client options jetpack_cues and jetpack_volume
         if (!FcsClientConfig.jetpackCues()) return;
+        // 0.1.11.124 (armour and flight overhaul E1): the quantum chestplate flies electromagnetically, no jet ignition or
+        // shutdown (its ion hum stays until its own sound comes); the jetpacks keep their cues
+        if (!com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED && entity instanceof net.minecraft.world.entity.LivingEntity le
+            && le.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).getItem() instanceof com.miophas.singularity_iteration.common.item.armor.mio_icif_chestplate_quantum)
+            return;
         float scale = FcsClientConfig.jetpackVolume();
         if (scale <= 0) return;
         float v = volume * scale * profile.volume / 0.4F;

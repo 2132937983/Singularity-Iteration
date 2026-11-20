@@ -20,6 +20,10 @@ import org.joml.Matrix4f;
 /**
  * Propulsion effects (0.1.10.2, client option {@code flight.thruster_fx}).
  *
+ * <p>0.1.11.124 (armour and flight overhaul E1): the heat haze, sparks, dust and clouds are archived with the reaction-mass
+ * effects ({@code legacy.flight.LegacyFlightFx}); the option is gone and {@code FcsClientConfig.thrusterFx()} is false. Only
+ * the light ring of a take-off or landing ({@link #ground}, phase branch) still runs.
+ *
  * <ul>
  *   <li><b>Heat haze.</b> Every thruster flame of this frame (the palms and soles of a suit in
  *       Special Maneuver flight, the boots and boost jets of the Wingmen) is recorded with its
@@ -64,7 +68,7 @@ public final class ThrusterFx {
         var random = mc.level.random;
         for (Jet j : JETS.values()) {
             if (now - j.at > 60) continue;
-            float n = com.miophas.singularity_iteration.common.client.suit.FlameRules.sparks(j.throttle);
+            float n = com.miophas.singularity_iteration.common.client.legacy.flight.FlameRules.sparks(j.throttle);
             if (n <= 0) continue;
             Vec3 axis = j.b.subtract(j.a);
             double len = axis.length();

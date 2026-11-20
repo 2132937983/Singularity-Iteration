@@ -1027,7 +1027,7 @@ public final class ManeuverModeClient {
     }
 
     /** Animation time of a flyer in seconds (for the flight layer). */
-    static float visualTime(Player p) {
+    public static float visualTime(Player p) {
         Visual vis = VISUALS.get(p.getId());
         return vis == null ? 0 : vis.heave;
     }

@@ -69,7 +69,6 @@ public final class FcsClientConfig {
     /** 0.1.11.58: the Wingman callouts as subtitles (else in the action bar), and their chirp. */
     public static final ModConfigSpec.BooleanValue WINGMAN_CALLOUTS, WINGMAN_CALLOUT_SOUND;
     /** 0.1.11.62: the flight effects in the classic style (glow, particles) instead of the constructivist one. */
-    public static final ModConfigSpec.BooleanValue CLASSIC_FLIGHT_FX;
     /** 0.1.11.65: the engine sound of flying Wingmen. */
     public static final ModConfigSpec.BooleanValue WINGMAN_ENGINE_SOUND;
     /** 0.1.11.68 (quantum flight phase R2): the camera shake of hard landings and wall hits, and the FOV kick of boost and brake. */
@@ -105,7 +104,6 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue SQUAD_HUD;
     public static final ModConfigSpec.BooleanValue ORDER_MARKERS;
     public static final ModConfigSpec.IntValue HOLO_TABLE_CELLS;
-    public static final ModConfigSpec.BooleanValue THRUSTER_FX;
     /** 0.1.10.30: the light of the worn nano and quantum suits (glow layer) and its strength. */
     public static final ModConfigSpec.BooleanValue SUIT_GLOW;
     public static final ModConfigSpec.DoubleValue SUIT_GLOW_STRENGTH;
@@ -134,8 +132,7 @@ public final class FcsClientConfig {
         VAPOR_EFFECTS = b.comment("Vapour cone, wake trails, sonic boom rings and condensation bursts in Special Maneuver Mode.")
             .define("vapor_effects", true);
         VAPOR_INTENSITY = b.comment("Opacity of the flight vapour effects (1.0 = default).").defineInRange("vapor_intensity", 1.0, 0.25, 1.5);
-        THRUSTER_FX = b.comment("Heat haze over the thruster flames (suit and Wingmen), shock diamonds at full burn and on boosts,",
-                "and the dust ring when you land from Special Maneuver flight.").define("thruster_fx", true);
+        // 0.1.11.124 (E1): "thruster_fx" removed: the flames, heat haze and dust it switched are archived (LegacyFlightFx)
         MOTION_FX = b.comment("Quantum suit motion in normal mode: back and sole jets in jetpack flight, the take-off ring and sole burst",
                 "of a boost jump, the shock ring of a hard landing, the air streaks of the sprint (also seen on other players).")
             .define("motion_fx", true);
@@ -171,8 +168,7 @@ public final class FcsClientConfig {
         WINGMAN_CALLOUTS = b.comment("Wingman callouts (lock-on, kills, damage, power, rescues...) as a subtitle line beside the squad HUD;",
                 "off: in the action bar.").define("wingman_callouts", true);
         WINGMAN_CALLOUT_SOUND = b.comment("A short chirp with each Wingman callout.").define("wingman_callout_sound", true);
-        CLASSIC_FLIGHT_FX = b.comment("Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the",
-                "phase warp one (cones of light, star streams, the warp at the sound barrier).").define("classic_flight_fx", false);
+        // 0.1.11.124 (E1): "classic_flight_fx" removed: the classic style is archived (LegacyFlightFx)
         WINGMAN_ENGINE_SOUND = b.comment("The engine of a flying Wingman: a turbine drone that rises with its speed.")
             .define("wingman_engine_sound", true);
         IMPACT_SHAKE = b.comment("Camera shake of a hard landing, a wall hit and a take-off in quantum flight (0 = off, 1 = default, 2 = strong).")
@@ -263,7 +259,8 @@ public final class FcsClientConfig {
     public static boolean wingmanFx() { return !loaded() || WINGMAN_FX.get(); }
     public static boolean wingmanCallouts() { return !loaded() || WINGMAN_CALLOUTS.get(); }
     /** 0.1.11.62: true for the classic flight effects, false (default) for the constructivist ones. */
-    public static boolean classicFlightFx() { return loaded() && CLASSIC_FLIGHT_FX.get(); }
+    /** 0.1.11.124 (E1): the classic flight style is archived; this is {@code LegacyFlightFx.ENABLED} (false), not an option. */
+    public static boolean classicFlightFx() { return com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED; }
     public static boolean wingmanEngineSound() { return !loaded() || WINGMAN_ENGINE_SOUND.get(); }
     /** 0.1.11.73: the screen effect of the own warp is on. */
     public static boolean warpPost() { return !loaded() || WARP_POST.get(); }
@@ -301,7 +298,8 @@ public final class FcsClientConfig {
     public static boolean orderMarkers() { return !loaded() || ORDER_MARKERS.get(); }
     /** Odd number of holo table cells per side (25..65). */
     public static int holoTableCells() { return loaded() ? HOLO_TABLE_CELLS.get() | 1 : 49; }
-    public static boolean thrusterFx() { return !loaded() || THRUSTER_FX.get(); }
+    /** 0.1.11.124 (E1): the thruster flames, heat haze and dust are archived; this is {@code LegacyFlightFx.ENABLED} (false). */
+    public static boolean thrusterFx() { return com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED; }
     public static boolean suitGlow() { return !loaded() || SUIT_GLOW.get(); }
     public static float suitGlowStrength() { return loaded() ? SUIT_GLOW_STRENGTH.get().floatValue() : 1.0F; }
     public static void setSuitGlow(boolean on) {

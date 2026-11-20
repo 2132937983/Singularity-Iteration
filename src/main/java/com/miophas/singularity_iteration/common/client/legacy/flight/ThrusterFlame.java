@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-package com.miophas.singularity_iteration.common.client.suit;
+package com.miophas.singularity_iteration.common.client.legacy.flight;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.mojang.blaze3d.vertex.VertexConsumer;

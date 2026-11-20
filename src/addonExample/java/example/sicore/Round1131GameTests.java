@@ -74,7 +74,7 @@ public final class Round1131GameTests {
     /** The flame turns from white through blue to violet; a strip faces the camera at the origin. */
     @GameTest(batch = "round1131_motion", template = "empty", timeoutTicks = 20)
     public static void flameRules(GameTestHelper h) {
-        Class<?> rules = common("client.suit.FlameRules");
+        Class<?> rules = common("client.legacy.flight.FlameRules");
         h.assertTrue((int) call(rules, "colour", 0F) == 0xFFF2E0 && (int) call(rules, "colour", 0.65F) == 0x5AA8FF
             && (int) call(rules, "colour", 1F) == 0xB878FF, "flame colours");
         double[] out = new double[12];

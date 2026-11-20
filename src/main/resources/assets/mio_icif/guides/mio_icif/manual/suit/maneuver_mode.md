@@ -54,6 +54,6 @@ If you hit a wall, the throttle closes.
 While you ride (boat, minecart, horse or a seat), the jetpack and the maneuver thrusters stay off and use no energy.
 Set the camera roll and the speed field of view in the mod configuration screen.
 
-## Thruster effects
+## Propulsion
 
-Since 0.1.10.2 heat haze shimmers over the thruster flames, shock diamonds stand in the plumes at full burn, and a dust ring runs over the ground when you land. The Wingmen's jets shimmer too. Client option: thruster_fx.
+Since 0.1.11.124 the quantum suit flies electromagnetically and throws out no reaction mass: the thruster flames, heat haze, shock diamonds, landing dust and ignition sounds are gone, and the client options thruster_fx and classic_flight_fx were removed. At speed each of the two back nozzles leaves a red light trail; the electromagnetic look of the hover and of the maneuvers comes in later versions.

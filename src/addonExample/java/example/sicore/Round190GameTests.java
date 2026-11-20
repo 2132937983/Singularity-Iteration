@@ -320,12 +320,18 @@ public final class Round190GameTests {
 
     // ------------------------------------------------------------------ assets
 
-    /** The attachment files exist for every core and piece, with geometry and an existing texture; icons and sounds ship. */
+    /**
+     * The attachment files exist for every core and piece, with geometry and an existing texture; icons and sounds ship.
+     * 0.1.11.124 (E1): only the nano helmet's: the finished quantum suit carries its cores as mounts of its own model
+     * (quantum_mounts.json), and its old attachments moved to tools/legacy/armor.
+     */
     @GameTest(template = "empty", batch = "round190_data")
     public static void coreAssetsShip(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
-        String[] attachments = {"solar_array_1_nano_helmet", "solar_array_1_quantum_helmet", "solar_array_2_nano_helmet",
-            "solar_array_2_quantum_helmet", "solar_array_3_quantum_helmet", "graviton_quantum_chestplate", "propulsion_quantum_chestplate"};
+        String[] attachments = {"solar_array_1_nano_helmet", "solar_array_2_nano_helmet"};
+        for (String old : new String[]{"solar_array_1_quantum_helmet", "solar_array_2_quantum_helmet", "solar_array_3_quantum_helmet",
+            "graviton_quantum_chestplate", "propulsion_quantum_chestplate"})
+            if (Round33GameTests.resource("/assets/mio_icif/armor_models/attachments/" + old + ".json") != null) problems.add(old + " still ships");
         for (String a : attachments) {
             String json = Round33GameTests.resource("/assets/mio_icif/armor_models/attachments/" + a + ".json");
             if (json == null) { problems.add(a + " missing"); continue; }

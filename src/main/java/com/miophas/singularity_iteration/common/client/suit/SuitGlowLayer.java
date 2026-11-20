@@ -102,7 +102,7 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
     }
 
     /** Charge 0..1 of an electric piece (1 for a piece without a battery). */
-    static float charge(ItemStack stack) {
+    public static float charge(ItemStack stack) {
         if (!(stack.getItem() instanceof AbstractElectricArmor armor)) return 1F;
         long max = armor.getMaxEnergy(stack);
         return max <= 0 ? 0F : (float) Math.min(1.0, armor.getEnergy(stack) / (double) max);

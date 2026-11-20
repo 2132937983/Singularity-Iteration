@@ -74,6 +74,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float[] output = ManeuverModeClient.thrusterOutput(player);
         if (output == null) return;
         PlayerModel<AbstractClientPlayer> model = getParentModel();
+        LightTrails.samplePlayer(pose, model, player, partial);   // 0.1.11.122: the light trails leave the back nozzles
         if (!FcsClientConfig.classicFlightFx()) {
             phase(pose, buffers, player, model, output, partial);
             return;

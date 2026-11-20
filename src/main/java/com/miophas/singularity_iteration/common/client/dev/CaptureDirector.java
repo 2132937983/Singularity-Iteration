@@ -3938,6 +3938,151 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "lighttrail" (-Dsi.capture.scene=lighttrail), 0.1.11.122: the light trails of the special flight. The quantum
+     * flyer speeds up past the barrier on a straight line south, then a fixed camera (an invisible armour stand, as in the
+     * Armory scene) beside the line shoots it flying past: from the side, from ahead and to the side, and at night. Then the
+     * flyer and two escort Wingmen fly a circle at 4 blocks per tick past a camera outside the circle. A slow pass shows the
+     * faint trail below Mach 0.9.
+     */
+    private static void sceneLightTrail() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+        });
+        java.util.function.DoubleSupplier speed = com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient::speed;
+        Runnable go = () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); };
+        // {side offset (x), height offset, ahead (z), name, day time}
+        Object[][] passes = {{9.0, 0.5, 34.0, "1_side_day", 6000L}, {6.0, 1.5, 44.0, "2_ahead_day", 6000L}, {9.0, 0.5, 34.0, "3_side_night", 18000L}};
+        for (Object[] pass : passes) {
+            server(1, sp -> { sp.serverLevel().setDayTime((long) pass[4]); quantumFlyer(sp, null, 0.5, -40, -400.5); });
+            client(20, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true;
+                mc.setCameraEntity(mc.player); mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); mc.player.setYRot(0); mc.player.setXRot(-2); });
+            client(1, go);
+            until(400, () -> speed.getAsDouble() > 2.8);
+            client(5, go);
+            server(1, sp -> lightTrailCamera(sp, sp.getX() + (double) pass[0], sp.getY() + (double) pass[1], sp.getZ() + (double) pass[2], sp.getX(), sp.getY() + 0.8, sp.getZ() + (double) pass[2] - 3));
+            client(3, CaptureDirector::attachCaptureCamera);
+            until(200, () -> { Minecraft mc = Minecraft.getInstance(); return mc.getCameraEntity() != mc.player && mc.player.getZ() > mc.getCameraEntity().getZ() - 7; });
+            for (int f = 0; f < 4; f++) {
+                String name = "lighttrail/" + pass[3] + "_" + f;
+                shot(f == 0 ? 0 : 2, name);
+                client(0, () -> Singularity_Iteration.LOGGER.info("capture lighttrail {}:{}", name, com.miophas.singularity_iteration.common.client.suit.LightTrails.describe()));
+            }
+            client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setCameraEntity(mc.player); });
+            server(1, CaptureDirector::dropCaptureCameras);
+        }
+        // a slow pass: Mach 0.6, the trail half way up its ramp
+        server(1, sp -> { sp.serverLevel().setDayTime(6000L); quantumFlyer(sp, null, 0.5, -40, -400.5); });
+        client(20, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.player.setYRot(0); mc.player.setXRot(-2); });
+        client(1, go);
+        until(400, () -> speed.getAsDouble() > 2.8);
+        client(1, CaptureDirector::releaseKeys);
+        until(200, () -> speed.getAsDouble() < 1.5);
+        server(1, sp -> lightTrailCamera(sp, sp.getX() + 7, sp.getY() + 0.5, sp.getZ() + 8, sp.getX(), sp.getY() + 0.8, sp.getZ() + 6));
+        client(2, CaptureDirector::attachCaptureCamera);
+        shot(1, "lighttrail/4_slowing");
+        client(0, () -> Singularity_Iteration.LOGGER.info("capture lighttrail {}:{}", "slow " + speed.getAsDouble(), com.miophas.singularity_iteration.common.client.suit.LightTrails.describe()));
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setCameraEntity(mc.player); });
+        server(1, CaptureDirector::dropCaptureCameras);
+        // the Wingmen: an escort pair flies a circle with its owner (as in "wingman_escort"), past a camera outside the circle
+        client(1, CaptureDirector::releaseKeys);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        double cx = 0.5, cz = 0.5, radius = 64, height = -40;
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            for (EquipmentSlot s : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) sp.setItemSlot(s, ItemStack.EMPTY);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            look(sp, cx + radius, height, cz, 0, 10);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS, Items.DIAMOND_SWORD},
+                    {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.BOW}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+                }
+            }
+        });
+        for (int t = 0; t < 140; t++) server(1, sp -> sp.connection.teleport(cx + radius, height, cz, 0, 10));
+        server(1, sp -> {
+            var uuid = sp.getUUID();
+            int[] tick = {0};
+            double[] angle = {0};
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.ServerTickEvent.Pre e) -> {
+                if (tick[0] >= 400) return;
+                ServerPlayer p = e.getServer().getPlayerList().getPlayer(uuid);
+                if (p == null) return;
+                int t = tick[0]++;
+                angle[0] += Math.min(4.0, (t + 1) * 4.0 / 60) / radius;
+                double a = angle[0];
+                p.connection.teleport(cx + Math.cos(a) * radius, height, cz + Math.sin(a) * radius, (float) Math.toDegrees(a), 10);
+            });
+        });
+        // a camera placed ahead of the first Wingman and out to the side of its path, once the circle is at full speed
+        server(120, sp -> {
+            var squad = com.miophas.singularity_iteration.common.armory.WingmanService.of(sp);
+            if (squad.isEmpty()) return;
+            var w = squad.get(0);
+            net.minecraft.world.phys.Vec3 at = w.position(), v = at.subtract(w.xo, w.yo, w.zo), ahead = at.add(v.scale(7));
+            net.minecraft.world.phys.Vec3 out = new net.minecraft.world.phys.Vec3(ahead.x - cx, 0, ahead.z - cz).normalize();
+            lightTrailCamera(sp, ahead.x + out.x * 8, ahead.y + 1.2, ahead.z + out.z * 8, ahead.x, ahead.y + 0.6, ahead.z);
+        });
+        client(2, CaptureDirector::attachCaptureCamera);
+        for (int f = 0; f < 6; f++) {
+            String name = String.format("lighttrail/5_wingmen_%02d", f);
+            shot(f == 0 ? 2 : 1, name);
+            client(0, () -> Singularity_Iteration.LOGGER.info("capture lighttrail {}:{}", name, com.miophas.singularity_iteration.common.client.suit.LightTrails.describe()));
+        }
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** 0.1.11.122: an invisible armour stand at (x, y, z) looking at (tx, ty, tz), for {@link #attachCaptureCamera}. */
+    private static void lightTrailCamera(ServerPlayer sp, double x, double y, double z, double tx, double ty, double tz) {
+        dropCaptureCameras(sp);
+        var level = sp.serverLevel();
+        var cam = new net.minecraft.world.entity.decoration.ArmorStand(level, x, y, z);
+        cam.setInvisible(true);
+        cam.setNoGravity(true);
+        cam.addTag("si_capture_camera");
+        cam.setCustomName(net.minecraft.network.chat.Component.literal("si_capture_camera"));
+        cam.setCustomNameVisible(false);
+        double dx = tx - x, dz = tz - z, dy = ty - cam.getEyeY();
+        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz)), pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+        cam.moveTo(x, y, z, yaw, pitch);
+        cam.setYHeadRot(yaw);
+        level.addFreshEntity(cam);
+    }
+
+    private static void attachCaptureCamera() {
+        Minecraft mc = Minecraft.getInstance();
+        for (var e : mc.level.entitiesForRendering())
+            if (e.getCustomName() != null && e.getCustomName().getString().equals("si_capture_camera")) mc.setCameraEntity(e);
+    }
+
+    private static void dropCaptureCameras(ServerPlayer sp) {
+        sp.serverLevel().getEntities((net.minecraft.world.entity.Entity) null, sp.getBoundingBox().inflate(200),
+            e -> e.getTags().contains("si_capture_camera")).forEach(net.minecraft.world.entity.Entity::discard);
+    }
+
+    static {
+        if (OUT != null && "lighttrail".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneLightTrail();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

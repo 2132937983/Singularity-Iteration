@@ -1,5 +1,7 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.menu.producer.MetalFormerMenu;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
 import java.util.ArrayList;

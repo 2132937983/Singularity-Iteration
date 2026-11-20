@@ -31,10 +31,10 @@ public class mio_icif_gui_furnace_elc extends ProcessInstrumentScreen<FurnaceElc
     protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
         int t = menu.getTemperature();
         int x0 = (int) cx - 38, x1 = (int) cx + 38, y0 = (int) cy - 32, y1 = (int) cy + 34;
-        g.fill(x0, y0, x1, y1, STEEL);                               // shell
-        g.fill(x0 + 6, y0 + 6, x1 - 6, y1 - 6, 0xFF2A2F2E);          // chamber
+        FcsDraw.fill(g, x0, y0, x1, y1, STEEL);                               // shell
+        FcsDraw.fill(g, x0 + 6, y0 + 6, x1 - 6, y1 - 6, 0xFF2A2F2E);          // chamber
         int heat = glow(t);
-        if (t > 300) g.fill(x0 + 6, y0 + 6, x1 - 6, y1 - 6, (Math.min(0x90, (int) ((t - 300) / 800.0 * 0x90)) << 24) | (heat & 0xFFFFFF));
+        if (t > 300) FcsDraw.fill(g, x0 + 6, y0 + 6, x1 - 6, y1 - 6, (Math.min(0x90, (int) ((t - 300) / 800.0 * 0x90)) << 24) | (heat & 0xFFFFFF));
         for (int row = 0; row < 2; row++) {                          // the heating coils, top and bottom
             float y = row == 0 ? y0 + 10 : y1 - 10;
             float px = x0 + 10, py = y;
@@ -45,7 +45,7 @@ public class mio_icif_gui_furnace_elc extends ProcessInstrumentScreen<FurnaceElc
                 py = ny;
             }
         }
-        g.fill(x0 + 14, (int) cy + 12, x1 - 14, (int) cy + 15, STEEL_LIGHT);   // the hearth
+        FcsDraw.fill(g, x0 + 14, (int) cy + 12, x1 - 14, (int) cy + 15, STEEL_LIGHT);   // the hearth
         ItemStack input = menu.getSlot(mio_icif_furnace_elc.INPUT_SLOT).getItem();
         if (!input.isEmpty()) g.renderItem(input, (int) cx - 8, (int) cy - 5);
     }

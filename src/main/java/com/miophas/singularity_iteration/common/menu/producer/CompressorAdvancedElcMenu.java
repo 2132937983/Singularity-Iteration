@@ -20,9 +20,9 @@ public class CompressorAdvancedElcMenu extends mio_icif_machine_menu {
     private static final int INPUT_X = 10;
     private static final int INPUT_Y = 18;
     private static final int BATTERY_X = 10;
-    private static final int BATTERY_Y = 38;
-    private static final int OUTPUT_X = 10;
-    private static final int OUTPUT_Y = 58;
+    private static final int BATTERY_Y = 56;   // 0.1.11.118: the furnace block (bolt between input and battery)
+    private static final int OUTPUT_X = 61;
+    private static final int OUTPUT_Y = 37;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 

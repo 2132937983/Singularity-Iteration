@@ -1,5 +1,7 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.menu.producer.CompressorElcMenu;
 import com.miophas.singularity_iteration.common.processing.Pressing;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
@@ -36,20 +38,20 @@ public class mio_icif_gui_compressor_elc extends ProcessInstrumentScreen<Compres
     /** Draws the press around (cx, cy); {@code travel} 0..1, {@code active} colours the ram face. */
     static void press(GuiGraphics g, float cx, float cy, float travel, boolean active, boolean loaded) {
         int x0 = (int) cx - 36, x1 = (int) cx + 36, top = (int) cy - 36, bed = (int) cy + 28;
-        g.fill(x0, top + 6, x1, top + 14, STEEL);                              // crown
-        g.fill((int) cx - 10, top, (int) cx + 10, top + 6, STEEL);              // cylinder
-        g.fill(x0 + 4, top + 14, x0 + 10, bed, STEEL);                          // columns
-        g.fill(x1 - 10, top + 14, x1 - 4, bed, STEEL);
-        g.fill(x0, bed, x1, bed + 8, STEEL);                                    // bed
-        g.fill((int) cx - 16, bed - 4, (int) cx + 16, bed, SHELL);              // die
+        FcsDraw.fill(g, x0, top + 6, x1, top + 14, STEEL);                              // crown
+        FcsDraw.fill(g, (int) cx - 10, top, (int) cx + 10, top + 6, STEEL);              // cylinder
+        FcsDraw.fill(g, x0 + 4, top + 14, x0 + 10, bed, STEEL);                          // columns
+        FcsDraw.fill(g, x1 - 10, top + 14, x1 - 4, bed, STEEL);
+        FcsDraw.fill(g, x0, bed, x1, bed + 8, STEEL);                                    // bed
+        FcsDraw.fill(g, (int) cx - 16, bed - 4, (int) cx + 16, bed, SHELL);              // die
         int travelPx = 33;   // at full travel the platen squashes the charge to half its height
         int ramFace = top + 22 + Math.round(travel * travelPx);
-        g.fill((int) cx - 3, top + 14, (int) cx + 3, ramFace - 4, STEEL_LIGHT);  // rod
-        g.fill((int) cx - 18, ramFace - 4, (int) cx + 18, ramFace, active ? 0xFF000000 | AMBER : STEEL_LIGHT);   // platen
+        FcsDraw.fill(g, (int) cx - 3, top + 14, (int) cx + 3, ramFace - 4, STEEL_LIGHT);  // rod
+        FcsDraw.fill(g, (int) cx - 18, ramFace - 4, (int) cx + 18, ramFace, active ? 0xFF000000 | AMBER : STEEL_LIGHT);   // platen
         if (loaded) {   // the charge: full height until the platen reaches it, then squashed to half
             int full = 10, chargeTop = bed - 4 - full;
             int squashed = Math.max(chargeTop, Math.min(bed - 4 - full / 2, ramFace));
-            g.fill((int) cx - 12, Math.max(chargeTop, squashed), (int) cx + 12, bed - 4, 0xFFA7B0AE);
+            FcsDraw.fill(g, (int) cx - 12, Math.max(chargeTop, squashed), (int) cx + 12, bed - 4, 0xFFA7B0AE);
         }
     }
 

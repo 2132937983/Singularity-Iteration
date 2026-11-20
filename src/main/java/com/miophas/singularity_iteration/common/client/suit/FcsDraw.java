@@ -19,6 +19,25 @@ public final class FcsDraw {
     public static final int WHITE = 0xEAF6FF;
     public static final int CYAN = 0x6FE6FF;
 
+    // ---- 0.1.11.118: pixel capture (see PixelCanvas) ----
+    private static PixelCanvas pixels;
+
+    /** Routes the primitives (and {@link #fill}) into {@code canvas} until {@link #endPixels}. */
+    public static void beginPixels(PixelCanvas canvas) { pixels = canvas; }
+
+    /** Stops routing and draws the canvas. */
+    public static void endPixels(GuiGraphics g) {
+        PixelCanvas c = pixels;
+        pixels = null;
+        if (c != null) c.draw(g);
+    }
+
+    /** An axis-aligned fill: {@code g.fill} normally, a canvas rectangle while a pixel canvas is open. */
+    public static void fill(GuiGraphics g, float x1, float y1, float x2, float y2, int argb) {
+        if (pixels != null) { pixels.rect(x1, y1, x2, y2, argb); return; }
+        g.fill(Math.round(x1), Math.round(y1), Math.round(x2), Math.round(y2), argb);
+    }
+
     public static int argb(int rgb, float alpha) {
         int a = Math.max(0, Math.min(255, (int) (alpha * 255)));
         return (a << 24) | (rgb & 0xFFFFFF);
@@ -26,6 +45,7 @@ public final class FcsDraw {
 
     /** Arbitrary line as a thin quad. */
     public static void line(GuiGraphics g, float x1, float y1, float x2, float y2, float width, int argb) {
+        if (pixels != null) { pixels.line(x1, y1, x2, y2, width, argb); return; }
         float dx = x2 - x1, dy = y2 - y1;
         float len = (float) Math.sqrt(dx * dx + dy * dy);
         if (len < 1.0E-3F) return;
@@ -35,6 +55,7 @@ public final class FcsDraw {
 
     /** Filled convex quad (corners in order). */
     public static void quad(GuiGraphics g, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, int argb) {
+        if (pixels != null) { pixels.convex(new float[]{x1, x2, x3, x4}, new float[]{y1, y2, y3, y4}, argb); return; }
         VertexConsumer vc = g.bufferSource().getBuffer(RenderType.gui());
         Matrix4f m = g.pose().last().pose();
         // the GUI pass culls back faces: emit the quad with the front-facing winding
@@ -55,6 +76,7 @@ public final class FcsDraw {
 
     /** Ring segment from angle a0 to a1 (radians, 0 = up, clockwise). */
     public static void arc(GuiGraphics g, float cx, float cy, float r, float a0, float a1, float width, int argb) {
+        if (pixels != null) pixels.begin();
         int steps = Math.max(2, (int) Math.ceil(Math.abs(a1 - a0) / 0.12F));
         float px = 0, py = 0;
         for (int i = 0; i <= steps; i++) {
@@ -64,6 +86,7 @@ public final class FcsDraw {
             px = x;
             py = y;
         }
+        if (pixels != null) pixels.end();
     }
 
     public static void circle(GuiGraphics g, float cx, float cy, float r, float width, int argb) {
@@ -147,6 +170,7 @@ public final class FcsDraw {
 
     /** Filled disc (triangle fan). */
     public static void disc(GuiGraphics g, float cx, float cy, float r, int argb) {
+        if (pixels != null) { pixels.disc(cx, cy, r, argb); return; }
         int steps = Math.max(10, (int) (r * 1.2F));
         for (int i = 0; i < steps; i++) {
             float a0 = (float) (i * Math.PI * 2 / steps), a1 = (float) ((i + 1) * Math.PI * 2 / steps);
@@ -157,12 +181,14 @@ public final class FcsDraw {
 
     /** Filled ring sector from a0 to a1 (radians, 0 = up, clockwise). */
     public static void sector(GuiGraphics g, float cx, float cy, float r0, float r1, float a0, float a1, int argb) {
+        if (pixels != null) pixels.begin();
         int steps = Math.max(2, (int) Math.ceil(Math.abs(a1 - a0) / 0.15F));
         for (int i = 0; i < steps; i++) {
             float b0 = a0 + (a1 - a0) * i / steps, b1 = a0 + (a1 - a0) * (i + 1) / steps;
             float s0 = (float) Math.sin(b0), c0 = (float) Math.cos(b0), s1 = (float) Math.sin(b1), c1 = (float) Math.cos(b1);
             quad(g, cx + s0 * r0, cy - c0 * r0, cx + s0 * r1, cy - c0 * r1, cx + s1 * r1, cy - c1 * r1, cx + s1 * r0, cy - c1 * r0, argb);
         }
+        if (pixels != null) pixels.end();
     }
 
     /** Dashed line. */

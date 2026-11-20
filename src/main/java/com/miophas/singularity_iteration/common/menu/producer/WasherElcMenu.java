@@ -33,14 +33,14 @@ public class WasherElcMenu extends mio_icif_machine_menu {
     // 0.1.11.114: two columns on the left of the instrument screen
     private static final int INPUT_X = 10;
     private static final int INPUT_Y = 18;
-    private static final int[] OUTPUT_X = {30, 30, 30};
+    private static final int[] OUTPUT_X = {61, 61, 61};   // 0.1.11.118: the furnace block
     private static final int[] OUTPUT_Y = {18, 38, 58};
     private static final int BATTERY_X = 10;
-    private static final int BATTERY_Y = 38;
+    private static final int BATTERY_Y = 56;
     private static final int WATER_BUCKET_X = 10;
-    private static final int WATER_BUCKET_Y = 58;
-    private static final int EMPTY_BUCKET_X = 10;
-    private static final int EMPTY_BUCKET_Y = 78;
+    private static final int WATER_BUCKET_Y = 78;
+    private static final int EMPTY_BUCKET_X = 30;
+    private static final int EMPTY_BUCKET_Y = 78;   // beside the water bucket
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 

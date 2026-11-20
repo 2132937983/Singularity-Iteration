@@ -38,15 +38,15 @@ public class mio_icif_gui_washer_elc extends ProcessInstrumentScreen<WasherElcMe
         if (running()) { drum = (drum + dt * 0.8F * tau) % tau; fall = (fall + dt * 2) % 1F; }
         // the settling pond: mud at the bottom, water up to the tank's level
         int px0 = (int) cx - 38, px1 = (int) cx + 30, pTop = (int) cy + 10, pBottom = (int) cy + 36;
-        g.fill(px0, pTop, px1, pBottom, SHELL);
+        FcsDraw.fill(g, px0, pTop, px1, pBottom, SHELL);
         int level = pBottom - 2 - Math.round((pBottom - pTop - 6) * tank());
-        g.fill(px0 + 2, level, px1 - 2, pBottom - 2, WATER);
-        g.fill(px0 + 2, pBottom - 5, px1 - 2, pBottom - 2, MUD);
+        FcsDraw.fill(g, px0 + 2, level, px1 - 2, pBottom - 2, WATER);
+        FcsDraw.fill(g, px0 + 2, pBottom - 5, px1 - 2, pBottom - 2, MUD);
         // the return pipe on the right, back up to the feed
         int rx = (int) cx + 34;
-        g.fill(px1, pBottom - 8, rx + 2, pBottom - 6, STEEL);
-        g.fill(rx, (int) cy - 34, rx + 2, pBottom - 6, STEEL);
-        g.fill((int) cx - 2, (int) cy - 34, rx + 2, (int) cy - 32, STEEL);
+        FcsDraw.fill(g, px1, pBottom - 8, rx + 2, pBottom - 6, STEEL);
+        FcsDraw.fill(g, rx, (int) cy - 34, rx + 2, pBottom - 6, STEEL);
+        FcsDraw.fill(g, (int) cx - 2, (int) cy - 34, rx + 2, (int) cy - 32, STEEL);
         if (running()) for (int k = 0; k < 3; k++) {   // water drops falling into the drum, and moving up the return
             float t = (fall + k / 3F) % 1F;
             FcsDraw.disc(g, cx, cy - 32 + t * 10, 1.2F, WATER);
@@ -58,7 +58,7 @@ public class mio_icif_gui_washer_elc extends ProcessInstrumentScreen<WasherElcMe
         FcsDraw.disc(g, cx, dy, 12, running() ? WATER_LIGHT : CHAMBER);
         for (int k = 0; k < 6; k++) blade(g, cx, dy, drum + k * tau / 6, 3, 12, 1, 1, STEEL);
         FcsDraw.disc(g, cx, dy, 3, STEEL);
-        if (running()) g.fill((int) cx - 1, (int) dy + 14, (int) cx + 1, pTop, WATER);   // the slurry to the pond
+        if (running()) FcsDraw.fill(g, (int) cx - 1, (int) dy + 14, (int) cx + 1, pTop, WATER);   // the slurry to the pond
     }
 
     @Override

@@ -31,7 +31,13 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     public static final int INK = 0x1C2524, DIM = 0x5B6867, BLUE = 0x2A5D8A, AMBER = 0xD49A12, RED = 0xC0392B, GREEN = 0x2F6E4F;
     public static final int W = 248, H = 204, SPLIT = 116;
     /** The figure's centre and the readout column. */
-    public static final int FIG_X = 98, FIG_Y = 58, READ_X = 150, READ_W = 90, PROGRESS_Y = 100, ENERGY_Y = 108;
+    public static final int FIG_X = 113, FIG_Y = 64, READ_X = 150, READ_W = 90, PROGRESS_Y = 100, ENERGY_Y = 108;
+    /**
+     * 0.1.11.118: the vanilla layout. The figure window and the readout window (outer edges), the furnace block on the left:
+     * the energy bolt between the input and the battery, the progress arrow from the inputs to the outputs.
+     */
+    public static final int FIG_WIN_X = 82, FIG_WIN_Y = 17, FIG_WIN_W = 62, FIG_WIN_H = 95,
+        READ_WIN_X = 146, READ_WIN_Y = 17, READ_WIN_W = 96, READ_WIN_H = 95, BOLT_X = 14, BOLT_Y = 38, ARROW_X = 33, ARROW_Y = 37;
     protected static final String K = "gui.mio_icif.process.";
 
     private long lastNanos;
@@ -78,6 +84,12 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     /** Tooltip lines when the mouse is over the figure. */
     protected abstract List<Component> figureTooltip();
 
+    /** 0.1.11.118: the figure's scale in its window (the figures were drawn for a radius of about 40). */
+    protected float figureScale() { return 0.75F; }
+
+    /** 0.1.11.118: whether the furnace block (energy bolt, progress arrow) is drawn on the left. */
+    protected boolean furnaceBlock() { return true; }
+
     /** Optional extra drawing in the readout column (bars, buttons), below the readouts at {@code y}. */
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) { }
 
@@ -90,15 +102,29 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
-        g.fill(x, y, x + W, y + SPLIT, PAPER);
-        g.fill(x, y + SPLIT, x + W, y + H, GROUND);
+        // 0.1.11.118: the vanilla container look (docs/gui_processing_machines.md)
+        VanillaFrame.panel(g, x, y, W, H);
+        VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
+        VanillaFrame.inset(g, x + READ_WIN_X, y + READ_WIN_Y, READ_WIN_W, READ_WIN_H, PAPER);
         for (Slot s : menu.slots) {
             if (s.x < 0 || s.x > W) continue;   // docked upgrade slots are drawn by the dock
-            g.fill(x + s.x - 1, y + s.y - 1, x + s.x + 16, y + s.y + 16, s.y < SPLIT ? SLOT_PAPER : SLOT_GROUND);   // 17 px: a 1 px gap between neighbours
+            VanillaFrame.slot(g, x + s.x - 1, y + s.y - 1);
+        }
+        if (furnaceBlock()) {
+            VanillaFrame.bolt(g, x + BOLT_X, y + BOLT_Y, energyFraction());
+            int max = menu.getMaxProgress();
+            VanillaFrame.arrow(g, x + ARROW_X, y + ARROW_Y, max > 0 ? (double) menu.getProgress() / max : 0);
         }
         panelButtons.clear();
         float dt = frameSeconds();
-        drawFigure(g, x + FIG_X, y + FIG_Y, dt);
+        // 0.1.11.118: the figure as pixel art, one cell a GUI pixel, inside its window
+        FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X + 1, y + FIG_WIN_Y + 1,
+            FIG_WIN_W - 2, FIG_WIN_H - 2, x + FIG_X, y + FIG_Y, figureScale()));
+        try {
+            drawFigure(g, x + FIG_X, y + FIG_Y, dt);
+        } finally {
+            FcsDraw.endPixels(g);
+        }
 
         float u = u(), lh = 9 * u + 1;
         int rx = x + READ_X;
@@ -206,7 +232,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
                 return;
             }
         }
-        if (inside(rx, ry, FIG_X - 40, FIG_Y - 40, 80, 80)) {
+        if (inside(rx, ry, FIG_WIN_X, FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H)) {
             g.renderComponentTooltip(this.font, figureTooltip(), mouseX, mouseY);
         } else if (inside(rx, ry, READ_X, PROGRESS_Y - 1, READ_W, 7)) {
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.progress", menu.getProgress(), menu.getMaxProgress())), mouseX, mouseY);

@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Nullable;
                 return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 10, 58) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 61, 37) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -62,7 +62,7 @@ import org.jetbrains.annotations.Nullable;
                 return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 38) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;

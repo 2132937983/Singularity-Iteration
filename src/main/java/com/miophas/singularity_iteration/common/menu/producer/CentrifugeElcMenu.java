@@ -29,19 +29,19 @@ import org.jetbrains.annotations.Nullable;
     @Override
     protected void addMachineSlots() {
         addInputSlot(INPUT_SLOT, 10, 18);   // 0.1.11.114: two columns on the left of the instrument screen
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 30, 18) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 61, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 30, 38) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 61, 37) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_3, 30, 58) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_3, 61, 56) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        addBatterySlot(BATTERY_SLOT, 10, 38);
+        addBatterySlot(BATTERY_SLOT, 10, 56);   // 0.1.11.118: the furnace block
         this.addUpgradeSlot(UPGRADE_SLOT_START, 152, 8);
         this.addUpgradeSlot(UPGRADE_SLOT_START + 1, 152, 26);
         this.addUpgradeSlot(UPGRADE_SLOT_START + 2, 152, 44);

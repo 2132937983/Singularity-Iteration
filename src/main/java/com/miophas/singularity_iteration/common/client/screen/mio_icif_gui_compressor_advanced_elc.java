@@ -1,5 +1,7 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_compressor_advanced_elc;
 import com.miophas.singularity_iteration.common.menu.producer.CompressorAdvancedElcMenu;
 import com.miophas.singularity_iteration.common.processing.Pressing;
@@ -39,12 +41,12 @@ public class mio_icif_gui_compressor_advanced_elc extends ProcessInstrumentScree
         mio_icif_gui_compressor_elc.press(g, cx - 10, cy, running() ? mio_icif_gui_compressor_elc.stroke(p) : 0, running(), loaded);
         // the accumulator: a bottle right of the press, oil level = stored share, red line = the next stroke's need
         int bx0 = (int) cx + 32, bx1 = bx0 + 12, top = (int) cy - 30, bottom = (int) cy + 36;
-        g.fill(bx0, top, bx1, bottom, SHELL);
+        FcsDraw.fill(g, bx0, top, bx1, bottom, SHELL);
         int level = bottom - Math.round((bottom - top - 2) * pressure());
-        g.fill(bx0 + 2, level, bx1 - 2, bottom - 2, 0xFF000000 | AMBER);
+        FcsDraw.fill(g, bx0 + 2, level, bx1 - 2, bottom - 2, 0xFF000000 | AMBER);
         int need = bottom - Math.round((bottom - top - 2) * required());
-        g.fill(bx0 - 1, need, bx1 + 1, need + 1, 0xFF000000 | RED);
-        g.fill((int) cx + 26, (int) cy + 30, bx0, (int) cy + 32, STEEL);   // the line to the press
+        FcsDraw.fill(g, bx0 - 1, need, bx1 + 1, need + 1, 0xFF000000 | RED);
+        FcsDraw.fill(g, (int) cx + 26, (int) cy + 30, bx0, (int) cy + 32, STEEL);   // the line to the press
     }
 
     @Override

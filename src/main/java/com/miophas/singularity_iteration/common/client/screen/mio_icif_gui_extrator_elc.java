@@ -36,17 +36,17 @@ public class mio_icif_gui_extrator_elc extends ProcessInstrumentScreen<Extractor
         int x0 = (int) cx - 38, x1 = (int) cx + 30, y0 = (int) cy - 12, y1 = (int) cy + 8;
         // the hopper over the inlet
         FcsDraw.quad(g, cx - 40, cy - 30, cx - 18, cy - 30, cx - 26, cy - 12, cx - 32, cy - 12, SHELL);
-        if (menu.getSlot(ExtractorElcMenu.INPUT_SLOT).hasItem()) g.fill((int) cx - 36, (int) cy - 26, (int) cx - 22, (int) cy - 18, FormingFigure.WORK);
+        if (menu.getSlot(ExtractorElcMenu.INPUT_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 36, (int) cy - 26, (int) cx - 22, (int) cy - 18, FormingFigure.WORK);
         // the barrel, the charge pressed thinner towards the outlet
-        g.fill(x0, y0, x1, y1, SHELL);
-        g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
+        FcsDraw.fill(g, x0, y0, x1, y1, SHELL);
+        FcsDraw.fill(g, x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
         if (running()) for (int x = x0 + 2; x < x1 - 2; x++) {
             float t = (float) (x - x0) / (x1 - x0);
             int h = Math.round(7 - 4 * t);
-            g.fill(x, (int) cy - 2 - h, x + 1, (int) cy - 2 + h, FormingFigure.WORK);
+            FcsDraw.fill(g, x, (int) cy - 2 - h, x + 1, (int) cy - 2 + h, FormingFigure.WORK);
         }
         // the shaft and the flights (shallower towards the outlet), moving with the turn
-        g.fill(x0 - 6, (int) cy - 3, x1 + 4, (int) cy - 1, STEEL);
+        FcsDraw.fill(g, x0 - 6, (int) cy - 3, x1 + 4, (int) cy - 1, STEEL);
         for (int k = 0; k < 8; k++) {
             float x = x0 + 4 + ((k * 8 + phase * 0.8F) % 62);
             float t = (x - x0) / (x1 - x0);
@@ -54,11 +54,11 @@ public class mio_icif_gui_extrator_elc extends ProcessInstrumentScreen<Extractor
             FcsDraw.line(g, x - 2, cy - 2 - r, x + 2, cy - 2 + r, 1.4F, STEEL_LIGHT);
         }
         // the drive at the inlet end
-        g.fill(x0 - 12, (int) cy - 8, x0 - 4, (int) cy + 4, STEEL);
+        FcsDraw.fill(g, x0 - 12, (int) cy - 8, x0 - 4, (int) cy + 4, STEEL);
         // the screen under the barrel, the juice dripping into the tray
-        for (int x = x0 + 8; x < x1 - 4; x += 4) g.fill(x, y1, x + 2, y1 + 1, STEEL_LIGHT);
-        g.fill(x0 + 4, (int) cy + 26, x1 - 2, (int) cy + 34, SHELL);
-        g.fill(x0 + 6, (int) cy + 29, x1 - 4, (int) cy + 32, JUICE);
+        for (int x = x0 + 8; x < x1 - 4; x += 4) FcsDraw.fill(g, x, y1, x + 2, y1 + 1, STEEL_LIGHT);
+        FcsDraw.fill(g, x0 + 4, (int) cy + 26, x1 - 2, (int) cy + 34, SHELL);
+        FcsDraw.fill(g, x0 + 6, (int) cy + 29, x1 - 4, (int) cy + 32, JUICE);
         if (running()) for (int k = 0; k < 5; k++) {
             float dx = x0 + 12 + k * 12, f = ((phase / 10) + k * 0.37F) % 1;
             FcsDraw.disc(g, dx, y1 + 2 + f * 16, 1.2F, JUICE);
@@ -66,7 +66,7 @@ public class mio_icif_gui_extrator_elc extends ProcessInstrumentScreen<Extractor
         // the cake leaving the outlet
         if (running()) {
             float f = phase / 10;
-            g.fill(x1, (int) (cy - 4), x1 + 3 + Math.round(5 * f), (int) cy, FormingFigure.WORK);
+            FcsDraw.fill(g, x1, (int) (cy - 4), x1 + 3 + Math.round(5 * f), (int) cy, FormingFigure.WORK);
         }
     }
 

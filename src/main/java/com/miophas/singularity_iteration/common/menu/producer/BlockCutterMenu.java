@@ -32,13 +32,13 @@ import org.jetbrains.annotations.Nullable;
     protected void addMachineSlots() {
         this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 10, 18));
         this.addSlot(new SlotItemHandler(itemHandler, BLADE_SLOT, 30, 18));
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 10, 58) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 61, 37) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 38) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);

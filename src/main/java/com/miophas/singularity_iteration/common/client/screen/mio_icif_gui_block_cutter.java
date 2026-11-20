@@ -53,10 +53,10 @@ public class mio_icif_gui_block_cutter extends ProcessInstrumentScreen<BlockCutt
         if (bh > 0) for (int k = 0; k < 18; k++) blade(g, cx, bcy, angle + k * tau / 18, 21, 25, 1.6F, 0.2F, colour);
         FcsDraw.disc(g, cx, bcy, 6, STEEL);
         blade(g, cx, bcy, angle, 0, 6, 0.8F, 0.8F, STEEL_LIGHT);
-        g.fill((int) cx - 36, (int) bcy - 2, (int) cx - 6, (int) bcy + 2, STEEL);   // the arbor arm
+        FcsDraw.fill(g, (int) cx - 36, (int) bcy - 2, (int) cx - 6, (int) bcy + 2, STEEL);   // the arbor arm
         // the block over it, with the kerf going down as the cut goes on
-        g.fill(bx0, by0, bx1, by1, FormingFigure.WORK);
-        if (p > 0) g.fill((int) cx - 1, by0, (int) cx + 1, by0 + Math.round((by1 - by0) * p), colour);
+        FcsDraw.fill(g, bx0, by0, bx1, by1, FormingFigure.WORK);
+        if (p > 0) FcsDraw.fill(g, (int) cx - 1, by0, (int) cx + 1, by0 + Math.round((by1 - by0) * p), colour);
     }
 
     @Override

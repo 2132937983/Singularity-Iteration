@@ -36,10 +36,10 @@ public class mio_icif_gui_recycler_elc extends ProcessInstrumentScreen<RecyclerE
         if (running()) { angle = (angle + dt * 2.5F * tau) % tau; fall = (fall + dt * 1.6F) % 1; }
         // the hopper
         FcsDraw.quad(g, cx - 30, cy - 36, cx + 30, cy - 36, cx + 22, cy - 16, cx - 22, cy - 16, SHELL);
-        if (menu.getSlot(RecyclerElcMenu.INPUT_SLOT).hasItem()) g.fill((int) cx - 16, (int) cy - 30, (int) cx + 16, (int) cy - 20, FormingFigure.WORK);
+        if (menu.getSlot(RecyclerElcMenu.INPUT_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 16, (int) cy - 30, (int) cx + 16, (int) cy - 20, FormingFigure.WORK);
         // the housing and the two rotors turning against each other
-        g.fill((int) cx - 30, (int) cy - 16, (int) cx + 30, (int) cy + 12, SHELL);
-        g.fill((int) cx - 28, (int) cy - 14, (int) cx + 28, (int) cy + 10, CHAMBER);
+        FcsDraw.fill(g, (int) cx - 30, (int) cy - 16, (int) cx + 30, (int) cy + 12, SHELL);
+        FcsDraw.fill(g, (int) cx - 28, (int) cy - 14, (int) cx + 28, (int) cy + 10, CHAMBER);
         for (int side = -1; side <= 1; side += 2) {
             float rx = cx + side * 12, a = side * angle;
             FcsDraw.disc(g, rx, cy - 2, 9, STEEL_LIGHT);
@@ -53,9 +53,9 @@ public class mio_icif_gui_recycler_elc extends ProcessInstrumentScreen<RecyclerE
         }
         // the bin, filled to the carry towards the next product
         int bx0 = (int) cx - 24, bx1 = (int) cx + 24, by0 = (int) cy + 24, by1 = (int) cy + 38;
-        g.fill(bx0, by0, bx1, by1, SHELL);
+        FcsDraw.fill(g, bx0, by0, bx1, by1, SHELL);
         int h = Math.round((by1 - by0 - 3) * Math.min(1, menu.getCarryPermille() / 1000F));
-        if (h > 0) g.fill(bx0 + 2, by1 - 2 - h, bx1 - 2, by1 - 2, SCRAP);
+        if (h > 0) FcsDraw.fill(g, bx0 + 2, by1 - 2 - h, bx1 - 2, by1 - 2, SCRAP);
     }
 
     @Override

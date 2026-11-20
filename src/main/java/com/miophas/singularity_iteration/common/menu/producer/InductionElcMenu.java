@@ -35,19 +35,19 @@ import org.jetbrains.annotations.Nullable;
                 return itemHandler.isItemValid(INPUT_SLOT_1, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 10, 38) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 30, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_2, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 58) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 30, 18) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 61, 27) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -59,7 +59,7 @@ import org.jetbrains.annotations.Nullable;
                 collectXp(player);   // taking smelted items pours the banked XP straight into the XP bar
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 30, 38) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 61, 47) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;

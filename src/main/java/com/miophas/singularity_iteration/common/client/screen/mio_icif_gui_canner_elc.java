@@ -36,9 +36,20 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     private int mode() { return Math.max(0, Math.min(3, menu.getMode())); }
 
     private void tank(GuiGraphics g, int x, int y, FluidStack fluid, int capacity) {
-        g.fill(x, y, x + 14, y + 52, SHELL);
-        g.fill(x + 2, y + 2, x + 12, y + 50, CHAMBER);
-        mio_icif_GuiUtils.renderFluidBar(g, x + 2, y + 2, 10, 48, fluid, capacity);
+        FcsDraw.fill(g, x, y, x + 14, y + 52, SHELL);
+        FcsDraw.fill(g, x + 2, y + 2, x + 12, y + 50, CHAMBER);
+        // 0.1.11.118: a flat level in the fluid's colour (pixel art; the texture would sit under the canvas)
+        if (!fluid.isEmpty() && capacity > 0) {
+            int lv = Math.round(48F * Math.min(1, fluid.getAmount() / (float) capacity));
+            if (lv > 0) FcsDraw.fill(g, x + 2, y + 50 - lv, x + 12, y + 50, fluidColour(fluid));
+        }
+    }
+
+    /** The fluid's tint, or a fixed colour for those drawn by their texture alone (lava). */
+    private static int fluidColour(FluidStack fluid) {
+        if (fluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA)) return 0xFFD9641A;
+        int tint = net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid.getFluidType()).getTintColor(fluid);
+        return (tint & 0xFFFFFF) == 0xFFFFFF ? 0xFFB8C4CC : 0xFF000000 | tint;
     }
 
     /** A pipe from (x1, y1) to (x2, y2), with dots moving along it while it works. */
@@ -57,26 +68,26 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
         tank(g, (int) cx - 46, (int) cy - 30, menu.getInputFluid(), menu.getInputFluidCapacity());
         tank(g, (int) cx + 32, (int) cy - 30, menu.getOutputFluid(), menu.getOutputFluidCapacity());
         // the filler head over the can
-        g.fill((int) cx - 8, (int) cy - 24, (int) cx + 8, (int) cy - 16, STEEL);
-        g.fill((int) cx - 2, (int) cy - 16, (int) cx + 2, (int) cy - 8, STEEL);
+        FcsDraw.fill(g, (int) cx - 8, (int) cy - 24, (int) cx + 8, (int) cy - 16, STEEL);
+        FcsDraw.fill(g, (int) cx - 2, (int) cy - 16, (int) cx + 2, (int) cy - 8, STEEL);
         // the pipes of the mode
         pipe(g, cx - 32, cy - 26, cx - 8, cy - 20, m == 2 || m == 3);   // left tank -> filler
         pipe(g, cx + 8, cy - 20, cx + 32, cy - 26, m == 1 || m == 3);   // filler -> right tank
         if (m == 0) {   // the hopper of the food or fuel
             FcsDraw.quad(g, cx - 10, cy - 40, cx + 10, cy - 40, cx + 4, cy - 26, cx - 4, cy - 26, SHELL);
-            if (menu.getSlot(CannerElcMenu.MATERIAL_SLOT).hasItem()) g.fill((int) cx - 6, (int) cy - 37, (int) cx + 6, (int) cy - 32, FormingFigure.WORK);
+            if (menu.getSlot(CannerElcMenu.MATERIAL_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 6, (int) cy - 37, (int) cx + 6, (int) cy - 32, FormingFigure.WORK);
             if (running()) FcsDraw.disc(g, cx, cy - 26 + flow * 18, 1.6F, FormingFigure.WORK);
         }
         // the can (or cell), filled with the progress (emptied in "cell to tank")
         int x0 = (int) cx - 9, x1 = (int) cx + 9, y0 = (int) cy - 6, y1 = (int) cy + 26;
-        g.fill(x0, y0, x1, y1, STEEL_LIGHT);
-        g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
+        FcsDraw.fill(g, x0, y0, x1, y1, STEEL_LIGHT);
+        FcsDraw.fill(g, x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
         int max = menu.getMaxProgress();
         float p = max > 0 && running() ? (float) menu.getProgress() / max : 0;
         float level = m == 1 ? 1 - p : p;
         int h = Math.round((y1 - y0 - 4) * level);
-        if (h > 0) g.fill(x0 + 2, y1 - 2 - h, x1 - 2, y1 - 2, m == 0 ? FormingFigure.WORK : 0xFF000000 | BLUE);
-        g.fill(x0 - 4, y1, x1 + 4, y1 + 3, STEEL);   // the stand
+        if (h > 0) FcsDraw.fill(g, x0 + 2, y1 - 2 - h, x1 - 2, y1 - 2, m == 0 ? FormingFigure.WORK : 0xFF000000 | BLUE);
+        FcsDraw.fill(g, x0 - 4, y1, x1 + 4, y1 + 3, STEEL);   // the stand
     }
 
     @Override

@@ -16,8 +16,9 @@ item_ids:
 
 ## Function
 
-The machine makes EU without fuel or sunlight.
-The machine sends EU to the blocks on all six faces.
+The machine makes EU without fuel or sunlight, day and night, in any weather and temperature.
+The machine is where the two solar routes meet: it is made from a quantum solar panel (the top of the concentrator route) and an ultimate photon resonance solar generator (the top of the photon resonance route).
+The machine sends EU to the blocks on its six faces.
 
 ## Power data
 

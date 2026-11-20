@@ -20,7 +20,13 @@ public class mio_icif_AdvancedSolarGenerator extends mio_icif_solar_generator {
 
     public mio_icif_AdvancedSolarGenerator(BlockPos pos, BlockState state, int dayPower, int nightPower, long capacity, int tier,
                                            BlockEntityType<?> type) {
-        super(pos, state, type, tierOf(tier), dayPower, nightPower, capacity, tierOf(tier).powerRating, 4, 4, false);
+        this(pos, state, dayPower, nightPower, capacity, tier, type, com.miophas.singularity_iteration.common.energy.SolarProfile.STANDARD);
+    }
+
+    /** 0.1.11.100: with the panel's solar profile; it may send {@code profile.packets()} packets of its tier a tick. */
+    public mio_icif_AdvancedSolarGenerator(BlockPos pos, BlockState state, int dayPower, int nightPower, long capacity, int tier,
+                                           BlockEntityType<?> type, com.miophas.singularity_iteration.common.energy.SolarProfile profile) {
+        super(pos, state, type, tierOf(tier), dayPower, nightPower, capacity, tierOf(tier).powerRating * profile.packets(), 4, 4, false, profile);
         this.tier = tier;
     }
 

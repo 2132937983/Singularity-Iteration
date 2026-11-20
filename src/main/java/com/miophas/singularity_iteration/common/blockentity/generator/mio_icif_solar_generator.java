@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.blockentity.generator;
 
 import com.miophas.singularity_iteration.common.energy.SolarPhysics;
+import com.miophas.singularity_iteration.common.energy.SolarProfile;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity;
@@ -52,6 +53,8 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     public static final int DATA_COUNT = 16 + SAMPLES / 2;
 
     protected final int dayPower, corePower, chargeSlots;
+    /** 0.1.11.100: how this panel uses the sky (light, weather, temperature, night, packets). */
+    protected final SolarProfile profile;
     private final boolean clampBasicBuffer;
 
     // the environment (server)
@@ -91,6 +94,16 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
      */
     protected mio_icif_solar_generator(BlockPos pos, BlockState state, BlockEntityType<?> type, CableTier cableTier,
                                        int dayPower, int corePower, long capacity, long maxExtract, int slots, int chargeSlots, boolean clampBasicBuffer) {
+        this(pos, state, type, cableTier, dayPower, corePower, capacity, maxExtract, slots, chargeSlots, clampBasicBuffer, SolarProfile.STANDARD);
+    }
+
+    /**
+     * @param maxExtract EU a tick it may send; a profile with several packets needs the tier's packet times that many
+     * @param profile    how the panel uses the sky (0.1.11.100)
+     */
+    protected mio_icif_solar_generator(BlockPos pos, BlockState state, BlockEntityType<?> type, CableTier cableTier,
+                                       int dayPower, int corePower, long capacity, long maxExtract, int slots, int chargeSlots,
+                                       boolean clampBasicBuffer, SolarProfile profile) {
         super(pos, state, type != null ? type : mio_icif_block_entities.SOLAR_GENERATOR_ENTITY_TYPE.get(),
               slots == 1 ? SlotLayout.builder().battery().build() : SlotLayout.builder().extra(slots).build(),
               dayPower, capacity, MAX_RECEIVE, maxExtract, cableTier);
@@ -98,6 +111,7 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         this.corePower = corePower;
         this.chargeSlots = Math.max(1, Math.min(slots, chargeSlots));
         this.clampBasicBuffer = clampBasicBuffer;
+        this.profile = java.util.Objects.requireNonNull(profile, "solar profile");
         setAsPowerSource(maxExtract);
     }
 
@@ -120,24 +134,28 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         long dayTime = level.getDayTime();
         elevation = SolarPhysics.elevation(dayTime);
         BlockPos up = worldPosition.above();
+        int skyLight = 0;
         if (!level.dimensionType().hasSkyLight()) exposure = NO_SKY;
         else if (level.canSeeSky(up)) exposure = OPEN;
-        else exposure = level.getBrightness(LightLayer.SKY, up) > 0 ? DIFFUSE : DARK;
+        else exposure = (skyLight = level.getBrightness(LightLayer.SKY, up)) > 0 ? DIFFUSE : DARK;
         var biome = level.getBiome(worldPosition).value();
-        boolean wet = biome.hasPrecipitation() && level.isRaining();
+        boolean precipitation = biome.hasPrecipitation();
+        boolean wet = precipitation && level.isRaining();
+        float rain = precipitation ? level.getRainLevel(1) : 0, thunder = precipitation ? level.getThunderLevel(1) : 0;
         clearSky = SolarPhysics.clearSky(elevation);
-        cloud = biome.hasPrecipitation() ? SolarPhysics.cloudIndex(level.getRainLevel(1), level.getThunderLevel(1)) : 1;
+        cloud = precipitation ? profile.weather(SolarPhysics.cloudIndex(rain, thunder)) : 1;
         double shade = switch (exposure) {
-            case OPEN -> 1;
-            case DIFFUSE -> SolarPhysics.DIFFUSE * level.getBrightness(LightLayer.SKY, up) / 15.0;
+            case OPEN -> profile.shade(true, 15);
+            case DIFFUSE -> profile.shade(false, skyLight);
             default -> 0;
         };
         irradiance = clearSky * cloud * shade;
-        cellTemp = SolarPhysics.cellTemperature(SolarPhysics.ambient(biome.getBaseTemperature(), wet), irradiance);
-        derate = SolarPhysics.derate(cellTemp);
+        cellTemp = profile.cellTemperature(SolarPhysics.ambient(biome.getBaseTemperature(), wet), irradiance);
+        derate = profile.derate(cellTemp);
         coreActive = corePower > 0 && elevation <= 0 && exposure == OPEN;
-        double pv = dayPower * SolarPhysics.output(irradiance, derate);
-        output = Math.max(pv, coreActive ? corePower : 0) * outputScale();
+        double pv = dayPower * profile.output(irradiance, derate);
+        double core = coreActive ? corePower * profile.night(rain, thunder) : 0;
+        output = Math.max(pv, core) * outputScale();
     }
 
     // ---- tick --------------------------------------------------------------------------------------------------------
@@ -276,6 +294,11 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     public long getPowerOutput() { return Math.round(output); }
 
     public int getDayPower() { return dayPower; }
+    public SolarProfile getProfile() { return profile; }
+
+    /** 0.1.11.100: a profile may send several packets of its tier a tick (the network reads this). */
+    @Override
+    public int getPacketCount() { return profile.packets(); }
     public int getCorePower() { return corePower; }
     public int getChargeSlots() { return chargeSlots; }
     public double getIrradiance() { return irradiance; }

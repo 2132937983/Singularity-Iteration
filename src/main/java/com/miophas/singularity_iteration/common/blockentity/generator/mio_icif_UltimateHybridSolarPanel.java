@@ -27,9 +27,12 @@ public class mio_icif_UltimateHybridSolarPanel extends mio_icif_AdvancedSolarGen
     public static final long CAPACITY = 1000000L;
     public static final int TIER = 3; // HV
     public static final int SLOT_COUNT = 4; // 4个电池槽
+    /** 0.1.11.100: route A (concentrator); the standard model until the overhaul's S1. */
+    public static final com.miophas.singularity_iteration.common.energy.SolarProfile PROFILE =
+        com.miophas.singularity_iteration.common.energy.SolarProfile.STANDARD;
 
     public mio_icif_UltimateHybridSolarPanel(BlockPos pos, BlockState state) {
-        super(pos, state, DAY_POWER, NIGHT_POWER, CAPACITY, TIER, mio_icif_block_entities.ULTIMATE_HYBRID_SOLAR_PANEL_ENTITY_TYPE.get());
+        super(pos, state, DAY_POWER, NIGHT_POWER, CAPACITY, TIER, mio_icif_block_entities.ULTIMATE_HYBRID_SOLAR_PANEL_ENTITY_TYPE.get(), PROFILE);
     }
 
     @Override

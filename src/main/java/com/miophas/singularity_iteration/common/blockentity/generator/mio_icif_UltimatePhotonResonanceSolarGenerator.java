@@ -19,11 +19,12 @@ public class mio_icif_UltimatePhotonResonanceSolarGenerator extends mio_icif_Met
     public static final int TIER = 5;
     public static final int SKY_UPDATE_INTERVAL = 64;
     public static final float MIN_SKY_BRIGHTNESS = 0.125F;
+    /** 0.1.11.100: route B (photon resonance); the standard model until the overhaul's S2. */
+    public static final com.miophas.singularity_iteration.common.energy.SolarProfile PROFILE =
+        com.miophas.singularity_iteration.common.energy.SolarProfile.STANDARD;
 
     public mio_icif_UltimatePhotonResonanceSolarGenerator(BlockPos pos, BlockState state) {
-        super(pos, state, DAY_POWER, PRODUCTION, CAPACITY, TIER, SKY_UPDATE_INTERVAL, MIN_SKY_BRIGHTNESS,
-            mio_icif_block_entities.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_ENTITY_TYPE.get(),
-            mio_icif_Block_UltimatePhotonResonanceSolarGenerator.LIT);
+        super(pos, state, DAY_POWER, CAPACITY, TIER, MIN_SKY_BRIGHTNESS, mio_icif_block_entities.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_ENTITY_TYPE.get(), PROFILE);
     }
 
     @Override

@@ -84,8 +84,10 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
     @Override
     public void render(PoseStack pose, MultiBufferSource buffers, int light, T entity,
                        float limbSwing, float limbSwingAmount, float partial, float age, float headYaw, float headPitch) {
-        if (!FcsClientConfig.coreAttachments()) return;
-        draw(getParentModel(), pose, buffers, light, entity, partial);
+        var parent = getParentModel();
+        com.miophas.singularity_iteration.common.client.suit.nano.NanoModuleLayer.draw(parent, pose, buffers, light, entity, partial);
+        QuantumWornMounts.draw(parent, pose, buffers, light, entity, partial);
+        if (FcsClientConfig.coreAttachments()) draw(parent, pose, buffers, light, entity, partial);
     }
 
     /**
@@ -170,8 +172,6 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
     @Nullable
     static String baseName(Item item) {
         if (item == mio_icif_items_armors.ARMOR_NANO_HELMET.get()) return "nano_helmet";
-        if (item == mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get()) return "quantum_helmet";
-        if (item == mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get()) return "quantum_chestplate";
         return null;
     }
 

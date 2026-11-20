@@ -6,31 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 
-/**
- * 0.1.11.66 (quantum flight phase R0, decision one A): the nozzles of the quantum suit, read from its models, so that every
- * flame of the flight comes out of a port the armour really has.
- *
- * <p>Each {@link Nozzle} is in the space of its model part: pixels, y down (towards the feet), +z towards the back, relative
- * to the pivot of the part (the {@code armor_models/quantum_*.json} and {@code attachments/*_quantum_chestplate.json}
- * coordinates). The direction is the way the exhaust leaves (the push is the opposite way). The set depends on the frame core
- * of the chestplate:
- * <ul>
- *   <li><b>Base</b>: four slanted pods on the back (two per side; the lit face looks down and back), the spine panel (back),
- *       the crown vent at the top of the back unit (up), the tail port under it (down); the forearm fins (outwards), the
- *       palms.</li>
- *   <li><b>Propulsion core</b>: its two boosters cover the pods and the spine; their two nozzles (down) are the main
- *       thrust. The crown vent, the tail port, the forearms and the palms stay.</li>
- *   <li><b>Graviton core</b>: no flame at all. Its mount covers the pods; the gyro on the back, the two shoulder pads,
- *       the palms and the soles show field rings ({@link Kind#FIELD}).</li>
- * </ul>
- * The quantum boots add a sole (down) and a heel port (down and back) to each leg.
- *
- * <p>Kinds: {@link Kind#MAIN} pushes the flight, {@link Kind#LIFT} holds the hover, {@link Kind#RCS} are the small
- * attitude and correction jets (lit in pulses by {@link RcsAllocator}, 0.1.11.67), {@link Kind#FIELD} is a graviton ring.
- *
- * <p>0.1.11.67 (R1): more attitude jets from the lit faces of the model: the outer sides and the upper faces of the pods,
- * the chest lights (forwards), and under the propulsion core the sides and backs of the booster bells.
- */
+/** Exhaust centres in Minecraft part-local pixels, Y down and +Z aft. The two main
+ * nozzles follow the authored acceleration pod transform. The ten RCS outlets
+ * follow their own arm, torso or boot, so their allocator and visual axes agree. */
 public final class QuantumNozzles {
     private QuantumNozzles() {}
 
@@ -60,76 +38,58 @@ public final class QuantumNozzles {
         }
     }
 
-    private static final List<Nozzle> BASE_BODY = List.of(
-        // the pods: slanted boxes, their lit face looks down and back (normal (0, 1, 1))
-        Nozzle.of("pod_right_upper", Part.BODY, -3.0F, 3.8F, 6.2F, 0, 1, 1, Kind.MAIN, 0.7F),
-        Nozzle.of("pod_left_upper", Part.BODY, 3.0F, 3.8F, 6.2F, 0, 1, 1, Kind.MAIN, 0.7F),
-        Nozzle.of("pod_right_lower", Part.BODY, -2.7F, 7.4F, 4.5F, 0, 1, 1, Kind.MAIN, 0.7F),
-        Nozzle.of("pod_left_lower", Part.BODY, 2.7F, 7.4F, 4.5F, 0, 1, 1, Kind.MAIN, 0.7F),
-        Nozzle.of("spine", Part.BODY, 0, 5.4F, 4.4F, 0, 0, 1, Kind.RCS, 0.6F),
-        // 0.1.11.67 (R1): the other lit faces of the pods: outer sides (yaw and strafe) and the upper faces (up and back)
-        Nozzle.of("pod_right_side_upper", Part.BODY, -4.1F, 3.4F, 5.6F, -1, 0, 0, Kind.RCS, 0.45F),
-        Nozzle.of("pod_left_side_upper", Part.BODY, 4.1F, 3.4F, 5.6F, 1, 0, 0, Kind.RCS, 0.45F),
-        Nozzle.of("pod_right_side_lower", Part.BODY, -3.8F, 7.0F, 4.0F, -1, 0, 0, Kind.RCS, 0.45F),
-        Nozzle.of("pod_left_side_lower", Part.BODY, 3.8F, 7.0F, 4.0F, 1, 0, 0, Kind.RCS, 0.45F),
-        Nozzle.of("retro_right", Part.BODY, -3.0F, 2.9F, 6.4F, 0, -1, 1, Kind.RCS, 0.5F),
-        Nozzle.of("retro_left", Part.BODY, 3.0F, 2.9F, 6.4F, 0, -1, 1, Kind.RCS, 0.5F));
+    // Shared with the visual pod rotation. These are the model pivot and
+    // thruster_nozzle_left/right, converted from GEO to body-local pixels.
+    public static final float POD_HINGE_Y = 5.35F, POD_HINGE_Z = 7.29F, POD_ANGLE = 38F;
+    public static final float POD_SLIDE_Y = 0.55F, POD_SLIDE_Z = 0.42F;
 
-    private static final List<Nozzle> PROPULSION_BODY = List.of(
-        Nozzle.of("booster_right", Part.BODY, -2.6F, 13.1F, 8.5F, 0, 1, 0, Kind.MAIN, 1.3F),
-        Nozzle.of("booster_left", Part.BODY, 2.6F, 13.1F, 8.5F, 0, 1, 0, Kind.MAIN, 1.3F),
-        // 0.1.11.67 (R1): the lit bells of the booster nozzles: outer sides (yaw and strafe, far behind the body) and backs
-        Nozzle.of("booster_right_side", Part.BODY, -3.9F, 11.8F, 8.5F, -1, 0, 0, Kind.RCS, 0.55F),
-        Nozzle.of("booster_left_side", Part.BODY, 3.9F, 11.8F, 8.5F, 1, 0, 0, Kind.RCS, 0.55F),
-        Nozzle.of("booster_right_back", Part.BODY, -2.6F, 11.8F, 9.7F, 0, 0, 1, Kind.RCS, 0.55F),
-        Nozzle.of("booster_left_back", Part.BODY, 2.6F, 11.8F, 9.7F, 0, 0, 1, Kind.RCS, 0.55F));
+    private static Nozzle main(String side, float x, float opening, float size) {
+        double angle = Math.toRadians(POD_ANGLE * opening);
+        float dy = (float) Math.cos(angle), dz = (float) Math.sin(angle);
+        return Nozzle.of("thruster_nozzle_" + side, Part.BODY, x,
+            POD_HINGE_Y + POD_SLIDE_Y * opening + 6.08F * dy,
+            POD_HINGE_Z + POD_SLIDE_Z * opening + 6.08F * dz, 0, dy, dz, Kind.MAIN, size);
+    }
 
-    /** Ports the base back unit keeps under the propulsion core. */
-    private static final List<Nozzle> SHARED_BODY = List.of(
-        Nozzle.of("crown", Part.BODY, 0, 0.2F, 3.9F, 0, -1, 0, Kind.RCS, 0.6F),
-        Nozzle.of("tail", Part.BODY, 0, 10.3F, 2.7F, 0, 1, 0, Kind.LIFT, 0.8F),
-        // 0.1.11.67 (R1): the two chest lights, facing forwards: the brake of the hover (push back)
-        Nozzle.of("chest_right", Part.BODY, -2.5F, 8.6F, -3.7F, 0, 0, -1, Kind.RCS, 0.45F),
-        Nozzle.of("chest_left", Part.BODY, 2.5F, 8.6F, -3.7F, 0, 0, -1, Kind.RCS, 0.45F));
-
-    private static final List<Nozzle> ARMS = List.of(
-        Nozzle.of("forearm_right", Part.RIGHT_ARM, -4.7F, 6.6F, 0, -1, 0, 0, Kind.RCS, 0.45F),
-        Nozzle.of("forearm_left", Part.LEFT_ARM, 4.7F, 6.6F, 0, 1, 0, 0, Kind.RCS, 0.45F),
-        Nozzle.of("palm_right", Part.RIGHT_ARM, -1.2F, 10.4F, 0, 0, 1, 0, Kind.LIFT, 1F),
-        Nozzle.of("palm_left", Part.LEFT_ARM, 1.2F, 10.4F, 0, 0, 1, 0, Kind.LIFT, 1F));
-
-    private static final List<Nozzle> GRAVITON = List.of(
-        Nozzle.of("gyro", Part.BODY, 0, 5.4F, 7.9F, 0, 0, 1, Kind.FIELD, 1.4F),
-        Nozzle.of("pad_right", Part.RIGHT_ARM, -1.9F, -5.5F, 0, 0, -1, 0, Kind.FIELD, 0.9F),
-        Nozzle.of("pad_left", Part.LEFT_ARM, 1.9F, -5.3F, 0, 0, -1, 0, Kind.FIELD, 0.9F),
-        Nozzle.of("palm_right", Part.RIGHT_ARM, -1.2F, 10.4F, 0, 0, 1, 0, Kind.FIELD, 0.7F),
-        Nozzle.of("palm_left", Part.LEFT_ARM, 1.2F, 10.4F, 0, 0, 1, 0, Kind.FIELD, 0.7F));
+    private static final List<Nozzle> CHEST_RCS = List.of(
+        Nozzle.of("rcs_locator_shoulder_right_up", Part.RIGHT_ARM, -3.32F, -2.87F, 2.58F, 0,-1,0, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_shoulder_left_up", Part.LEFT_ARM, 3.32F, -2.87F, 2.58F, 0,-1,0, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_shoulder_right_front", Part.RIGHT_ARM, -4.32F, -2.34F, 2.05F, 0,0,-1, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_shoulder_left_front", Part.LEFT_ARM, 4.32F, -2.34F, 2.05F, 0,0,-1, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_waist_right_out", Part.BODY, -3.83F, 8.97F, 3.68F, -1,0,0, Kind.RCS, .5F),
+        Nozzle.of("rcs_locator_waist_left_out", Part.BODY, 3.83F, 8.97F, 3.68F, 1,0,0, Kind.RCS, .5F));
 
     private static final List<Nozzle> BOOTS = List.of(
-        Nozzle.of("sole_right", Part.RIGHT_LEG, 0, 12.4F, -0.5F, 0, 1, 0, Kind.LIFT, 1F),
-        Nozzle.of("sole_left", Part.LEFT_LEG, 0, 12.4F, -0.5F, 0, 1, 0, Kind.LIFT, 1F),
-        // the heel port: lit faces down (12.2) and back (3.7)
-        Nozzle.of("heel_right", Part.RIGHT_LEG, -0.1F, 12.0F, 3.5F, 0, 1, 0.6F, Kind.MAIN, 0.6F),
-        Nozzle.of("heel_left", Part.LEFT_LEG, 0.1F, 12.0F, 3.5F, 0, 1, 0.6F, Kind.MAIN, 0.6F));
+        Nozzle.of("rcs_locator_calf_right_back", Part.RIGHT_LEG, -.19F, 7.62F, 4.24F, 0,0,1, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_calf_left_back", Part.LEFT_LEG, .19F, 7.62F, 4.24F, 0,0,1, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_calf_right_down", Part.RIGHT_LEG, -1.19F, 8.15F, 3.71F, 0,1,0, Kind.RCS, .45F),
+        Nozzle.of("rcs_locator_calf_left_down", Part.LEFT_LEG, 1.19F, 8.15F, 3.71F, 0,1,0, Kind.RCS, .45F),
+        Nozzle.of("sole_right", Part.RIGHT_LEG, -.19F, 10.6F, 3.71F, 0,1,0, Kind.LIFT, 1F),
+        Nozzle.of("sole_left", Part.LEFT_LEG, .19F, 10.6F, 3.71F, 0,1,0, Kind.LIFT, 1F));
 
+    private static final List<Nozzle> GRAVITON = List.of(
+        Nozzle.of("gyro", Part.BODY, 0, 9.6F, 4.3F, 0,0,1, Kind.FIELD, 1.4F),
+        Nozzle.of("pad_right", Part.RIGHT_ARM, -3.32F, -2.87F, 2.58F, 0,-1,0, Kind.FIELD, .9F),
+        Nozzle.of("pad_left", Part.LEFT_ARM, 3.32F, -2.87F, 2.58F, 0,-1,0, Kind.FIELD, .9F));
     private static final List<Nozzle> GRAVITON_BOOTS = List.of(
-        Nozzle.of("sole_right", Part.RIGHT_LEG, 0, 12.4F, -0.5F, 0, 1, 0, Kind.FIELD, 0.8F),
-        Nozzle.of("sole_left", Part.LEFT_LEG, 0, 12.4F, -0.5F, 0, 1, 0, Kind.FIELD, 0.8F));
+        Nozzle.of("sole_right", Part.RIGHT_LEG, -.19F, 10.6F, 3.71F, 0,1,0, Kind.FIELD, .8F),
+        Nozzle.of("sole_left", Part.LEFT_LEG, .19F, 10.6F, 3.71F, 0,1,0, Kind.FIELD, .8F));
 
-    /** The nozzles of the chestplate (back unit and arms) for a variant. */
-    public static List<Nozzle> chest(Variant v) {
-        List<Nozzle> out = new ArrayList<>();
-        switch (v) {
-            case GRAVITON -> out.addAll(GRAVITON);
-            case PROPULSION -> { out.addAll(PROPULSION_BODY); out.addAll(SHARED_BODY); out.addAll(ARMS); }
-            default -> { out.addAll(BASE_BODY); out.addAll(SHARED_BODY); out.addAll(ARMS); }
-        }
+    public static List<Nozzle> chest(Variant variant) {
+        return chest(variant, 0);
+    }
+
+    public static List<Nozzle> chest(Variant variant, float opening) {
+        if (variant == Variant.GRAVITON) return new ArrayList<>(GRAVITON);
+        float size = variant == Variant.PROPULSION ? 1.3F : .7F;
+        List<Nozzle> out = new ArrayList<>(CHEST_RCS);
+        out.add(main("left", 2.83F, opening, size));
+        out.add(main("right", -2.83F, opening, size));
         return out;
     }
 
-    /** The nozzles of the quantum boots (rings under a graviton chestplate). */
-    public static List<Nozzle> boots(Variant v) {
-        return v == Variant.GRAVITON ? GRAVITON_BOOTS : BOOTS;
+    public static List<Nozzle> boots(Variant variant) {
+        return variant == Variant.GRAVITON ? GRAVITON_BOOTS : BOOTS;
     }
 
     /**

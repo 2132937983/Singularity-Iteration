@@ -5,7 +5,6 @@ import com.miophas.singularity_iteration.common.suit.QuantumNozzles;
 import com.miophas.singularity_iteration.common.suit.core.FrameCores;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -41,8 +40,12 @@ public final class NozzleDraw {
 
     /** The nozzles of what an entity wears: the chestplate set and, with the quantum boots, the boot set. */
     public static List<QuantumNozzles.Nozzle> worn(LivingEntity e) {
+        return worn(e, 0);
+    }
+
+    public static List<QuantumNozzles.Nozzle> worn(LivingEntity e, float partial) {
         QuantumNozzles.Variant v = variant(e);
-        List<QuantumNozzles.Nozzle> out = new ArrayList<>(QuantumNozzles.chest(v));
+        List<QuantumNozzles.Nozzle> out = QuantumNozzles.chest(v, QuantumWornMounts.podOpening(e, partial));
         if (boots(e)) out.addAll(QuantumNozzles.boots(v));
         return out;
     }

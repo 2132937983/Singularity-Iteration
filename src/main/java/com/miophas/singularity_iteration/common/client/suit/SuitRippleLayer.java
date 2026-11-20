@@ -129,7 +129,7 @@ public final class SuitRippleLayer<T extends LivingEntity, M extends HumanoidMod
             String name = SuitGlowLayer.modelOf(stack);
             if (name == null) continue;
             BakedArmorModel model = SuitGlowLayer.model(name);
-            var geometry = model.geometry();
+            var geometry = model.wornGeometry(entity, partial);
             if (geometry.isEmpty()) continue;
             ((HumanoidModel) parent).copyPropertiesTo(model);
             SuitPalette palette = SuitPalette.of(stack);

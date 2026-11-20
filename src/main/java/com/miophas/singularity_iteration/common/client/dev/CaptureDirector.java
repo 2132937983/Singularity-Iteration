@@ -4044,6 +4044,50 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "hover" (-Dsi.capture.scene=hover), 0.1.11.126 (armour and flight overhaul E3): the electromagnetic hover. A
+     * quantum flyer hovers 2.5 blocks over the ground; a fixed camera (an invisible armour stand) shoots it from the side and
+     * from below-front, twice each a quarter of a beat apart (the ripples move), by day and at night, then with a graviton
+     * frame (its own field rings at the soles).
+     */
+    private static void sceneHover() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+        });
+        Object[][] passes = {{"1_day", 6000L, null}, {"2_night", 18000L, null}, {"3_graviton", 6000L, "GRAVITON"}};
+        for (Object[] pass : passes) {
+            server(1, sp -> {
+                sp.serverLevel().setDayTime((long) pass[1]);
+                quantumFlyer(sp, (String) pass[2], 0.5, -57.5, 0.5);
+            });
+            client(30, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.setCameraEntity(mc.player); });
+            server(1, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -57.5, 0.5, 0, 8));   // the take-off of the first pass climbs
+            server(10, sp -> lightTrailCamera(sp, sp.getX() + 4.2, sp.getY() + 0.4, sp.getZ() + 1.0, sp.getX(), sp.getY() + 0.2, sp.getZ()));
+            client(3, CaptureDirector::attachCaptureCamera);
+            for (int f = 0; f < 2; f++) shot(f == 0 ? 10 : 8, "hover/" + pass[0] + "_side_" + f);
+            client(0, () -> { Minecraft mc = Minecraft.getInstance(); Singularity_Iteration.LOGGER.info("capture hover {}: weight {}, y {}", pass[0],
+                com.miophas.singularity_iteration.common.client.suit.QuantumWornMounts.hoverWeight(mc.player, 1F), mc.player.getY()); });
+            server(1, sp -> lightTrailCamera(sp, sp.getX() + 1.5, sp.getY() - 1.2, sp.getZ() + 3.2, sp.getX(), sp.getY() - 0.6, sp.getZ()));
+            client(3, CaptureDirector::attachCaptureCamera);
+            for (int f = 0; f < 2; f++) shot(f == 0 ? 6 : 8, "hover/" + pass[0] + "_low_" + f);
+            client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setCameraEntity(mc.player); });
+            server(1, CaptureDirector::dropCaptureCameras);
+        }
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "hover".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneHover();
+        }
+    }
+
     /** 0.1.11.122: an invisible armour stand at (x, y, z) looking at (tx, ty, tz), for {@link #attachCaptureCamera}. */
     private static void lightTrailCamera(ServerPlayer sp, double x, double y, double z, double tx, double ty, double tz) {
         dropCaptureCameras(sp);

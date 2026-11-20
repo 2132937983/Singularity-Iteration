@@ -196,6 +196,16 @@ public final class QuantumWornMounts {
         });
     }
 
+    /**
+     * 0.1.11.126 (E3): how much the flyer hovers, 0..1: the hover clip's boot-strip glow, which the flight state machine
+     * crossfades in and out. The electromagnetic hover ({@link HoverField}) fades with it.
+     */
+    public static float hoverWeight(LivingEntity e, float partial) {
+        FlightVisual s = state(e, partial);
+        if (s == null || s.mode() != FlightVisual.Mode.HOVER && !s.posed(now(e, partial), clips())) return 0F;
+        return Mth.clamp(bone(s, e, partial, "module_flight_boots_left_glow", "scale")[1], 0, 1);
+    }
+
     /** True while the moving parts are drawn by this class (in flight, or folding back after it). */
     private static boolean posed(@Nullable LivingEntity e, float partial) {
         FlightVisual s = state(e, partial);
@@ -262,7 +272,11 @@ public final class QuantumWornMounts {
                     if (core.isSolar()) intensity = ArmorFeatureState.isEnabled(stack, FrameCore.KEY_SOLAR)
                         && entity.level().isDay() && entity.level().canSeeSky(entity.blockPosition().above()) ? 1F : 0F;
                 }
-                case "halo", "wing" -> { if (!moving) continue; }
+                case "halo", "wing" -> {
+                    if (!moving) continue;
+                    // 0.1.11.126 (E3): their glow breathes with the float while hovering
+                    intensity *= com.miophas.singularity_iteration.common.suit.HoverFieldRules.glowBreath(now(entity, partial), hoverWeight(entity, partial));
+                }
                 case "mach_pod" -> {
                     if (!moving) continue;
                     intensity *= bone(visual, entity, partial, "module_mach_pod_" + m.id + "_glow", "scale")[1];   // lit when deployed

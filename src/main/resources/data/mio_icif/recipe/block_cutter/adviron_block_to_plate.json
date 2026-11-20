@@ -1,11 +1,11 @@
 {
   "type": "mio_icif:block_cutter",
-  "energypertick": 4,
+  "energypertick": 16,
   "hardness": 5,
   "ingredient": {
     "tag": "c:storage_blocks/steel"
   },
-  "processingtime": 450,
+  "processingtime": 750,
   "result": {
     "count": 9,
     "id": "mio_icif:resource/item_adviron_plate"

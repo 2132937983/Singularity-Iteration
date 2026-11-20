@@ -158,8 +158,9 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
     // ---- 0.1.11.115 (processing overhaul M8): the recipe's time and power, and blade wear ----
 
     /**
-     * A recipe that writes its own time and EU/t runs them (logs to planks and planks to sticks 100 t × 2 EU/t, the steel
-     * block to plates 450 t × 4 EU/t); the others run the cutter's 900 t at 48 EU/t as before.
+     * A recipe that writes its own time and EU/t runs them (logs to planks and planks to sticks 100 t × 2 EU/t; since
+     * 0.1.11.117 the metal blocks and obsidian 150 t × hardness at 16 EU/t: copper 150 t, iron 750 t, obsidian 1,200 t);
+     * a recipe without them runs the cutter's 900 t at 48 EU/t.
      */
     public int recipeTicks() {
         var recipe = getCurrentRecipe();

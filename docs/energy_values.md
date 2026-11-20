@@ -112,10 +112,10 @@
 | MFE | `wiring/block_mfe` | HV | 512 | 4,000,000 | 512 | 512 |
 | MFSU | `wiring/block_mfsu` | EV | 2,048 | 40,000,000 | 2,048 | 2,048 |
 | EESU储电箱 | `wiring/block_eesu` | IV | 8,192 | 400,000,000 | 8,192 | 8,192 |
-| 大型储电GESU输出模块（IV） | `wiring/block_gesu_output_iv` | IV | 8,192 | 16,384 | 0 | 8,192 |
-| 大型储电GESU输出模块（LuV） | `wiring/block_gesu_output_luv` | LUV | 32,768 | 65,536 | 0 | 32,768 |
 | 大型储电GESU核心 | `wiring/block_gesu_core` | MAX | 2,147,483,647 | 2,147,483,647 | 0 | 0 |
 | 大型储电GESU输入模块 | `wiring/block_gesu_input_iv` | MAX | 2,147,483,647 | 4,294,967,294 | 2,147,483,647 | 0 |
+| 大型储电GESU输出模块（IV） | `wiring/block_gesu_output_iv` | IV | 8,192 | 16,384 | 0 | 8,192 |
+| 大型储电GESU输出模块（LuV） | `wiring/block_gesu_output_luv` | LUV | 32,768 | 65,536 | 0 | 32,768 |
 
 GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输出模块各自按等级收发。模块的储能是它们的缓冲。
 
@@ -145,7 +145,9 @@ GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输
 
 ## 8. 机器耗电
 
-「单次耗电」= 耗电 × 工时（默认配方、没有升级）。实际配方可能有自己的工时和耗电（例如精炼机），以 JEI 为准。
+「单次耗电」= 耗电 × 工时（空机、没有升级时的默认值）。实际配方可能有自己的工时和耗电（例如精炼机），以 JEI 为准。
+
+0.1.11.107 起的加工机器大修后，很多加工机器的单次耗电跟着输入走，空机测得的默认值只是起点：打粉机和旋风打粉机按材料的邦德功指数（铁约 600 EU）；压缩机、提取机、方块切割机、洗矿机和两台金属成型机按配方写的工时和功率；电炉和感应炉另有升温；热能离心机按配方的最低热量开工。各机器的计算方式见游戏手册。
 
 | 名称 | ID | 输入等级 | 单包上限 EU | 耗电 EU/t | 工时 tick | 单次耗电 EU | 内部储能 EU |
 |---|---|---|---|---|---|---|---|
@@ -165,20 +167,20 @@ GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输
 | 进阶金属成型机 | `producer/block_metal_former_advanced` | MV | 128 | 50 | 20 | 1,000 | 1,000 |
 | 方块切割机 | `producer/block_block_cutter` | MV | 128 | 48 | 900 | 43,200 | 43,200 |
 | 热能离心机 | `producer/block_centrifuge_elc` | MV | 128 | 48 | 500 | 24,000 | 24,000 |
-| 进阶高压压缩机 | `producer/block_compressor_advanced_elc` | MV | 128 | 25 | 70 | 1,750 | 1,750 |
 | 洗矿机 | `producer/block_washer_elc` | MV | 128 | 16 | 400 | 6,400 | 8,000 |
 | 感应炉 | `producer/block_induction_elc` | MV | 128 | 15 | 4,000 | 60,000 | 10,000 |
+| 进阶旋风打粉机 | `producer/block_powder_advanced_elc` | MV | 128 | 12 | 40 | 480 | 1,710 |
 | 电解机 | `producer/block_electrolyzer_elc` | LV | 32 | 10 | 20 | 200 | 400 |
 | 金属成型机 | `producer/block_metal_former` | LV | 32 | 10 | 200 | 2,000 | 2,000 |
+| 进阶高压压缩机 | `producer/block_compressor_advanced_elc` | MV | 128 | 8 | 75 | 600 | 20,000 |
 | 精炼机 | `producer/block_oil_refinery_elc` | MV | 128 | 8 | 10 | 80 | 2,000 |
 | 磁化机 | `producer/block_magnetizer` | LV | 32 | 5 | 100 | 500 | 100 |
-| 进阶旋风打粉机 | `producer/block_powder_advanced_elc` | MV | 128 | 5 | 150 | 750 | 750 |
 | 装罐机 | `producer/block_canner_elc` | LV | 32 | 4 | 200 | 800 | 800 |
-| 电炉 | `producer/block_furnace_elc` | LV | 32 | 3 | 100 | 300 | 300 |
-| 批量工作台 | `producer/block_batch_crafter` | MV | 128 | 2 | 40 | 80 | 20,000 |
-| 压缩机 | `producer/block_compressor_elc` | LV | 32 | 2 | 300 | 600 | 600 |
-| 提取机 | `producer/block_extractor_elc` | LV | 32 | 2 | 300 | 600 | 600 |
-| 打粉机 | `producer/block_powder_elc` | LV | 32 | 2 | 300 | 600 | 600 |
+| 电炉 | `producer/block_furnace_elc` | LV | 32 | 3 | 100 | 300 | 600 |
+| 批量工作台 | `producer/block_batch_crafter` | MV | 128 | 2 | 40 | 80 | 20,080 |
+| 压缩机 | `producer/block_compressor_elc` | LV | 32 | 2 | 300 | 600 | 18,600 |
+| 提取机 | `producer/block_extractor_elc` | LV | 32 | 2 | 300 | 600 | 1,200 |
+| 打粉机 | `producer/block_powder_elc` | LV | 32 | 2 | 300 | 600 | 1,800 |
 | 收割机 | `producer/block_harvest_elc` | LV | 32 | 1 | 10 | 10 | 10,000 |
 | 作物监管机 | `producer/block_matron_elc` | LV | 32 | 1 | 10 | 10 | 10,000 |
 | 泵 | `producer/block_pump_elc` | LV | 32 | 1 | 20 | 20 | 20 |

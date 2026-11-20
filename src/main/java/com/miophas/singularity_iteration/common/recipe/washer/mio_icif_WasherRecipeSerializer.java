@@ -41,8 +41,9 @@ public static final MapCodec<mio_icif_WasherRecipe> CODEC = RecordCodecBuilder.m
             ItemStack.CODEC.optionalFieldOf("tertiaryResult", ItemStack.EMPTY).forGetter(mio_icif_WasherRecipe::getTertiaryResult),
             Codec.INT.optionalFieldOf("tertiaryCount", 0).forGetter(mio_icif_WasherRecipe::getTertiaryCount),
             // Other parameters
-            Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_WasherRecipe::getProcessingTime),
-            Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_WasherRecipe::getEnergyPerTick),
+            // 0.1.11.117: absent is -1 (the washer then runs its stock 400 t at 16 EU/t)
+            Codec.INT.optionalFieldOf("processingtime", -1).forGetter(mio_icif_WasherRecipe::getProcessingTimeRaw),
+            Codec.INT.optionalFieldOf("energypertick", -1).forGetter(mio_icif_WasherRecipe::getEnergyPerTickRaw),
             Codec.INT.optionalFieldOf("wateramount", DEFAULT_WATER_AMOUNT).forGetter(mio_icif_WasherRecipe::getWaterAmount)
         ).apply(instance, mio_icif_WasherRecipe::new)
     );
@@ -95,8 +96,8 @@ public static final MapCodec<mio_icif_WasherRecipe> CODEC = RecordCodecBuilder.m
         ItemStack tertiaryResult = OPTIONAL_ITEM_STREAM_CODEC.decode(buffer);
         int tertiaryCount = buffer.readVarInt();
         // Other parameters
-        int processingTime = buffer.readVarInt();
-        int energyPerTick = buffer.readVarInt();
+        int processingTime = buffer.readVarInt() - 1;   // 0.1.11.117: -1 (none) travels as 0
+        int energyPerTick = buffer.readVarInt() - 1;
         int waterAmount = buffer.readVarInt();
         
         return new mio_icif_WasherRecipe(group, ingredient, 
@@ -122,8 +123,8 @@ public static final MapCodec<mio_icif_WasherRecipe> CODEC = RecordCodecBuilder.m
         OPTIONAL_ITEM_STREAM_CODEC.encode(buffer, recipe.getTertiaryResult());
         buffer.writeVarInt(recipe.getTertiaryCount());
         // Other parameters
-        buffer.writeVarInt(recipe.getProcessingTime());
-        buffer.writeVarInt(recipe.getEnergyPerTick());
+        buffer.writeVarInt(recipe.getProcessingTimeRaw() + 1);
+        buffer.writeVarInt(recipe.getEnergyPerTickRaw() + 1);
         buffer.writeVarInt(recipe.getWaterAmount());
     }
 }

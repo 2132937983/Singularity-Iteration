@@ -409,8 +409,41 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         return java.util.Collections.emptyList();
     }
 
+    // ---- 0.1.11.117 (processing overhaul M10): the recipe's own time and power ----
+
+    /** The recipe's time if it writes one (niobium and titanium 200 t), else the stock 400 t. */
+    public static int ticksOf(@org.jetbrains.annotations.Nullable mio_icif_WasherRecipe recipe) {
+        return recipe != null ? recipe.processingTimeOverride().orElse(DEFAULT_WORK_TIME) : DEFAULT_WORK_TIME;
+    }
+
+    /** The recipe's EU/t if it writes one (niobium and titanium 10 EU/t), else the stock 16 EU/t. */
+    public static long powerOf(@org.jetbrains.annotations.Nullable mio_icif_WasherRecipe recipe) {
+        return recipe != null && recipe.energyPerTickOverride().isPresent() ? recipe.energyPerTickOverride().getAsInt() : DEFAULT_ENERGY_PER_TICK;
+    }
+
+    private @org.jetbrains.annotations.Nullable mio_icif_WasherRecipe currentWasherRecipe() {
+        return getRecipe(itemHandler.getStackInSlot(INPUT_SLOT)).orElse(null);
+    }
+
+    @Override
+    protected void updateProcessingParameters() {
+        int target = cycleScaledTicks(ticksOf(currentWasherRecipe()));
+        if (maxProgress != target) {
+            maxProgress = target;
+            if (progress > maxProgress) progress = maxProgress;
+        }
+    }
+
+    /** The recipe's power at the overclock's energy multiplier. */
+    @Override
+    public long getEffectiveEnergyPerTick() {
+        long base = super.getEffectiveEnergyPerTick();
+        return Math.max(1, Math.round(base * (double) powerOf(currentWasherRecipe()) / DEFAULT_ENERGY_PER_TICK));
+    }
+
     @Override
     protected void doWork() {
+        updateProcessingParameters();   // 0.1.11.117: the length follows the recipe
         // 0.1.11.114: this tick's water first; without it the washer waits (no energy, no progress)
         if (progress < maxProgress && !drawWater()) {
             stopWork();

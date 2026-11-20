@@ -174,7 +174,7 @@ public enum MetalFormerMode {
         }
 
         // Check that the machine has enough energy.
-        if (getEffectiveEnergyPerTick() <= 0 || progress < Math.max(1, getRecipeProcessingTime()) && !hasEnoughEnergy()) {
+        if (getEffectiveEnergyPerTick() <= 0 || progress < maxProgress && !hasEnoughEnergy()) {
             return false;
         }
 
@@ -228,7 +228,8 @@ public enum MetalFormerMode {
 
     @Override
     protected void doWork() {
-        if (progress < Math.max(1, getRecipeProcessingTime()) && !consumeEnergy()) { stopWork(); return; }
+        updateProcessingParameters();   // 0.1.11.117: the length follows the current recipe and mode
+        if (progress < maxProgress && !consumeEnergy()) { stopWork(); return; }
         isWorking = true;
     }
 
@@ -238,7 +239,7 @@ public enum MetalFormerMode {
     @Override
     protected void updateProgress() {
         if (isWorking) {
-            int recipeMaxProgress = Math.max(1, getRecipeProcessingTime());
+            int recipeMaxProgress = maxProgress;   // 0.1.11.117: the field (was the recipe time beside a stale field)
             int progressPerTick = takeProgressStep();   // 0.1.11.111: exact 0.7^n
             if (progress < recipeMaxProgress) {
                 progress = (int) Math.min(recipeMaxProgress, (long) progress + progressPerTick);
@@ -435,9 +436,23 @@ public enum MetalFormerMode {
         return currentMode;
     }
 
+    /**
+     * 0.1.11.117: the operation's length is the field, set from the recipe of the current mode (with the work cycle
+     * factor), like the advanced former; it stayed at the stock 200 before, so the overclocked ticks per operation and
+     * the work cycle were off for every recipe of another length.
+     */
+    @Override
+    protected void updateProcessingParameters() {
+        int target = cycleScaledTicks(Math.max(1, getRecipeProcessingTime()));
+        if (maxProgress != target) {
+            maxProgress = target;
+            if (progress > maxProgress) progress = maxProgress;
+        }
+    }
+
     @Override
     public int getMaxProgress() {
-        return getRecipeProcessingTime();
+        return maxProgress;
     }
 
     @Override

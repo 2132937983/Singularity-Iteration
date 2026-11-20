@@ -6,5 +6,7 @@
   "result": {
     "count": 9,
     "id": "mio_icif:resource/item_lead_plate"
-  }
+  },
+  "processingtime": 150,
+  "energypertick": 16
 }

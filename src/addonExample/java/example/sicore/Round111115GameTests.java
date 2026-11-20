@@ -16,7 +16,7 @@ import net.neoforged.neoforge.items.IItemHandlerModifiable;
 /**
  * 0.1.11.115 (processing overhaul M8): both metal formers run the recipe's time (the advanced one a fifth of it at
  * 50 EU/t); the block cutter runs the recipe's time and power when it writes them (logs 100 t × 2 EU/t; the copper block
- * keeps 900 t × 48 EU/t), and its blade wears by (material ÷ blade hardness)² a cut and breaks when worn through. (The
+ * 150 t × 16 EU/t since 0.1.11.117, by its hardness), and its blade wears by (material ÷ blade hardness)² a cut and breaks when worn through. (The
  * mod's common classes by reflection: addon examples do not compile against them.)
  */
 @GameTestHolder(CoreExampleMod.ID)
@@ -57,7 +57,7 @@ public final class Round111115GameTests {
         });
     }
 
-    /** Logs run 100 t at 2 EU/t, the copper block keeps 900 t at 48 EU/t; four log cuts wear an iron blade by 1. */
+    /** Logs run 100 t at 2 EU/t, the copper block 150 t at 16 EU/t (0.1.11.117); four log cuts wear an iron blade by 1. */
     @GameTest(template = "empty", timeoutTicks = 600)
     public static void cutterRunsRecipesAndWearsTheBlade(GameTestHelper h) {
         var m = place(h, new BlockPos(1, 2, 1), "producer/block_block_cutter");
@@ -66,7 +66,7 @@ public final class Round111115GameTests {
         items.setStackInSlot(0, new ItemStack(Items.COPPER_BLOCK, 2));
         h.onEachTick(() -> m.getEnergyStorageInternal().setStored(m.getEnergyStorageInternal().getCapacity()));
         h.runAfterDelay(3, () -> {
-            h.assertTrue(m.getMaxProgress() == 900 && m.getEffectiveEnergyPerTick() == 48, "copper block: " + m.getMaxProgress() + " t, " + m.getEffectiveEnergyPerTick() + " EU/t");
+            h.assertTrue(m.getMaxProgress() == 150 && m.getEffectiveEnergyPerTick() == 16, "copper block: " + m.getMaxProgress() + " t, " + m.getEffectiveEnergyPerTick() + " EU/t");
             items.setStackInSlot(0, new ItemStack(Items.OAK_LOG, 8));
             h.runAfterDelay(3, () -> {
                 h.assertTrue(m.getMaxProgress() == 100 && m.getEffectiveEnergyPerTick() == 2, "oak log: " + m.getMaxProgress() + " t, " + m.getEffectiveEnergyPerTick() + " EU/t");

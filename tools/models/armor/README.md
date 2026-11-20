@@ -4,6 +4,8 @@
 
 [查看游戏内穿戴、染色与第一人称截图](preview-in-game.png)
 
+[查看量子普通框架与推进框架在悬停、满推力时的实机对照](quantum/preview-in-flight.png)
+
 | 套装 | 编辑工程 | 重建游戏资源 |
 |---|---|---|
 | 纳米 | [nano_suit_pure.bbmodel](nano/nano_suit_pure.bbmodel) | `python tools/models/armor/nano/bake_nano.py` |

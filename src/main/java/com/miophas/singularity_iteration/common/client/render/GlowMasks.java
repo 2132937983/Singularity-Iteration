@@ -6,6 +6,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
@@ -30,9 +31,8 @@ public final class GlowMasks {
         public boolean isEmpty() { return texture == null || count == 0; }
     }
 
-    private record Entry(Map<String, float[][]> geometry, Mask mask) { }
-
-    private static final Map<String, Entry> CACHE = new HashMap<>();
+    // A moving quantum wearer and a stowed wearer can share the same texture in one frame.
+    private static final Map<String, IdentityHashMap<Map<String, float[][]>, Mask>> CACHE = new HashMap<>();
 
     /** Called by the client reload listener with the baked models. */
     public static synchronized void invalidate() {
@@ -41,11 +41,8 @@ public final class GlowMasks {
 
     /** The glow of baked piece {@code name} (for example {@code quantum_chestplate}) over its {@code geometry}. */
     public static synchronized Mask of(String name, Map<String, float[][]> geometry) {
-        Entry e = CACHE.get(name);
-        if (e != null && e.geometry() == geometry) return e.mask();
-        Mask mask = load(name, geometry);
-        CACHE.put(name, new Entry(geometry, mask));
-        return mask;
+        return CACHE.computeIfAbsent(name, k -> new IdentityHashMap<>())
+            .computeIfAbsent(geometry, quads -> load(name, quads));
     }
 
     private static Mask load(String name, Map<String, float[][]> geometry) {

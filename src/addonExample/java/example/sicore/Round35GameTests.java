@@ -214,16 +214,23 @@ public final class Round35GameTests {
     public static void nanoItemsUseTheirModelAndBootsFaceForward(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
         for (String piece : new String[]{"helmet", "chestplate", "leggings", "boots"}) {
-            // 0.1.10.11: the 3D piece everywhere, the inventory included (builtin/entity)
             String problem = Round183GameTests.bakedArmorItemModel("armor/item_armor_nano_" + piece);
             if (problem != null) problems.add(piece + " " + problem);
         }
         String boots = Round33GameTests.resource("/assets/mio_icif/armor_models/nano_boots.json");
         var parts = com.google.gson.JsonParser.parseString(boots).getAsJsonObject().getAsJsonObject("parts");
-        double minZ = Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
         for (String part : new String[]{"right_leg", "left_leg"}) {
+            double minZ = Double.POSITIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
             for (var q : parts.getAsJsonArray(part)) {
                 var v = q.getAsJsonObject().getAsJsonArray("v");
+                // The narrow heel stabiliser can extend past the toe. Measure the broad outsole.
+                double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
+                for (int i = 0; i < 4; i++) {
+                    double x = v.get(i * 5).getAsDouble();
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                }
+                if (maxX - minX < 2) continue;
                 for (int i = 0; i < 4; i++) {
                     if (v.get(i * 5 + 1).getAsDouble() <= 10.5) continue;   // 0.1.11.27: at the sole (see Round180)
                     double z = v.get(i * 5 + 2).getAsDouble();
@@ -231,9 +238,9 @@ public final class Round35GameTests {
                     maxZ = Math.max(maxZ, z);
                 }
             }
+            if (!Double.isFinite(minZ) || -minZ <= maxZ)
+                problems.add(part + " outsole faces backwards: z from " + minZ + " to " + maxZ);
         }
-        // the toe caps reach further than the heel at the sole: the front (-z) must be the long side
-        if (-minZ <= maxZ) problems.add("boots face backwards: z from " + minZ + " to " + maxZ);
         h.assertTrue(problems.isEmpty(), "nano: " + problems);
         h.succeed();
     }

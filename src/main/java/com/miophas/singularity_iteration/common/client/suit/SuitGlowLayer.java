@@ -186,7 +186,7 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
             Light light = light(entity, slot, partial);
             if (light == null) continue;
             BakedArmorModel model = model(light.model());
-            var geometry = model.geometry();
+            var geometry = model.wornGeometry(entity, partial);
             if (geometry.isEmpty()) continue;
             GlowMasks.Mask mask = GlowMasks.of(light.model(), geometry);
             if (mask.isEmpty()) continue;
@@ -196,7 +196,7 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
                 case HEAD -> part(pose, vc, model.head, mask, "head", light);
                 case CHEST -> {
                     // 0.1.10.32 (S-8): the moving parts follow the worn model (the same offsets as BakedArmorModel)
-                    boolean moving = "quantum_chestplate".equals(light.model()) && FcsClientConfig.suitGimmicks();
+                    boolean moving = model.supportsChestGimmicks() && FcsClientConfig.suitGimmicks();
                     float vent = moving ? SuitGimmicks.vent(entity, partial) : 0F;
                     ventSlide = SuitFxRules.VENT_SLIDE * vent;
                     shoulderSlide = moving ? SuitGimmicks.shoulder(entity, partial) : 0F;
@@ -229,9 +229,10 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
      */
     public static void drawArm(PoseStack pose, MultiBufferSource buffers, LivingEntity entity, ModelPart arm, boolean right, boolean hand) {
         if (!FcsClientConfig.suitGlow()) return;
-        Light light = light(entity, EquipmentSlot.CHEST, net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
+        float partial = net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        Light light = light(entity, EquipmentSlot.CHEST, partial);
         if (light == null) return;
-        var geometry = model(light.model()).geometry();
+        var geometry = model(light.model()).wornGeometry(entity, partial);
         if (geometry.isEmpty()) return;
         GlowMasks.Mask mask = GlowMasks.of(light.model(), geometry);
         if (mask.isEmpty()) return;

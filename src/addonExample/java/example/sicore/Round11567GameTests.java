@@ -57,6 +57,11 @@ public final class Round11567GameTests {
         return out;
     }
 
+    /** Exact active ports over one full PWM frame; an opposite firing is a failure. */
+    private static java.util.Set<String> ports(String... names) {
+        return java.util.Arrays.stream(names).map(name -> "rcs_locator_" + name).collect(java.util.stream.Collectors.toSet());
+    }
+
     private static final float[] STILL = {0, 0, 0};
 
     @GameTest(template = "empty", batch = "round11567_hover", timeoutTicks = 20)
@@ -77,13 +82,13 @@ public final class Round11567GameTests {
     public static void strafeAndDriftFireTheRightSide(GameTestHelper h) {
         List<Object> base = suit("BASE");
         var left = fired(base, command(0, 0, 1, STILL, 0, 0, 0), false, 0);
-        h.assertTrue(left.contains("pod_right_side_upper") && left.contains("forearm_right"), "strafe left does not push from the right: " + left);
-        h.assertTrue(left.stream().noneMatch(n -> n.contains("left_side") || n.equals("forearm_left")), "strafe left fires the left jets: " + left);
+        h.assertTrue(left.equals(ports("waist_right_out")), "strafe left: " + left);
+        var right = fired(base, command(0, 0, -1, STILL, 0, 0, 0), false, 0);
+        h.assertTrue(right.equals(ports("waist_left_out")), "strafe right: " + right);
         var forward = fired(base, command(0, 1, 0, STILL, 0, 0, 0), false, 0);
-        h.assertTrue(forward.contains("spine") && !forward.contains("chest_right"), "forward stick: " + forward);
-        // the stick released while drifting forwards (back velocity negative): the chest jets stop the drift
+        h.assertTrue(forward.equals(ports("calf_left_back", "calf_right_back")), "forward stick: " + forward);
         var stop = fired(base, command(0, 0, 0, new float[]{0, 0, -0.3F}, 0, 0, 0), false, 0);
-        h.assertTrue(stop.contains("chest_right") && stop.contains("chest_left") && !stop.contains("spine"), "the hover does not brake: " + stop);
+        h.assertTrue(stop.equals(ports("shoulder_left_front", "shoulder_right_front")), "the hover does not brake: " + stop);
         h.succeed();
     }
 
@@ -91,15 +96,13 @@ public final class Round11567GameTests {
     public static void yawFiresTheLevers(GameTestHelper h) {
         List<Object> base = suit("BASE");
         var hover = fired(base, command(0, 0, 0, STILL, 90, 0, 0), false, 0);
-        h.assertTrue(hover.contains("pod_right_side_upper") && hover.contains("pod_right_side_lower"), "hover yaw right: " + hover);
-        h.assertTrue(hover.stream().noneMatch(n -> n.startsWith("pod_left_side")), "hover yaw right fires the left pods: " + hover);
+        h.assertTrue(hover.equals(ports("calf_left_back", "shoulder_right_front", "waist_right_out")), "hover yaw right: " + hover);
         var hoverLeft = fired(base, command(0, 0, 0, STILL, -90, 0, 0), false, 0);
-        h.assertTrue(hoverLeft.contains("pod_left_side_upper") && hoverLeft.stream().noneMatch(n -> n.startsWith("pod_right_side")), "hover yaw left: " + hoverLeft);
-        // the cruise: head first, so the jets above the waist on the left swing the head to the right
+        h.assertTrue(hoverLeft.equals(ports("calf_right_back", "shoulder_left_front", "waist_left_out")), "hover yaw left: " + hoverLeft);
         var cruise = fired(base, command(1, 0, 0, STILL, 90, 0, 0), true, 0);
-        h.assertTrue(cruise.contains("pod_left_side_upper") && !cruise.contains("pod_right_side_upper"), "cruise yaw right: " + cruise);
+        h.assertTrue(cruise.equals(ports("waist_left_out", "calf_left_down", "shoulder_right_up")), "cruise yaw right: " + cruise);
         var prop = fired(suit("PROPULSION"), command(0, 0, 0, STILL, 90, 0, 0), false, 0);
-        h.assertTrue(prop.contains("booster_right_side") && !prop.contains("booster_left_side"), "propulsion yaw right: " + prop);
+        h.assertTrue(prop.equals(hover), "the propulsion frame changes the direction of the RCS response: " + prop);
         h.succeed();
     }
 
@@ -107,9 +110,9 @@ public final class Round11567GameTests {
     public static void pitchFiresTheLevers(GameTestHelper h) {
         List<Object> base = suit("BASE");
         var up = fired(base, command(1, 0, 0, STILL, 0, 90, 0), true, 0);
-        h.assertTrue(up.contains("crown") && !up.contains("spine"), "nose up: " + up);
+        h.assertTrue(up.equals(ports("shoulder_left_up", "shoulder_right_up", "shoulder_left_front", "shoulder_right_front", "calf_left_back", "calf_right_back")), "nose up: " + up);
         var down = fired(base, command(1, 0, 0, STILL, 0, -90, 0), true, 0);
-        h.assertTrue(down.contains("spine") && !down.contains("crown"), "nose down: " + down);
+        h.assertTrue(down.equals(ports("calf_left_down", "calf_right_down")), "nose down: " + down);
         h.succeed();
     }
 
@@ -118,7 +121,7 @@ public final class Round11567GameTests {
         List<Object> base = suit("BASE");
         Object brake = command(1, 0, 0, STILL, 0, 0, 1);
         var fired = fired(base, brake, true, 1);
-        h.assertTrue(fired.contains("crown") && fired.contains("retro_right") && fired.contains("retro_left"), "the brake jets: " + fired);
+        h.assertTrue(fired.equals(ports("shoulder_right_up", "shoulder_left_up")), "the brake jets: " + fired);
         float[] braking = allocate(base, brake, true, 1, 0), cruising = allocate(base, command(1, 0, 0, STILL, 0, 0, 0), true, 0, 0);
         for (int i = 0; i < braking.length; i++) {
             if (!kind(base.get(i)).equals("MAIN")) continue;

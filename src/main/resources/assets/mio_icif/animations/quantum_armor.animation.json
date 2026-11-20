@@ -1,0 +1,466 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.quantum.stowed": {
+      "loop": true,
+      "animation_length": 1,
+      "bones": {
+        "module_flight_boots_left_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_flight_boots_right_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_mach_pod_left_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_mach_pod_right_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.quantum.hover": {
+      "loop": true,
+      "animation_length": 3.2,
+      "bones": {
+        "module_flight_boots_left_glow": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "module_flight_boots_right_glow": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "module_mach_pod_left_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_mach_pod_right_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "armorHead_float": {
+          "position": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.8": [
+              0,
+              0.1,
+              0
+            ],
+            "1.6": [
+              0,
+              0,
+              0
+            ],
+            "2.4": [
+              0,
+              -0.1,
+              0
+            ],
+            "3.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "armorBody_float": {
+          "position": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.8": [
+              0,
+              -0.12,
+              0
+            ],
+            "1.6": [
+              0,
+              0,
+              0
+            ],
+            "2.4": [
+              0,
+              0.12,
+              0
+            ],
+            "3.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.quantum.rcs_flight": {
+      "loop": true,
+      "animation_length": 0.2,
+      "bones": {},
+      "particle_effects": {
+        "0.0": {
+          "effect": "quantum_rcs_sample",
+          "locator": "module_flight_system"
+        }
+      }
+    },
+    "animation.quantum.mach4_boost": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 2,
+      "bones": {
+        "module_flight_boots_left_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_flight_boots_right_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "armorBody_float": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              6,
+              0,
+              0
+            ]
+          },
+          "position": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              0,
+              -0.15,
+              0.28
+            ]
+          }
+        },
+        "module_mach_pod_left": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              38,
+              0,
+              0
+            ]
+          },
+          "position": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              0,
+              -0.55,
+              0.42
+            ]
+          }
+        },
+        "module_mach_pod_right": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              38,
+              0,
+              0
+            ]
+          },
+          "position": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              0,
+              -0.55,
+              0.42
+            ]
+          }
+        },
+        "module_mach_pod_left_glow": {
+          "scale": [
+            "query.anim_time >= 0.50",
+            "query.anim_time >= 0.50",
+            "query.anim_time >= 0.50"
+          ]
+        },
+        "module_mach_pod_right_glow": {
+          "scale": [
+            "query.anim_time >= 0.50",
+            "query.anim_time >= 0.50",
+            "query.anim_time >= 0.50"
+          ]
+        }
+      }
+    },
+    "animation.quantum.mach4_sustain": {
+      "loop": true,
+      "animation_length": 0.4,
+      "bones": {
+        "module_flight_boots_left_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_flight_boots_right_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "armorBody_float": {
+          "rotation": [
+            6,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            -0.15,
+            0.28
+          ]
+        },
+        "module_mach_pod_left": {
+          "rotation": [
+            38,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            -0.55,
+            0.42
+          ]
+        },
+        "module_mach_pod_right": {
+          "rotation": [
+            38,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            -0.55,
+            0.42
+          ]
+        },
+        "module_mach_pod_left_glow": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "module_mach_pod_right_glow": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.quantum.mach4_retract": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.6,
+      "bones": {
+        "module_flight_boots_left_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "module_flight_boots_right_glow": {
+          "scale": [
+            0,
+            0,
+            0
+          ]
+        },
+        "armorBody_float": {
+          "rotation": {
+            "0.0": [
+              6,
+              0,
+              0
+            ],
+            "0.08": [
+              6,
+              0,
+              0
+            ],
+            "0.58": [
+              0,
+              0,
+              0
+            ]
+          },
+          "position": {
+            "0.0": [
+              0,
+              -0.15,
+              0.28
+            ],
+            "0.08": [
+              0,
+              -0.15,
+              0.28
+            ],
+            "0.58": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "module_mach_pod_left": {
+          "rotation": {
+            "0.0": [
+              38,
+              0,
+              0
+            ],
+            "0.08": [
+              38,
+              0,
+              0
+            ],
+            "0.58": [
+              0,
+              0,
+              0
+            ]
+          },
+          "position": {
+            "0.0": [
+              0,
+              -0.55,
+              0.42
+            ],
+            "0.08": [
+              0,
+              -0.55,
+              0.42
+            ],
+            "0.58": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "module_mach_pod_right": {
+          "rotation": {
+            "0.0": [
+              38,
+              0,
+              0
+            ],
+            "0.08": [
+              38,
+              0,
+              0
+            ],
+            "0.58": [
+              0,
+              0,
+              0
+            ]
+          },
+          "position": {
+            "0.0": [
+              0,
+              -0.55,
+              0.42
+            ],
+            "0.08": [
+              0,
+              -0.55,
+              0.42
+            ],
+            "0.58": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "module_mach_pod_left_glow": {
+          "scale": [
+            "query.anim_time < 0.06",
+            "query.anim_time < 0.06",
+            "query.anim_time < 0.06"
+          ]
+        },
+        "module_mach_pod_right_glow": {
+          "scale": [
+            "query.anim_time < 0.06",
+            "query.anim_time < 0.06",
+            "query.anim_time < 0.06"
+          ]
+        }
+      }
+    }
+  }
+}

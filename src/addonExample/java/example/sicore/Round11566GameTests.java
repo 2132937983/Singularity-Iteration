@@ -11,14 +11,13 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * 0.1.11.66 (quantum flight phase R0): the nozzle table of the quantum suit matches its models. Every port sits on its part
- * (inside the bounds of the part in the armour models, attachments included), every exhaust is a unit vector, the sets
- * mirror left and right, and each frame core has its own set: pods on the base, boosters under the propulsion core, field
- * rings only under the graviton core. In the hover the back main thrust is dark and the lift burns; in the cruise it burns.
+ * Checks the flight allocator against the shipped rig: ten independent RCS apertures, two opening
+ * acceleration pods, heel lift and the mutually exclusive graviton field emitters.
  */
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
@@ -48,54 +47,58 @@ public final class Round11566GameTests {
 
     private static String s(Object n, String accessor) { return String.valueOf(get(n, accessor)); }
 
-    /** Part bounds (pixels) {minX, maxX, minY, maxY, minZ, maxZ} from a model file, merged into {@code into}. */
-    private static void bounds(String file, Map<String, float[]> into) {
+    private static JsonObject asset(String file) {
         try (var in = Round33GameTests.common("suit.QuantumNozzles").getResourceAsStream(ROOT + file)) {
             if (in == null) throw new IllegalStateException("no model " + file);
-            JsonObject root = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (root.has("parts")) {
-                for (var e : root.getAsJsonObject("parts").entrySet()) {
-                    JsonElement p = e.getValue();
-                    merge(into, e.getKey(), p.isJsonObject() ? p.getAsJsonObject().getAsJsonArray("quads") : p.getAsJsonArray());
-                }
-            }
-            if (root.has("segments")) {
-                for (JsonElement seg : root.getAsJsonArray("segments")) {
-                    JsonObject o = seg.getAsJsonObject();
-                    if (o.get("quads").isJsonArray()) merge(into, o.get("part").getAsString(), o.getAsJsonArray("quads"));
-                }
-            }
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException(e);
+            return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+        } catch (java.io.IOException ex) {
+            throw new IllegalStateException(ex);
         }
     }
 
-    private static void merge(Map<String, float[]> into, String part, JsonArray quads) {
-        float[] b = into.computeIfAbsent(part, k -> new float[]{Float.MAX_VALUE, -Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE});
-        for (JsonElement q : quads) {
-            JsonArray v = q.getAsJsonObject().getAsJsonArray("v");
-            for (int i = 0; i < 4; i++) for (int k = 0; k < 3; k++) {
-                float c = v.get(i * 5 + k).getAsFloat();
-                b[k * 2] = Math.min(b[k * 2], c);
-                b[k * 2 + 1] = Math.max(b[k * 2 + 1], c);
-            }
-        }
+    private static Vec3 vec(JsonArray a, int i) {
+        return new Vec3(a.get(i).getAsDouble(), a.get(i + 1).getAsDouble(), a.get(i + 2).getAsDouble());
     }
 
-    private static String partKey(Object n) {
-        return s(n, "part").toLowerCase(java.util.Locale.ROOT);
+    private static Vec3 point(Object nozzle) {
+        return new Vec3(f(nozzle, "x"), f(nozzle, "y"), f(nozzle, "z"));
     }
 
-    private static void onModel(GameTestHelper h, List<?> nozzles, Map<String, float[]> parts, String what) {
-        for (Object n : nozzles) {
-            float[] b = parts.get(partKey(n));
-            h.assertTrue(b != null, what + ": no model part " + partKey(n));
-            float x = f(n, "x"), y = f(n, "y"), z = f(n, "z"), m = 0.6F;
-            h.assertTrue(x >= b[0] - m && x <= b[1] + m && y >= b[2] - m && y <= b[3] + m && z >= b[4] - m && z <= b[5] + m,
-                what + ": " + s(n, "name") + " is off its part at " + x + "," + y + "," + z);
-            float l = f(n, "dx") * f(n, "dx") + f(n, "dy") * f(n, "dy") + f(n, "dz") * f(n, "dz");
-            h.assertTrue(Math.abs(l - 1) < 1e-4F, what + ": " + s(n, "name") + " exhaust is not a unit vector");
+    private static Vec3 axis(Object nozzle) {
+        return new Vec3(f(nozzle, "dx"), f(nozzle, "dy"), f(nozzle, "dz"));
+    }
+
+    private static JsonObject face(JsonObject parts, String part, Vec3 normal) {
+        for (JsonElement element : parts.getAsJsonArray(part)) {
+            var quad = element.getAsJsonObject();
+            if (vec(quad.getAsJsonArray("n"), 0).distanceTo(normal) < .0001) return quad;
         }
+        throw new AssertionError("No " + normal + " face in " + part);
+    }
+
+    private static Vec3 centre(JsonObject quad) {
+        var vertices = quad.getAsJsonArray("v");
+        return vec(vertices, 0).add(vec(vertices, 5)).add(vec(vertices, 10)).add(vec(vertices, 15)).scale(.25);
+    }
+
+    private static void matches(GameTestHelper h, Vec3 actual, Vec3 expected, String what) {
+        h.assertTrue(actual.distanceTo(expected) < .001, what + ": " + actual + " vs " + expected);
+    }
+
+    /** Project the actual mark's UV centre onto its native quad, including flipped UV axes. */
+    private static Vec3 aperture(JsonObject quad, JsonArray rect) {
+        var v = quad.getAsJsonArray("v");
+        double du = (rect.get(0).getAsDouble() + .5) / 128 - v.get(3).getAsDouble();
+        double dv = (rect.get(1).getAsDouble() + .5) / 128 - v.get(4).getAsDouble();
+        double u1 = v.get(8).getAsDouble() - v.get(3).getAsDouble();
+        double v1 = v.get(9).getAsDouble() - v.get(4).getAsDouble();
+        double u3 = v.get(18).getAsDouble() - v.get(3).getAsDouble();
+        double v3 = v.get(19).getAsDouble() - v.get(4).getAsDouble();
+        double det = u1 * v3 - u3 * v1;
+        double a = (du * v3 - u3 * dv) / det, b = (u1 * dv - du * v1) / det;
+        if (!(a > 0 && a < 1 && b > 0 && b < 1)) throw new AssertionError("RCS texel outside face");
+        Vec3 p = vec(v, 0);
+        return p.add(vec(v, 5).subtract(p).scale(a)).add(vec(v, 15).subtract(p).scale(b));
     }
 
     /** Each nozzle on the right has its mirror on the left. */
@@ -105,29 +108,66 @@ public final class Round11566GameTests {
             if (!name.contains("right")) continue;
             Object twin = nozzles.stream().filter(o -> s(o, "name").equals(name.replace("right", "left"))).findFirst().orElse(null);
             h.assertTrue(twin != null, what + ": " + name + " has no left twin");
-            h.assertTrue(Math.abs(f(n, "x") + f(twin, "x")) < 0.45F && Math.abs(f(n, "dx") + f(twin, "dx")) < 1e-4F
+            h.assertTrue(Math.abs(f(n, "x") + f(twin, "x")) < 1e-4F && f(n, "y") == f(twin, "y") && f(n, "z") == f(twin, "z")
+                && Math.abs(f(n, "dx") + f(twin, "dx")) < 1e-4F
                 && f(n, "dy") == f(twin, "dy") && f(n, "dz") == f(twin, "dz"), what + ": " + name + " is not mirrored");
         }
     }
 
     @GameTest(template = "empty", batch = "round11566_nozzles", timeoutTicks = 20)
     public static void nozzlesSitOnTheModels(GameTestHelper h) {
-        Map<String, float[]> base = new HashMap<>(), propulsion = new HashMap<>(), graviton = new HashMap<>(), feet = new HashMap<>();
-        bounds("quantum_chestplate.json", base);
-        bounds("quantum_chestplate.json", propulsion);
-        bounds("attachments/propulsion_quantum_chestplate.json", propulsion);
-        bounds("quantum_chestplate.json", graviton);
-        bounds("attachments/graviton_quantum_chestplate.json", graviton);
-        bounds("quantum_boots.json", feet);
-        onModel(h, chest("BASE"), base, "base");
-        onModel(h, chest("PROPULSION"), propulsion, "propulsion");
-        onModel(h, chest("GRAVITON"), graviton, "graviton");
-        onModel(h, boots("BASE"), feet, "boots");
-        onModel(h, boots("GRAVITON"), feet, "graviton boots");
-        for (String v : new String[]{"BASE", "PROPULSION", "GRAVITON"}) {
+        JsonObject model = asset("quantum_mounts.json"), parts = model.getAsJsonObject("parts");
+        Map<String, String> limbs = new HashMap<>();
+        for (var entry : model.getAsJsonArray("segments")) {
+            var data = entry.getAsJsonObject();
+            limbs.put(data.get("name").getAsString(), data.get("part").getAsString());
+        }
+        var bindings = asset("quantum_bindings.json").getAsJsonObject("flight");
+        var sockets = bindings.getAsJsonArray("sockets");
+        h.assertTrue(sockets.size() == 10, "expected ten individually addressed RCS outlets");
+        for (String v : List.of("BASE", "PROPULSION")) {
+            for (var raw : sockets) {
+                var socket = raw.getAsJsonObject();
+                String name = socket.get("bone").getAsString();
+                var list = socket.get("equipment_slot").getAsString().equals("feet") ? boots(v) : chest(v);
+                Object nozzle = named(list, name);
+                h.assertTrue(s(nozzle, "part").equalsIgnoreCase(limbs.get(name)), "wrong posed limb for " + name);
+                Vec3 normal = axis(nozzle);
+                var quad = face(parts, name, normal);
+                var rect = socket.getAsJsonArray("atlas_rect");
+                h.assertTrue(rect.get(2).getAsInt() == 1 && rect.get(3).getAsInt() == 1, "port is not a single texel: " + name);
+                matches(h, point(nozzle), aperture(quad, rect).add(normal.scale(.03)), name);
+            }
+            for (String side : List.of("left", "right")) {
+                String name = "thruster_nozzle_" + side;
+                Vec3 down = new Vec3(0, 1, 0);
+                Vec3 closed = centre(face(parts, "mach_rail_" + side, down));
+                Vec3 hinge = centre(face(parts, "mach_pod_" + side, down.scale(-1)));
+                for (float opening : new float[]{0F, .5F, 1F}) {
+                    var nozzles = (List<?>) Round33GameTests.call(Round33GameTests.common("suit.QuantumNozzles"), "chest", variant(v), opening);
+                    Object nozzle = named(nozzles, name);
+                    double angle = Math.toRadians(38 * opening);
+                    Vec3 direction = new Vec3(0, Math.cos(angle), Math.sin(angle));
+                    Vec3 expected = hinge.add(0, .55 * opening, .42 * opening).add(direction.scale(closed.y - hinge.y));
+                    matches(h, point(nozzle), expected, name + " at " + opening);
+                    matches(h, axis(nozzle), direction, name + " exhaust axis");
+                }
+            }
+        }
+        for (String v : List.of("BASE", "PROPULSION", "GRAVITON")) {
             mirrored(h, chest(v), v);
             mirrored(h, boots(v), v + " boots");
+            for (String side : List.of("left", "right")) {
+                Object heel = named(boots(v), "sole_" + side);
+                matches(h, point(heel), centre(face(parts, "hover_strip_" + side, axis(heel))), "heel " + side);
+                Object pad = named(chest("GRAVITON"), "pad_" + side);
+                Object shoulder = named(chest("BASE"), "rcs_locator_shoulder_" + side + "_up");
+                matches(h, point(pad), point(shoulder), "graviton pad " + side);
+                matches(h, axis(pad), axis(shoulder), "graviton field normal " + side);
+            }
         }
+        Object gyro = named(chest("GRAVITON"), "gyro");
+        matches(h, point(gyro), centre(face(parts, "module_graviton", axis(gyro))).add(axis(gyro).scale(.03)), "gyro");
         h.succeed();
     }
 
@@ -143,12 +183,21 @@ public final class Round11566GameTests {
         h.assertTrue(variant("PROPULSION") == Round33GameTests.call(variant, "of", Enum.valueOf(cast(core), "PROPULSION")), "propulsion");
         h.assertTrue(variant("GRAVITON") == Round33GameTests.call(variant, "of", Enum.valueOf(cast(core), "GRAVITON")), "graviton");
         List<?> base = chest("BASE"), prop = chest("PROPULSION"), grav = chest("GRAVITON");
-        h.assertTrue(base.stream().filter(n -> s(n, "name").startsWith("pod_") && s(n, "kind").equals("MAIN")).count() == 4 && count(base, "MAIN") == 4, "the base has not four back pods");
-        h.assertTrue(count(prop, "MAIN") == 2 && prop.stream().filter(n -> s(n, "kind").equals("MAIN")).allMatch(n -> f(n, "y") > 12 && f(n, "z") > 7),
-            "the propulsion main thrust is not the two boosters");
-        h.assertTrue(prop.stream().noneMatch(n -> s(n, "name").startsWith("pod_") || s(n, "name").equals("spine")), "the boosters do not cover the pods");
-        h.assertTrue(count(grav, "FIELD") == grav.size() && count(boots("GRAVITON"), "FIELD") == 2, "a graviton suit has flames");
-        h.assertTrue(count(base, "RCS") >= 4, "too few attitude jets");
+        for (List<?> jets : List.of(base, prop)) {
+            h.assertTrue(jets.size() == 8 && count(jets, "RCS") == 6 && count(jets, "MAIN") == 2, "wrong chest exhausts");
+            for (String side : List.of("left", "right")) {
+                Object nozzle = named(jets, "thruster_nozzle_" + side);
+                h.assertTrue(s(nozzle, "kind").equals("MAIN") && s(nozzle, "part").equals("BODY"), "unbound main nozzle");
+            }
+        }
+        h.assertTrue(f(named(prop, "thruster_nozzle_left"), "size") > f(named(base, "thruster_nozzle_left"), "size"),
+            "the propulsion frame lost its larger main exhaust");
+        for (String v : List.of("BASE", "PROPULSION")) {
+            List<?> feet = boots(v);
+            h.assertTrue(feet.size() == 6 && count(feet, "RCS") == 4 && count(feet, "LIFT") == 2, "wrong boot ports");
+        }
+        h.assertTrue(grav.size() == 3 && count(grav, "FIELD") == 3 && boots("GRAVITON").size() == 2 && count(boots("GRAVITON"), "FIELD") == 2,
+            "the graviton rig must emit fields only");
         h.succeed();
     }
 
@@ -164,12 +213,13 @@ public final class Round11566GameTests {
     public static void hoverLiftsAndCruisePushes(GameTestHelper h) {
         List<?> base = chest("BASE"), feet = boots("BASE");
         float[] hover = {0.45F, 0.45F, 0.75F, 0.75F}, cruise = {0.75F, 0.75F, 1F, 1F};
-        Object pod = named(base, "pod_right_upper"), tail = named(base, "tail"), palm = named(base, "palm_left"), crown = named(base, "crown");
-        h.assertTrue(out(pod, hover, 0F) == 0 && out(named(feet, "heel_right"), hover, 0F) == 0, "the main thrust burns in the hover");
-        h.assertTrue(out(tail, hover, 0F) > 0.5F && out(named(feet, "sole_left"), hover, 0F) == 0.75F && out(palm, hover, 0F) == 0.45F,
-            "the lift does not hold the hover");
-        h.assertTrue(out(pod, cruise, 1F) > 0.9F && out(tail, cruise, 1F) < out(tail, hover, 0F), "the cruise does not push");
-        h.assertTrue(out(crown, cruise, 1F) == 0, "an attitude jet burns before the allocator");
+        Object pod = named(base, "thruster_nozzle_right");
+        h.assertTrue(out(pod, hover, 0) == 0 && out(named(base, "thruster_nozzle_left"), hover, 0) == 0, "main thrust burns in hover");
+        float[] asymmetrical = {0, 0, .2F, .8F};
+        h.assertTrue(out(named(feet, "sole_right"), asymmetrical, 0) == .2F && out(named(feet, "sole_left"), asymmetrical, 0) == .8F,
+                "heel lift does not follow the individual foot");
+        h.assertTrue(out(pod, cruise, 1F) > .9F && out(named(base, "thruster_nozzle_left"), cruise, 1F) > .9F, "cruise does not push");
+        h.assertTrue(out(named(base, "rcs_locator_shoulder_right_up"), cruise, 1F) == 0, "RCS fires before allocation");
         float nan = out(pod, new float[]{Float.NaN}, Float.NaN);
         h.assertTrue(nan == 0 && out(pod, null, 2F) <= 1F, "the output is not bounded");
         h.succeed();

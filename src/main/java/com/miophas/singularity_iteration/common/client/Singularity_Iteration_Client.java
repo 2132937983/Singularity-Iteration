@@ -221,6 +221,7 @@ public class Singularity_Iteration_Client {
         event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> {
             com.miophas.singularity_iteration.common.client.render.BakedArmorModel.invalidate();
             com.miophas.singularity_iteration.common.client.render.CoreAttachmentModel.invalidate();
+            com.miophas.singularity_iteration.common.client.suit.QuantumWornMounts.invalidate();
             com.miophas.singularity_iteration.common.client.render.GlowMasks.invalidate();
         });
     }

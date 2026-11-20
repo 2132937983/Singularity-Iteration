@@ -85,7 +85,7 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         // 0.1.11.66 (R0): the jets leave the back ports of the worn chestplate (pods, boosters; a graviton core shows rings)
         // and the soles of the boots (QuantumNozzles)
         float sole = Math.max(boots ? jet * 0.75F : 0F, burst);
-        for (com.miophas.singularity_iteration.common.suit.QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
+        for (com.miophas.singularity_iteration.common.suit.QuantumNozzles.Nozzle n : NozzleDraw.worn(player, partial)) {
             boolean back = n.part() == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Part.BODY;
             boolean foot = n.name().startsWith("sole");
             var kind = n.kind();

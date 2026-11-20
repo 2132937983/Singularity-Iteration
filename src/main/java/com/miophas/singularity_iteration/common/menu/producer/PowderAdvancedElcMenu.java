@@ -37,7 +37,7 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.POWDER_ADVANCED_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 5, blockEntity);
+            null, DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -46,8 +46,24 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
         registerMachineMoveRules();
     }
 
+    /** 0.1.11.109: data 5 rotor speed ‰, 6 hold speed on, 7 held now (the first five as before). */
+    public static final int DATA_COUNT = 8;
+    /** 0.1.11.109: menu button that switches hold speed. */
+    public static final int BUTTON_HOLD_SPEED = 0;
+
     private ISlotLayout getSlotLayout() {
-        return blockEntity != null ? blockEntity.getSlotLayout() : mio_icif_powder_advanced_elc.getOrCreateLayout();
+        return mio_icif_powder_advanced_elc.getOrCreateLayout();
+    }
+
+    public int getRotorSpeedPermille() { return data.get(5); }
+    public boolean isHoldSpeedOn() { return data.get(6) != 0; }
+    public boolean isHoldingNow() { return data.get(7) != 0; }
+
+    @Override
+    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+        if (id != BUTTON_HOLD_SPEED) return false;
+        if (blockEntity != null) blockEntity.toggleHoldSpeed();
+        return true;
     }
 
     @Override
@@ -128,6 +144,9 @@ public class PowderAdvancedElcMenu extends mio_icif_machine_menu {
             int maxEnergy = (int) blockEntity.getEnergyStorage().getCapacity();
             this.setSyncData(3, energy);
             this.setSyncData(4, maxEnergy);
+            this.setSyncData(5, (int) Math.round(blockEntity.getRotorSpeed() * 1000));
+            this.setSyncData(6, blockEntity.isHoldingSpeed() ? 1 : 0);
+            this.setSyncData(7, blockEntity.isHolding() ? 1 : 0);
         }
     }
 

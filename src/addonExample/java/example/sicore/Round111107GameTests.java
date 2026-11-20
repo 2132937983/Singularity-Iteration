@@ -75,10 +75,10 @@ public final class Round111107GameTests {
         h.runAfterDelay(5, () -> {
             Object ca = call(a, "processCost"), cb = call(b, "processCost");
             h.assertTrue((long) call(ca, "energy") == 600 && (long) call(ca, "power") == 2, "macerator " + ca);
-            h.assertTrue((long) call(cb, "energy") == 750 && (long) call(cb, "power") == 5, "advanced macerator " + cb);
+            h.assertTrue((long) call(cb, "energy") == 480 && (long) call(cb, "power") == 12, "advanced macerator (0.1.11.109: 480 EU at 12 EU/t without input) " + cb);
             h.assertTrue((int) call(a, "getMaxProgress") == 300, "macerator ticks " + call(a, "getMaxProgress"));
             h.assertTrue((long) call(a, "getEffectiveEnergyPerTick") == 2, "macerator EU/t " + call(a, "getEffectiveEnergyPerTick"));
-            h.assertTrue((int) call(b, "getMaxProgress") == 150, "advanced macerator ticks " + call(b, "getMaxProgress"));
+            h.assertTrue((int) call(b, "getMaxProgress") == 40, "advanced macerator ticks (0.1.11.109) " + call(b, "getMaxProgress"));
             h.succeed();
         });
     }

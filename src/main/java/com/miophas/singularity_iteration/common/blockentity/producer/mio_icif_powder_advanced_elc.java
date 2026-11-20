@@ -1,19 +1,25 @@
 package com.miophas.singularity_iteration.common.blockentity.producer;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.common.menu.producer.PowderAdvancedElcMenu;
+import com.miophas.singularity_iteration.common.processing.Comminution;
+import com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes;
+import com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe;
+import com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput;
+import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
-import com.miophas.singularity_iteration.core.api.energy.ICableTier;
-import com.miophas.singularity_iteration.core.prefab.blockentity.GenericMachineBlockEntity;
-import com.miophas.singularity_iteration.core.api.machine.IProducerBlock;
+import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 import com.miophas.singularity_iteration.core.api.machine.ISlotLayout;
-import com.miophas.singularity_iteration.core.api.machine.ISlotType;
-import com.miophas.singularity_iteration.core.api.machine.builder.IElectricMachineBuilder;
-import com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilderAPI;
-import com.miophas.singularity_iteration.core.api.recipe.IRecipeAPI;
+import com.miophas.singularity_iteration.core.api.machine.ProcessCost;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractStandardMachineBlockEntity;
+import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
+import com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache;
 import com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -23,201 +29,258 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
-
+/**
+ * 进阶旋风打粉机 (advanced cyclone macerator). 0.1.11.109 (processing overhaul M2): a dry air-swept mill with a cyclone
+ * classifier, in closed circuit.
+ * <ul>
+ *   <li><b>Closed circuit.</b> The cyclone takes the fines away and returns the coarse particles to the mill, so nothing
+ *       is ground twice: the energy per operation is 80 % of the macerator's (Bond's law at 47.2 EU per unit of work
+ *       index, {@link Comminution}). Iron ore 480 EU (was 750).</li>
+ *   <li><b>Rotor.</b> At full speed it draws 12 EU/t (MV): iron ore in 40 ticks. The rotor and fan have inertia: they
+ *       speed up 10 % a second while the mill has work and power, and coast down 5 % a second otherwise. Below full
+ *       speed the mill runs that share of the ticks, so its mean power and its speed fall together and the energy per
+ *       operation stays the same.</li>
+ *   <li><b>Hold speed.</b> A switch on the machine (menu button {@link PowderAdvancedElcMenu#BUTTON_HOLD_SPEED}) keeps the
+ *       rotor turning while the mill is idle for {@link #HOLD_EU_PER_TICK} EU/t, so the next item runs at full speed.</li>
+ *   <li><b>Cyclone.</b> At full speed the cut size d50 is about 75 μm with a circulating load of about 250 %
+ *       ({@link #cutSizeMicrons()}, {@link #circulatingLoadPercent()}; the screen shows them).</li>
+ * </ul>
+ * It used to be a {@code GenericMachineBlockEntity} (5 EU/t × 150 ticks for everything, 750 EU, registered through the
+ * machine builder from its constructor). The slots keep their order (input, output, battery, four upgrades), so saves
+ * load unchanged; the rotor starts at rest.
+ */
 @SuppressWarnings("null")
-public class mio_icif_powder_advanced_elc extends GenericMachineBlockEntity implements com.miophas.singularity_iteration.core.api.machine.ProcessCost.Source {
+public class mio_icif_powder_advanced_elc extends AbstractStandardMachineBlockEntity implements ProcessCost.Source {
+    public static final int INPUT_SLOT = 0, OUTPUT_SLOT = 1, BATTERY_SLOT = 2, UPGRADE_SLOT_START = 3, SLOT_COUNT = 7;
+    private static final SlotLayout LAYOUT = SlotLayout.builder().input(1).output(1).battery().upgrade(4).build();
 
+    /** Stock buffer (EU), as before; the hardest operation is added on top. */
     public static final long DEFAULT_CAPACITY = 750L;
     public static final long DEFAULT_MAX_RECEIVE = 128L;
     public static final long DEFAULT_MAX_EXTRACT = 0L;
-    public static final int DEFAULT_WORK_TIME = 150;
-    public static final long DEFAULT_ENERGY_PER_TICK = 5L;
+    /** Power at full rotor speed (EU/t). */
+    public static final long DEFAULT_ENERGY_PER_TICK = 12L;
+    /** Closed-circuit energy factor: the cyclone returns the coarse part, nothing is overground. */
+    public static final double EFFICIENCY = 0.8;
+    /** Ticks per operation for iron ore at full speed (the reference; the material decides). */
+    public static final int DEFAULT_WORK_TIME = 40;
+    /** The hardest common operation (gravel, about 952 EU) sizes the buffer. */
+    public static final long MAX_OPERATION_ENERGY = 960L;
+    /** Rotor speed change per tick: +10 % a second spinning up, −5 % a second coasting. */
+    public static final double SPIN_UP_PER_TICK = 0.10 / 20, COAST_PER_TICK = 0.05 / 20;
+    /** Power to keep the rotor turning while idle (hold speed). */
+    public static final long HOLD_EU_PER_TICK = 1L;
+    /** Cyclone at full speed: cut size d50 (μm) and circulating load (%). */
+    public static final double FULL_SPEED_D50 = 75, FULL_SPEED_CIRCULATING_LOAD = 250;
 
-    private static IMachineBuilderAPI.MachineConfiguration CACHED_CONFIGURATION;
-    private static ISlotLayout CACHED_LAYOUT;
-    private static ICableTier CACHED_TIER;
+    private final RecipeLookupCache<mio_icif_SingleItemRecipeInput, mio_icif_PowderRecipe> recipeCache =
+        new RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
+    private final RecipeLookupCache<mio_icif_SingleItemRecipeInput, mio_icif_PowderRecipe> slotCache =
+        new RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
 
-    private final int inputSlot;
-    private final int batterySlot;
-    private final int outputSlot;
+    /** Rotor speed, 0..1 (saved). */
+    private double speed;
+    /** Fraction of a run tick carried to the next tick (saved). */
+    private double carry;
+    /** Keep the rotor turning while idle (saved). */
+    private boolean holdSpeed;
+    /** The rotor is held this tick (for the screen). */
+    private boolean holding;
+
+    private static ISlotLayout menuLayout;
 
     public mio_icif_powder_advanced_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.POWDER_ADVANCED_ELC_ENTITY_TYPE.get());
     }
 
     public mio_icif_powder_advanced_elc(BlockPos pos, BlockState state, BlockEntityType<?> type) {
-        super(pos, state, type,
-            DEFAULT_CAPACITY,
-            DEFAULT_MAX_RECEIVE,
-            DEFAULT_MAX_EXTRACT,
-            DEFAULT_WORK_TIME,
-            getOrCreateLayout(),
-            DEFAULT_ENERGY_PER_TICK,
-            getOrCreateTier());
-        ISlotLayout layout = getOrCreateLayout();
-        this.inputSlot = layout.getInputSlots()[0];
-        this.batterySlot = layout.getBatterySlots()[0];
-        this.outputSlot = layout.getOutputSlots()[0];
-        setConfiguration(getOrCreateConfiguration());
+        super(pos, state, type, DEFAULT_CAPACITY, DEFAULT_MAX_RECEIVE, DEFAULT_MAX_EXTRACT, DEFAULT_WORK_TIME, LAYOUT,
+            DEFAULT_ENERGY_PER_TICK, CableTier.MV);
     }
 
+    /** The slot layout for the menu (input 0, output 1, battery 2, upgrades 3 to 6), the same as the machine's. */
     public static ISlotLayout getOrCreateLayout() {
-        if (CACHED_LAYOUT == null) {
-            CACHED_LAYOUT = MioIcifAPI.instance().getMachineBuilderAPI()
-                .createStandardLayout(1, 1, true, 4);
-        }
-        return CACHED_LAYOUT;
+        if (menuLayout == null) menuLayout = MioIcifAPI.instance().getMachineBuilderAPI().createStandardLayout(1, 1, true, 4);
+        return menuLayout;
     }
 
-    public static ICableTier getOrCreateTier() {
-        if (CACHED_TIER == null) {
-            CACHED_TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("mv");
-        }
-        return CACHED_TIER;
-    }
+    // ---- recipe ------------------------------------------------------------------------------------------------------
 
-    public static IMachineBuilderAPI.MachineConfiguration getOrCreateConfiguration() {
-        if (CACHED_CONFIGURATION == null) {
-            CACHED_CONFIGURATION = buildMachineDefinition();
-        }
-        return CACHED_CONFIGURATION;
-    }
-
-    private static IMachineBuilderAPI.MachineConfiguration buildMachineDefinition() {
-        IElectricMachineBuilder builder = MioIcifAPI.instance().getMachineBuilderAPI()
-            .createElectricMachineBuilder()
-            .setName("powder_advanced_elc")
-            .setTranslationKey("container.mio_icif.powder_advanced_elc")
-            .setEnergyCapacity(DEFAULT_CAPACITY)
-            .setMaxReceive(DEFAULT_MAX_RECEIVE)
-            .setMaxExtract(DEFAULT_MAX_EXTRACT)
-            .setEnergyPerTick(DEFAULT_ENERGY_PER_TICK)
-            .setProcessTime(DEFAULT_WORK_TIME)
-            .setCableTier(getOrCreateTier())
-            .useStandardLayout(1, 1, true, 4)
-            .setSupportsUpgrades(true)
-            .setMachineType(com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType.MACERATOR)
-            .withEntityType(mio_icif_block_entities.POWDER_ADVANCED_ELC_ENTITY_TYPE.get());
-
-        builder.buildAndRegister("mio_icif");
-        return builder.getConfiguration();
-    }
-
-
-
-    @Override
-    public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        ISlotType type = getOrCreateLayout().getType(slot);
-        if (type.isInput()) return isCrushable(stack);
-        if (type.isBattery()) return isBattery(stack);
-        if (type.isOutput()) return false;
-        if (type.isUpgrade()) return getItemAPI().isUpgrade(stack);
-        return false;
-    }
-
-    @Override
-    protected int[] getSlotsForDirection(Direction side) {
-        return new int[]{inputSlot, batterySlot, outputSlot};
+    private Optional<RecipeHolder<mio_icif_PowderRecipe>> findRecipe() {
+        if (level == null) return Optional.empty();
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return Optional.empty();
+        return recipeCache.find(level, new mio_icif_SingleItemRecipeInput(input));
     }
 
     private boolean isCrushable(ItemStack stack) {
-        if (level == null || stack.isEmpty()) {
-            return false;
-        }
-        // 槽位校验时忽略数量，避免数量大于1的配方无法放入不足数量的材料
-        return MioIcifAPI.instance().getRecipeAPI().findPowderRecipe(stack.copyWithCount(64), level).isPresent();
+        if (level == null || stack.isEmpty()) return false;
+        // the count is ignored here, so a recipe that takes several items accepts fewer while they are put in
+        return slotCache.find(level, new mio_icif_SingleItemRecipeInput(stack.copyWithCount(64))).isPresent();
+    }
+
+    private Optional<RecipeSlots.Prepared> prepare(RecipeHolder<mio_icif_PowderRecipe> recipe) {
+        return RecipeSlots.prepare(itemHandler, INPUT_SLOT, recipe.value().getIngredientCount(),
+            new int[]{OUTPUT_SLOT}, java.util.List.of(recipe.value().getResultItem(level.registryAccess())));
+    }
+
+    @Override
+    protected @Nullable net.minecraft.resources.ResourceLocation currentRecipeId() {
+        return findRecipe().map(RecipeHolder::id).orElse(null);
     }
 
     @Override
     protected boolean hasValidRecipe() {
-        ItemStack input = itemHandler.getStackInSlot(inputSlot);
-        return isCrushable(input);
-    }
-
-    private Optional<? extends RecipeHolder<?>> findRecipe() {
-        if (level == null) {
-            return Optional.empty();
-        }
-        ItemStack input = itemHandler.getStackInSlot(inputSlot);
-        if (input.isEmpty()) {
-            return Optional.empty();
-        }
-        return MioIcifAPI.instance().getRecipeAPI().findPowderRecipe(input, level);
+        return isCrushable(itemHandler.getStackInSlot(INPUT_SLOT));
     }
 
     @Override
     protected boolean canWork() {
-        return (progress >= maxProgress || hasEnoughEnergy()) && getEffectiveEnergyPerTick() > 0
-            && findRecipe().flatMap(this::prepareOperation).isPresent();
+        if (!hasEnoughEnergy()) return false;
+        return findRecipe().flatMap(this::prepare).isPresent();
     }
-
-    private Optional<RecipeSlots.Prepared> prepareOperation(RecipeHolder<?> recipe) {
-        var api = MioIcifAPI.instance().getRecipeAPI();
-        return RecipeSlots.prepare(itemHandler, inputSlot, api.getRecipeIngredientCount(recipe),
-            new int[]{outputSlot}, java.util.List.of(api.getRecipeOutput(recipe)));
-    }
-
-
-
-
-
-
 
     @Override
     protected void doWork() {
-        var recipe = findRecipe();
-        if (recipe.isEmpty() || prepareOperation(recipe.get()).isEmpty()) { stopWork(); return; }
-        if (progress < maxProgress) {
-            if (getEffectiveEnergyPerTick() <= 0 || !hasEnoughEnergy() || !consumeEnergy()) { stopWork(); return; }
-            progress = (int) Math.min(maxProgress, (long) progress + getProgressPerTick());
-        }
+        if (!consumeEnergy()) { stopWork(); return; }
         isWorking = true;
-        if (progress >= maxProgress) finishCrushing(recipe.get());
+        var recipe = findRecipe();
+        if (recipe.isEmpty()) { stopWork(); return; }
+        if (progress >= maxProgress) {
+            var operation = prepare(recipe.get());
+            if (operation.isEmpty() || !operation.get().commit()) { stopWork(); return; }
+            finishWork();
+            if (canWork()) isWorking = true;
+        }
     }
 
+    // ---- cost --------------------------------------------------------------------------------------------------------
+
+    /** The energy of one operation: 80 % of the macerator's for the material, at 12 EU/t. */
     @Override
-    protected void updateProgress() {
-        // doWork owns the single paid progress increment for this tick.
+    public ProcessCost processCost() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty() || level == null) return ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
+        return Comminution.maceratorCost(input, findRecipe().map(RecipeHolder::value).orElse(null), DEFAULT_ENERGY_PER_TICK, EFFICIENCY);
     }
 
-    private void finishCrushing(RecipeHolder<?> recipe) {
-        var operation = prepareOperation(recipe);
-        if (operation.isEmpty()) { stopWork(); return; }
-        int completed = progress;
-        progress = 0;
-        if (!operation.get().commit()) { progress = completed; stopWork(); return; }
-        finishWork();
+    /** The stock 750 EU plus the hardest operation at the current overclock; it does not change with the input. */
+    @Override
+    protected long getProcessingCapacity() {
+        double perOperation = MAX_OPERATION_ENERGY * upgradeStats.getEnergyUsageMultiplier() * upgradeStats.getProcessTimeMultiplier();
+        return baseCapacity + upgradeStats.getEnergyStorageCount() * com.miophas.singularity_iteration.core.runtime.upgrade.MachineUpgradeStats.ENERGY_STORAGE_BONUS
+            + (long) Math.ceil(perOperation);
+    }
+
+    // ---- rotor -------------------------------------------------------------------------------------------------------
+
+    /** Runs on the share of the ticks equal to the rotor speed (none at rest). */
+    @Override
+    protected boolean advanceThisTick() {
+        carry += speed;
+        if (carry >= 1) { carry -= 1; return true; }
+        return false;
+    }
+
+    /** Once a tick after production (from {@link #tick}): the rotor speeds up while the mill works, is held, or coasts down. */
+    private void turnRotor() {
+        double before = speed;
+        holding = false;
+        if (isWorking) {
+            speed = Math.min(1, speed + SPIN_UP_PER_TICK);
+        } else if (holdSpeed && speed > 0 && canWorkRedstone() && apiUseEnergy(HOLD_EU_PER_TICK, true) >= HOLD_EU_PER_TICK
+                && apiUseEnergy(HOLD_EU_PER_TICK, false) >= HOLD_EU_PER_TICK) {
+            holding = true;
+        } else {
+            speed = Math.max(0, speed - COAST_PER_TICK);
+            if (speed == 0) carry = 0;
+        }
+        if (speed != before) setChanged();
+    }
+
+    public double getRotorSpeed() { return speed; }
+    public boolean isHoldingSpeed() { return holdSpeed; }
+    public boolean isHolding() { return holding; }
+
+    public void toggleHoldSpeed() {
+        holdSpeed = !holdSpeed;
         setChanged();
     }
 
-    /** 0.1.11.107 (processing overhaul M0): the cost of one operation, 750 EU at 5 EU/t (150 ticks), as before. */
-    @Override
-    public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
-        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
+    /** Cyclone cut size (μm): finer at higher air speed, d50 ∝ 1/√speed (75 μm at full speed; none at rest). */
+    public double cutSizeMicrons() {
+        return speed <= 0 ? 0 : FULL_SPEED_D50 / Math.sqrt(speed);
     }
+
+    /** Circulating load (% of the feed returned to the mill), proportional to the speed (250 % at full speed). */
+    public double circulatingLoadPercent() {
+        return FULL_SPEED_CIRCULATING_LOAD * speed;
+    }
+
+    // ---- slots -------------------------------------------------------------------------------------------------------
+
+    @Override
+    public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == INPUT_SLOT) return isCrushable(stack);
+        if (slot == BATTERY_SLOT) return isBattery(stack);
+        if (slot == OUTPUT_SLOT) return false;
+        if (slot >= UPGRADE_SLOT_START && slot < UPGRADE_SLOT_START + 4) return getItemAPI().isUpgrade(stack);
+        return false;
+    }
+
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT};
+
+    @Override
+    protected int[] getSlotsForDirection(Direction side) { return SIDE_SLOTS; }
+
+    @Override
+    protected int[] getInputSlots() { return INPUT_SLOTS; }
+
+    @Override
+    protected int[] getOutputSlots() { return OUTPUT_SLOTS; }
+
+    @Override
+    protected int getBatterySlot() { return BATTERY_SLOT; }
+
+    @Override
+    protected boolean canExtractItem(int slot, @Nullable Direction side) { return slot == OUTPUT_SLOT; }
 
     public ItemStack getResultItem() {
         if (level == null) return ItemStack.EMPTY;
-        Optional<? extends RecipeHolder<?>> recipe = findRecipe();
-        return recipe.map(r -> MioIcifAPI.instance().getRecipeAPI().getRecipeOutput(r)).orElse(ItemStack.EMPTY);
+        return findRecipe().map(r -> r.value().getResultItem(level.registryAccess())).orElse(ItemStack.EMPTY);
     }
 
-    public ItemStack getInputItem() {
-        return itemHandler.getStackInSlot(inputSlot);
+    public ItemStack getInputItem() { return itemHandler.getStackInSlot(INPUT_SLOT); }
+
+    public ItemStack getOutputItem() { return itemHandler.getStackInSlot(OUTPUT_SLOT); }
+
+    // ---- save --------------------------------------------------------------------------------------------------------
+
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putDouble("cyclone_speed", speed);
+        tag.putDouble("cyclone_carry", carry);
+        tag.putBoolean("cyclone_hold", holdSpeed);
     }
 
-    public ItemStack getOutputItem() {
-        return itemHandler.getStackInSlot(outputSlot);
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        speed = Math.max(0, Math.min(1, tag.getDouble("cyclone_speed")));
+        carry = Math.max(0, Math.min(1, tag.getDouble("cyclone_carry")));
+        holdSpeed = tag.getBoolean("cyclone_hold");
     }
+
+    // ---- tick --------------------------------------------------------------------------------------------------------
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_powder_advanced_elc blockEntity) {
         if (level.isClientSide()) return;
-        if (blockEntity instanceof IProducerBlock producer) {
-            producer.serverTick();
-        }
-        blockEntity.setLit(blockEntity.isWorking());
+        AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
+        blockEntity.turnRotor();
+        blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_powder_advanced_elc.LIT);
     }
 
     @Override

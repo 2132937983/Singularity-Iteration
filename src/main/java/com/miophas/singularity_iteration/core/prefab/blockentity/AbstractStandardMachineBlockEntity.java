@@ -79,6 +79,8 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             if (changed) setChanged();
             return;
         }
+        // 0.1.11.109: a machine running below full speed (a rotor spinning up) sits out some ticks; it stays working
+        if (!advanceThisTick()) { isWorking = true; return; }
         if (!consumeEnergy()) { stopWork(); return; }
         isWorking = true;
         if (++progress < maxProgress) return;
@@ -99,6 +101,15 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             setChanged();
         }
         completeWorkCycles(finishedOperations() - finished);   // 0.1.11.2: also closes the cycle
+    }
+
+    /**
+     * 0.1.11.109: whether this tick pays and advances the operation. A machine that runs at a fraction of its speed
+     * (the cyclone macerator's rotor) returns true on that fraction of the ticks, so its mean power and its speed scale
+     * together and the energy per operation does not change. Default: every tick.
+     */
+    protected boolean advanceThisTick() {
+        return true;
     }
 
     @Override

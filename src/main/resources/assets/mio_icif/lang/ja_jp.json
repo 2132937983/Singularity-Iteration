@@ -5858,5 +5858,17 @@
   "gui.mio_icif.process.tip.heat_hold.2": "保温は放熱の分だけ：満温で約 8 EU/t、保温ユニット付きで約 2 EU/t。",
   "gui.mio_icif.process.tip.induction.1": "誘導炉を上から見た図：銅コイルの交流がるつぼに渦電流を起こし、材料を直接加熱する。色は溶湯の温度。",
   "gui.mio_icif.process.tip.induction.2": "最大 64 EU/t で室温から 1,600 °C まで約 30 秒。放熱は温度に比例し、加熱しないと時定数約 4 分で冷える。",
-  "gui.mio_icif.process.tip.induction.3": "600 °C で精錬が始まり、1,600 °C で全速：2つのレーンでそれぞれ 12 tick ごとに1個、さらに 15 EU/t。"
+  "gui.mio_icif.process.tip.induction.3": "600 °C で精錬が始まり、1,600 °C で全速：2つのレーンでそれぞれ 12 tick ごとに1個、さらに 15 EU/t。",
+  "gui.mio_icif.process.tank": "水タンク %s mB",
+  "gui.mio_icif.process.wash_flow": "流量 %s mB · 回収 %s%%",
+  "gui.mio_icif.process.status.no_water": "水不足",
+  "gui.mio_icif.process.rpm": "回転 %s rpm",
+  "gui.mio_icif.process.heat_line": "熱量 %s / 必要 %s HU",
+  "gui.mio_icif.process.rcf": "遠心力 約 %s g",
+  "gui.mio_icif.process.tip.washer.1": "洗鉱機を横から見た図：水が回転するドラムに流れ込み、鉱石と砂や泥を密度で分ける。泥水は下の沈殿池に流れ、泥は底に沈む。",
+  "gui.mio_icif.process.tip.washer.2": "1回の洗浄でレシピの水量（粉砕鉱石は 1,000 mB）が流れ、沈殿池が 80 %% を右の戻り管で戻すので、正味は約5分の1。水が足りないと比例して遅くなる。",
+  "gui.mio_icif.process.tip.centrifuge.1": "熱遠心分離機を上から見た図：外側のヒーターリングが材料をレシピの必要熱量（粘土 250 HU、鉱石 500〜4,000）まで加熱し、鉱物を分けやすくする。",
+  "gui.mio_icif.process.tip.centrifuge.2": "ローターが6つのバケットを回す：全速で 12,000 rpm、半径 10 cm、約 16,000 g で重い粒子を外へ飛ばす。",
+  "gui.mio_icif.process.tip.centrifuge.3": "ローターには慣性がある：稼働中は毎秒 +10 %%、待機中は毎秒 −5 %%。材料がある時だけ加熱する。",
+  "gui.mio_icif.process.wash_net": "正味 %s mB / 回"
 }

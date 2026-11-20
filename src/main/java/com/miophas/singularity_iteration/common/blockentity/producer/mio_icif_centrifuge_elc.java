@@ -228,7 +228,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     @Override
     protected boolean canWork() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty() || !hasEnoughEnergy() || heatStorage < MIN_HEAT_FOR_WORK) return false;
+        if (input.isEmpty() || !hasEnoughEnergy() || heatStorage < requiredHeat()) return false;   // 0.1.11.114: the recipe's own minimum heat
         return com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.fits(itemHandler, INPUT_SLOT, 1,
             OUTPUT_SLOTS, getProcessingResults(input));
     }
@@ -249,6 +249,11 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
 
     @Override
     protected void doWork() {
+        // 0.1.11.114: below full rotor speed the centrifuge runs that share of the ticks (no energy, no progress otherwise)
+        rotorCarry += rotorSpeed;
+        advancedThisTick = rotorCarry >= 1;
+        if (!advancedThisTick) { isWorking = true; return; }
+        rotorCarry -= 1;
         // Use energy. Stop if the machine does not have sufficient energy.
         if (!consumeEnergy()) {
             stopWork();
@@ -317,6 +322,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
 
         // The parent tick does the processing, progress and battery slot logic.
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
+        blockEntity.turnRotor();   // 0.1.11.114
 
         // Update the LIT block state to show if the machine is working.
         blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_centrifuge_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
@@ -328,27 +334,91 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
      * - Without power, the machine loses heat each tick.
      */
     private void updateHeat() {
+        // 0.1.11.114: the heater runs only while the centrifuge has something to do (input with a recipe and room for
+        // the output, not stopped by redstone or a remote switch); it used to heat whenever it had power
         int before = heatStorage;
-        if (!hasEnoughEnergy()) {
-            if (heatStorage > 0) {
-                heatStorage = Math.max(0, heatStorage - HEAT_COOLING_RATE);
+        if (wantsHeat() && heatStorage < MAX_HEAT && hasEnoughEnergy()) {
+            int heat = (int) Math.min(Math.min(HEAT_GENERATION_RATE, MAX_HEAT - heatStorage), energyStorage.getAmount());
+            if (heat > 0) {
+                apiUseEnergy(heat, false);
+                heatStorage += heat;
                 heatChanged(before);
             }
-            return;
-        }
-
-        int maxHeatToGenerate = Math.min(HEAT_GENERATION_RATE, MAX_HEAT - heatStorage);
-        if (maxHeatToGenerate > 0) {
-            long energyAvailable = Math.min(energyStorage.getAmount(), maxHeatToGenerate);
-            int heatGenerated = (int) energyAvailable;
-
-            if (heatGenerated > 0) {
-                apiUseEnergy(heatGenerated, false);
-                heatStorage += heatGenerated;
-                heatChanged(before);
-            }
+        } else if (!wantsHeat() && heatStorage > 0) {
+            heatStorage = Math.max(0, heatStorage - HEAT_COOLING_RATE);
+            heatChanged(before);
         }
     }
+
+    // ---- 0.1.11.114 (processing overhaul M7): the recipe's heat and the centrifuge rotor ----
+
+    /**
+     * A thermal centrifuge heats the charge so its minerals separate, then spins it so they settle by density. Each
+     * recipe says how hot (clay 250 HU, cobblestone 100, the crushed ores 500 to 4,000; 5,000 when it says nothing): the
+     * centrifuge starts once that heat is reached instead of always waiting for the full 5,000 HU (about a minute). The
+     * rotor has inertia like the cyclone macerator's: +10 % a second while it works, −5 % a second otherwise; below full
+     * speed it runs that share of the ticks, so the energy per operation stays the same. At full speed it turns 12,000 rpm
+     * at a 10 cm radius, about 16,000 g.
+     */
+    public static final double SPIN_UP_PER_TICK = 0.10 / 20, COAST_PER_TICK = 0.05 / 20, FULL_RPM = 12_000, RADIUS_M = 0.10;
+
+    private double rotorSpeed, rotorCarry;
+    private boolean advancedThisTick;
+
+    /** The heat the current input needs (HU): the recipe's minimum, 5,000 without input. */
+    public int requiredHeat() {
+        return getRecipe(itemHandler.getStackInSlot(INPUT_SLOT)).map(mio_icif_CentrifugeRecipe::getMinHeatRequired).orElse(MIN_HEAT_FOR_WORK);
+    }
+
+    /** Something to heat for: input with a recipe, room for the output, not stopped by redstone or a remote switch. */
+    private boolean wantsHeat() {
+        if (level == null || !canWorkRedstone()) return false;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        return !input.isEmpty() && getRecipe(input).isPresent()
+            && com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.fits(itemHandler, INPUT_SLOT, 1, OUTPUT_SLOTS, getProcessingResults(input));
+    }
+
+    public double getRotorSpeed() { return rotorSpeed; }
+
+    /** Rotor speed (rpm). */
+    public double rpm() { return FULL_RPM * rotorSpeed; }
+
+    /** Relative centrifugal force (g): ω² r / g. */
+    public double relativeCentrifugalForce() {
+        double omega = rpm() * 2 * Math.PI / 60;
+        return omega * omega * RADIUS_M / 9.81;
+    }
+
+    /** The progress moves only on the ticks the rotor ran. */
+    @Override
+    protected void updateProgress() {
+        if (advancedThisTick) super.updateProgress();
+        advancedThisTick = false;
+    }
+
+    /** Once a tick after production: the rotor speeds up while the centrifuge works, coasts down otherwise. */
+    private void turnRotor() {
+        double before = rotorSpeed;
+        rotorSpeed = isWorking() ? Math.min(1, rotorSpeed + SPIN_UP_PER_TICK) : Math.max(0, rotorSpeed - COAST_PER_TICK);
+        if (rotorSpeed == 0) rotorCarry = 0;
+        if (rotorSpeed != before && (rotorSpeed == 0 || rotorSpeed == 1)) setChanged();
+    }
+
+    /** Why the centrifuge runs, heats or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (getRecipe(input).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        if (!com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.fits(itemHandler, INPUT_SLOT, 1, OUTPUT_SLOTS, getProcessingResults(input)))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (heatStorage < requiredHeat()) return hasEnoughEnergy()
+            ? com.miophas.singularity_iteration.common.processing.ProcessStatus.HEATING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
 
     /**
      * 0.1.10.38: a heat change is saved with a light mark. The full setChanged() (comparators; it also wakes the idle machine)
@@ -356,7 +426,8 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
      * every tick of heating up and cooling down.
      */
     private void heatChanged(int before) {
-        boolean work = (before >= MIN_HEAT_FOR_WORK) != (heatStorage >= MIN_HEAT_FOR_WORK);
+        int need = requiredHeat();   // 0.1.11.114: the recipe's heat (it was the fixed 5,000), so a sleeping centrifuge wakes when it is reached
+        boolean work = (before >= need) != (heatStorage >= need);
         if (work || heatSignal(before) != heatSignal(heatStorage)) setChanged();
         else com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
     }
@@ -372,7 +443,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
      */
     @Override
     protected boolean idleSleepAllowed() {
-        return true;
+        return rotorSpeed <= 0;   // 0.1.11.114: a turning rotor keeps it awake (the heat is updated every tick, asleep too)
     }
 
 
@@ -421,6 +492,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
         super.saveAdditional(tag, registries);
         // Save the stored heat.
         tag.putInt("heat_storage", heatStorage);
+        tag.putDouble("centrifuge_speed", rotorSpeed);   // 0.1.11.114
     }
 
     @Override
@@ -430,5 +502,6 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
         if (tag.contains("heat_storage")) {
             heatStorage = tag.getInt("heat_storage");
         }
+        rotorSpeed = Math.max(0, Math.min(1, tag.getDouble("centrifuge_speed")));   // 0.1.11.114: an old save starts at rest
     }
 }

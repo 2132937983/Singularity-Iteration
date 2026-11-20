@@ -466,7 +466,9 @@ public final class Round1138GameTests {
         machine(h, at).getEnergyStorageInternal().setStored(24_000);
         h.runAfterDelay(40, () -> {
             h.assertTrue(machine(h, at).isIdleAsleep(), "a hot idle centrifuge does not sleep");
-            h.assertTrue((Integer) field(machine(h, at), "heatStorage") == 5000, "the sleeping centrifuge lost heat");
+            // 0.1.11.114: an idle centrifuge no longer heats; it cools 2 HU a tick (asleep too)
+            int heat = (Integer) field(machine(h, at), "heatStorage");
+            h.assertTrue(heat < 5000 && heat >= 4900, "the idle centrifuge's heat after 40 ticks: " + heat);
             machine(h, at).getItemHandler().insertItem(0, new ItemStack(Items.COBBLESTONE), false);
             h.runAfterDelay(2, () -> {
                 h.assertTrue(machine(h, at).isWorking(), "an inserted item did not start the sleeping centrifuge");

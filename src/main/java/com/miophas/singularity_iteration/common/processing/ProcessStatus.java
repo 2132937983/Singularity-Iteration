@@ -13,11 +13,13 @@ public final class ProcessStatus {
     public static final int CHARGING = 6;
     /** 0.1.11.113: a furnace is heating up to the temperature the item needs. */
     public static final int HEATING = 7;
+    /** 0.1.11.114: the ore washer has no water to run on. */
+    public static final int NO_WATER = 8;
     /** Language key suffixes, by code. */
-    public static final String[] KEYS = {"running", "no_input", "no_recipe", "output_full", "no_power", "redstone_off", "charging", "heating"};
+    public static final String[] KEYS = {"running", "no_input", "no_recipe", "output_full", "no_power", "redstone_off", "charging", "heating", "no_water"};
 
     /** True for a code the screen shows as a stop (red), not a wait. */
     public static boolean isFault(int code) {
-        return code == OUTPUT_FULL || code == NO_POWER || code == REDSTONE_OFF;
+        return code == OUTPUT_FULL || code == NO_POWER || code == REDSTONE_OFF || code == NO_WATER;
     }
 }

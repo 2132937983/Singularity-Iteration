@@ -5858,5 +5858,17 @@
   "gui.mio_icif.process.tip.heat_hold.2": "保温只补散热：满温约 8 EU/t，装了保温单元约 2 EU/t。",
   "gui.mio_icif.process.tip.induction.1": "感应炉俯视图：铜线圈里的交变电流在坩埚里感应出涡流，直接加热炉料；颜色就是熔池温度。",
   "gui.mio_icif.process.tip.induction.2": "加热功率最高 64 EU/t，约 30 秒从室温升到 1,600 °C；散热与温度成正比，不加热时约 4 分钟降温（时间常数）。",
-  "gui.mio_icif.process.tip.induction.3": "600 °C 开始冶炼，1,600 °C 满速：两个格子每 12 tick 各炼一件，另耗 15 EU/t。"
+  "gui.mio_icif.process.tip.induction.3": "600 °C 开始冶炼，1,600 °C 满速：两个格子每 12 tick 各炼一件，另耗 15 EU/t。",
+  "gui.mio_icif.process.tank": "水箱 %s mB",
+  "gui.mio_icif.process.wash_flow": "流量 %s mB · 回收 %s%%",
+  "gui.mio_icif.process.status.no_water": "缺水",
+  "gui.mio_icif.process.rpm": "转速 %s rpm",
+  "gui.mio_icif.process.heat_line": "热量 %s / 需要 %s HU",
+  "gui.mio_icif.process.rcf": "离心力约 %s g",
+  "gui.mio_icif.process.tip.washer.1": "洗矿机侧视图：水冲进转动的洗矿筒，按密度把矿石和泥沙分开；泥浆流进下面的沉淀池，泥沉在底部。",
+  "gui.mio_icif.process.tip.washer.2": "每洗一次流过配方规定的水量（粉碎矿石 1,000 mB），沉淀池回收 80%% 经右边的回水管送回，净耗约五分之一；水不够时按比例变慢。",
+  "gui.mio_icif.process.tip.centrifuge.1": "热能离心机俯视图：外圈加热环先把炉料加热到配方所需的热量（黏土 250 HU，矿石 500 到 4,000），矿物才分得开。",
+  "gui.mio_icif.process.tip.centrifuge.2": "转子带着六个离心桶旋转：满速 12,000 rpm、半径 10 cm，离心力约 16,000 g，重的颗粒甩向外侧。",
+  "gui.mio_icif.process.tip.centrifuge.3": "转子有惯性：有活时每秒加速 10%%，没活时每秒减速 5%%；只有有料时才加热。",
+  "gui.mio_icif.process.wash_net": "净耗 %s mB / 次"
 }

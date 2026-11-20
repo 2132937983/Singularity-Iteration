@@ -5858,5 +5858,17 @@
   "gui.mio_icif.process.tip.heat_hold.2": "Holding only replaces the heat loss: about 8 EU/t at full heat, about 2 with a Thermal Retention Unit.",
   "gui.mio_icif.process.tip.induction.1": "An induction furnace from above: the alternating current in the copper coil induces eddy currents in the crucible, which heat the charge directly; the colour is the melt temperature.",
   "gui.mio_icif.process.tip.induction.2": "Up to 64 EU/t heats it from room temperature to 1,600 °C in about 30 seconds; the loss grows with the temperature, and an unheated furnace cools with a time constant of about 4 minutes.",
-  "gui.mio_icif.process.tip.induction.3": "Smelting starts at 600 °C and is at full speed at 1,600 °C: an item per lane every 12 ticks, for 15 EU/t more."
+  "gui.mio_icif.process.tip.induction.3": "Smelting starts at 600 °C and is at full speed at 1,600 °C: an item per lane every 12 ticks, for 15 EU/t more.",
+  "gui.mio_icif.process.tank": "Tank %s mB",
+  "gui.mio_icif.process.wash_flow": "Flow %s mB · %s%% back",
+  "gui.mio_icif.process.status.no_water": "No water",
+  "gui.mio_icif.process.rpm": "%s rpm",
+  "gui.mio_icif.process.heat_line": "Heat %s / needs %s HU",
+  "gui.mio_icif.process.rcf": "About %s g",
+  "gui.mio_icif.process.tip.washer.1": "An ore washer from the side: water runs into the turning drum and separates ore from sand and clay by density; the slurry flows into the settling pond below, where the mud sinks.",
+  "gui.mio_icif.process.tip.washer.2": "Each washing passes the recipe's water (1,000 mB for crushed ore); the pond returns 80 %% up the return pipe on the right, so the net use is about a fifth. Short of water, it runs slower in proportion.",
+  "gui.mio_icif.process.tip.centrifuge.1": "A thermal centrifuge from above: the heater ring first brings the charge to the heat its recipe needs (clay 250 HU, ores 500 to 4,000) so the minerals come apart.",
+  "gui.mio_icif.process.tip.centrifuge.2": "The rotor spins six buckets: at full speed 12,000 rpm at 10 cm, about 16,000 g, throwing the heavy particles outward.",
+  "gui.mio_icif.process.tip.centrifuge.3": "The rotor has inertia: +10 %% a second while working, −5 %% a second while idle. It heats only while it has something to process.",
+  "gui.mio_icif.process.wash_net": "Net %s mB a washing"
 }

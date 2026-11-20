@@ -22,26 +22,26 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public CentrifugeElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_centrifuge_elc blockEntity) {
-        super(mio_icif_menus.CENTRIFUGE_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 7);
+        super(mio_icif_menus.CENTRIFUGE_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 11);
         registerMachineMoveRules();
     }
 
     @Override
     protected void addMachineSlots() {
-        addInputSlot(INPUT_SLOT, 11, 21);
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 124, 18) {
+        addInputSlot(INPUT_SLOT, 10, 18);   // 0.1.11.114: two columns on the left of the instrument screen
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 30, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 124, 36) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 30, 38) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_3, 124, 54) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_3, 30, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        addBatterySlot(BATTERY_SLOT, 11, 60);
+        addBatterySlot(BATTERY_SLOT, 10, 38);
         this.addUpgradeSlot(UPGRADE_SLOT_START, 152, 8);
         this.addUpgradeSlot(UPGRADE_SLOT_START + 1, 152, 26);
         this.addUpgradeSlot(UPGRADE_SLOT_START + 2, 152, 44);
@@ -82,7 +82,31 @@ import org.jetbrains.annotations.Nullable;
     }
 
     @Override
-    protected int getDataSlotCount() { return 7; }
+    protected int getDataSlotCount() { return 11; }
+
+    /** 0.1.11.114: data 7 status (ProcessStatus), 8 heat the input needs HU, 9 rotor speed ‰, 10 stored energy ‰ (0-6 as before). */
+    public int getStatus() { return data.get(7); }
+    public int getRequiredHeat() { return data.get(8); }
+    public int getRotorSpeedPermille() { return data.get(9); }
+    public int getEnergyPermille() { return data.get(10); }
+
+    // ---- 0.1.11.114: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
 
     public int getProgress() { return data.get(0); }
     public int getMaxProgress() { return data.get(1); }
@@ -103,6 +127,10 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(4, (int) centrifuge.getEnergyStorage().getCapacity());
             this.setSyncData(5, centrifuge.getHeatStorage());
             this.setSyncData(6, mio_icif_centrifuge_elc.MAX_HEAT);
+            this.setSyncData(7, centrifuge.processStatus());
+            this.setSyncData(8, centrifuge.requiredHeat());
+            this.setSyncData(9, (int) Math.round(centrifuge.getRotorSpeed() * 1000));
+            this.setSyncData(10, (int) Math.round(1000.0 * centrifuge.getEnergyStorage().getAmount() / Math.max(1, centrifuge.getEnergyStorage().getCapacity())));
         }
     }
 }

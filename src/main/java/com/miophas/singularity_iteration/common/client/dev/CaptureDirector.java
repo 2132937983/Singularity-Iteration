@@ -295,6 +295,13 @@ public final class CaptureDirector {
                     if (handler instanceof net.neoforged.neoforge.items.IItemHandlerModifiable m) m.setStackInSlot(0, new net.minecraft.world.item.ItemStack(item, 32));
                     if (level.getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
                 }
+                // 0.1.11.114: -Dsi.capture.galleryWater=mB fills the machine's tank with water
+                Integer water = Integer.getInteger("si.capture.galleryWater");
+                if (water != null) {
+                    var tank = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, at, null);
+                    if (tank != null) tank.fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, water),
+                        net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                }
                 sp.teleportTo(level, at.getX() + 0.5, -60, at.getZ() - 2.5, 0, 20);
                 var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
                 level.getBlockState(at).useWithoutItem(level, sp, hit);

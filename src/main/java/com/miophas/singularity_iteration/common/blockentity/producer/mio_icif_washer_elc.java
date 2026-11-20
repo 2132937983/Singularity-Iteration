@@ -288,10 +288,60 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
      * 检查是否有足够水来工作
      */
     protected boolean hasEnoughWater() {
-        if (fluidTank.isEmpty() || fluidTank.getFluid().getFluid() != Fluids.WATER) {
-            return false;
+        // 0.1.11.114: the water is drawn tick by tick (netWaterPerTick); any water lets the washer run, slower when short
+        return !fluidTank.isEmpty() && fluidTank.getFluid().getFluid() == Fluids.WATER;
+    }
+
+    // ---- 0.1.11.114 (processing overhaul M7): the washing water ----
+
+    /**
+     * Gravity separation needs a steady flow of water: each washing passes the recipe's water amount through the
+     * washer (1,000 mB for the crushed ores, 8,000 mB for one recipe, 200 mB for two), and a settling pond returns 80 %
+     * of it, as washing plants do. The net use, a fifth of the flow (200 mB for most recipes, as before), is drawn tick by
+     * tick over the operation; a tick without enough water waits, so a short supply slows the washer in proportion.
+     */
+    public static final double RECOVERED_SHARE = 0.8;
+
+    /** Water flow of one washing (mB): the recipe's amount (its default 200 mB when it gives none). */
+    public int grossWaterPerOperation() {
+        return getRecipe(itemHandler.getStackInSlot(INPUT_SLOT)).map(mio_icif_WasherRecipe::getWaterAmount).orElse(WATER_PER_OPERATION * 5);
+    }
+
+    /** Net water one washing uses (mB): the fifth the settling pond does not return. */
+    public int netWaterPerOperation() {
+        return (int) Math.ceil(grossWaterPerOperation() * (1 - RECOVERED_SHARE) - 1e-9);
+    }
+
+    /** Fraction of a mB carried to the next tick (not saved). */
+    private double waterCarry;
+    /** The last tick waited for water (for the status). */
+    private boolean waterShort;
+
+    /** Draws this tick's share of the net water; false (and nothing drawn) when the tank cannot give it. */
+    private boolean drawWater() {
+        double need = netWaterPerOperation() / (double) Math.max(1, getMaxProgress()) + waterCarry;
+        int whole = (int) Math.floor(need);
+        if (whole > 0) {
+            if (fluidTank.getFluidAmount() < whole || fluidTank.getFluid().getFluid() != Fluids.WATER) { waterShort = true; return false; }
+            fluidTank.drain(whole, IFluidHandler.FluidAction.EXECUTE);
         }
-        return fluidTank.getFluidAmount() >= WATER_PER_OPERATION;
+        waterCarry = need - whole;
+        waterShort = false;
+        return true;
+    }
+
+    /** Why the washer runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (getRecipe(input).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        if (!com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.fits(itemHandler, INPUT_SLOT, 1, OUTPUT_SLOTS, getWashingResults(input)))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (!hasEnoughWater() || waterShort) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_WATER;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     /**
@@ -361,6 +411,11 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
 
     @Override
     protected void doWork() {
+        // 0.1.11.114: this tick's water first; without it the washer waits (no energy, no progress)
+        if (progress < maxProgress && !drawWater()) {
+            stopWork();
+            return;
+        }
         // 检查能量
         if (!consumeEnergy()) {
             stopWork();
@@ -385,7 +440,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         if (plan.isEmpty()) { stopWork(); return; }
         int completedProgress = progress;
         progress = 0; // An inventory observer must never save completed work against the next input.
-        if (!plan.get().commitWithFluid(fluidTank, new FluidStack(Fluids.WATER, WATER_PER_OPERATION))) { progress = completedProgress; stopWork(); return; }
+        if (!plan.get().commit()) { progress = completedProgress; stopWork(); return; }   // 0.1.11.114: the water was drawn tick by tick
         finishWork();
         if (canWork()) isWorking = true;
     }

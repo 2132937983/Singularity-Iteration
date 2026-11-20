@@ -79,15 +79,21 @@ public final class Round1154GameTests {
         h.succeed();
     }
 
-    /** The cables are made of tin, iron, copper and gold (low to extra-high voltage). */
+    /**
+     * The cables are made of tin, copper, gold and iron (low to extra-high voltage), as in IC2. 0.1.11.4 had made them tin,
+     * iron, copper and gold; 0.1.11.96 restores the original order (and the skins that go with it).
+     */
     @GameTest(template = "empty")
-    public static void cablesAreTinIronCopperGold(GameTestHelper h) {
+    public static void cablesAreTinCopperGoldIron(GameTestHelper h) {
         var recipes = h.getLevel().getRecipeManager();
         String[][] expected = {
             {"metal_former/extruding/tin_ingot_to_cable", "wiring/cable/block_tin_cable"},
-            {"metal_former/extruding/iron_ingot_to_cable", "wiring/cable/block_cable_o"},
-            {"metal_former/extruding/copper_ingot_to_cable", "wiring/cable/block_gold_cable"},
-            {"metal_former/extruding/gold_ingot_to_cable", "wiring/cable/block_iron_cable"},
+            {"metal_former/extruding/copper_ingot_to_cable", "wiring/cable/block_cable_o"},
+            {"metal_former/extruding/gold_ingot_to_cable", "wiring/cable/block_gold_cable"},
+            {"metal_former/extruding/iron_ingot_to_cable", "wiring/cable/block_iron_cable"},
+            {"metal_former/cutting/copper_plate_to_cable", "wiring/cable/block_cable_o"},
+            {"metal_former/cutting/gold_plate_to_cable", "wiring/cable/block_gold_cable"},
+            {"metal_former/cutting/iron_plate_to_cable", "wiring/cable/block_iron_cable"},
             {"shapeless_178_uninsulated_copper_cable", "wiring/cable/block_cable_o"},
             {"shapeless_181_gold_cable", "wiring/cable/block_gold_cable"},
         };
@@ -96,10 +102,13 @@ public final class Round1154GameTests {
             ItemStack out = recipe.value().getResultItem(h.getLevel().registryAccess());
             h.assertTrue(out.is(si(e[1]).getItem()), e[0] + " makes " + out + ", expected " + e[1]);
         }
-        var iron = recipes.byKey(ResourceLocation.fromNamespaceAndPath("mio_icif", "shapeless_178_uninsulated_copper_cable")).orElseThrow();
-        boolean takesIron = iron.value().getIngredients().stream().anyMatch(i -> i.test(si("resource/item_plate_iron")) || java.util.Arrays.stream(i.getItems())
-            .anyMatch(s -> BuiltInRegistries.ITEM.getKey(s.getItem()).getPath().contains("iron")));
-        h.assertTrue(takesIron, "The hand-cut medium-voltage cable takes an iron plate");
+        String[][] handCut = {{"shapeless_178_uninsulated_copper_cable", "copper"}, {"shapeless_181_gold_cable", "gold"}};
+        for (String[] c : handCut) {
+            var recipe = recipes.byKey(ResourceLocation.fromNamespaceAndPath("mio_icif", c[0])).orElseThrow();
+            boolean takes = recipe.value().getIngredients().stream().anyMatch(i -> java.util.Arrays.stream(i.getItems())
+                .anyMatch(s -> BuiltInRegistries.ITEM.getKey(s.getItem()).getPath().contains(c[1])));
+            h.assertTrue(takes, c[0] + " does not take a " + c[1] + " plate");
+        }
         h.succeed();
     }
 }

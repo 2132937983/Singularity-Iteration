@@ -293,8 +293,11 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
         if (disabled) return 0F;
         try {
             if (cat == EnergyNetworkSnapshot.Category.GENERATOR) {
+                // 0.1.11.13: the generator's own rated output; 0.1.11.99: a fusion power output port's share of the reactor's
+                // output (it is no generator block entity, and its theoretical generation read 0 whenever the grid took nothing)
                 float nameplate = be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity gen
-                    ? gen.ratedOutput() : 0F;   // 0.1.11.13: the generator's own rated output
+                    ? gen.ratedOutput()
+                    : be instanceof com.miophas.singularity_iteration.common.blockentity.fusion.FusionPowerPortBlockEntity port ? port.ratedOutput() : 0F;
                 return Math.max(nameplate, out);
             }
             if (cat == EnergyNetworkSnapshot.Category.CONSUMER) {

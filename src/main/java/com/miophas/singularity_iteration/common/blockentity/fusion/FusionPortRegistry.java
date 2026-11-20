@@ -9,9 +9,10 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 0.1.11.92: which fusion controller a port serves, for the ports without a block entity of their own (the fuel injection port
- * and the disruption mitigation port hand their item capability to the controller). The controller links its ports when its
- * structure forms and unlinks them when it breaks; each change invalidates the port's capabilities, so pipes look again.
+ * 0.1.11.92: which fusion controller a port serves. The controller links its ports when its structure forms and unlinks them
+ * when it breaks; each change invalidates the port's capabilities, so pipes look again. 0.1.11.97: the fuel injection port and
+ * the disruption mitigation port have slots of their own now ({@link FusionItemPortBlockEntity}); their screens look up here
+ * whether they are linked.
  */
 public final class FusionPortRegistry {
     private FusionPortRegistry() {}

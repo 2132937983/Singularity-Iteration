@@ -92,6 +92,7 @@
     { "item": "mio_icif:resource/item_raw_tin_ore", "uu": 1.36 },
     { "item": "mio_icif:resource/item_raw_lead_ore", "uu": 9.18 },
     { "item": "mio_icif:resource/item_raw_uran_ore", "uu": 16.07 },
+    { "item": "mio_icif:block_ore_silver_in_deep", "uu": 47.6 },
     { "item": "mio_icif:resource/item_raw_silver_ore", "uu": 47.6 },
     { "item": "mio_icif:resource/item_harz", "uu": 100 },
     { "item": "minecraft:dragon_egg", "deny": true }

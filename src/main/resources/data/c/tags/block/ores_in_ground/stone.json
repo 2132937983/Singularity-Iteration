@@ -19,6 +19,10 @@
     {
       "id": "mio_icif:block_ore_titanium",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_silver",
+      "required": false
     }
   ]
 }

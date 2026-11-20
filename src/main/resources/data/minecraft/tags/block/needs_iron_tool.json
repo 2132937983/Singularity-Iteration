@@ -32,6 +32,22 @@
     {
       "id": "mio_icif:generator/block_quantum_generator",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_silver",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_silver_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_silver",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_raw_silver",
+      "required": false
     }
   ]
 }

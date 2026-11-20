@@ -26,6 +26,8 @@
               "mio_icif:block_ore_tin_in_deep",
               "mio_icif:block_ore_lead",
               "mio_icif:block_ore_lead_in_deep",
+              "mio_icif:block_ore_silver",
+              "mio_icif:block_ore_silver_in_deep",
               "mio_icif:block_ore_uran",
               "mio_icif:block_ore_uran_in_deep",
               "mio_icif:block_ore_niobium",

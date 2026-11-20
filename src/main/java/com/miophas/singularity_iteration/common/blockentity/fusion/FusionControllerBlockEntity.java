@@ -63,6 +63,9 @@ import org.jetbrains.annotations.Nullable;
  *       in the blanket or in a fission reactor) in its fuel slots or through a fuel injection port; a fresh rod gives 10,000
  *       units (a used one the share it has left) and its empty fuel rod back. The plasma uses one unit of each per feed step
  *       and tick at full temperature.</li>
+ *   <li>0.1.11.97: the fuel injection ports and the disruption mitigation ports have slots of their own
+ *       ({@link FusionItemPortBlockEntity}); every tick the controller takes one rod or cell from them into each of its fuel and
+ *       mitigation slots that is empty, and hands its empty fuel rods to the fuel ports.</li>
  *   <li>Once the plasma makes power, the controller keeps {@link #SELF_FEED_TICKS} ticks of magnet upkeep in its input store
  *       from its own output.</li>
  *   <li>A disruption throws the plasma's heat onto the first wall: every component in the blanket's first column is
@@ -108,6 +111,8 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
     private boolean formed, blanketOverheated, blanketInvalid, recheck = true;
     private int checkIn, cycleIn, radiationIn = 20;
     private final List<BlockPos> ports = new ArrayList<>();
+    /** 0.1.11.97: the fuel injection and disruption mitigation ports among {@link #ports} (they have slots). */
+    private final List<BlockPos> itemPorts = new ArrayList<>();
     private int powerPorts, heaters, cyclotron, fuelPorts, exhausts, cryos, mitigations;
     private @Nullable BlockPos wrongAt;
     private @Nullable FusionStructure.Part expected;
@@ -220,17 +225,25 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
 
     private void countPorts() {
         powerPorts = heaters = cyclotron = fuelPorts = exhausts = cryos = mitigations = 0;
+        itemPorts.clear();
         if (level == null || !formed) return;
         for (BlockPos p : ports) {
             BlockState s = level.getBlockState(p);
             if (s.is(mio_icif_blocks.FUSION_POWER_PORT.get())) powerPorts++;
             else if (s.is(mio_icif_blocks.FUSION_NBI_PORT.get())) heaters++;
             else if (s.is(mio_icif_blocks.FUSION_ECRH_PORT.get())) { heaters++; cyclotron++; }
-            else if (s.is(mio_icif_blocks.FUSION_FUEL_PORT.get())) fuelPorts++;
+            else if (s.is(mio_icif_blocks.FUSION_FUEL_PORT.get())) { fuelPorts++; itemPorts.add(p); }
             else if (s.is(mio_icif_blocks.FUSION_EXHAUST_PORT.get())) exhausts++;
             else if (s.is(mio_icif_blocks.FUSION_CRYO_PORT.get())) cryos++;
-            else if (s.is(mio_icif_blocks.FUSION_MITIGATION_PORT.get())) mitigations++;
+            else if (s.is(mio_icif_blocks.FUSION_MITIGATION_PORT.get())) { mitigations++; itemPorts.add(p); }
         }
+    }
+
+    /** 0.1.11.97: rods and cells from the fuel and mitigation ports into the empty slots; the empty fuel rods out to them. */
+    private void servePorts() {
+        if (level == null || !formed) return;
+        for (BlockPos p : itemPorts)
+            if (level.isLoaded(p) && level.getBlockEntity(p) instanceof FusionItemPortBlockEntity port) port.serve(items);
     }
 
     public boolean serves(BlockPos port) { return formed && ports.contains(port); }
@@ -244,6 +257,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             c.checkIn = c.formed ? CHECK_FORMED : CHECK_UNFORMED;
             c.validate();
         }
+        c.servePorts();
         c.takeFuel();
         boolean signal = level.hasNeighborSignal(pos);
         boolean run = signal && c.cryos > 0 && !c.blanketInvalid;
@@ -272,14 +286,14 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         if (c.hull >= c.maxHull && c.formed && c.meltdown((ServerLevel) level)) return;
         // the output of this tick, and the magnets' upkeep kept from it
         if (c.output > 0) {
-            c.buffer = Math.min(FusionPlasma.OUTPUT_CAP, c.buffer + c.output);
+            c.buffer = Math.min(c.bufferLimit(), c.buffer + c.output);
             long want = FusionPlasma.MAGNET_UPKEEP * SELF_FEED_TICKS - c.apiGetStoredEnergy();
             long feed = Math.min(c.buffer, Math.max(0, Math.min(want, c.apiGetMaxEnergy() - c.apiGetStoredEnergy())));
             if (feed > 0) {
                 long added = c.apiGenerateEnergy(feed, false);
                 c.buffer -= added;
             }
-            if (c.output >= FusionPlasma.OUTPUT_CAP && level.getGameTime() % 20 == 0) MioAchievements.at(level, pos, "fusion_full_power", "full");
+            if (c.output >= FusionPlasma.FULL_POWER && level.getGameTime() % 20 == 0) MioAchievements.at(level, pos, "fusion_full_power", "full");
         }
         if (c.plasma.state() == FusionPlasma.State.BURNING && --c.radiationIn <= 0) {
             c.radiationIn = 20;
@@ -445,9 +459,17 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
 
     // ------------------------------------------------------------------ for the ports and the screen
 
+    /**
+     * The most the output store keeps: one tick of the output, at least {@link FusionPlasma#FULL_POWER} (0.1.11.98: it was the
+     * cap).
+     */
+    private long bufferLimit() {
+        return Math.max(FusionPlasma.FULL_POWER, Math.min(FusionPlasma.OUTPUT_LIMIT, output));
+    }
+
     /** EU a power output port may take this tick: its share of the output (or of what is buffered). */
     public long portShare() {
-        long per = Math.max(output, Math.min(buffer, FusionPlasma.OUTPUT_CAP));
+        long per = Math.max(output, Math.min(buffer, bufferLimit()));
         return powerPorts <= 0 ? 0 : Math.max(1, per / powerPorts);
     }
 
@@ -458,7 +480,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
     }
 
     public void returnEnergy(long amount) {
-        if (amount > 0) buffer = Math.min(FusionPlasma.OUTPUT_CAP, buffer + amount);
+        if (amount > 0) buffer = Math.min(bufferLimit(), buffer + amount);
     }
 
     public Status status() {
@@ -508,17 +530,16 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             Math.round(lithiumShare * 1000), lastHeating, lastUsed};
     }
 
-    /** Fuel injection port: insert deuterium and tritium cells, take the empty cells. */
+    /**
+     * The controller's own faces, for pipes and hoppers: deuterium and tritium fuel rods in, the empty fuel rods out; nothing
+     * reaches the blanket or the mitigation slot (0.1.11.97: the fuel injection and disruption mitigation ports have slots of
+     * their own, {@link FusionItemPortBlockEntity}).
+     */
     public IItemHandler fuelHandler() {
         return new SlotView(new int[]{SLOT_DEUTERIUM, SLOT_TRITIUM, SLOT_EMPTY_CELL, SLOT_EMPTY_ROD});
     }
 
-    /** Disruption mitigation port: insert ice. */
-    public IItemHandler mitigationHandler() {
-        return new SlotView(new int[]{SLOT_MITIGATION});
-    }
-
-    /** Some of the controller's slots, for a port's pipes and hoppers. */
+    /** Some of the controller's slots, for pipes and hoppers. */
     private final class SlotView implements IItemHandler {
         private final int[] slots;
         SlotView(int[] slots) { this.slots = slots; }
@@ -611,8 +632,8 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         tritium = Math.max(0, Math.min(TANK, tag.getLong("Tritium")));
         hull = Math.max(0, tag.getLong("Hull"));
         maxHull = Math.max(1, tag.contains("MaxHull") ? tag.getLong("MaxHull") : 10_000);
-        output = Math.max(0, Math.min(FusionPlasma.OUTPUT_CAP, tag.getLong("Output")));
-        buffer = Math.max(0, Math.min(FusionPlasma.OUTPUT_CAP, tag.getLong("Buffer")));
+        output = Math.max(0, Math.min(FusionPlasma.OUTPUT_LIMIT, tag.getLong("Output")));
+        buffer = Math.max(0, Math.min(FusionPlasma.OUTPUT_LIMIT, tag.getLong("Buffer")));
         formed = tag.getBoolean("Formed");
         ports.clear();
         for (Tag t : tag.getList("Ports", Tag.TAG_INT_ARRAY)) NbtUtils.readBlockPos(wrap(t), "P").ifPresent(ports::add);

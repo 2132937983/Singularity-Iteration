@@ -321,6 +321,9 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.BLOCK_ORE_LEAD_IN_DEEP.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get());   // 0.1.10.36: made by nuclear blasts
                 output.accept(mio_icif_blocks.BLOCK_LEAD.get());
+                output.accept(mio_icif_blocks.BLOCK_ORE_SILVER.get());          // 0.1.11.98
+                output.accept(mio_icif_blocks.BLOCK_ORE_SILVER_IN_DEEP.get());
+                output.accept(mio_icif_blocks.BLOCK_SILVER.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_URAN.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_URAN_IN_DEEP.get());
                 output.accept(mio_icif_blocks.BLOCK_URAN.get());
@@ -332,6 +335,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.BLOCK_TITANIUM.get());
                 output.accept(mio_icif_blocks.BLOCK_RAW_TIN.get());
                 output.accept(mio_icif_blocks.BLOCK_RAW_LEAD.get());
+                output.accept(mio_icif_blocks.BLOCK_RAW_SILVER.get());          // 0.1.11.98
                 output.accept(mio_icif_blocks.BLOCK_RAW_URAN.get());
                 output.accept(mio_icif_blocks.BLOCK_RAW_NIOBIUM.get());
                 output.accept(mio_icif_blocks.BLOCK_RAW_TITANIUM.get());

@@ -894,6 +894,11 @@ public class mio_icif_block_entities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.fusion.FusionPowerPortBlockEntity>> FUSION_POWER_PORT_ENTITY_TYPE =
         BLOCK_ENTITIES.register("fusion_power_port", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.fusion.FusionPowerPortBlockEntity::new, mio_icif_blocks.FUSION_POWER_PORT.get()).build(null));
+    // 0.1.11.97: the fuel injection port and the disruption mitigation port (slots of their own and a screen)
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.fusion.FusionItemPortBlockEntity>> FUSION_ITEM_PORT_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("fusion_item_port", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.fusion.FusionItemPortBlockEntity::new, mio_icif_blocks.FUSION_FUEL_PORT.get(),
+                mio_icif_blocks.FUSION_MITIGATION_PORT.get()).build(null));
 
     // 注册 reactor fluid port 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_fluid_port>> REACTOR_FLUID_PORT_ENTITY_TYPE =

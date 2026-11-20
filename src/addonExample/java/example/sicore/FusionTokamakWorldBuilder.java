@@ -166,6 +166,24 @@ public final class FusionTokamakWorldBuilder {
         }
     }
 
+    /** 0.1.11.99: what the energy management terminal on the output line reads: its generation and its devices with their categories. */
+    private static String terminalReading() {
+        try {
+            BlockPos at = (BlockPos) demo("outputTerminal", verifyController);
+            var terminal = verifyLevel.getBlockEntity(at);
+            if (terminal == null) return "\"no terminal\"";
+            Object s = Round33GameTests.call(terminal, "snapshot");
+            float generation = s.getClass().getField("generation").getFloat(s), capacity = s.getClass().getField("generationCapacity").getFloat(s);
+            java.util.List<String> devices = new java.util.ArrayList<>();
+            for (Object d : (java.util.List<?>) s.getClass().getField("devices").get(s))
+                if (String.valueOf(Round33GameTests.call(d, "category")).equals("GENERATOR"))
+                    devices.add(Round33GameTests.call(d, "blockId") + ":" + Round33GameTests.call(d, "output") + "/" + Round33GameTests.call(d, "rated"));
+            return String.format(java.util.Locale.ROOT, "{\"generation\":%.0f,\"capacity\":%.0f,\"generators\":\"%s\"}", generation, capacity, String.join(" ", devices));
+        } catch (ReflectiveOperationException | RuntimeException | AssertionError e) {
+            return "\"" + e.toString().replace('"', '\'') + "\"";
+        }
+    }
+
     private static BlockPos verifyGesu;
 
     private static long gesuStored() throws ReflectiveOperationException {
@@ -190,9 +208,9 @@ public final class FusionTokamakWorldBuilder {
                 long[] v = (long[]) be.getClass().getMethod("screenValues").invoke(be);
                 String[] states = {"OFF", "COOLING", "CHARGING", "HEATING", "BURNING", "DISRUPTED", "QUENCHED"};
                 verifyLog.add(String.format(java.util.Locale.ROOT,
-                    "{\"tick\":%d,\"state\":\"%s\",\"kev\":%.2f,\"q\":%s,\"fusion\":%d,\"output\":%d,\"stored\":%d,\"buffer\":%d,\"hull\":%d,\"deuterium\":%d,\"tritium\":%d,\"status\":%d,\"heaters\":%d,\"powerPorts\":%d,\"cooled\":%d,\"charged\":%d,\"heating\":%d,\"used\":%d,\"ash\":%d,\"burn\":%d,\"fuelCells\":\"%s\"}",
+                    "{\"tick\":%d,\"state\":\"%s\",\"kev\":%.2f,\"q\":%s,\"fusion\":%d,\"output\":%d,\"stored\":%d,\"buffer\":%d,\"hull\":%d,\"deuterium\":%d,\"tritium\":%d,\"status\":%d,\"heaters\":%d,\"powerPorts\":%d,\"cooled\":%d,\"charged\":%d,\"heating\":%d,\"used\":%d,\"ash\":%d,\"burn\":%d,\"fuelCells\":\"%s\",\"terminal\":%s}",
                     verifyTick, states[(int) v[0]], v[1] / 100.0, v[16] < 0 ? "\"inf\"" : String.valueOf(v[16] / 100.0), v[3], v[4], v[5], v[7], v[10], v[8], v[9], v[25], v[19], v[18],
-                    v[12], v[13], v[33], v[34], v[15], v[14], fuelCells(be)));
+                    v[12], v[13], v[33], v[34], v[15], v[14], fuelCells(be), terminalReading()));
             } catch (ReflectiveOperationException e) {
                 verifyLog.add("{\"error\":\"" + e + "\"}");
             }

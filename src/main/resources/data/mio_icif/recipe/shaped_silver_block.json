@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MMM",
+    "MMM",
+    "MMM"
+  ],
+  "key": {
+    "M": {
+      "tag": "c:ingots/silver"
+    }
+  },
+  "result": {
+    "id": "mio_icif:block_silver",
+    "count": 1
+  }
+}

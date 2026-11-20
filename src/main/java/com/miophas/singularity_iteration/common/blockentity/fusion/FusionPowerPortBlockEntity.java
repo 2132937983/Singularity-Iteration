@@ -20,20 +20,22 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 0.1.11.92: a power output port of the fusion reactor. While its controller is formed it takes its share of the output (the
  * output divided among the power output ports) and sends it in up to 64 packets a tick, of the lowest voltage that carries the
- * share: IV (8,192 EU) up to 524,288 EU/t, then LuV, ZPMV, UV, and UHV (2,097,152 EU) for one port at the full 39,200,000 EU/t.
+ * share: IV (8,192 EU) up to 524,288 EU/t, then LuV, ZPMV, UV, and UHV (2,097,152 EU) for one port at 39,200,000 EU/t;
+ * 0.1.11.98 (the output cap removed): UEV (8,388,608 EU) up to 536,870,912 EU/t and UIV (33,554,432 EU) above, which carries
+ * the grid's top 2,147,483,647 EU/t.
  * Its tier follows the share as the kinetic generators' and the fission reactor's do (a dynamic-tier generator in
  * BuiltinEnergyProfiles): cables and machines on it must take that voltage (the superconducting cable takes any).
  */
 public class FusionPowerPortBlockEntity extends AbstractEnergyBlockEntity implements FusionControllerBlockEntity.FusionPart {
-    public static final int MIN_TIER = 5, MAX_TIER = 9;   // IV .. UHV
-    public static final long CAPACITY = FusionPlasma.OUTPUT_CAP;
+    public static final int MIN_TIER = 5, MAX_TIER = 11;   // IV .. UIV (0.1.11.98: was UHV)
+    public static final long CAPACITY = FusionPlasma.OUTPUT_LIMIT;
     private @Nullable BlockPos controller;
     private boolean sourceRole;
     private int tier = MIN_TIER;
     private long rate;
 
     public FusionPowerPortBlockEntity(BlockPos pos, BlockState state) {
-        super(pos, state, mio_icif_block_entities.FUSION_POWER_PORT_ENTITY_TYPE.get(), CAPACITY, 0, 0, CableTier.UHV);
+        super(pos, state, mio_icif_block_entities.FUSION_POWER_PORT_ENTITY_TYPE.get(), CAPACITY, 0, 0, CableTier.UIV);
     }
 
     /** The packet of a source tier: 8 x 4^tier EU. */
@@ -91,6 +93,16 @@ public class FusionPowerPortBlockEntity extends AbstractEnergyBlockEntity implem
     }
 
     public long rate() { return rate; }
+
+    /**
+     * 0.1.11.99: what the port offers each tick, its share of the reactor's output (0 while the reactor makes nothing): the
+     * energy management terminal's theoretical generation. Its measured generation is only what the network takes, so it read 0
+     * once the storage behind the port was full.
+     */
+    public long ratedOutput() {
+        FusionControllerBlockEntity c = controller();
+        return c == null || c.output() <= 0 && c.buffer() <= 0 ? 0 : c.portShare();
+    }
 
     @Override public int getPacketCount() { return EnergyPacketPolicy.MAX_PACKETS_PER_ROUND; }
 

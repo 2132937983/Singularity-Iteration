@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "tag": "c:storage_blocks/raw_silver"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:resource/item_raw_silver_ore",
+    "count": 9
+  }
+}

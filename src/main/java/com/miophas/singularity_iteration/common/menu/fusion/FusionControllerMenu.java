@@ -16,7 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 0.1.11.92: the fusion reactor controller's screen: the blanket (9 x 6 component slots, column 1 next to the plasma), the fuel
- * slots (deuterium, tritium, the two empty-cell outputs), the disruption mitigation slot (ice) and the player's inventory.
+ * slots (deuterium, tritium, the two empty-cell outputs), the disruption mitigation slot (0.1.11.94: coolant cells, was ice) and
+ * the player's inventory.
  * {@link #VALUES} longs from {@link FusionControllerBlockEntity#screenValues()} are sent as four 16-bit data slots each.
  * Buttons: 0 feed -1, 1 feed +1, 2 feed -4, 3 feed +4.
  */

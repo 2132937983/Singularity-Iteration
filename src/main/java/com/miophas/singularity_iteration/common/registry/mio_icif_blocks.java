@@ -258,6 +258,13 @@ public class mio_icif_blocks {
 
     public static final DeferredBlock<Block> BLOCK_ORE_LEAD_IN_DEEP = registerBlock("block_ore_lead_in_deep", () -> new Block(Block.Properties.of().mapColor(MapColor.DEEPSLATE).strength(3.0f, 3.0f).sound(SoundType.DEEPSLATE).requiresCorrectToolForDrops().randomTicks()));
 
+    // 0.1.11.98: silver ore (stone and deepslate, rarer than lead, about as rare as gold), the silver block and the raw silver
+    // block. The Shining crop's last stage needs silver ore or a silver block under it; an iron pickaxe mines them.
+    public static final DeferredBlock<Block> BLOCK_ORE_SILVER = registerBlock("block_ore_silver", () -> new Block(Block.Properties.of().mapColor(MapColor.STONE).strength(3.0f, 3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<Block> BLOCK_ORE_SILVER_IN_DEEP = registerBlock("block_ore_silver_in_deep", () -> new Block(Block.Properties.of().mapColor(MapColor.DEEPSLATE).strength(4.5f, 3.0f).sound(SoundType.DEEPSLATE).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<Block> BLOCK_SILVER = registerBlock("block_silver", () -> new Block(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 6.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<Block> BLOCK_RAW_SILVER = registerBlock("block_raw_silver", () -> new Block(Block.Properties.of().mapColor(MapColor.RAW_IRON).strength(3.0f, 3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+
     // 0.1.10.36: deepslate iridium ore. No world generation: a nuclear blast turns deepslate ores into it. Needs a diamond pickaxe.
     public static final DeferredBlock<Block> BLOCK_ORE_IRIDIUM_IN_DEEP = registerBlock("block_ore_iridium_in_deep", () -> new Block(Block.Properties.of().mapColor(MapColor.DEEPSLATE).strength(4.5f, 3.0f).sound(SoundType.DEEPSLATE).requiresCorrectToolForDrops()));
 
@@ -808,7 +815,7 @@ public static final DeferredBlock<mio_icif_Block_Nuclear_Reactor_Generator> NUCL
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing> FUSION_ECRH_PORT =
         registerBlock("fusion/block_fusion_ecrh_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing> FUSION_FUEL_PORT =
-        registerBlock("fusion/block_fusion_fuel_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("fusion/block_fusion_fuel_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.ItemPort(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));   // 0.1.11.97: slots and a screen
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing> FUSION_EXHAUST_PORT =
         registerBlock("fusion/block_fusion_exhaust_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing> FUSION_CRYO_PORT =
@@ -816,7 +823,7 @@ public static final DeferredBlock<mio_icif_Block_Nuclear_Reactor_Generator> NUCL
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.PowerPort> FUSION_POWER_PORT =
         registerBlock("fusion/block_fusion_power_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.PowerPort(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));   // 0.1.11.92: sends EU
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing> FUSION_MITIGATION_PORT =
-        registerBlock("fusion/block_fusion_mitigation_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.Facing(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("fusion/block_fusion_mitigation_port", () -> new com.miophas.singularity_iteration.common.block.fusion.mio_icif_block_fusion_part.ItemPort(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));   // 0.1.11.97: slots and a screen
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_turbine_rotor> STEAM_TURBINE_ROTOR_IRIDIUM =
         registerBlock("generator/block_steam_turbine_rotor_iridium", () -> new com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_turbine_rotor(Block.Properties.of().mapColor(MapColor.SNOW).strength(5.0f, 10.0f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion(), com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_turbine_rotor.Tier.IRIDIUM));
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_turbine_rotor> STEAM_TURBINE_ROTOR_NETHERITE =

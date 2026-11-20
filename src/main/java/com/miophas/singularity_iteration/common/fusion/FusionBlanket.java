@@ -18,9 +18,10 @@ import net.minecraft.world.item.ItemStack;
  *       fission reactor: vents, heat exchangers, coolant cells and platings keep the blanket's heat in check.</li>
  *   <li>The blanket is subcritical: its rods fission only while the plasma burns.</li>
  *   <li>Output (EU/t): the neutron power, 20% more for the share of neutrons lithium cells take (lithium-6 + n releases 4.8 MeV),
- *       plus {@link #EU_PER_FISSION_EU} times the fission reactor output the rods give, times f. Capped at
- *       {@link FusionPlasma#OUTPUT_CAP}: proton quad rods boxed in by iridium overclocked vents reach it (5 x the neutron
- *       power, twice the Mekanism fusion reactor); no layout goes above it.</li>
+ *       plus {@link #EU_PER_FISSION_EU} times the fission reactor output the rods give, times f. Until 0.1.11.98 it was capped
+ *       at {@link FusionPlasma#FULL_POWER} (twice the Mekanism fusion reactor); now proton quad rods boxed in by iridium
+ *       overclocked vents give 41,440,000 EU/t and stronger layouts more (up to {@link FusionPlasma#OUTPUT_LIMIT}, the grid's
+ *       top voltage, as an overflow guard).</li>
  *   <li>Too hot (the hull at its maximum, 10,000 + platings) is an overheated blanket: the plasma disrupts.</li>
  * </ul>
  */
@@ -37,7 +38,7 @@ public final class FusionBlanket {
     /** The neutron power at full fusion power (16 feed steps). */
     public static final long FULL_NEUTRONS = Math.round(FusionPlasma.MAX_FEED * FusionPlasma.FUSION_PER_FEED * FusionPlasma.NEUTRON_SHARE);
 
-    /** One cycle: the new stacks, the hull heat, the output (EU/t, capped) and its parts. */
+    /** One cycle: the new stacks, the hull heat, the output (EU/t) and its parts. */
     public record Cycle(ItemStack[] stacks, long hull, long maxHull, long output, double fissionEu, double lithiumShare,
                         boolean overheated, boolean invalid) {}
 
@@ -49,12 +50,12 @@ public final class FusionBlanket {
         return out;
     }
 
-    /** The output for a neutron power, a lithium share and the rods' fission output (fission-reactor EU/t), capped. */
+    /** The output for a neutron power, a lithium share and the rods' fission output (fission-reactor EU/t). */
     public static long output(long neutronPower, double lithiumShare, double fissionEu) {
         if (neutronPower <= 0) return 0;
         double f = Math.min(1.0, (double) neutronPower / FULL_NEUTRONS);
         double eu = neutronPower * (1 + LITHIUM_GAIN * lithiumShare) + EU_PER_FISSION_EU * fissionEu * f;
-        return (long) Math.min(FusionPlasma.OUTPUT_CAP, Math.max(0, Math.floor(eu)));
+        return (long) Math.min(FusionPlasma.OUTPUT_LIMIT, Math.max(0, Math.floor(eu)));   // 0.1.11.98: no cap
     }
 
     /**

@@ -900,6 +900,22 @@
     {
       "id": "mio_icif:fusion/block_fusion_poloidal_coil",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_silver",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_silver_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_silver",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_raw_silver",
+      "required": false
     }
   ]
 }

@@ -241,7 +241,8 @@ public class JEIPlugin implements IModPlugin {
             net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.1"),
             net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.2"),
             net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.3"),
-            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.4"));   // 0.1.11.94: coolant cells and the meltdown
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.4"),    // 0.1.11.94: coolant cells and the meltdown
+            net.minecraft.network.chat.Component.translatable("jei.mio_icif.fusion_info.5"));   // 0.1.11.97: the fuel and mitigation ports' slots
         var level = Minecraft.getInstance().level;
         if (level == null) return;
 

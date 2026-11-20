@@ -226,6 +226,18 @@ public final class NetworkWalker {
     }
 
     /**
+     * 0.1.11.99: the energy source a contact block belongs to (a reactor chamber's reactor), when the source lists {@code at}
+     * among its electrical contacts; otherwise null. Call on the server thread.
+     */
+    @Nullable
+    public static BlockEntity contactOwner(@Nullable BlockEntity be, BlockPos at) {
+        if (!(be instanceof com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_chamber chamber)) return null;
+        BlockEntity owner = chamber.getConnectedReactor();
+        return owner instanceof com.miophas.singularity_iteration.core.api.energy.IEnergyEmissionSource source
+            && source.electricalContactPositions().contains(at) ? owner : null;
+    }
+
+    /**
      * Returns the rated packet of a wire in EU/t, or 0 if the block entity is not a wire or the tier is
      * unknown. A failure in the tier lookup also gives 0, so that a display walk never throws.
      */
@@ -467,7 +479,13 @@ public final class NetworkWalker {
                 // a device already listed (e.g. a transformer bordering two segments) is not re-added,
                 // but it must still be queued from this side - the old walker skipped it here
                 EnergyNetworkSnapshot.Category cat = categorize(be);
-                if (cat == null) continue;
+                if (cat == null) {
+                    // 0.1.11.99: a contact block of a multi-block source (a reactor chamber): the source behind it is the device,
+                    // at its own position, where the engine measures it (the terminal missed a reactor cabled at a chamber)
+                    BlockEntity owner = contactOwner(be, next);
+                    if (owner != null && (cat = categorize(owner)) != null) addDevice(r, devices, owner.getBlockPos(), cat, subnet.index, maxDevices);
+                    continue;
+                }
                 addDevice(r, devices, next, cat, subnet.index, maxDevices);
                 if (isBuffer(be)) { buffers.add(next.immutable()); touch(r, next, subnet.index); }
             }

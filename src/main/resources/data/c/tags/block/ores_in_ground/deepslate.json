@@ -23,6 +23,10 @@
     {
       "id": "mio_icif:block_ore_iridium_in_deep",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_silver_in_deep",
+      "required": false
     }
   ]
 }

@@ -82,6 +82,11 @@ public class mio_icif_menus {
     // 0.1.11.92: the fusion reactor controller
     public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.fusion.FusionControllerMenu>> FUSION_CONTROLLER_MENU_TYPE =
         MENU_TYPES.register("fusion_controller_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.fusion.FusionControllerMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+    // 0.1.11.97: the fuel injection port and the disruption mitigation port (one menu type each: the client builds the slots)
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.fusion.FusionItemPortMenu>> FUSION_FUEL_PORT_MENU_TYPE =
+        MENU_TYPES.register("fusion_fuel_port_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.fusion.FusionItemPortMenu::fuel, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.fusion.FusionItemPortMenu>> FUSION_COOLANT_PORT_MENU_TYPE =
+        MENU_TYPES.register("fusion_mitigation_port_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.fusion.FusionItemPortMenu::coolant, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
     public static final DeferredHolder<MenuType<?>, MenuType<ReactorFluidPortMenu>> REACTOR_FLUID_PORT_MENU_TYPE =
         MENU_TYPES.register("reactor_fluid_port_menu", () -> new MenuType<>(ReactorFluidPortMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));

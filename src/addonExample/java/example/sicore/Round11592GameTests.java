@@ -174,10 +174,10 @@ public final class Round11592GameTests {
     }
 
     @GameTest(template = "empty", batch = "round11592_fusion_model", timeoutTicks = 20)
-    public static void bestBlanketGivesExactlyTwiceMekanism(GameTestHelper h) {
+    public static void bestBlanketReachesTwiceMekanismAndStrongerOnesGoPast(GameTestHelper h) {
         List<String> wrong = new ArrayList<>();
-        long full = num(BLANKET, "FULL_NEUTRONS"), cap = num(PLASMA, "OUTPUT_CAP");
-        // proton quad rods boxed in by iridium overclocked vents: stable, and at the cap
+        long full = num(BLANKET, "FULL_NEUTRONS"), cap = num(PLASMA, "FULL_POWER"), limit = num(PLASMA, "OUTPUT_LIMIT");
+        // proton quad rods boxed in by iridium overclocked vents: stable, and at full power (0.1.11.98: no longer a cap)
         ItemStack[] grid = blanket("VVVVVVVVV", "VpVVpVVpV", "VVVVVVVVV", "VVVVVVVVV", "VpVVpVVpV", "VVVVVVVVV");
         long hull = 0, output = 0;
         for (int i = 0; i < 100; i++) {
@@ -187,10 +187,14 @@ public final class Round11592GameTests {
             hull = lng(call(c, "hull"));
             output = lng(call(c, "output"));
         }
-        if (output != cap) wrong.add("the best layout gives " + output + " EU/t, expected " + cap);
-        if (cap != 2 * 19_600_000L) wrong.add("the cap is not twice the Mekanism fusion reactor (19.6M FE/t)");
-        // nothing goes above it, however strong
-        if (lng(call(cls(BLANKET), "output", full, 1.0, 1e12)) != cap) wrong.add("the output goes past the cap");
+        System.out.println("[Round11592] reference blanket (proton quad rods in iridium vents): " + output + " EU/t");
+        // uncapped it gives 41,440,000 EU/t (the manual, the JEI text, the demo sign and the energy table say so)
+        if (output != 41_440_000L) wrong.add("the reference layout gives " + output + " EU/t, expected 41,440,000 (past full power " + cap + ")");
+        if (cap != 2 * 19_600_000L) wrong.add("full power is not twice the Mekanism fusion reactor (19.6M FE/t)");
+        // 0.1.11.98: no cap: a stronger blanket goes past it; only the grid's top voltage bounds the output (overflow guard)
+        if (lng(call(cls(BLANKET), "output", full, 0.0, 20_000.0)) <= cap) wrong.add("a stronger blanket does not go past 39.2M EU/t");
+        if (lng(call(cls(BLANKET), "output", full, 1.0, 1e12)) != limit) wrong.add("the output is not bounded by the grid's top voltage");
+        if (limit != Integer.MAX_VALUE) wrong.add("the output limit is " + limit + ", not the grid's top voltage");
         // weaker blankets give less
         long lithium = lng(call(cycle(blanket("L", "L", "L", "L", "L", "L"), 0, full), "output"));
         if (lithium >= cap || lithium <= full) wrong.add("a lithium blanket gives " + lithium);
@@ -224,7 +228,9 @@ public final class Round11592GameTests {
     @GameTest(template = "empty", batch = "round11592_fusion_model", timeoutTicks = 20)
     public static void powerPortVoltageAndStructureTurns(GameTestHelper h) {
         List<String> wrong = new ArrayList<>();
-        long[][] cases = {{100_000, 5}, {524_288, 5}, {524_289, 6}, {2_097_152, 6}, {9_800_000, 8}, {19_600_000, 8}, {39_200_000, 9}};
+        // 0.1.11.98: above UHV (no output cap): UEV up to 536,870,912 EU/t, UIV for the grid's top 2,147,483,647 EU/t
+        long[][] cases = {{100_000, 5}, {524_288, 5}, {524_289, 6}, {2_097_152, 6}, {9_800_000, 8}, {19_600_000, 8}, {39_200_000, 9},
+            {134_217_728, 9}, {134_217_729, 10}, {200_000_000, 10}, {536_870_912, 10}, {536_870_913, 11}, {Integer.MAX_VALUE, 11}};
         for (long[] c : cases) {
             long tier = lng(call(cls(PORT), "tierFor", c[0]));
             if (tier != c[1]) wrong.add(c[0] + " EU/t -> tier " + tier + ", expected " + c[1]);

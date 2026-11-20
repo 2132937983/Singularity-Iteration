@@ -6,14 +6,15 @@ import net.minecraft.nbt.CompoundTag;
  * 0.1.11.92: the plasma and the magnets of a fusion reactor (tokamak), as a model without world access: the controller gives it
  * what the structure offers each tick ({@link Inputs}) and gets back what happened ({@link Result}).
  *
- * <p>The numbers follow a real tokamak, scaled so that the best layout gives {@link #OUTPUT_CAP}:
+ * <p>The numbers follow a real tokamak, scaled so that a good blanket gives about {@link #FULL_POWER} (0.1.11.98: no longer a cap;
+ * a blanket gives what its components make):
  * <ul>
  *   <li>Fusion power: {@link #FUSION_PER_FEED} EU/t per feed step (1-16), times the reactivity at the plasma temperature
  *       (none below 4 keV, full from 14 keV). D-T fusion gives 20% of its energy to alpha particles, which stay in the plasma
  *       and heat it, and 80% to neutrons, which go into the blanket ({@code FusionBlanket} multiplies them).</li>
  *   <li>The plasma loses heat in proportion to its temperature; with the alpha heating alone it settles at 15 keV (about
  *       170 million K). Below that it needs the heating ports: up to fusion power / 10 (Q = 10, as ITER), 245,000 EU/t per port.</li>
- *   <li>The superconducting magnets cost {@link #MAGNET_UPKEEP} EU/t (1% of the cap) while the reactor runs, cool down in
+ *   <li>The superconducting magnets cost {@link #MAGNET_UPKEEP} EU/t (1% of {@link #FULL_POWER}) while the reactor runs, cool down in
  *       {@link #COOLDOWN_TICKS} ticks of paid upkeep, and quench when the upkeep is not paid.</li>
  *   <li>Start-up: the central solenoid takes {@link #STARTUP_ENERGY} EU, at up to {@link #STARTUP_RATE} EU/t (30 s at full rate).
  *       Its flux carries a burn of {@link #PULSE_TICKS} ticks (ITER: 300-500 s); two electron cyclotron heaters drive the plasma
@@ -24,8 +25,14 @@ import net.minecraft.nbt.CompoundTag;
  * </ul>
  */
 public final class FusionPlasma {
-    /** 2 x the Mekanism fusion reactor's air-cooled maximum (19,600,000 FE/t at injection rate 98). */
-    public static final long OUTPUT_CAP = 39_200_000L;
+    /**
+     * 2 x the Mekanism fusion reactor's air-cooled maximum (19,600,000 FE/t at injection rate 98): the full-power advancement.
+     * It was the output cap until 0.1.11.98; uncapped, the demonstration blanket (proton quad rods boxed in by iridium
+     * overclocked vents) gives 41,440,000 EU/t and stronger blankets more.
+     */
+    public static final long FULL_POWER = 39_200_000L;
+    /** 0.1.11.98: the highest output, the EU grid's top voltage (MAX, 2,147,483,647 EU/t): an overflow guard, not a cap. */
+    public static final long OUTPUT_LIMIT = Integer.MAX_VALUE;
     public static final int MIN_FEED = 1, MAX_FEED = 16;
     public static final long FUSION_PER_FEED = 612_500L;              // 16 steps: 9,800,000 EU/t of fusion power
     public static final double ALPHA_SHARE = 0.2, NEUTRON_SHARE = 0.8;
@@ -34,7 +41,7 @@ public final class FusionPlasma {
     public static final double LOSS_PER_KEV = ALPHA_SHARE * FUSION_PER_FEED / BURN_KEV;
     /** EU to raise the plasma one keV, per feed step. */
     public static final double HEAT_CAPACITY = 400_000.0;
-    public static final long MAGNET_UPKEEP = OUTPUT_CAP / 100;        // 392,000 EU/t
+    public static final long MAGNET_UPKEEP = FULL_POWER / 100;        // 392,000 EU/t
     public static final int COOLDOWN_TICKS = 600;
     public static final long STARTUP_ENERGY = 300_000_000L, STARTUP_RATE = 10_000_000L;
     public static final long HEATING_PER_PORT = 245_000L;             // 4 ports: 980,000 EU/t = fusion power at 16 steps / 10

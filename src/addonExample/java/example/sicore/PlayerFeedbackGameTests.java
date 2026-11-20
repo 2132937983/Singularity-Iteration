@@ -316,7 +316,7 @@ public final class PlayerFeedbackGameTests {
             throw new AssertionError(e);
         }
         var slots = (IItemHandlerModifiable) call(machine, "getItemHandler");
-        slots.setStackInSlot(0, new ItemStack(Items.IRON_INGOT));   // 0.1.11.4: medium-voltage cable is iron
+        slots.setStackInSlot(0, new ItemStack(Items.COPPER_INGOT));   // 0.1.11.96: medium-voltage cable is copper again
         h.setBlock(cable, block("wiring/cable/block_cable_o"));
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(!slots.getStackInSlot(2).isEmpty(), "the Metal Former made nothing yet"))

@@ -116,7 +116,7 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
             tx, ty + 10 * line++, tw, SiGuiTheme.TEXT_SCREEN, false);
         mio_icif_screen.drawFitted(g, font, Component.translatable("gui.mio_icif.fusion.fusion", compact(v(3))), tx, ty + 10 * line++, tw, SiGuiTheme.TEXT_SCREEN, false);
         mio_icif_screen.drawFitted(g, font, Component.translatable("gui.mio_icif.fusion.output", compact(v(4))), tx, ty + 10 * line++, tw,
-            v(4) >= FusionPlasma.OUTPUT_CAP ? SiGuiTheme.GOOD : SiGuiTheme.TEXT_SCREEN, false);
+            v(4) >= FusionPlasma.FULL_POWER ? SiGuiTheme.GOOD : SiGuiTheme.TEXT_SCREEN, false);
         mio_icif_screen.drawFitted(g, font, Component.translatable("gui.mio_icif.fusion.feed", v(2), FusionPlasma.MAX_FEED), tx, ty + 10 * line++, tw, SiGuiTheme.TEXT_SCREEN, false);
         mio_icif_screen.drawFitted(g, font, Component.translatable("gui.mio_icif.fusion.fuel", compact(v(8)), compact(v(9))), tx, ty + 10 * line++, tw, SiGuiTheme.TEXT_SCREEN, false);
         mio_icif_screen.drawFitted(g, font, Component.translatable("gui.mio_icif.fusion.ports", v(18), v(19), v(23), v(22), v(21), v(24)), tx, ty + 10 * line++, tw,

@@ -16,13 +16,13 @@ item_ids:
 
 The console of the tokamak fusion reactor. The structure is a torus (a doughnut) 25 blocks across and 11 high: a central solenoid, eight D-shaped toroidal field coils, two outer poloidal field coils, the vacuum vessel, and inside it the blanket, the divertor and the plasma channel.
 
-D-T fusion gives 20% of its energy to the plasma, which keeps it hot, and 80% to neutrons, which go into the blanket. The blanket takes the nuclear reactor's components: fuel rods fission from the neutrons (subcritical: no fusion, no fission), lithium cells breed tritium, and vents, heat exchangers and coolant cells keep it cool. The best blanket gives twice the output of the Mekanism fusion reactor.
+D-T fusion gives 20% of its energy to the plasma, which keeps it hot, and 80% to neutrons, which go into the blanket. The blanket takes the nuclear reactor's components: fuel rods fission from the neutrons (subcritical: no fusion, no fission), lithium cells breed tritium, and vents, heat exchangers and coolant cells keep it cool. The output has no cap: the example blanket below gives 41,440,000 EU/t, more than twice the Mekanism fusion reactor, and stronger blankets give more.
 
 ## Power data
 
 | Item | Value |
 |---|---|
-| Output | up to 39,200,000 EU/t (best blanket) |
+| Output | no cap; 41,440,000 EU/t with the example blanket |
 | Fusion power | 612,500 EU/t per feed step, 9,800,000 EU/t at 16 steps |
 | Input voltage tier | LuV (32,768 EU), any face |
 | Input storage | 20,000,000 EU |
@@ -46,12 +46,22 @@ D-T fusion gives 20% of its energy to the plasma, which keeps it hot, and 80% to
 ## Procedure
 
 1. Build the structure and connect LuV power to the console.
-2. Put deuterium fuel rods and tritium fuel rods into the fuel slots (or through a fuel injection port). A fresh rod gives 10,000 fuel units, and the empty fuel rod comes back.
+2. Put deuterium fuel rods and tritium fuel rods into the fuel slots (or into a fuel injection port, see Automation below). A fresh rod gives 10,000 fuel units, and the empty fuel rod comes back.
    - Deuterium fuel rods: a thermal centrifuge (heat 4,000 or more, 1,200 ticks) turns a hot water cell into an unstable hot water cell; in a canner in canning mode, put the unstable hot water cell in the left slot and an empty fuel rod in the middle slot.
    - A deuterium fuel rod also works in a nuclear reactor as a neutron source: each adjacent fuel rod takes one more pulse per cycle, for 5,000 cycles (half a tritium rod), with no decay heat; then the empty fuel rod is left.
 3. Fill the blanket (9 columns x 6 rows; column 1 faces the plasma) with components.
 4. Apply a redstone signal. The reactor goes through: magnet cooldown (30 s), solenoid charge, heating, ignition (14 keV, about 160 million K), burn (about 15 keV).
 5. Set the feed (1-16) with the screen's buttons. After ignition no heating is needed. The output leaves through the power output ports.
+
+## Automation
+
+The fuel injection port and the disruption mitigation port have slots of their own; right-click one to open its screen (like the nuclear reactor's fluid port):
+
+- **Fuel injection port**: 2 slots of deuterium fuel rods, 2 of tritium fuel rods and 2 outputs for the empty fuel rods. Pipes and hoppers can only put fuel rods into their own slots, and can only take the empty fuel rods out.
+- **Disruption mitigation port**: 4 slots of coolant cells (10k, 30k, 60k).
+- Once the structure is formed, the console takes one rod or cell from a port whenever its deuterium, tritium or mitigation slot is empty, and sends its empty fuel rods to the fuel injection port's outputs. While the structure is not formed, the items stay in the port.
+- The screen shows whether the port is linked to the console, and the fuel or coolant cells the console holds. Breaking a port drops its contents.
+- Hoppers can also feed the console itself, but it only exposes the fuel slots and the empty-rod outputs, never the blanket. Coolant cells go in only through a disruption mitigation port or by hand.
 
 ## Plasma
 
@@ -64,8 +74,8 @@ D-T fusion gives 20% of its energy to the plasma, which keeps it hot, and 80% to
 
 - The fusion neutrons weaken column by column: at full power each slot of columns 1, 2 and 3 gets 2, 1 and 1 neutrons per cycle, and the columns after that get none.
 - Fuel rods count them as extra pulses, so they make more heat and more power (the nuclear reactor's own rules). Lithium cells breed 40 per neutron and become tritium fuel rods at 10,000; about 5 lithium cells in column 1 keep the tritium self-sufficient.
-- Output = neutron power x (1 + 0.2 x the share of neutrons the lithium cells take) + 14,000 x the rods' fission output (in nuclear reactor EU/t) x the power fraction. It is capped at 39,200,000 EU/t.
-- For example, proton quad rods boxed in by iridium overclocked vents reach the cap. A blanket at its maximum heat (10,000 plus platings) melts down (see below).
+- Output = neutron power x (1 + 0.2 x the share of neutrons the lithium cells take) + 14,000 x the rods' fission output (in nuclear reactor EU/t) x the power fraction. There is no cap (it stops only at the grid's top voltage, 2,147,483,647 EU/t, against overflow).
+- For example, proton quad rods boxed in by iridium overclocked vents give 41,440,000 EU/t (past the full power advancement at 39,200,000); blankets with more fission give more. A blanket at its maximum heat (10,000 plus platings) melts down (see below).
 
 ## Hazards
 

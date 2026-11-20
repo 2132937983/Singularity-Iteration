@@ -2596,7 +2596,7 @@ public final class CaptureDirector {
         until(1200, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.BURNING));
         client(5, () -> log.accept("7_ignition"));
         shot(1, "fusion/7_gui_ignition");
-        until(2400, () -> ref.get() != null && ref.get().output() >= com.miophas.singularity_iteration.common.fusion.FusionPlasma.OUTPUT_CAP);
+        until(2400, () -> ref.get() != null && ref.get().output() >= com.miophas.singularity_iteration.common.fusion.FusionPlasma.FULL_POWER);
         client(40, () -> log.accept("8_full_power"));
         shot(1, "fusion/8_gui_full_power");
         // outside, running

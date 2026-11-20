@@ -2467,18 +2467,13 @@ public class mio_icif_capacities {
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TUNNEL_ENTITY_TYPE.get(), (blockEntity, direction) -> blockEntity);
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TUNNEL_FLUID_PORT_ENTITY_TYPE.get(), (blockEntity, direction) -> blockEntity);
         registerEnergyCapabilities(event, mio_icif_block_entities.STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE.get());
-        // 0.1.11.92: the fusion reactor: the controller takes EU, the power output ports send it; the fuel injection port and the
-        // disruption mitigation port (no block entity) hand pipes and hoppers the controller's fuel and ice slots
+        // 0.1.11.92: the fusion reactor: the controller takes EU, the power output ports send it. 0.1.11.97: the fuel injection port
+        // and the disruption mitigation port have slots of their own (fuel rods / coolant cells in, empty fuel rods out), which the
+        // controller takes from; the controller's own faces still take only fuel rods (never the blanket)
         registerEnergyCapabilities(event, mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get());
         registerEnergyCapabilities(event, mio_icif_block_entities.FUSION_POWER_PORT_ENTITY_TYPE.get());
-        event.registerBlock(Capabilities.ItemHandler.BLOCK, (level, pos, state, be, side) -> {
-            var controller = com.miophas.singularity_iteration.common.blockentity.fusion.FusionPortRegistry.controller(level, pos);
-            return controller == null ? null : controller.fuelHandler();
-        }, mio_icif_blocks.FUSION_FUEL_PORT.get());
-        event.registerBlock(Capabilities.ItemHandler.BLOCK, (level, pos, state, be, side) -> {
-            var controller = com.miophas.singularity_iteration.common.blockentity.fusion.FusionPortRegistry.controller(level, pos);
-            return controller == null ? null : controller.mitigationHandler();
-        }, mio_icif_blocks.FUSION_MITIGATION_PORT.get());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.FUSION_ITEM_PORT_ENTITY_TYPE.get(),
+            (be, side) -> be.automation());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get(),
             (be, side) -> be.fuelHandler());
         // 0.1.10.36: the steam turbine (EU, cell and battery slots, the steam tank)

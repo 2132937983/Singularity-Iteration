@@ -80,6 +80,22 @@
     {
       "id": "#c:storage_blocks/refined_iron",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_silver",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_raw_silver",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/silver",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/raw_silver",
+      "required": false
     }
   ]
 }

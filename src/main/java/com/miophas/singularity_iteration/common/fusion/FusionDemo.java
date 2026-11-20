@@ -106,16 +106,30 @@ public final class FusionDemo {
             for (Direction d : Direction.values()) level.setBlock(core.relative(d), module, Block.UPDATE_ALL);
             level.setBlock(core, block("wiring/block_gesu_core").defaultBlockState(), Block.UPDATE_ALL);
         }
+        // 0.1.11.99: an energy management terminal on the output line: it reads the reactor's generation
+        level.setBlock(outputTerminal(controller), block("wiring/block_energy_terminal").defaultBlockState(), Block.UPDATE_ALL);
 
         if (signs) {
             BlockPos at = new BlockPos(controller.getX() + 1, ground, controller.getZ() + 6);
             sign(level, at, "聚变堆演示", "拉下控制台上的", "拉杆即启动", "右键控制台看状态");
             sign(level, at.east(), "启动流程", "磁体冷却30秒", "螺线管充能", "加热→点火→燃烧");
             sign(level, at.east(2), "测试电源", "64台创造发电机", "每台32768 EU/t", "共约2.1M EU/t");
-            sign(level, at.east(3), "输出", "能量输出端口→", "超导导线→GESU", "满功率39.2M EU/t");
+            sign(level, at.east(3), "输出", "能量输出端口→", "超导导线→GESU", "满功率41.44M EU/t");   // 0.1.11.98: uncapped (was 39.2M)
+            sign(level, at.east(4), "能源管理终端", "在输出导线底部", "右键看发电读数", "");   // 0.1.11.99
         }
         c.setChanged();
         return lever;
+    }
+
+    /** 0.1.11.99: where the demonstration's energy management terminal stands: beside the bottom of the output line. */
+    public static BlockPos outputTerminal(BlockPos controller) {
+        for (FusionStructure.Laid b : FusionStructure.tokamak().laid()) {
+            if (!b.name().equals("power_port")) continue;
+            Direction front = Direction.byName(b.facing());
+            BlockPos line = controller.offset(b.x(), b.y(), b.z()).relative(front);
+            return line.atY(controller.getY() + bottom()).relative(front.getClockWise());
+        }
+        throw new IllegalStateException("the tokamak has no power output port");
     }
 
     /** Turns the lever on or off (as a player would), so the controller sees the signal at once. */

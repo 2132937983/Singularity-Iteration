@@ -49,7 +49,8 @@ NOTES = {
     'generator/block_experience_generator': '烧经验球：160 EU/t',
     'generator/block_advanced_experience_generator': '烧经验球：320 EU/t',
     'generator/block_quantum_generator': '8,192 EU/t（有自己的配置项，再乘发电倍率）',
-    'fusion/block_fusion_controller': '托卡马克聚变堆：最高 39,200,000 EU/t（最优包层，Mek 聚变堆的二倍），经能量输出端口送出；'
+    'fusion/block_fusion_controller': '托卡马克聚变堆：输出不封顶（0.1.11.98 起；示例包层 41,440,000 EU/t，超过 Mek 聚变堆的二倍，更强的包层更多，'
+                                      '只在电网最高电压 2,147,483,647 EU/t 处截断），经能量输出端口送出；'
                                       '聚变功率每档加料 612,500 EU/t；储能为输入（LuV），磁体维持 392,000 EU/t，启动 300,000,000 EU；'
                                       '燃料为氘燃料棒和氚燃料棒，满功率每 625 tick 各用一根；破裂缓解用 10k/30k/60k 冷却单元；'
                                       '包层热量到上限即熔毁核爆（默认为核反应堆最强爆炸的 50 倍，配置 fusionExplosionMultiplier）',
@@ -68,13 +69,13 @@ DYNAMIC_TIER = {
     'generator/block_turbo_kinetic_generator': ('HV→EV', 2048),
     'generator/block_twin_turbo_kinetic_generator': ('EV→IV', 8192),
     'generator/block_nuclear_reactor_generator': ('IV→LuV', 32768),
-    'fusion/block_fusion_controller': ('IV→UHV', 2097152),   # through its power output ports
-    'fusion/block_fusion_power_port': ('IV→UHV', 2097152),
+    'fusion/block_fusion_controller': ('IV→UIV', 33554432),   # through its power output ports (0.1.11.98: was UHV, no cap now)
+    'fusion/block_fusion_power_port': ('IV→UIV', 33554432),
 }
 
 # the most a state-dependent generator makes (EU/t, from its manual page or its code), for the planning ranking
 MAX_OUT = {
-    'fusion/block_fusion_controller': (39200000, '设计上限：最优包层（Mek 聚变堆的二倍）'),
+    'fusion/block_fusion_controller': (41440000, '示例包层（质子四联燃料棒＋铱超频散热片）；0.1.11.98 起不封顶，更强的包层更多'),
     'generator/block_geomagnetic_generator': (30720, '手册：扰动为 1 时；平均约 8,300'),
     'generator/block_quantum_generator': (8192, '额定（代码）'),
     'generator/block_twin_turbo_kinetic_generator': (4800, '手册：4,000 KU/t 风力或水力动能'),

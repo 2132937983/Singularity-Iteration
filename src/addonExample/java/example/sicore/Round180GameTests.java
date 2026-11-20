@@ -127,7 +127,7 @@ public final class Round180GameTests {
 
     /**
      * The quantum suit ships baked Blockbench models: each piece has its geometry and texture, the
-     * chestplate has hand cover parts, the boots face forward, the items draw the 3D model and the
+     * chestplate has hand cover parts, the boots face forward, the items use GUI sprites and 3D models, and the
      * armor layer uses the baked texture.
      */
     @GameTest(template = "empty", batch = "round180_data")
@@ -142,7 +142,6 @@ public final class Round180GameTests {
             if (json == null) { problems.add("model missing: " + pieces[i]); continue; }
             var root = com.google.gson.JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("parts");
             for (String part : parts[i]) if (!root.has(part) || root.getAsJsonArray(part).size() < 6) problems.add(pieces[i] + " lacks " + part);
-            // 0.1.10.11: the 3D piece everywhere, the inventory included (builtin/entity)
             String problem = Round183GameTests.bakedArmorItemModel("armor/item_armor_quantum_" + pieces[i]);
             if (problem != null) problems.add(pieces[i] + " " + problem);
             var stack = new ItemStack(item("armor/item_armor_quantum_" + pieces[i]));

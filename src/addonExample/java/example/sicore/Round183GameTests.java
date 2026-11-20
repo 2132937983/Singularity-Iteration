@@ -32,15 +32,15 @@ public final class Round183GameTests {
         {"hybrid_solar_helmet", "armor/item_armor_hybrid_solar_helmet"},
         {"ultimate_solar_helmet", "armor/item_armor_ultimate_solar_helmet"}};
 
-    /** Check the worn model's 3D item transforms, plus the flat GUI override on the four nano pieces. */
+    /** Check the 3D item transforms and the flat GUI sprites of the nano and quantum suits. */
     static String bakedArmorItemModel(String itemPath) {
         String json = Round33GameTests.resource("/assets/mio_icif/models/item/" + itemPath + ".json");
         if (json == null) return "item model missing";
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        if (itemPath.startsWith("armor/item_armor_nano_")) {
+        if (itemPath.startsWith("armor/item_armor_nano_") || itemPath.startsWith("armor/item_armor_quantum_")) {
             String icon = itemPath.substring("armor/item_armor_".length());
             if (!root.has("loader") || !"neoforge:separate_transforms".equals(root.get("loader").getAsString()))
-                return "missing nano inventory perspective";
+                return "missing inventory perspective for " + icon;
             var views = root.getAsJsonObject("perspectives");
             if (views == null || !views.keySet().equals(java.util.Set.of("gui"))
                     || !("mio_icif:item/" + icon).equals(views.getAsJsonObject("gui").get("parent").getAsString()))
@@ -51,6 +51,8 @@ public final class Round183GameTests {
             if (!"minecraft:item/generated".equals(sprite.get("parent").getAsString())
                     || !("mio_icif:item/" + icon).equals(sprite.getAsJsonObject("textures").get("layer0").getAsString()))
                 return "incorrect inventory sprite " + icon;
+            if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + icon + ".png"))
+                return "missing inventory sprite texture " + icon;
             root = root.getAsJsonObject("base");
             if (root == null) return "missing 3D item base";
         }

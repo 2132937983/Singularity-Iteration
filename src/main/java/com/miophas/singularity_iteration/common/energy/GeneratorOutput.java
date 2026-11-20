@@ -30,10 +30,10 @@ public final class GeneratorOutput {
 
     public static final List<Entry> GENERATORS = List.of(
         new Entry("solar_generator", "Solar Generator: 1 EU/t in daylight"),
-        new Entry("advanced_solar_panel", "Advanced Solar Panel: 8 EU/t day, 1 EU/t night"),
-        new Entry("hybrid_solar_panel", "Hybrid Solar Panel: 64 EU/t day, 8 EU/t night"),
-        new Entry("ultimate_hybrid_solar_panel", "Ultimate Hybrid Solar Panel: 512 EU/t day, 64 EU/t night"),
-        new Entry("quantum_solar_panel", "Quantum Solar Panel: 4096 EU/t day, 1024 EU/t night"),
+        new Entry("advanced_solar_panel", "Advanced Solar Panel (concentrator): 12 EU/t in direct sun, none at night"),
+        new Entry("hybrid_solar_panel", "Hybrid Solar Panel (concentrator): 96 EU/t in direct sun, none at night"),
+        new Entry("ultimate_hybrid_solar_panel", "Ultimate Hybrid Solar Panel (concentrator): 768 EU/t in direct sun, none at night"),
+        new Entry("quantum_solar_panel", "Quantum Solar Panel (concentrator): 6144 EU/t in direct sun, none at night"),
         new Entry("mets_advanced_solar_generator", "Advanced Solar Generator (METS): up to 64 EU/t by sky light"),
         new Entry("photon_resonance_solar_generator", "Photon Resonance Solar Generator: up to 512 EU/t by sky light"),
         new Entry("ultimate_photon_resonance_solar_generator", "Ultimate Photon Resonance Solar Generator: up to 4096 EU/t by sky light"),

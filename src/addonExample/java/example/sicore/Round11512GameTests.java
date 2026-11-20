@@ -85,7 +85,7 @@ public final class Round11512GameTests {
     @GameTest(template = "empty", timeoutTicks = 20)
     public static void quantumAndRtgValues(GameTestHelper h) {
         h.assertTrue(num("blockentity.generator.mio_icif_QuantumGenerator", "DEFAULT_PRODUCTION") == 8192, "quantum generator 8192 EU/t");
-        h.assertTrue(num("blockentity.generator.mio_icif_QuantumSolarPanel", "NIGHT_POWER") == 1024, "quantum solar panel 1024 EU/t by night");
+        h.assertTrue(num("blockentity.generator.mio_icif_QuantumSolarPanel", "NIGHT_POWER") == 0, "quantum solar panel: nothing by night (route A, 0.1.11.101; was 1024)");
         long[] old = (long[]) constant("blockentity.generator.mio_icif_rt_generator", "GENERATION_RATES");
         long[] independent = (long[]) constant("blockentity.generator.mio_icif_rt_generator", "INDEPENDENT_GENERATION_RATES");
         h.assertTrue(java.util.Arrays.equals(old, independent), "RTG tables differ");

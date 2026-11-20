@@ -53,9 +53,10 @@ public final class Round11514GameTests {
     public static void solarPanelsShareOneImplementation(GameTestHelper h) {
         Class<?> base = common("blockentity.generator.mio_icif_solar_generator");
         Object[][] panels = {
-            {"generator/block_solar_generator", 1, 0, 1}, {"generator/block_advanced_solar_panel", 8, 1, 4},
-            {"generator/block_hybrid_solar_panel", 64, 8, 4}, {"generator/block_ultimate_hybrid_solar_panel", 512, 64, 4},
-            {"generator/block_quantum_solar_panel", 4096, 1024, 4}, {"generator/block_mets_advanced_solar_generator", 64, 6, 1},
+            // 0.1.11.101: route A (concentrator) 12 / 96 / 768 / 6144 EU/t, nothing at night
+            {"generator/block_solar_generator", 1, 0, 1}, {"generator/block_advanced_solar_panel", 12, 0, 4},
+            {"generator/block_hybrid_solar_panel", 96, 0, 4}, {"generator/block_ultimate_hybrid_solar_panel", 768, 0, 4},
+            {"generator/block_quantum_solar_panel", 6144, 0, 4}, {"generator/block_mets_advanced_solar_generator", 64, 6, 1},
             {"generator/block_photon_resonance_solar_generator", 512, 51, 1}, {"generator/block_ultimate_photon_resonance_solar_generator", 4096, 512, 1}};
         int x = 0;
         for (Object[] row : panels) {
@@ -70,11 +71,11 @@ public final class Round11514GameTests {
         h.succeed();
     }
 
-    /** A panel with a roof over it gets the diffuse light only (at most 15 % of the clear sky). */
+    /** A panel with a roof over it gets the diffuse light only (at most 15 % of the clear sky). 0.1.11.101: a standard panel (the hybrid is a concentrator now). */
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void coveredPanelGetsDiffuseLightOnly(GameTestHelper h) {
         BlockPos at = new BlockPos(2, 2, 2);
-        BlockEntity be = place(h, at, "generator/block_hybrid_solar_panel");
+        BlockEntity be = place(h, at, "generator/block_mets_advanced_solar_generator");
         h.setBlock(at.above(3), Blocks.STONE);
         h.runAfterDelay(10, () -> {   // the sky light under the roof is updated a few ticks later
             call(be, "sense", h.getLevel());

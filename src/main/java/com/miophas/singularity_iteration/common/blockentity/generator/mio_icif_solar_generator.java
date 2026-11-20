@@ -50,7 +50,9 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     public static final int REFRESH = 20, SAMPLE = 250, SAMPLES = 24000 / SAMPLE;
     /** Shade states for the screen. */
     public static final int OPEN = 0, DIFFUSE = 1, DARK = 2, NO_SKY = 3;
-    public static final int DATA_COUNT = 16 + SAMPLES / 2;
+    /** 0.1.11.101: after the record, the profile for the screen: full-output level W/m², flags (1 direct light only, 2 held cell), cooling x1000. */
+    public static final int DATA_PROFILE = 16 + SAMPLES / 2;
+    public static final int DATA_COUNT = DATA_PROFILE + 3;
 
     protected final int dayPower, corePower, chargeSlots;
     /** 0.1.11.100: how this panel uses the sky (light, weather, temperature, night, packets). */
@@ -308,7 +310,8 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     /**
      * Menu data: 0 irradiance W/m², 1 clear-sky W/m², 2 output EU/t x100, 3 rated EU/t x100, 4 night core EU/t x100,
      * 5 cell °C x10, 6 temperature factor x1000, 7 cloud index x1000, 8 shade state, 9 time of day, 10 energy,
-     * 11 capacity, 12 today's EU, 13 elevation x10, 14 charge slots, 15 core on, 16.. today's record (two points an int).
+     * 11 capacity, 12 today's EU, 13 elevation x10, 14 charge slots, 15 core on, 16.. today's record (two points an int),
+     * then {@link #DATA_PROFILE}: full-output level W/m², flags (1 direct light only, 2 held cell), cooling x1000.
      */
     public ContainerData getContainerData() {
         return new ContainerData() {
@@ -333,6 +336,9 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
                     case 13 -> (int) Math.round(elevation * 10);
                     case 14 -> chargeSlots;
                     case 15 -> coreActive ? 1 : 0;
+                    case DATA_PROFILE -> (int) Math.round(profile.clip());
+                    case DATA_PROFILE + 1 -> (profile.directOnly() ? 1 : 0) | (profile.fixedCell() ? 2 : 0);
+                    case DATA_PROFILE + 2 -> (int) Math.round(com.miophas.singularity_iteration.common.energy.SolarRoutes.cooling(profile) * 1000);
                     default -> {
                         int k = (i - 16) * 2;
                         if (k < 0 || k + 1 >= SAMPLES) yield 0;

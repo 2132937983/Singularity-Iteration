@@ -5870,5 +5870,20 @@
   "gui.mio_icif.process.tip.centrifuge.1": "熱遠心分離機を上から見た図：外側のヒーターリングが材料をレシピの必要熱量（粘土 250 HU、鉱石 500〜4,000）まで加熱し、鉱物を分けやすくする。",
   "gui.mio_icif.process.tip.centrifuge.2": "ローターが6つのバケットを回す：全速で 12,000 rpm、半径 10 cm、約 16,000 g で重い粒子を外へ飛ばす。",
   "gui.mio_icif.process.tip.centrifuge.3": "ローターには慣性がある：稼働中は毎秒 +10 %%、待機中は毎秒 −5 %%。材料がある時だけ加熱する。",
-  "gui.mio_icif.process.wash_net": "正味 %s mB / 回"
+  "gui.mio_icif.process.wash_net": "正味 %s mB / 回",
+  "gui.mio_icif.process.mode.rolling": "圧延",
+  "gui.mio_icif.process.mode.cutting": "切断",
+  "gui.mio_icif.process.mode.extruding": "押出",
+  "gui.mio_icif.process.switch_mode": "モード切替",
+  "gui.mio_icif.process.cutting": "切断中",
+  "gui.mio_icif.process.no_blade": "刃なし",
+  "gui.mio_icif.process.blade": "刃の硬度 %s · 耐久 %s/%s",
+  "gui.mio_icif.process.cut_wear": "材料硬度 %s · 1回の摩耗 %s",
+  "gui.mio_icif.process.status.no_blade": "刃が柔らかすぎるか、ない",
+  "gui.mio_icif.process.tip.switch_mode": "圧延・切断・押出を切り替える。",
+  "gui.mio_icif.process.tip.former.1": "金属成形機を横から見た図：圧延は棒を板に、切断はせん断刃で板を切り、押出はビレットをダイスから押し出して線や軸にする。",
+  "gui.mio_icif.process.tip.former.2": "時間はレシピどおり（100〜400 tick）、10 EU/t（レシピに電力があればその値）。",
+  "gui.mio_icif.process.tip.former_advanced": "上級版はレシピ時間の5分の1、50 EU/t で加工する。",
+  "gui.mio_icif.process.tip.cutter.1": "ブロックカッターを横から見た図：丸のこがブロックを切り下ろし、切り溝が進むにつれ深くなる。鉄の刃は灰色、ダイヤモンドの刃は淡い水色。",
+  "gui.mio_icif.process.tip.cutter.2": "1回の切断で刃は（材料硬度 ÷ 刃の硬度）² ポイント摩耗する：鉄の刃 64、ダイヤモンドの刃 1,024。使い切ると折れる。"
 }

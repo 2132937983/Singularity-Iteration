@@ -155,8 +155,96 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         return true;
     }
 
+    // ---- 0.1.11.115 (processing overhaul M8): the recipe's time and power, and blade wear ----
+
+    /**
+     * A recipe that writes its own time and EU/t runs them (logs to planks and planks to sticks 100 t × 2 EU/t, the steel
+     * block to plates 450 t × 4 EU/t); the others run the cutter's 900 t at 48 EU/t as before.
+     */
+    public int recipeTicks() {
+        var recipe = getCurrentRecipe();
+        return recipe != null && recipe.processingTimeOverride().isPresent() ? recipe.processingTimeOverride().getAsInt() : MAX_PROGRESS;
+    }
+
+    public long recipePower() {
+        var recipe = getCurrentRecipe();
+        return recipe != null && recipe.energyPerTickOverride().isPresent() ? recipe.energyPerTickOverride().getAsInt() : ENERGY_PER_TICK;
+    }
+
+    /** The operation's length follows the recipe (with the work cycle factor; the overclock speeds the progress). */
+    @Override
+    protected void updateProcessingParameters() {
+        int target = cycleScaledTicks(recipeTicks());
+        if (maxProgress != target) {
+            maxProgress = target;
+            if (progress > maxProgress) progress = maxProgress;
+        }
+    }
+
+    /** The recipe's power at the overclock's energy multiplier. */
+    @Override
+    public long getEffectiveEnergyPerTick() {
+        long base = super.getEffectiveEnergyPerTick();
+        return Math.max(1, Math.round(base * (double) recipePower() / ENERGY_PER_TICK));
+    }
+
+    /**
+     * Blade wear: a cut wears the blade by (material hardness ÷ blade hardness)², in units of the blade's durability
+     * (iron 64, diamond 1,024): the iron blade cuts 64 blocks of hardness 2 or 256 of hardness 1, the diamond blade 1,024 of
+     * hardness 8. Fractions are carried; a blade worn through breaks.
+     */
+    private double wearCarry;
+
+    /** Hardness of the current material (0 without a recipe). */
+    public int materialHardness() {
+        var recipe = getCurrentRecipe();
+        return recipe == null ? 0 : recipe.getHardness();
+    }
+
+    public double wearPerCut() {
+        var recipe = getCurrentRecipe();
+        int blade = getBladeHardness(itemHandler.getStackInSlot(BLADE_SLOT));
+        if (recipe == null || blade <= 0) return 0;
+        double r = (double) Math.max(1, recipe.getHardness()) / blade;
+        return r * r;
+    }
+
+    private void wearBlade(double wear) {
+        ItemStack blade = itemHandler.getStackInSlot(BLADE_SLOT);
+        if (blade.isEmpty() || !blade.isDamageableItem()) return;
+        wearCarry += wear;
+        int whole = (int) Math.floor(wearCarry);
+        if (whole <= 0) return;
+        wearCarry -= whole;
+        int damage = blade.getDamageValue() + whole;
+        if (damage >= blade.getMaxDamage()) {
+            itemHandler.setStackInSlot(BLADE_SLOT, ItemStack.EMPTY);
+            if (level != null) level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.BLOCKS, 0.8F, 1.0F);
+            wearCarry = 0;
+        } else {
+            ItemStack worn = blade.copy();
+            worn.setDamageValue(damage);
+            itemHandler.setStackInSlot(BLADE_SLOT, worn);
+        }
+    }
+
+    /** Why the cutter runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code); 9 is no or too soft a blade. */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (itemHandler.getStackInSlot(INPUT_SLOT).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        var recipe = getCurrentRecipe();
+        if (recipe == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        ItemStack blade = itemHandler.getStackInSlot(BLADE_SLOT);
+        if (!isValidBlade(blade) || getBladeHardness(blade) < recipe.getHardness()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_BLADE;
+        if (prepareOperation().isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
     @Override
     protected void doWork() {
+        updateProcessingParameters();   // 0.1.11.115: the length follows the current recipe
         if (prepareOperation().isEmpty()) { stopWork(); return; }
         if (progress < maxProgress) {
             if (getEffectiveEnergyPerTick() <= 0 || !hasEnoughEnergy() || !consumeEnergy()) { stopWork(); return; }
@@ -202,8 +290,10 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         var operation = prepareOperation();
         if (operation.isEmpty()) { stopWork(); return; }
         int completed = progress;
+        double wear = wearPerCut();   // 0.1.11.115: taken before the input changes
         progress = 0;
         if (!operation.get().commit()) { progress = completed; stopWork(); return; }
+        wearBlade(wear);
         finishWork();
         setChanged();
     }
@@ -220,11 +310,13 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
     @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        tag.putDouble("blade_wear_carry", wearCarry);   // 0.1.11.115
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        wearCarry = Math.max(0, Math.min(1, tag.getDouble("blade_wear_carry")));
     }
 
     @Override

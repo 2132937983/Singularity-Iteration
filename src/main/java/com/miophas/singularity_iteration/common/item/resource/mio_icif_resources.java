@@ -57,7 +57,7 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> CRYSTAL_MEMORY = ITEMS.register("resource/item_crystal_memory", () -> new mio_icif_memory(new Item.Properties()));
     public static final DeferredItem<Item> CRYSTAL_MEMORY_RAW = ITEMS.register("resource/item_crystal_memory_raw", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> DCP_PLATE = ITEMS.register("resource/item_dcp_plate", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> DIAMOND_CUT_BLADE = ITEMS.register("resource/item_diamond_cut_blade", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> DIAMOND_CUT_BLADE = ITEMS.register("resource/item_diamond_cut_blade", () -> new Item(new Item.Properties().durability(1024)));   // 0.1.11.115: wears in the block cutter
     public static final DeferredItem<Item> DIAMOND_DUST_SMALL = ITEMS.register("resource/item_diamond_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> ENDER_PEARL_DUST = ITEMS.register("resource/item_ender_pearl_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MILK_WART = ITEMS.register("resource/item_milk_wart", () -> new MilkWartItem(new Item.Properties()));
@@ -87,7 +87,7 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> IRIDIUM = ITEMS.register("resource/item_iridium", () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> IRIDIUM_PLATE = ITEMS.register("resource/item_iridium_plate", () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> IRON_CASING = ITEMS.register("resource/item_iron_casing", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> IRON_CUT_BLADE = ITEMS.register("resource/item_iron_cut_blade", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> IRON_CUT_BLADE = ITEMS.register("resource/item_iron_cut_blade", () -> new Item(new Item.Properties().durability(64)));   // 0.1.11.115: wears in the block cutter
     public static final DeferredItem<Item> IRON_DENSEPLATE = ITEMS.register("resource/item_iron_denseplate", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> IRON_DUST = ITEMS.register("resource/item_iron_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> IRON_DUST_SMALL = ITEMS.register("resource/item_iron_dust_small", () -> new Item(new Item.Properties()));

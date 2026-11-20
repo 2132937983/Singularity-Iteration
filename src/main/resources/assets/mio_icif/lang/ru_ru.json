@@ -5870,5 +5870,20 @@
   "gui.mio_icif.process.tip.centrifuge.1": "Термоцентрифуга сверху: кольцевой нагреватель сначала доводит загрузку до тепла по рецепту (глина 250 HU, руды 500–4 000), чтобы минералы разделились.",
   "gui.mio_icif.process.tip.centrifuge.2": "Ротор вращает шесть стаканов: на полной скорости 12 000 об/мин при радиусе 10 см, около 16 000 g, тяжёлые частицы уходят наружу.",
   "gui.mio_icif.process.tip.centrifuge.3": "У ротора есть инерция: +10 %% в секунду при работе, −5 %% в секунду в простое. Греет только при наличии загрузки.",
-  "gui.mio_icif.process.wash_net": "Расход %s mB за промывку"
+  "gui.mio_icif.process.wash_net": "Расход %s mB за промывку",
+  "gui.mio_icif.process.mode.rolling": "Прокатка",
+  "gui.mio_icif.process.mode.cutting": "Резка",
+  "gui.mio_icif.process.mode.extruding": "Экструзия",
+  "gui.mio_icif.process.switch_mode": "Сменить режим",
+  "gui.mio_icif.process.cutting": "Режет",
+  "gui.mio_icif.process.no_blade": "Нет лезвия",
+  "gui.mio_icif.process.blade": "Лезвие: твёрдость %s · %s/%s",
+  "gui.mio_icif.process.cut_wear": "Заготовка %s · износ %s/рез",
+  "gui.mio_icif.process.status.no_blade": "Лезвие слишком мягкое или отсутствует",
+  "gui.mio_icif.process.tip.switch_mode": "Переключает прокатку, резку и экструзию.",
+  "gui.mio_icif.process.tip.former.1": "Металлоформовщик сбоку: прокатка делает из прутка лист, резка разрезает лист ножницами, экструзия продавливает заготовку через фильеру в проволоку или вал.",
+  "gui.mio_icif.process.tip.former.2": "Время по рецепту (100–400 тиков), 10 EU/t (или мощность рецепта, если она указана).",
+  "gui.mio_icif.process.tip.former_advanced": "Продвинутый делает рецепт за пятую часть времени при 50 EU/t.",
+  "gui.mio_icif.process.tip.cutter.1": "Блокорез сбоку: дисковая пила опускается сквозь блок, пропил углубляется по ходу резки; железное лезвие серое, алмазное — бледно-голубое.",
+  "gui.mio_icif.process.tip.cutter.2": "Каждый рез изнашивает лезвие на (твёрдость материала ÷ твёрдость лезвия)² единиц: 64 у железного, 1 024 у алмазного; изношенное лезвие ломается."
 }

@@ -293,6 +293,10 @@ public final class CaptureDirector {
                         ? pm.getItemHandler() : null;
                     var item = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(input));
                     if (handler instanceof net.neoforged.neoforge.items.IItemHandlerModifiable m) m.setStackInSlot(0, new net.minecraft.world.item.ItemStack(item, 32));
+                    // 0.1.11.115: -Dsi.capture.gallerySlot1=item_id puts one of it in slot 1 (the block cutter's blade)
+                    String second = System.getProperty("si.capture.gallerySlot1");
+                    if (second != null && handler instanceof net.neoforged.neoforge.items.IItemHandlerModifiable m2)
+                        m2.setStackInSlot(1, new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(second))));
                     if (level.getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
                 }
                 // 0.1.11.114: -Dsi.capture.galleryWater=mB fills the machine's tank with water

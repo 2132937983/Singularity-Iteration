@@ -18,12 +18,12 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
 
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 37;
-    private static final int INPUT_Y = 35;
-    private static final int BATTERY_X = 17;
-    private static final int BATTERY_Y = 58;
-    private static final int OUTPUT_X = 115;
-    private static final int OUTPUT_Y = 35;
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 38;
+    private static final int OUTPUT_X = 10;
+    private static final int OUTPUT_Y = 58;
 
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
@@ -38,7 +38,7 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.METAL_FORMER_ADVANCED_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 6, blockEntity);
+            null, DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -102,6 +102,29 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
         return true;
     }
 
+    /** 0.1.11.115: data 6 status (ProcessStatus), 7 EU/t (0-5 as before). */
+    public static final int DATA_COUNT = 8;
+
+    public int getStatus() { return data.get(6); }
+    public int getPower() { return data.get(7); }
+
+    // ---- 0.1.11.115: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
     public IMachineAPI.MetalFormerMode getMode() {
         int modeIndex = data.get(5);
         return IMachineAPI.MetalFormerMode.fromId(modeIndex % 3);
@@ -126,6 +149,8 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
             this.setSyncData(3, (int) be.getEnergyStorage().getAmount());
             this.setSyncData(4, (int) be.getEnergyStorage().getCapacity());
             this.setSyncData(5, be.getMode().getId());
+            this.setSyncData(6, be.processStatus());
+            this.setSyncData(7, (int) Math.min(Short.MAX_VALUE, be.getEffectiveEnergyPerTick()));
         }
     }
 

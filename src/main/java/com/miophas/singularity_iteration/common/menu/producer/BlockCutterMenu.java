@@ -25,20 +25,20 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public BlockCutterMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_block_cutter blockEntity) {
-        super(mio_icif_menus.BLOCK_CUTTER_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT);
+        super(mio_icif_menus.BLOCK_CUTTER_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 9);
     }
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 26, 17));
-        this.addSlot(new SlotItemHandler(itemHandler, BLADE_SLOT, 71, 37));
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 116, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 10, 18));
+        this.addSlot(new SlotItemHandler(itemHandler, BLADE_SLOT, 30, 18));
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 10, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 26, 53) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 38) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
@@ -53,7 +53,31 @@ import org.jetbrains.annotations.Nullable;
     protected int getBatterySlotIndex() { return BATTERY_SLOT; }
 
     @Override
-    protected int getDataSlotCount() { return 5; }
+    protected int getDataSlotCount() { return 9; }
+
+    /** 0.1.11.115: data 5 status (ProcessStatus), 6 material hardness, 7 EU/t of the recipe, 8 stored energy ‰ (0-4 as before). */
+    public int getStatus() { return data.get(5); }
+    public int getMaterialHardness() { return data.get(6); }
+    public int getPower() { return data.get(7); }
+    public int getEnergyPermille() { return data.get(8); }
+
+    // ---- 0.1.11.115: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
 
     public int getProgress() { return data.get(0); }
     public int getMaxProgress() { return data.get(1); }
@@ -68,6 +92,10 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(2, cutter.isWorking() ? 1 : 0);
             this.setSyncData(3, (int) cutter.getEnergyStorage().getAmount());
             this.setSyncData(4, (int) cutter.getEnergyStorage().getCapacity());
+            this.setSyncData(5, cutter.processStatus());
+            this.setSyncData(6, cutter.materialHardness());
+            this.setSyncData(7, (int) Math.min(Short.MAX_VALUE, cutter.getEffectiveEnergyPerTick()));
+            this.setSyncData(8, (int) Math.round(1000.0 * cutter.getEnergyStorage().getAmount() / Math.max(1, cutter.getEnergyStorage().getCapacity())));
         }
     }
 }

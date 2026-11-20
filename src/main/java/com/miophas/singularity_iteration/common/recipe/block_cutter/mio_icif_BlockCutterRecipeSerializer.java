@@ -24,8 +24,9 @@ public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mi
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_BlockCutterRecipe::getGroup),
             Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(mio_icif_BlockCutterRecipe::getIngredient),
             ItemStack.CODEC.fieldOf("result").forGetter(mio_icif_BlockCutterRecipe::getResult),
-            Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_BlockCutterRecipe::getProcessingTime),
-            Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_BlockCutterRecipe::getEnergyPerTick),
+            // 0.1.11.115: absent is -1 (the block cutter then runs its own 900 t at 48 EU/t)
+            Codec.INT.optionalFieldOf("processingtime", -1).forGetter(mio_icif_BlockCutterRecipe::getProcessingTimeRaw),
+            Codec.INT.optionalFieldOf("energypertick", -1).forGetter(mio_icif_BlockCutterRecipe::getEnergyPerTickRaw),
             Codec.INT.optionalFieldOf("count", DEFAULT_INGREDIENT_COUNT).forGetter(mio_icif_BlockCutterRecipe::getIngredientCount),
             Codec.INT.optionalFieldOf("hardness", DEFAULT_HARDNESS).forGetter(mio_icif_BlockCutterRecipe::getHardness),
             Codec.BOOL.optionalFieldOf("wood", false).forGetter(mio_icif_BlockCutterRecipe::isWood)
@@ -51,8 +52,8 @@ public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mi
         String group = buffer.readUtf();
         Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buffer);
         ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
-        int processingTime = buffer.readVarInt();
-        int energyPerTick = buffer.readVarInt();
+        int processingTime = buffer.readVarInt() - 1;   // 0.1.11.115: -1 (none) travels as 0
+        int energyPerTick = buffer.readVarInt() - 1;
         int ingredientCount = buffer.readVarInt();
         int hardness = buffer.readVarInt();
         boolean wood = buffer.readBoolean();
@@ -63,8 +64,8 @@ public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mi
         buffer.writeUtf(recipe.getGroup());
         Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, recipe.getIngredient());
         ItemStack.STREAM_CODEC.encode(buffer, recipe.getResult());
-        buffer.writeVarInt(recipe.getProcessingTime());
-        buffer.writeVarInt(recipe.getEnergyPerTick());
+        buffer.writeVarInt(recipe.getProcessingTimeRaw() + 1);
+        buffer.writeVarInt(recipe.getEnergyPerTickRaw() + 1);
         buffer.writeVarInt(recipe.getIngredientCount());
         buffer.writeVarInt(recipe.getHardness());
         buffer.writeBoolean(recipe.isWood());

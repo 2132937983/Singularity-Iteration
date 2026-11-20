@@ -344,6 +344,27 @@ public enum MetalFormerMode {
         return recipe.map(r -> r.value()).orElse(null);
     }
 
+    /** 0.1.11.115: why the metal former runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (itemHandler.getStackInSlot(INPUT_SLOT).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if ((switch (currentMode) { case ROLLING -> getRollingRecipe(); case CUTTING -> getCuttingRecipe(); case EXTRUDING -> getExtrudingRecipe(); }) == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        if (!(switch (currentMode) { case ROLLING -> canWorkRolling(itemHandler.getStackInSlot(INPUT_SLOT)); case CUTTING -> canWorkCutting(itemHandler.getStackInSlot(INPUT_SLOT)); case EXTRUDING -> canWorkExtruding(itemHandler.getStackInSlot(INPUT_SLOT)); })) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
+    /**
+     * 0.1.11.115 (processing overhaul M8): the recipe's power (10 EU/t for the recipes that give none, the machine's
+     * stock power), at the overclock's energy multiplier. The time was already the recipe's.
+     */
+    @Override
+    public long getEffectiveEnergyPerTick() {
+        long base = super.getEffectiveEnergyPerTick();
+        return Math.max(1, Math.round(base * (double) getRecipeEnergyPerTick() / DEFAULT_ENERGY_PER_TICK));
+    }
+
     /**
      * 获取当前配方相关的处理时间
      */

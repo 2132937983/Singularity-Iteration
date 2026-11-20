@@ -181,8 +181,39 @@ public class mio_icif_metal_former_advanced extends GenericMachineBlockEntity im
 
 
 
+    // ---- 0.1.11.115 (processing overhaul M8): the recipe's time, five times faster ----
+
+    /** The advanced former runs a recipe in a fifth of its time at its own 50 EU/t (it was a fixed 20 ticks for every recipe). */
+    public static final int SPEED_FACTOR = 5;
+
+    /** Ticks of the current recipe: ⌈recipe time ÷ 5⌉ (20 without a recipe). */
+    public int recipeTicks() {
+        return findRecipeForMode().isEmpty() ? DEFAULT_WORK_TIME : Math.max(1, (getRecipeProcessingTime() + SPEED_FACTOR - 1) / SPEED_FACTOR);
+    }
+
+    @Override
+    protected void updateProcessingParameters() {
+        int target = cycleScaledTicks(recipeTicks());
+        if (maxProgress != target) {
+            maxProgress = target;
+            if (progress > maxProgress) progress = maxProgress;
+        }
+    }
+
+    /** 0.1.11.115: why the metal former runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (itemHandler.getStackInSlot(inputSlot).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (findRecipeForMode().isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        if (prepareOperation().isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
     @Override
     protected void doWork() {
+        updateProcessingParameters();   // 0.1.11.115: the length follows the current recipe and mode
         if (prepareOperation().isEmpty()) { stopWork(); return; }
         if (progress < maxProgress) {
             if (getEffectiveEnergyPerTick() <= 0 || !hasEnoughEnergy() || !consumeEnergy()) { stopWork(); return; }

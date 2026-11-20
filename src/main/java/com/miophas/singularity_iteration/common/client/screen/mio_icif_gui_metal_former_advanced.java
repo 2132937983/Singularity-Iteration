@@ -1,130 +1,70 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
-import com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools;
 import com.miophas.singularity_iteration.common.menu.producer.MetalFormerAdvancedMenu;
-import com.miophas.singularity_iteration.core.api.machine.IMachineAPI;
+import com.miophas.singularity_iteration.common.processing.ProcessStatus;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+/**
+ * 进阶金属成型机界面. 0.1.11.115 (processing overhaul M8): the instrument screen (docs/gui_processing_machines.md). The figure is
+ * the tool of the current mode from the side ({@link FormingFigure}); a flat button cycles the mode (rolling, cutting,
+ * extruding). It runs a recipe in a fifth of its time at 50 EU/t.
+ */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
-public class mio_icif_gui_metal_former_advanced extends mio_icif_screen<MetalFormerAdvancedMenu> {
+public class mio_icif_gui_metal_former_advanced extends ProcessInstrumentScreen<MetalFormerAdvancedMenu> {
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_adv_metal_former.png");
-
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    private static final int PROGRESS_X = 61;
-    private static final int PROGRESS_Y = 35;
-
-    private static final int ENERGY_BAR_X = 44;
-    private static final int ENERGY_BAR_Y = 58;
-
-    private static final int MODE_BUTTON_SIZE = 16;
-    private static final int MODE_BUTTON_X = 77;
-    private static final int MODE_BUTTON_Y = 14;
-
-    private static final ResourceLocation BUTTON_SPRITE = ResourceLocation.withDefaultNamespace("widget/button");
-    private static final ResourceLocation BUTTON_HIGHLIGHTED_SPRITE = ResourceLocation.withDefaultNamespace("widget/button_highlighted");
+    private float spin;
 
     public mio_icif_gui_metal_former_advanced(MetalFormerAdvancedMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+    }
+
+    private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
+
+    @Override
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
+        if (running()) spin = (spin + dt * 2.5F) % (float) (2 * Math.PI);
+        int max = menu.getMaxProgress();
+        FormingFigure.draw(g, cx, cy, menu.getMode().name(), max > 0 ? (float) menu.getProgress() / max : 0, spin, running());
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        MetalFormerAdvancedMenu menu = this.getMenu();
-        if (menu != null) {
-            int progressPixels = menu.getProgress() * METAL_FORMER_PROGRESS_WIDTH / Math.max(menu.getMaxProgress(), 1);
-            drawMetalFormerProgress(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, progressPixels);
-
-            drawModernEnergyBar(guiGraphics, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, menu.getEnergy(), menu.getMaxEnergy());
-
-            boolean buttonHovered = isHoveringModeButton(mouseX, mouseY, x, y);
-            renderModeButton(guiGraphics, x + MODE_BUTTON_X, y + MODE_BUTTON_Y, menu.getMode(), buttonHovered);
-        }
-    }
-
-    private boolean isHoveringModeButton(int mouseX, int mouseY, int guiLeft, int guiTop) {
-        return mouseX >= guiLeft + MODE_BUTTON_X && mouseX < guiLeft + MODE_BUTTON_X + MODE_BUTTON_SIZE &&
-               mouseY >= guiTop + MODE_BUTTON_Y && mouseY < guiTop + MODE_BUTTON_Y + MODE_BUTTON_SIZE;
-    }
-
-    private void renderModeButton(GuiGraphics guiGraphics, int x, int y, IMachineAPI.MetalFormerMode mode, boolean hovered) {
-        guiGraphics.blitSprite(hovered ? BUTTON_HIGHLIGHTED_SPRITE : BUTTON_SPRITE, x, y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
-
-        ItemStack iconStack = switch (mode) {
-            case ROLLING -> new ItemStack(mio_icif_items_tools.TOOL_HAMMER.get());
-            case CUTTING -> new ItemStack(mio_icif_resources.IRON_CUT_BLADE.get());
-            case EXTRUDING -> new ItemStack(mio_icif_blocks.WIRE_MV.get().asItem());
-        };
-
-        guiGraphics.renderItem(iconStack, x, y);
+    protected Component headline() {
+        return Component.translatable(K + "mode." + menu.getMode().name().toLowerCase(Locale.ROOT));
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && this.menu != null && this.minecraft != null && this.minecraft.gameMode != null) {
-            int x = (this.width - this.imageWidth) / 2;
-            int y = (this.height - this.imageHeight) / 2;
+    protected int headlineColour() { return running() ? INK : DIM; }
 
-            if (isHoveringModeButton((int) mouseX, (int) mouseY, x, y)) {
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 0);
-                return true;
-            }
-        }
-
-        return super.mouseClicked(mouseX, mouseY, button);
+    @Override
+    protected List<Component> readouts() {
+        List<Component> lines = new ArrayList<>();
+        ItemStack input = menu.getSlot(0).getItem();
+        lines.add(input.isEmpty() ? Component.translatable(K + "no_material") : input.getHoverName());
+        lines.add(Component.translatable(K + "energy_line", (long) menu.getPower() * menu.getMaxProgress(), menu.getPower(), menu.getMaxProgress()));
+        return lines;
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
+    protected int status() { return menu.getStatus(); }
 
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        MetalFormerAdvancedMenu menu = this.getMenu();
-        if (menu == null) return;
-
-        if (isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, METAL_FORMER_PROGRESS_WIDTH, METAL_FORMER_PROGRESS_HEIGHT)) {
-            renderProgressTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getProgress(), menu.getMaxProgress());
-        }
-
-        if (isHovering(mouseX, mouseY, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, KINETIC_ENERGY_BAR_WIDTH, KINETIC_ENERGY_BAR_HEIGHT)) {
-            renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
-        }
-
-        if (mouseX >= x + MODE_BUTTON_X && mouseX <= x + MODE_BUTTON_X + MODE_BUTTON_SIZE &&
-            mouseY >= y + MODE_BUTTON_Y && mouseY <= y + MODE_BUTTON_Y + MODE_BUTTON_SIZE) {
-            Component modeName = switch (menu.getMode()) {
-                case ROLLING -> Component.translatable("gui.mio_icif.metal_former.mode_rolling");
-                case CUTTING -> Component.translatable("gui.mio_icif.metal_former.mode_cutting");
-                case EXTRUDING -> Component.translatable("gui.mio_icif.metal_former.mode_extruding");
-            };
-            guiGraphics.renderTooltip(this.font,
-                Component.translatable("gui.mio_icif.metal_former.mode_tooltip", modeName),
-                mouseX - x, mouseY - y);
-        }
+    @Override
+    protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+        int by = Math.min(y - topPos, PROGRESS_Y - 14);
+        menuButton(g, x - leftPos, by, 60, 11, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
+            List.of(Component.translatable(K + "tip.switch_mode")));
     }
 
-    // 0.1.11.3: no containerTick override. It copied the client block entity's values (never ticked on the client and
-    // only updated when the chunk loaded) over the values the menu syncs from the server each tick, so the progress,
-    // energy and heat bars stayed frozen or flickered.
+    @Override
+    protected List<Component> figureTooltip() {
+        return List.of(Component.translatable(K + "tip.former.1"), Component.translatable(K + "tip.former_advanced"));
+    }
 }

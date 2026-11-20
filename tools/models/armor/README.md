@@ -11,6 +11,8 @@
 | 纳米 | [nano_suit_pure.bbmodel](nano/nano_suit_pure.bbmodel) | `python tools/models/armor/nano/bake_nano.py` |
 | 量子 | [quantum_armor.bbmodel](quantum/quantum_armor.bbmodel) | `python tools/models/armor/quantum/bake.py` |
 
+量子套的四张 16×16 物品栏图标、平面模型和格子预览可用 `python tools/models/armor/quantum/generate_quantum_icons.py` 重建。[查看 16 倍图标预览](quantum/quantum_icons_preview.png)
+
 纳米套的 4 张 16×16 物品栏图标可用 `python tools/models/armor/nano/generate_nano_icons.py` 重建。它们只用于 GUI，手持和掉落物视角继续使用 3D 模型。气密头罩随头盔上的毒素·辐射过滤器开关显示。[纳米穿戴预览](nano/preview.png)
 
 量子套的原始几何、六段编辑动画与模块绑定分别位于游戏资源的 `mio_icif:geo/quantum_armor.geo.json`、`mio_icif:animations/quantum_armor.animation.json` 和 `mio_icif:armor_models/quantum_bindings.json`。每个主加速舱的磁轨末端有一个空定位骨，分别为 `thruster_nozzle_left` 和 `thruster_nozzle_right`。动画采样后，将定位骨的局部原点变换到世界空间即可取得喷口中心，局部出流轴为 `[0, -1, 0]`。游戏内沿用当前版本的特殊机动油门驱动舱体和动态尾焰。[量子套收纳与展开预览](quantum/preview.png)

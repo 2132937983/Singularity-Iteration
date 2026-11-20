@@ -68,18 +68,7 @@ public class mio_icif_gui_powder_elc extends mio_icif_screen<PowderElcMenu> {
         }
     }
 
-    @Override
-    public void containerTick() {
-        super.containerTick();
+    // 0.1.11.107: the menu's data comes from the server (the menu's broadcastChanges); the client menu has no block
+    // entity, so the copy that was here never ran.
 
-        // ç´æ¥ä»æ¹åå®ä½åæ­¥æ°æ®å°å®¢æ·ç«?
-        PowderElcMenu menu = this.getMenu();
-        if (menu != null && menu.blockEntity != null) {
-            menu.setSyncData(0, menu.blockEntity.getProgress());
-            menu.setSyncData(1, menu.blockEntity.getMaxProgress());
-            menu.setSyncData(2, menu.blockEntity.isWorking() ? 1 : 0);
-            menu.setSyncData(3, menu.blockEntity.getEnergyStorage().getEnergyStored());
-            menu.setSyncData(4, menu.blockEntity.getEnergyStorage().getMaxEnergyStored());
-        }
-    }
 }

@@ -28,7 +28,7 @@ import java.util.Optional;
  * 使用电力将物品粉碎成粉末
  */
 @SuppressWarnings("null")
-public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
+public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity implements com.miophas.singularity_iteration.core.api.machine.ProcessCost.Source {
     // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput, com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput, com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
@@ -186,6 +186,15 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         }
         mio_icif_SingleItemRecipeInput recipeInput = new mio_icif_SingleItemRecipeInput(input);
         return recipeCache2.find(level, recipeInput);
+    }
+
+    /**
+     * 0.1.11.107 (processing overhaul M0): the cost of one operation, 600 EU at 2 EU/t (300 ticks) for every input as before.
+     * From 0.1.11.108 it follows the material's work index (Bond's law).
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
     }
 
     /** 0.1.11.2: the id of the macerator recipe of the current input (for work cycle upgrades). */

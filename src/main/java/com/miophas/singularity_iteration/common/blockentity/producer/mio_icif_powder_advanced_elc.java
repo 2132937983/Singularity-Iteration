@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.Optional;
 
 @SuppressWarnings("null")
-public class mio_icif_powder_advanced_elc extends GenericMachineBlockEntity {
+public class mio_icif_powder_advanced_elc extends GenericMachineBlockEntity implements com.miophas.singularity_iteration.core.api.machine.ProcessCost.Source {
 
     public static final long DEFAULT_CAPACITY = 750L;
     public static final long DEFAULT_MAX_RECEIVE = 128L;
@@ -190,6 +190,12 @@ public class mio_icif_powder_advanced_elc extends GenericMachineBlockEntity {
         if (!operation.get().commit()) { progress = completed; stopWork(); return; }
         finishWork();
         setChanged();
+    }
+
+    /** 0.1.11.107 (processing overhaul M0): the cost of one operation, 750 EU at 5 EU/t (150 ticks), as before. */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
     }
 
     public ItemStack getResultItem() {

@@ -15,6 +15,8 @@ import net.minecraft.world.level.block.state.BlockState;
 public abstract class AbstractStandardMachineBlockEntity extends AbstractProcessingMachineBlockEntity {
     private StandardProcessingTiming timing;
     private int previousOverclockers = -1;
+    /** 0.1.11.107: the cost the timing was made for (a machine whose cost depends on its input recomputes on a change). */
+    private com.miophas.singularity_iteration.core.api.machine.ProcessCost timedCost;
     private boolean paidForThisTick;
 
     protected AbstractStandardMachineBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type,
@@ -23,11 +25,22 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
         super(pos, state, type, capacity, maxReceive, maxExtract, duration, layout, energyPerTick, tier);
     }
 
+    /**
+     * 0.1.11.107 (processing overhaul M0): the cost of one operation before upgrades. The default is the fixed time and
+     * EU/t the machine was built with; a machine whose cost depends on its input (its material) overrides it, and the
+     * timing follows when it changes. The power stays the machine's draw; the energy sets the time.
+     */
+    protected com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(baseMaxProgress, energyPerTick);
+    }
+
     @Override
     protected void updateProcessingParameters() {
         int count = upgradeStats.getOverclockerCount();
-        if (timing != null && previousOverclockers == count) return;
-        timing = StandardProcessingTiming.calculate(baseMaxProgress, energyPerTick,
+        var cost = processCost();
+        if (timing != null && previousOverclockers == count && cost.equals(timedCost)) return;
+        timedCost = cost;
+        timing = StandardProcessingTiming.calculate(cost.ticks(), cost.power(),
             upgradeStats.getProcessTimeMultiplier(), upgradeStats.getEnergyUsageMultiplier());
         previousOverclockers = count;
         int previousLength = maxProgress;
@@ -38,6 +51,8 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
 
     @Override
     protected void tickProduction() {
+        // 0.1.11.107: a cost that follows the input (its material) retimes the operation when the input changes
+        if (timing != null && !processCost().equals(timedCost)) updateProcessingParameters();
         // Validate the input/output even during a power outage. A blocked recipe
         // clears progress, while a valid recipe waiting for power keeps progress.
         boolean available;

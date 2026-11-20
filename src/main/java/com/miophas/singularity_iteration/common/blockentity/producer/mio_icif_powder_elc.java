@@ -189,12 +189,31 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity impl
     }
 
     /**
-     * 0.1.11.107 (processing overhaul M0): the cost of one operation, 600 EU at 2 EU/t (300 ticks) for every input as before.
-     * From 0.1.11.108 it follows the material's work index (Bond's law).
+     * 0.1.11.108 (processing overhaul M1): the cost of one operation follows the material's Bond work index at a fixed
+     * 2 EU/t: 47.2 EU per unit of work index (iron ore 600 EU, 300 ticks as before; glass 146 EU; gravel 1,191 EU). A
+     * recipe that sets its own time keeps it. Without input it is the old 600 EU.
      */
     @Override
     public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
-        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty() || level == null)
+            return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
+        return com.miophas.singularity_iteration.common.processing.Comminution.maceratorCost(input,
+            findRecipe().map(RecipeHolder::value).orElse(null), DEFAULT_ENERGY_PER_TICK, 1.0);
+    }
+
+    /** 0.1.11.108: the energy of the hardest common operation (gravel, about 1,191 EU) sizes the buffer. */
+    public static final long MAX_OPERATION_ENERGY = 1200L;
+
+    /**
+     * 0.1.11.108: the buffer holds the stock 600 EU plus the hardest operation at the current overclock, so it does not
+     * change (and lose stored energy) when the input changes.
+     */
+    @Override
+    protected long getProcessingCapacity() {
+        double perOperation = MAX_OPERATION_ENERGY * upgradeStats.getEnergyUsageMultiplier() * upgradeStats.getProcessTimeMultiplier();
+        return baseCapacity + upgradeStats.getEnergyStorageCount() * com.miophas.singularity_iteration.core.runtime.upgrade.MachineUpgradeStats.ENERGY_STORAGE_BONUS
+            + (long) Math.ceil(perOperation);
     }
 
     /** 0.1.11.2: the id of the macerator recipe of the current input (for work cycle upgrades). */

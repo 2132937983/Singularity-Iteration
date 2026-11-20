@@ -27,7 +27,7 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 
 /**
- * 0.1.11.107 (processing overhaul M0): material properties of items, from data packs
+ * 0.1.11.107 (processing overhaul M0): material properties of items (0.1.11.108: also on clients, by {@link Sync}), from data packs
  * ({@code data/<namespace>/si_materials/*.json}). The machines read what a process needs from here instead of a fixed
  * time per recipe. For now one property:
  * <ul>
@@ -45,6 +45,14 @@ public final class SiMaterials extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new GsonBuilder().create();
 
     private record TagEntry(TagKey<Item> tag, double workIndex) {}
+
+    /**
+     * 0.1.11.108: one entry as read from a file, also what the server sends to clients (JEI and the screens show the
+     * material's energy). {@code tag} true: {@code id} is an item tag; false: an item.
+     */
+    public record RawEntry(boolean tag, String id, double workIndex) {}
+
+    private static volatile List<RawEntry> raw = List.of();
 
     private static volatile Map<Item, Double> itemWorkIndex = Map.of();
     private static volatile List<TagEntry> tagWorkIndex = List.of();
@@ -79,8 +87,7 @@ public final class SiMaterials extends SimpleJsonResourceReloadListener {
 
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
-        Map<Item, Double> items = new java.util.HashMap<>();
-        List<TagEntry> tags = new ArrayList<>();
+        List<RawEntry> entries = new ArrayList<>();
         // a stable order: by file id, so a pack's file named after the mod's replaces nothing by accident
         var ids = new ArrayList<>(files.keySet());
         ids.sort(Comparator.comparing(ResourceLocation::toString));
@@ -104,23 +111,61 @@ public final class SiMaterials extends SimpleJsonResourceReloadListener {
                     continue;
                 }
                 try {
-                    if (o.has("item")) {
-                        ResourceLocation rl = ResourceLocation.parse(o.get("item").getAsString());
-                        Item item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
-                        if (item == null) Singularity_Iteration.LOGGER.debug("[Materials] {}: no item {}", id, rl);
-                        else items.put(item, wi);
-                    } else if (o.has("tag")) {
-                        tags.add(new TagEntry(TagKey.create(Registries.ITEM, ResourceLocation.parse(o.get("tag").getAsString())), wi));
-                    }
+                    if (o.has("item")) entries.add(new RawEntry(false, ResourceLocation.parse(o.get("item").getAsString()).toString(), wi));
+                    else if (o.has("tag")) entries.add(new RawEntry(true, ResourceLocation.parse(o.get("tag").getAsString()).toString(), wi));
                 } catch (RuntimeException ex) {
                     Singularity_Iteration.LOGGER.warn("[Materials] {}: bad entry {}: {}", id, o, ex.getMessage());
                 }
             }
         }
+        install(entries);
+    }
+
+    /** The entries in force (what the server sends to clients). */
+    public static List<RawEntry> entries() { return raw; }
+
+    /** Puts a list of entries in force: the server after a reload, a remote client from the server's sync. */
+    public static void install(List<RawEntry> entries) {
+        Map<Item, Double> items = new java.util.HashMap<>();
+        List<TagEntry> tags = new ArrayList<>();
+        for (RawEntry e : entries) {
+            if (!(e.workIndex() > 0) || !Double.isFinite(e.workIndex())) continue;
+            ResourceLocation rl = ResourceLocation.tryParse(e.id());
+            if (rl == null) continue;
+            if (e.tag()) tags.add(new TagEntry(TagKey.create(Registries.ITEM, rl), e.workIndex()));
+            else BuiltInRegistries.ITEM.getOptional(rl).ifPresent(item -> items.put(item, e.workIndex()));
+        }
+        raw = List.copyOf(entries);
         itemWorkIndex = Map.copyOf(items);
         tagWorkIndex = List.copyOf(tags);
         CACHE.clear();
         generation++;
+    }
+
+    /** 0.1.11.108: the material table for a client (sent on login and after /reload). */
+    public record Sync(List<RawEntry> entries) implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
+        public static final Type<Sync> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "si_materials"));
+        private static final net.minecraft.network.codec.StreamCodec<io.netty.buffer.ByteBuf, RawEntry> ENTRY = net.minecraft.network.codec.StreamCodec.composite(
+            net.minecraft.network.codec.ByteBufCodecs.BOOL, RawEntry::tag,
+            net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8, RawEntry::id,
+            net.minecraft.network.codec.ByteBufCodecs.DOUBLE, RawEntry::workIndex,
+            RawEntry::new);
+        public static final net.minecraft.network.codec.StreamCodec<io.netty.buffer.ByteBuf, Sync> CODEC = net.minecraft.network.codec.StreamCodec.composite(
+            ENTRY.apply(net.minecraft.network.codec.ByteBufCodecs.list(65536)), Sync::entries, Sync::new);
+
+        @Override
+        public Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type() { return TYPE; }
+
+        public static void handle(Sync packet, net.neoforged.neoforge.network.handling.IPayloadContext context) {
+            // the integrated server already holds the same table
+            context.enqueueWork(() -> { if (!context.connection().isMemoryConnection()) install(packet.entries); });
+        }
+
+        /** Only to connections that negotiated the channel (vanilla clients, fake and test players are skipped). */
+        public static void send(net.minecraft.server.level.ServerPlayer player) {
+            if (player.connection == null || !player.connection.hasChannel(TYPE)) return;
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new Sync(raw));
+        }
     }
 
     @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
@@ -132,5 +177,10 @@ public final class SiMaterials extends SimpleJsonResourceReloadListener {
 
         @SubscribeEvent
         public static void onTagsUpdated(TagsUpdatedEvent event) { CACHE.clear(); }
+
+        @SubscribeEvent
+        public static void onDatapackSync(net.neoforged.neoforge.event.OnDatapackSyncEvent event) {
+            event.getRelevantPlayers().forEach(Sync::send);
+        }
     }
 }

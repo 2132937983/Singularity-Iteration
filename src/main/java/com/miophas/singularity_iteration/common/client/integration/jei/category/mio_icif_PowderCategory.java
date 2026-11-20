@@ -12,7 +12,10 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 
 import java.util.List;
 
-/** Macerator: the machine runs every recipe for its own time and energy (IC2: 300 ticks, 2 EU/t). */
+/**
+ * Macerator: 2 EU/t; 0.1.11.108: the time follows the input's Bond work index (synced material table), or the recipe's
+ * own time when it sets one.
+ */
 @SuppressWarnings("null")
 public class mio_icif_PowderCategory extends SiItemMachineCategory<mio_icif_PowderRecipe> {
 
@@ -35,7 +38,10 @@ public class mio_icif_PowderCategory extends SiItemMachineCategory<mio_icif_Powd
 
     @Override
     protected int ticks(mio_icif_PowderRecipe recipe) {
-        return (int) com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_powder_elc.DEFAULT_WORK_TIME;
+        ItemStack[] items = recipe.getIngredient().getItems();
+        ItemStack input = items.length > 0 ? items[0] : ItemStack.EMPTY;
+        return com.miophas.singularity_iteration.common.processing.Comminution.maceratorCost(input, recipe,
+            com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_powder_elc.DEFAULT_ENERGY_PER_TICK, 1.0).ticks();
     }
 
     @Override

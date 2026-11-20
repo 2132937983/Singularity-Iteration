@@ -81,4 +81,22 @@ public final class VanillaFrame {
             }
         }
     }
+
+    /**
+     * 0.1.11.121: a strip line in the vanilla font: {@code label}, a furnace-style bar (sunk grey, filled white) and
+     * {@code right} at the right end, across {@code w} pixels from x.
+     */
+    public static int[] labelledBar(GuiGraphics g, int x, int y, int w, net.minecraft.network.chat.Component label, double share,
+                                   net.minecraft.network.chat.Component right) {
+        net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+        g.drawString(font, label, x, y + 2, TITLE, false);
+        int rw = font.width(right);
+        g.drawString(font, right, x + w - rw, y + 2, TITLE, false);
+        int bx = x + font.width(label) + 4, bw = x + w - rw - 4 - bx;
+        if (bw < 6) return new int[]{bx, 0};
+        inset(g, bx, y + 2, bw, 8, SLOT);
+        int fill = (int) Math.round((bw - 2) * Math.max(0, Math.min(1, share)));
+        if (fill > 0) g.fill(bx + 1, y + 3, bx + 1 + fill, y + 9, LIGHT);
+        return new int[]{bx + 1, bw - 2};   // the fill's left edge and width (for marks)
+    }
 }

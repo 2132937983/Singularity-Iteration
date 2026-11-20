@@ -25,7 +25,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @SuppressWarnings("null")
 public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<T> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 113;
+    private static final int WX = 34, WY = 15, WW = 207, WH = 62, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
     private static final int CX = WX + 24, CY = WY + 6, CW = 176, CH = 44;
     private static final int AMBER = 0xFFD49A12, AMBER_FILL = 0x40D49A12, ENVELOPE = 0xFFB8A76A, BLUE = 0xFF2A5D8A,
         RED = 0xFFC0392B, GRID = 0xFFD9DED9;
@@ -58,7 +58,9 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
 
         VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
         chart(g, x + CX, y + CY);
+        ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the readout window, vanilla font
         readings(g, x + WX + 4, y + WY + 61);
+        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 62);
         strip(g, x, y + STRIP_Y);
     }
 
@@ -167,16 +169,10 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
     private static String f3(double v) { return String.format(Locale.ROOT, "%.3f", v); }
 
     private void strip(GuiGraphics g, int x, int sy) {
-        float u = WindRoseView.u();
-        Component ec = Component.translatable(K + "stored");
-        PumpCrossSection.text(g, ec, x + WX, sy + 6 - 4.5F * u, 0x2A2E33, u);
-        float barX = x + WX + AsciiHud.width(ec, u) + 3, barW = x + 241 - 82 - barX;
+        // 0.1.11.121: vanilla font, furnace-style bar
         long e = Integer.toUnsignedLong(v(10)), cap = Math.max(1, Integer.toUnsignedLong(v(11)));
-        g.fill((int) barX - 1, sy + 2, (int) (barX + barW) + 1, sy + 10, SiGuiTheme.SLOT_SHADOW);
-        g.fill((int) barX, sy + 3, (int) (barX + barW), sy + 9, SiGuiTheme.SCREEN_BG);
-        if (e > 0) g.fillGradient((int) barX, sy + 3, (int) (barX + barW * Math.min(1.0, e / (double) cap)), sy + 9, SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
-        Component pc = Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap));
-        PumpCrossSection.text(g, pc, x + 241 - AsciiHud.width(pc, u), sy + 6 - 4.5F * u, 0x2A2E33, u);
+        VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+            Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
     }
 
     @Override

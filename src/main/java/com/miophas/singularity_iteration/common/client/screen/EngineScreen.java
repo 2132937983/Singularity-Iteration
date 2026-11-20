@@ -23,7 +23,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @SuppressWarnings("null")
 public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 113;
+    private static final int WX = 34, WY = 15, WW = 207, WH = 66, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
     private static final int RUST = 0xFFB4471F, HOT = 0xFFC0392B, BLUE = 0xFF2A5D8A, GREEN = 0xFF2F6E4F, WELL = 0xFFE3E6E4, GRID = 0xFFD9DED9;
     private static final String K = "gui.mio_icif.engine.";
 
@@ -48,7 +48,9 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
         VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
         gauges(g, x + WX, y + WY, partialTick);
         record(g, x + WX + 4, y + WY + 47, WW - 8, 16);
+        ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the readout window, vanilla font
         readings(g, x + WX + 4, y + WY + 66);
+        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 58);
         strip(g, x, y + STRIP_Y);
     }
 
@@ -162,20 +164,14 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
     }
 
     private void strip(GuiGraphics g, int x, int sy) {
-        float u = WindRoseView.u();
-        Component ec = Component.translatable(K + "stored");
-        PumpCrossSection.text(g, ec, x + WX, sy + 6 - 4.5F * u, 0x2A2E33, u);
-        float barX = x + WX + AsciiHud.width(ec, u) + 3, barW = x + 241 - 92 - barX;
+        // 0.1.11.121: vanilla font, furnace-style bar; the governor's start and stop marks in blue
         long e = Integer.toUnsignedLong(v(12)), cap = Math.max(1, Integer.toUnsignedLong(v(13)));
-        g.fill((int) barX - 1, sy + 2, (int) (barX + barW) + 1, sy + 10, SiGuiTheme.SLOT_SHADOW);
-        g.fill((int) barX, sy + 3, (int) (barX + barW), sy + 9, SiGuiTheme.SCREEN_BG);
-        if (e > 0) g.fillGradient((int) barX, sy + 3, (int) (barX + barW * Math.min(1.0, e / (double) cap)), sy + 9, SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
+        int[] bar = VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+            Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
         for (double mark : new double[]{EngineGovernor.START_BELOW, EngineGovernor.STOP_AT}) {
-            int m = (int) (barX + barW * mark);
-            g.fill(m, sy + 1, m + 1, sy + 11, BLUE);
+            int m = (int) (bar[0] + bar[1] * mark);
+            if (bar[1] > 0) g.fill(m, sy + 1, m + 1, sy + 11, BLUE);
         }
-        Component pc = Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap));
-        PumpCrossSection.text(g, pc, x + 241 - AsciiHud.width(pc, u), sy + 6 - 4.5F * u, 0x2A2E33, u);
     }
 
     @Override

@@ -25,7 +25,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKineticGeneratorMenu> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 113, STORM_W = 76;
+    private static final int WX = 34, WY = 15, WW = 207, WH = 62, STRIP_Y = 145, STORM_W = 88;   // 0.1.11.121: wider for the vanilla font
     private static final String K = "gui.mio_icif.wind.";
 
     public mio_icif_gui_wind_kinetic_generator(WindKineticGeneratorMenu menu, Inventory playerInventory, Component title) {
@@ -51,6 +51,7 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKin
         ItemStack rotorStack = menu.getSlot(0).getItem();
         curve(g, x + WX + 92, y + WY + 6, 108, 46, rotorStack);
         // readings
+        ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the readout window, vanilla font
         float tx = x + WX + 4, ty = y + WY + 66, lh = 9 * u + 1;
         WindRoseView.line(g, Component.translatable(K + "wind_line", v(3), v(4)).append(" · ").append(WindRoseView.bearing(v(5))), tx, ty, WindRoseView.INK, WW - 8);
         WindRoseView.line(g, Component.translatable(K + "factors", WindRoseView.factor(v(7)), WindRoseView.factor(v(8)), WindRoseView.factor(v(9))),
@@ -68,24 +69,24 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKin
             ? WindRoseView.RED : status == mio_icif_Wind_Kinetic_Generator.STATUS_GENERATING ? 0x2F6E4F : WindRoseView.DIM;
         WindRoseView.line(g, Component.translatable(K + "output_ku", v(1)).append(" · ").append(Component.translatable(K + key)), tx, ty + 2 * lh, col, WW - 8);
 
-        // strip: storm protection, rotor health
+        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 62);
+
+        // strip: storm protection, rotor health (0.1.11.121: a vanilla button, vanilla font, furnace-style bar)
         int sy = y + STRIP_Y, bx = x + WX;
         boolean hover = mouseX >= bx && mouseX < bx + STORM_W && mouseY >= sy && mouseY < sy + 12;
         boolean storm = v(10) != 0;
-        g.fill(bx, sy, bx + STORM_W, sy + 12, SiGuiTheme.OUTLINE);
-        g.fill(bx + 1, sy + 1, bx + STORM_W - 1, sy + 11, hover ? 0xFFF4F6F8 : storm ? 0xFFDFEEE3 : 0xFFF1DEDE);
+        if (storm) {
+            VanillaFrame.inset(g, bx, sy, STORM_W, 12, hover ? 0xFF7A7A7A : 0xFF6B6B6B);
+        } else {
+            g.fill(bx, sy, bx + STORM_W, sy + 12, VanillaFrame.SHADOW);
+            g.fill(bx, sy, bx + STORM_W - 1, sy + 11, VanillaFrame.LIGHT);
+            g.fill(bx + 1, sy + 1, bx + STORM_W - 1, sy + 11, hover ? 0xFFD8D8E8 : 0xFFB8B8B8);
+        }
         Component sc = Component.translatable(K + (storm ? "storm.on" : "storm.off"));
-        PumpCrossSection.text(g, sc, bx + STORM_W / 2F - AsciiHud.width(sc, u) / 2, sy + 6 - 4.5F * u, 0x2A2E33, u);
-        Component hc = Component.translatable(K + "rotor_health");
-        float hx = bx + STORM_W + 6;
-        PumpCrossSection.text(g, hc, hx, sy + 6 - 4.5F * u, 0x2A2E33, u);
-        float barX = hx + AsciiHud.width(hc, u) + 3, barW = x + 241 - 22 - barX;
-        g.fill((int) barX - 1, sy + 2, (int) (barX + barW) + 1, sy + 10, SiGuiTheme.SLOT_SHADOW);
-        g.fill((int) barX, sy + 3, (int) (barX + barW), sy + 9, SiGuiTheme.SCREEN_BG);
+        g.drawString(font, sc, bx + (STORM_W - font.width(sc)) / 2, sy + 2, storm ? 0xFFFFFF : VanillaFrame.TITLE, false);
         int health = v(2);
-        if (health > 0) g.fill((int) barX, sy + 3, (int) (barX + barW * health / 100F), sy + 9, health > 25 ? 0xFF3C9A52 : 0xFFC8423C);
-        Component pc = Component.literal(health + "%");
-        PumpCrossSection.text(g, pc, x + 241 - AsciiHud.width(pc, u), sy + 6 - 4.5F * u, 0x2A2E33, u);
+        VanillaFrame.labelledBar(g, bx + STORM_W + 6, sy, 241 - WX - STORM_W - 6, Component.translatable(K + "rotor_health"), health / 100.0,
+            Component.literal(health + "%"));
     }
 
     /** The rotor's power curve in (px, py, pw, ph) with the operating point. */

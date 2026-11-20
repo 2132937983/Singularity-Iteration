@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("null")
 public abstract class MimicGeneratorMenu extends mio_icif_generator_menu {
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     protected MimicGeneratorMenu(MenuType<?> type, int containerId, int slots, Inventory inv, @Nullable IItemHandler items, int dataCount,
                                  @Nullable Object blockEntity) {

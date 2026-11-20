@@ -22,7 +22,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @SuppressWarnings("null")
 public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGeneratorMenu> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 113;
+    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
     private static final int CX = WX + 47, CY = WY + 48, R = 42;
     private static final int COL = WX + 98, COL_W = 105;
     private static final int CHART_PAPER = 0xFFFBFBF6, GRID = 0xFFD9DED9, GRID_MAJOR = 0xFFB9C0BD;
@@ -50,7 +50,9 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
 
         VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
         chart(g, x + CX, y + CY, partialTick);
+        ReadoutPanel.begin();   // 0.1.11.121: the column's reading lines in the readout window, vanilla font
         column(g, x + COL, y + WY + 5);
+        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 32);
         strip(g, x, y + STRIP_Y);
     }
 
@@ -192,19 +194,12 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
     }
 
     private void strip(GuiGraphics g, int x, int sy) {
-        float u = WindRoseView.u();
-        Component ec = Component.translatable(K + "stored");
-        PumpCrossSection.text(g, ec, x + WX, sy + 6 - 4.5F * u, 0x2A2E33, u);
-        float barX = x + WX + AsciiHud.width(ec, u) + 3, barW = x + 241 - 70 - barX;
+        // 0.1.11.121: vanilla font, furnace-style bar; the damper reopens at 85 % (blue mark)
         long e = Integer.toUnsignedLong(v(3)), cap = Math.max(1, Integer.toUnsignedLong(v(4)));
-        g.fill((int) barX - 1, sy + 2, (int) (barX + barW) + 1, sy + 10, SiGuiTheme.SLOT_SHADOW);
-        g.fill((int) barX, sy + 3, (int) (barX + barW), sy + 9, SiGuiTheme.SCREEN_BG);
-        if (e > 0) g.fillGradient((int) barX, sy + 3, (int) (barX + barW * Math.min(1.0, e / (double) cap)), sy + 9, SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
-        // the damper reopens at 85 %
-        int mark = (int) (barX + barW * mio_icif_Thermal_Generator.REOPEN);
-        g.fill(mark, sy + 1, mark + 1, sy + 11, 0xFF2A5D8A);
-        Component pc = Component.literal(e + " / " + cap + " EU");
-        PumpCrossSection.text(g, pc, x + 241 - AsciiHud.width(pc, u), sy + 6 - 4.5F * u, 0x2A2E33, u);
+        int[] bar = VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+            Component.literal(e + " / " + cap + " EU"));
+        int mark = (int) (bar[0] + bar[1] * mio_icif_Thermal_Generator.REOPEN);
+        if (bar[1] > 0) g.fill(mark, sy + 1, mark + 1, sy + 11, 0xFF2A5D8A);
     }
 
     @Override

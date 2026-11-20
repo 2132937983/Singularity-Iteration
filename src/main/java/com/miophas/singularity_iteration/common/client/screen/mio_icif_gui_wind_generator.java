@@ -20,7 +20,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class mio_icif_gui_wind_generator extends mio_icif_screen<WindGeneratorMenu> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 113;
+    private static final int WX = 34, WY = 15, WW = 207, WH = 62, STRIP_Y = 145;
     private static final String K = "gui.mio_icif.wind.";
 
     public mio_icif_gui_wind_generator(WindGeneratorMenu menu, Inventory playerInventory, Component title) {
@@ -44,6 +44,7 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<WindGeneratorMe
         float u = WindRoseView.u();
         WindRoseView.rose(g, x + WX + 40, y + WY + 31, 22, WindRoseView.bytes(this::v, 10), WindRoseView.bytes(this::v, 14), -1, v(3));
         curve(g, x + WX + 92, y + WY + 6, 108, 46);
+        ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the readout window, vanilla font
         float tx = x + WX + 4, ty = y + WY + 66, lh = 9 * u + 1;
         double weather = v(7) / 100.0;
         WindRoseView.line(g, Component.translatable(K + "base_wind", v(2), String.format(Locale.ROOT, "×%.2f", weather)).append(" · ")
@@ -54,17 +55,12 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<WindGeneratorMe
         WindRoseView.line(g, Component.translatable(K + "output_eu", v(1)).append(" · ").append(Component.translatable(K + state)),
             tx, ty + 2 * lh, generating ? 0x2F6E4F : WindRoseView.DIM, WW - 8);
 
-        // strip: stored energy
-        int sy = y + STRIP_Y;
-        Component ec = Component.translatable(K + "stored");
-        PumpCrossSection.text(g, ec, x + WX, sy + 6 - 4.5F * u, 0x2A2E33, u);
-        float barX = x + WX + AsciiHud.width(ec, u) + 3, barW = x + 241 - 70 - barX;
+        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 62);
+
+        // strip: stored energy (0.1.11.121: vanilla font, furnace-style bar)
         long e = Integer.toUnsignedLong(v(8)), cap = Math.max(1, Integer.toUnsignedLong(v(9)));
-        g.fill((int) barX - 1, sy + 2, (int) (barX + barW) + 1, sy + 10, SiGuiTheme.SLOT_SHADOW);
-        g.fill((int) barX, sy + 3, (int) (barX + barW), sy + 9, SiGuiTheme.SCREEN_BG);
-        if (e > 0) g.fillGradient((int) barX, sy + 3, (int) (barX + barW * Math.min(1.0, e / (double) cap)), sy + 9, SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
-        Component pc = Component.literal(e + " / " + cap + " EU");
-        PumpCrossSection.text(g, pc, x + 241 - AsciiHud.width(pc, u), sy + 6 - 4.5F * u, 0x2A2E33, u);
+        VanillaFrame.labelledBar(g, x + WX, y + STRIP_Y, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+            Component.literal(e + " / " + cap + " EU"));
     }
 
     /** Output against effective height: p = weather x wind x (h - base) / 750, up to base + 192. */

@@ -21,9 +21,9 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class EngineMenu extends mio_icif_generator_menu {
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
     public static final int SLOT_X = 10, FUEL_Y = 22, EMPTY_Y = 48, BATTERY_Y = 82;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
     public static final int FUEL_SLOT = 0, EMPTY_SLOT = 1, BATTERY_SLOT = 2, SLOT_COUNT = 3;
 
     private final ContainerLevelAccess access;

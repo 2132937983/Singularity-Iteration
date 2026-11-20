@@ -137,7 +137,6 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     /** Reads the sun, the weather, the shade and the temperature, and sets the output for the next second. */
     protected void sense(Level level) {
         long dayTime = level.getDayTime();
-        elevation = SolarPhysics.elevation(dayTime);
         BlockPos up = worldPosition.above();
         int skyLight = 0;
         if (!level.dimensionType().hasSkyLight()) exposure = NO_SKY;
@@ -145,23 +144,52 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         else exposure = (skyLight = level.getBrightness(LightLayer.SKY, up)) > 0 ? DIFFUSE : DARK;
         var biome = level.getBiome(worldPosition).value();
         boolean precipitation = biome.hasPrecipitation();
-        boolean wet = precipitation && level.isRaining();
         float rain = precipitation ? level.getRainLevel(1) : 0, thunder = precipitation ? level.getThunderLevel(1) : 0;
-        clearSky = SolarPhysics.clearSky(elevation);
-        cloud = precipitation ? profile.weather(SolarPhysics.cloudIndex(rain, thunder)) : 1;
+        Reading r = evaluate(profile, dayPower, corePower, dayTime, exposure, skyLight, precipitation, precipitation && level.isRaining(),
+            rain, thunder, biome.getBaseTemperature());
+        elevation = r.elevation();
+        clearSky = r.clearSky();
+        cloud = r.cloud();
+        irradiance = r.irradiance();
+        cellTemp = r.cellTemperature();
+        derate = r.derate();
+        nightSky = r.nightSky();
+        coreActive = r.coreActive();
+        output = r.output() * outputScale();
+    }
+
+    /** 0.1.11.105: one reading of the sky (the output before the configured multiplier). */
+    public record Reading(double elevation, double clearSky, double cloud, double irradiance, double cellTemperature, double derate,
+                          double nightSky, boolean coreActive, double output) {}
+
+    /**
+     * 0.1.11.105: the panel's output for a time and a sky, without a world (the panels and the balance tests use it).
+     *
+     * @param exposure       {@link #OPEN}, {@link #DIFFUSE}, {@link #DARK} or {@link #NO_SKY}
+     * @param skyLight       sky light above a covered panel (0..15)
+     * @param precipitation  the biome has rain (deserts have none)
+     * @param raining        it rains there now (the air is 4 K cooler)
+     * @param rain           rain level (0..1), 0 without precipitation
+     * @param thunder        thunder level (0..1), 0 without precipitation
+     */
+    public static Reading evaluate(SolarProfile profile, int dayPower, int corePower, long dayTime, int exposure, int skyLight,
+                                   boolean precipitation, boolean raining, float rain, float thunder, float biomeTemperature) {
+        double elevation = SolarPhysics.elevation(dayTime);
+        double clearSky = SolarPhysics.clearSky(elevation);
+        double cloud = precipitation ? profile.weather(SolarPhysics.cloudIndex(rain, thunder)) : 1;
         double shade = switch (exposure) {
             case OPEN -> profile.shade(true, 15);
             case DIFFUSE -> profile.shade(false, skyLight);
             default -> 0;
         };
-        irradiance = clearSky * cloud * shade;
-        cellTemp = profile.cellTemperature(SolarPhysics.ambient(biome.getBaseTemperature(), wet), irradiance);
-        derate = profile.derate(cellTemp);
-        coreActive = corePower > 0 && elevation <= 0 && exposure == OPEN;
+        double irradiance = clearSky * cloud * shade;
+        double cellTemp = profile.cellTemperature(SolarPhysics.ambient(biomeTemperature, raining), irradiance);
+        double derate = profile.derate(cellTemp);
+        boolean coreActive = corePower > 0 && elevation <= 0 && exposure == OPEN;
         double pv = dayPower * profile.output(irradiance, derate);
-        nightSky = profile.night(rain, thunder);
+        double nightSky = profile.night(rain, thunder);
         double core = coreActive ? corePower * nightSky : 0;
-        output = Math.max(pv, core) * outputScale();
+        return new Reading(elevation, clearSky, cloud, irradiance, cellTemp, derate, nightSky, coreActive, Math.max(pv, core));
     }
 
     // ---- tick --------------------------------------------------------------------------------------------------------

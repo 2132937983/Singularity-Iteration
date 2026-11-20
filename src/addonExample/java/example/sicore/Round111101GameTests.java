@@ -60,10 +60,10 @@ public final class Round111101GameTests {
     /** Under a roof a concentrator gets no light at all (a standard panel keeps the diffuse part). */
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void coveredConcentratorMakesNothing(GameTestHelper h) {
-        BlockPos at = new BlockPos(2, 2, 2);
+        BlockPos at = new BlockPos(2, 1, 2);   // 0.1.11.105: the roof inside the 5x4x5 template (y 3); above it, neighbouring tests could clear it
         h.setBlock(at, block("generator/block_ultimate_hybrid_solar_panel"));
         BlockEntity be = h.getBlockEntity(at);
-        h.setBlock(at.above(3), Blocks.STONE);
+        h.setBlock(at.above(2), Blocks.STONE);
         h.runAfterDelay(10, () -> {   // the sky light under the roof is updated a few ticks later
             call(be, "sense", h.getLevel());
             h.assertTrue((int) call(be, "getExposure") != 0, "a covered panel is not under open sky");

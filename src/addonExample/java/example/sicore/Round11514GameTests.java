@@ -75,9 +75,9 @@ public final class Round11514GameTests {
     /** A panel with a roof over it gets the diffuse light only (at most 15 % of the clear sky). 0.1.11.102: the basic panel (the only standard one left). */
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void coveredPanelGetsDiffuseLightOnly(GameTestHelper h) {
-        BlockPos at = new BlockPos(2, 2, 2);
+        BlockPos at = new BlockPos(2, 1, 2);   // 0.1.11.105: the roof inside the 5x4x5 template (y 3); above it, neighbouring tests could clear it
         BlockEntity be = place(h, at, "generator/block_solar_generator");
-        h.setBlock(at.above(3), Blocks.STONE);
+        h.setBlock(at.above(2), Blocks.STONE);
         h.runAfterDelay(10, () -> {   // the sky light under the roof is updated a few ticks later
             call(be, "sense", h.getLevel());
             int exposure = (int) call(be, "getExposure");

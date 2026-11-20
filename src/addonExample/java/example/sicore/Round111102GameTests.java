@@ -88,25 +88,32 @@ public final class Round111102GameTests {
         h.succeed();
     }
 
-    /** Under the same roof the ultimate photon resonance panel gets four times the basic panel's light (60 % against 15 %). */
+    /**
+     * Under a roof the ultimate photon resonance panel keeps 60 % of the sky light it sees (the basic panel 15 %). 0.1.11.105:
+     * checked against the panel's own sky light and weather (a neighbouring basic panel's roof was not always in place).
+     */
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void coveredPanelKeepsMoreSkyLight(GameTestHelper h) {
-        BlockPos basic = new BlockPos(1, 2, 2), resonance = new BlockPos(4, 2, 2);
-        h.setBlock(basic, block("generator/block_solar_generator"));
-        h.setBlock(resonance, block("generator/block_ultimate_photon_resonance_solar_generator"));
-        h.setBlock(basic.above(3), Blocks.STONE);
-        h.setBlock(resonance.above(3), Blocks.STONE);
-        BlockEntity a = h.getBlockEntity(basic), b = h.getBlockEntity(resonance);
-        h.runAfterDelay(10, () -> {   // the sky light under the roofs is updated a few ticks later
-            call(a, "sense", h.getLevel());
-            call(b, "sense", h.getLevel());
-            double ga = d(call(a, "getIrradiance")), gb = d(call(b, "getIrradiance"));
+        BlockPos at = new BlockPos(2, 1, 2);   // 0.1.11.105: the roof inside the 5x4x5 template (y 3); above it, neighbouring tests could clear it
+        h.setBlock(at, block("generator/block_ultimate_photon_resonance_solar_generator"));
+        h.setBlock(at.above(2), Blocks.STONE);
+        BlockEntity be = h.getBlockEntity(at);
+        h.runAfterDelay(10, () -> {   // the sky light under the roof is updated a few ticks later
+            call(be, "sense", h.getLevel());
+            int exposure = (int) call(be, "getExposure");
+            if (exposure != 1) { h.fail("the roofed panel is not in diffuse light: exposure " + exposure); return; }
+            var level = h.getLevel();
+            BlockPos up = h.absolutePos(at).above();
+            int sky = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, up);
             Class<?> physics = common("energy.SolarPhysics");
-            double clear = d(call(physics, "clearSky", d(call(physics, "elevation", h.getLevel().getDayTime()))));
-            h.assertTrue((int) call(b, "getExposure") != 0, "a covered panel is not under open sky");
-            h.assertTrue(gb <= clear * 0.60 + 1e-6, "covered: " + gb + " W/m² of " + clear);
-            if (clear > 0 && !h.getLevel().isRaining())
-                h.assertTrue(ga > 0 && Math.abs(gb / ga - 4) < 1e-6, "basic " + ga + " W/m², resonance " + gb + " W/m²");
+            Object p = route("ULTIMATE_PHOTON");
+            double clear = d(call(physics, "clearSky", d(call(physics, "elevation", level.getDayTime()))));
+            boolean rain = level.getBiome(up).value().hasPrecipitation();
+            double weather = rain ? d(call(p, "weather", d(call(physics, "cloudIndex", (double) level.getRainLevel(1), (double) level.getThunderLevel(1))))) : 1;
+            double expected = clear * weather * 0.60 * sky / 15.0;
+            double g = d(call(be, "getIrradiance"));
+            h.assertTrue(Math.abs(g - expected) < 1e-6 && g <= clear * 0.60 + 1e-6,
+                "covered: " + g + " W/m², expected " + expected + " (clear " + clear + ", sky light " + sky + ")");
             h.succeed();
         });
     }

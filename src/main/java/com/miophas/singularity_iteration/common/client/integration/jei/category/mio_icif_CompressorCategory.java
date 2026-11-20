@@ -35,11 +35,11 @@ public class mio_icif_CompressorCategory extends SiItemMachineCategory<mio_icif_
 
     @Override
     protected int ticks(mio_icif_CompressorRecipe recipe) {
-        return (int) recipe.getProcessingTime();
+        return com.miophas.singularity_iteration.common.processing.Pressing.cost(recipe).ticks();   // 0.1.11.112: as the compressor runs it
     }
 
     @Override
     protected long euPerTick(mio_icif_CompressorRecipe recipe) {
-        return recipe.getEnergyPerTick();
+        return com.miophas.singularity_iteration.common.processing.Pressing.cost(recipe).power();
     }
 }

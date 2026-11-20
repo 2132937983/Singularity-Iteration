@@ -30,16 +30,17 @@ public class WasherElcMenu extends mio_icif_machine_menu {
     public static final int UPGRADE_SLOT_START = 7;
     public static final int SLOT_COUNT = 11;
 
-    private static final int INPUT_X = 104;
-    private static final int INPUT_Y = 17;
-    private static final int[] OUTPUT_X = {86, 104, 122};
-    private static final int OUTPUT_Y = 62;
-    private static final int BATTERY_X = 8;
-    private static final int BATTERY_Y = 62;
-    private static final int WATER_BUCKET_X = 38;
-    private static final int WATER_BUCKET_Y = 17;
-    private static final int EMPTY_BUCKET_X = 38;
-    private static final int EMPTY_BUCKET_Y = 62;
+    // 0.1.11.114: two columns on the left of the instrument screen
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int[] OUTPUT_X = {61, 61, 61};   // 0.1.11.118: the furnace block
+    private static final int[] OUTPUT_Y = {18, 38, 58};
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 56;
+    private static final int WATER_BUCKET_X = 10;
+    private static final int WATER_BUCKET_Y = 78;
+    private static final int EMPTY_BUCKET_X = 30;
+    private static final int EMPTY_BUCKET_Y = 78;   // beside the water bucket
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -54,7 +55,7 @@ public class WasherElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.WASHER_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 7, blockEntity);
+            null, DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -70,7 +71,7 @@ public class WasherElcMenu extends mio_icif_machine_menu {
     protected void addMachineSlots() {
         addInputSlot(INPUT_SLOT, INPUT_X, INPUT_Y);
         for (int i = 0; i < 3; i++) {
-            addOutputSlot(OUTPUT_SLOT_1 + i, OUTPUT_X[i], OUTPUT_Y);
+            addOutputSlot(OUTPUT_SLOT_1 + i, OUTPUT_X[i], OUTPUT_Y[i]);
         }
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
         this.addSlot(new SlotItemHandler(itemHandler, WATER_BUCKET_SLOT, WATER_BUCKET_X, WATER_BUCKET_Y) {
@@ -124,6 +125,30 @@ public class WasherElcMenu extends mio_icif_machine_menu {
         return 4;
     }
 
+    /** 0.1.11.114: data 7 status (ProcessStatus), 8 water flow per washing mB, 9 net water per washing mB (0-6 as before). */
+    public static final int DATA_COUNT = 10;
+
+    public int getStatus() { return data.get(7); }
+    public int getGrossWater() { return data.get(8); }
+    public int getNetWater() { return data.get(9); }
+
+    // ---- 0.1.11.114: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
     public int getFluidAmount() {
         return data.get(5);
     }
@@ -153,6 +178,9 @@ public class WasherElcMenu extends mio_icif_machine_menu {
             this.setSyncData(4, maxEnergy);
             this.setSyncData(5, blockEntity.getFluidAmount());
             this.setSyncData(6, blockEntity.getFluidCapacity());
+            this.setSyncData(7, blockEntity.processStatus());
+            this.setSyncData(8, (int) Math.min(Short.MAX_VALUE, blockEntity.grossWaterPerOperation()));
+            this.setSyncData(9, (int) Math.min(Short.MAX_VALUE, blockEntity.netWaterPerOperation()));
         }
     }
 }

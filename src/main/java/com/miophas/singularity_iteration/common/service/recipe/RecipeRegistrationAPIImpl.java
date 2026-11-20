@@ -100,7 +100,7 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
         ItemStack secondary = outputs.length > 1 ? outputs[1] : ItemStack.EMPTY;
         ItemStack tertiary = outputs.length > 2 ? outputs[2] : ItemStack.EMPTY;
         return registerRecipe(id, "washer", () -> RecipeFactoryBridge.washer("", input,
-            primary, primary.getCount(), secondary, secondary.getCount(), tertiary, tertiary.getCount(), processTime, 5, 1000));
+            primary, primary.getCount(), secondary, secondary.getCount(), tertiary, tertiary.getCount(), processTime, -1, 1000));   // 0.1.11.117: no EU/t given: the washer's own 16
     }
 
     @Override

@@ -718,8 +718,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     /** 0.1.11.2: ticks of one cycle with the installed upgrades, before the cycle factors. */
     protected int workCycleBaseTicks() {
         int ticks = cycleUnscaledTicks >= 0 ? cycleUnscaledTicks : maxProgress;
-        int perTick = Math.max(1, getProgressPerTick());
-        return Math.max(1, (ticks + perTick - 1) / perTick);
+        return Math.max(1, (int) Math.ceil(ticks / exactProgressPerTick() - 1e-9));   // 0.1.11.111: exact 0.7^n
     }
 
     /** 0.1.11.2: the duration factor of the open cycle (1 when none). */
@@ -980,8 +979,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     /** Ticks of one operation at the current speed. */
     public int getTicksPerOperation() {
-        int perTick = Math.max(1, getDisplayProgressPerTick());
-        return Math.max(1, (maxProgress + perTick - 1) / perTick);
+        recalculateUpgradeStats();
+        return Math.max(1, (int) Math.ceil(maxProgress / exactProgressPerTick() - 1e-9));   // 0.1.11.111: exact 0.7^n
     }
 
     /**
@@ -1012,6 +1011,30 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      */
     protected int getProgressPerTick() {
         return Math.max(1, (int) Math.ceil(1.0 / upgradeStats.getProcessTimeMultiplier()));
+    }
+
+    /** 0.1.11.111: fraction of a progress step carried to the next tick ({@link #takeProgressStep()}; not saved). */
+    private double progressCarry;
+
+    /**
+     * 0.1.11.111 (processing overhaul M4): the exact progress per tick, {@code 1 / 0.7^n} for n active overclockers, so an
+     * operation takes {@code base × 0.7^n} ticks as in the standard machines (it was rounded up per tick: 2 overclockers
+     * gave ×3 instead of ×2.04).
+     */
+    protected double exactProgressPerTick() {
+        double m = upgradeStats.getProcessTimeMultiplier();
+        return m > 0 ? Math.max(1.0, 1.0 / m) : 1.0;
+    }
+
+    /**
+     * 0.1.11.111: the whole progress for this tick at the exact speed: the fraction is carried, so over an operation the
+     * steps add up to {@code base × 0.7^n} ticks. Call it once per working tick.
+     */
+    protected final int takeProgressStep() {
+        double v = exactProgressPerTick() + progressCarry;
+        int step = Math.max(1, (int) Math.floor(v));
+        progressCarry = Math.max(0, v - step);
+        return step;
     }
 
     /**
@@ -1664,7 +1687,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      */
     protected void updateProgress() {
         if (isWorking) {
-            progress = Math.min(maxProgress, progress + getProgressPerTick());
+            progress = Math.min(maxProgress, progress + takeProgressStep());   // 0.1.11.111: exact 0.7^n
         }
         // Progress does not go back. It stays at the current value until the work completes
     }

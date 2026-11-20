@@ -15,6 +15,8 @@ import net.minecraft.world.level.block.state.BlockState;
 public abstract class AbstractStandardMachineBlockEntity extends AbstractProcessingMachineBlockEntity {
     private StandardProcessingTiming timing;
     private int previousOverclockers = -1;
+    /** 0.1.11.107: the cost the timing was made for (a machine whose cost depends on its input recomputes on a change). */
+    private com.miophas.singularity_iteration.core.api.machine.ProcessCost timedCost;
     private boolean paidForThisTick;
 
     protected AbstractStandardMachineBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type,
@@ -23,11 +25,22 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
         super(pos, state, type, capacity, maxReceive, maxExtract, duration, layout, energyPerTick, tier);
     }
 
+    /**
+     * 0.1.11.107 (processing overhaul M0): the cost of one operation before upgrades. The default is the fixed time and
+     * EU/t the machine was built with; a machine whose cost depends on its input (its material) overrides it, and the
+     * timing follows when it changes. The power stays the machine's draw; the energy sets the time.
+     */
+    protected com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(baseMaxProgress, energyPerTick);
+    }
+
     @Override
     protected void updateProcessingParameters() {
         int count = upgradeStats.getOverclockerCount();
-        if (timing != null && previousOverclockers == count) return;
-        timing = StandardProcessingTiming.calculate(baseMaxProgress, energyPerTick,
+        var cost = processCost();
+        if (timing != null && previousOverclockers == count && cost.equals(timedCost)) return;
+        timedCost = cost;
+        timing = StandardProcessingTiming.calculate(cost.ticks(), cost.power(),
             upgradeStats.getProcessTimeMultiplier(), upgradeStats.getEnergyUsageMultiplier());
         previousOverclockers = count;
         int previousLength = maxProgress;
@@ -38,6 +51,8 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
 
     @Override
     protected void tickProduction() {
+        // 0.1.11.107: a cost that follows the input (its material) retimes the operation when the input changes
+        if (timing != null && !processCost().equals(timedCost)) updateProcessingParameters();
         // Validate the input/output even during a power outage. A blocked recipe
         // clears progress, while a valid recipe waiting for power keeps progress.
         boolean available;
@@ -64,6 +79,8 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             if (changed) setChanged();
             return;
         }
+        // 0.1.11.109: a machine running below full speed (a rotor spinning up) sits out some ticks; it stays working
+        if (!advanceThisTick()) { isWorking = true; return; }
         if (!consumeEnergy()) { stopWork(); return; }
         isWorking = true;
         if (++progress < maxProgress) return;
@@ -84,6 +101,25 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             setChanged();
         }
         completeWorkCycles(finishedOperations() - finished);   // 0.1.11.2: also closes the cycle
+    }
+
+    /**
+     * 0.1.11.109: whether this tick pays and advances the operation. A machine that runs at a fraction of its speed
+     * (the cyclone macerator's rotor) returns true on that fraction of the ticks, so its mean power and its speed scale
+     * together and the energy per operation does not change. Default: every tick.
+     */
+    protected boolean advanceThisTick() {
+        return true;
+    }
+
+    /**
+     * 0.1.11.112: the operation length already has the overclock in it (the timing scales the ticks), so the ticks per
+     * operation are just that length; the base computation divided it by the overclock speed a second time.
+     */
+    @Override
+    public int getTicksPerOperation() {
+        recalculateUpgradeStats();
+        return Math.max(1, maxProgress);
     }
 
     @Override

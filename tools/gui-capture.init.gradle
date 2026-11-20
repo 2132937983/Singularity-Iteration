@@ -1,0 +1,20 @@
+// Optional development capture (0.1.11.110): screenshots of chosen machine GUIs while they work, in a disposable flat world.
+// ./gradlew --init-script tools/gui-capture.init.gradle runGuiCapture [-PsiCaptureGallery=id,id] [-PsiCaptureInput=item] [-PsiCaptureWait=ticks] [-PsiCaptureWater=mB] [-PsiCaptureSlot1=item]
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('guiCapture') {
+            client()
+            loadedMods = [project.neoForge.mods[project.mod_id]]
+            gameDirectory = project.file('build/gui-capture-game')
+            systemProperty 'si.capture', project.file('build/gui-capture').absolutePath
+            systemProperty 'si.capture.gallery', project.findProperty('siCaptureGallery') ?: 'producer/block_powder_elc,producer/block_powder_advanced_elc'
+            systemProperty 'si.capture.galleryInput', project.findProperty('siCaptureInput') ?: 'minecraft:iron_ore'
+            systemProperty 'si.capture.galleryWait', project.findProperty('siCaptureWait') ?: '240'
+            if (project.findProperty('siCaptureWater')) systemProperty 'si.capture.galleryWater', project.findProperty('siCaptureWater')
+            if (project.findProperty('siCaptureSlot1')) systemProperty 'si.capture.gallerySlot1', project.findProperty('siCaptureSlot1')
+            programArguments.addAll '--width', '1280', '--height', '900'
+            jvmArguments.addAll '-Xmx3G', '-Xms512m'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

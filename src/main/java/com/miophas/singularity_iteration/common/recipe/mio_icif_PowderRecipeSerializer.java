@@ -29,7 +29,8 @@ public static final MapCodec<mio_icif_PowderRecipe> CODEC = RecordCodecBuilder.m
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_PowderRecipe::getGroup),
             Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(mio_icif_PowderRecipe::getIngredient),
             ItemStack.CODEC.fieldOf("result").forGetter(mio_icif_PowderRecipe::getResult),
-            Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_PowderRecipe::getProcessingTime),
+            // 0.1.11.108: absent is -1 (the macerator times the recipe by the material's work index)
+            Codec.INT.optionalFieldOf("processingtime", -1).forGetter(mio_icif_PowderRecipe::getProcessingTimeRaw),
             Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_PowderRecipe::getEnergyPerTick),
             Codec.INT.optionalFieldOf("count", DEFAULT_INGREDIENT_COUNT).forGetter(mio_icif_PowderRecipe::getIngredientCount)
         ).apply(instance, mio_icif_PowderRecipe::new)
@@ -58,7 +59,7 @@ public static final MapCodec<mio_icif_PowderRecipe> CODEC = RecordCodecBuilder.m
         String group = buffer.readUtf();
         Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buffer);
         ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
-        int processingTime = buffer.readVarInt();
+        int processingTime = buffer.readVarInt() - 1;
         int energyPerTick = buffer.readVarInt();
         int ingredientCount = buffer.readVarInt();
         return new mio_icif_PowderRecipe(group, ingredient, result, processingTime, energyPerTick, ingredientCount);
@@ -71,7 +72,7 @@ public static final MapCodec<mio_icif_PowderRecipe> CODEC = RecordCodecBuilder.m
         buffer.writeUtf(recipe.getGroup());
         Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, recipe.getIngredient());
         ItemStack.STREAM_CODEC.encode(buffer, recipe.getResult());
-        buffer.writeVarInt(recipe.getProcessingTime());
+        buffer.writeVarInt(recipe.getProcessingTimeRaw() + 1);   // 0.1.11.108: -1 (none) as 0
         buffer.writeVarInt(recipe.getEnergyPerTick());
         buffer.writeVarInt(recipe.getIngredientCount());
     }

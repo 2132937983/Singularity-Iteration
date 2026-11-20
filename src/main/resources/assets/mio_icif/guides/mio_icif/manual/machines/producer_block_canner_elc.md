@@ -20,6 +20,8 @@ The Canner uses EU in four modes. Canning mode puts an item into a container, fo
 The other modes empty cells into the tank, fill cells from the tank, or mix a fluid with a solid.
 Mix mode makes Coolant from Distilled Water and lapis dust.
 
+The left side of the GUI is the input tank and the right side is the output tank, 8,000 mB each. Moving dots show on the pipes that the current mode uses. The "Switch mode" and "Swap" buttons are in the GUI. "Swap" exchanges the two tanks. Each recipe runs at its own operation time and power.
+
 ## Power data
 
 | Item | Value |
@@ -27,11 +29,12 @@ Mix mode makes Coolant from Distilled Water and lapis dust.
 | Input voltage tier | LV (32 EU) |
 | Maximum input | 32 EU/t |
 | Energy storage | 800 EU |
-| Use while working | 4 EU/t |
-| Operation time | 200 tick (10 s) |
-| Energy per operation | 800 EU |
+| Use while working | By recipe (default 4 EU/t) |
+| Operation time | By recipe (default 200 tick) |
+| Energy per operation | By recipe (default 800 EU) |
+| Tanks | Input and output, 8,000 mB each |
 
-The game measured these values from the block entity of this version.
+The operation time and energy in the table are the values without overclocking. Each Overclocker Upgrade multiplies the operation time by 0.7 and the energy use by 1.6. The GUI and JEI show the actual values for the current input.
 
 ## Procedure
 

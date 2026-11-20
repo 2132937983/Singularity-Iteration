@@ -47,7 +47,8 @@ public final class Round21GameTests {
         h.succeed();
     }
 
-    @GameTest(batch = "round21", template = "empty", timeoutTicks = 300)
+    // 0.1.11.113: 500 ticks (the furnace first heats its chamber to 1,000 °C, about 100 ticks)
+    @GameTest(batch = "round21", template = "empty", timeoutTicks = 500)
     public static void electricFurnaceXpGoesStraightToThePlayer(GameTestHelper h) {
         var pos = new BlockPos(2, 1, 2);
         h.setBlock(pos, block("producer/block_furnace_elc"));

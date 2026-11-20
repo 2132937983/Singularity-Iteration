@@ -123,7 +123,7 @@ import org.jetbrains.annotations.Nullable;
     }
 
     // 0.1.11.18: the 248 x 204 rotor cross-section screen
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

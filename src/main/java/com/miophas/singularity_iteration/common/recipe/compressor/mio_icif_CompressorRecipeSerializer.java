@@ -30,8 +30,9 @@ public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuild
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_CompressorRecipe::getGroup),
             Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(mio_icif_CompressorRecipe::getIngredient),
             ItemStack.CODEC.fieldOf("result").forGetter(mio_icif_CompressorRecipe::getResult),
-            Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_CompressorRecipe::getProcessingTime),
-            Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_CompressorRecipe::getEnergyPerTick),
+            // 0.1.11.112: absent is -1 (the compressor then runs its stock 300 t at 2 EU/t)
+            Codec.INT.optionalFieldOf("processingtime", -1).forGetter(mio_icif_CompressorRecipe::getProcessingTimeRaw),
+            Codec.INT.optionalFieldOf("energypertick", -1).forGetter(mio_icif_CompressorRecipe::getEnergyPerTickRaw),
             Codec.INT.optionalFieldOf("count", DEFAULT_INGREDIENT_COUNT).forGetter(mio_icif_CompressorRecipe::getIngredientCount)
         ).apply(instance, mio_icif_CompressorRecipe::new)
     );
@@ -59,8 +60,8 @@ public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuild
         String group = buffer.readUtf();
         Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buffer);
         ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
-        int processingTime = buffer.readVarInt();
-        int energyPerTick = buffer.readVarInt();
+        int processingTime = buffer.readVarInt() - 1;   // 0.1.11.112: -1 (none) travels as 0
+        int energyPerTick = buffer.readVarInt() - 1;
         int ingredientCount = buffer.readVarInt();
         return new mio_icif_CompressorRecipe(group, ingredient, result, processingTime, energyPerTick, ingredientCount);
     }
@@ -72,8 +73,8 @@ public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuild
         buffer.writeUtf(recipe.getGroup());
         Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, recipe.getIngredient());
         ItemStack.STREAM_CODEC.encode(buffer, recipe.getResult());
-        buffer.writeVarInt(recipe.getProcessingTime());
-        buffer.writeVarInt(recipe.getEnergyPerTick());
+        buffer.writeVarInt(recipe.getProcessingTimeRaw() + 1);
+        buffer.writeVarInt(recipe.getEnergyPerTickRaw() + 1);
         buffer.writeVarInt(recipe.getIngredientCount());
     }
 }

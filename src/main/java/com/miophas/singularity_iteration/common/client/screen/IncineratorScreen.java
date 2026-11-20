@@ -63,4 +63,8 @@ public class IncineratorScreen<M extends MimicGeneratorMenu> extends MimicScreen
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip1"), Component.translatable(K + "tip2"),
                 Component.translatable(K + "tip3")), mouseX, mouseY);
     }
+
+    /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */
+    @Override
+    protected boolean pixelArt() { return false; }
 }

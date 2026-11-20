@@ -57,8 +57,8 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
         g.drawManaged(() -> {
             int x = leftPos, y = topPos;
             float u = WindRoseView.u();
-            SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
-            for (Slot slot : menu.slots) SiGuiTheme.slot(g, x + slot.x - 1, y + slot.y - 1);
+            VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
+            for (Slot slot : menu.slots) VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
             int columns = menu.getAvailableColumns();
             for (int row = 0; row < 6; row++)
                 for (int col = columns; col < 9; col++) {

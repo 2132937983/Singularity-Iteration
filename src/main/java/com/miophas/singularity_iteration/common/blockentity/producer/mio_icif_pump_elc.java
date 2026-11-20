@@ -850,4 +850,10 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         }
         return out;
     }
+
+    /** 0.1.11.111: keeps its own progress model (not the processing machines' exact 0.7^n) for the work cycle time. */
+    @Override
+    protected double exactProgressPerTick() {
+        return Math.max(1, getProgressPerTick());
+    }
 }

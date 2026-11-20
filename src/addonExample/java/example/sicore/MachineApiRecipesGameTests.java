@@ -59,7 +59,8 @@ public final class MachineApiRecipesGameTests {
 
     private static IItemHandler items(BlockEntity be) { return (IItemHandler) call(be, "getItemHandler"); }
 
-    @GameTest(batch = "machine_api", template = "empty", timeoutTicks = 200)
+    // 0.1.11.113: 400 ticks (the electric furnace first heats its chamber to 1,000 °C, about 100 ticks)
+    @GameTest(batch = "machine_api", template = "empty", timeoutTicks = 400)
     public static void electricFurnacesSmeltApiRecipes(GameTestHelper h) {
         h.assertTrue(registration().registerElectricFurnaceRecipe(id("flesh_to_leather"), Ingredient.of(Items.ROTTEN_FLESH),
             new ItemStack(Items.LEATHER), 100, 0.5F), "register");

@@ -76,6 +76,15 @@ public final class EnergyValuesDumpGameTests {
             }
             if (!(be instanceof AbstractEnergyBlockEntity energy)) continue;
             b.addProperty("class", be.getClass().getSimpleName());
+            // 0.1.11.117: a processing machine sizes its buffer when it recalculates its upgrades (the macerators and the
+            // compressor hold their hardest operation); a detached one has not, so do it here
+            if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity) {
+                try {
+                    var m = com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity.class.getDeclaredMethod("recalculateUpgradeStats");
+                    m.setAccessible(true);
+                    m.invoke(be);
+                } catch (ReflectiveOperationException | RuntimeException ignored) { }
+            }
             try {
                 var storage = energy.getEnergyStorageInternal();
                 b.addProperty("capacity", storage.getCapacity());

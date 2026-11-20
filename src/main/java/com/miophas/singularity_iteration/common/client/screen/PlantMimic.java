@@ -48,8 +48,8 @@ final class PlantMimic {
     }
 
     static void box(GuiGraphics g, float x, float y, float w, float h, int fill) {
-        g.fill((int) x - 1, (int) y - 1, (int) (x + w) + 1, (int) (y + h) + 1, OUTLINE);
-        g.fill((int) x, (int) y, (int) (x + w), (int) (y + h), fill);
+        FcsDraw.fill(g, (int) x - 1, (int) y - 1, (int) (x + w) + 1, (int) (y + h) + 1, OUTLINE);
+        FcsDraw.fill(g, (int) x, (int) y, (int) (x + w), (int) (y + h), fill);
     }
 
     /** A turbine casing: narrow at the inlet (left), wide at the exhaust (right). */
@@ -78,7 +78,7 @@ final class PlantMimic {
 
     /** A vent stack with steam puffs rising when it vents. */
     static void vent(GuiGraphics g, float x, float y, float h, boolean venting, double time) {
-        g.fill((int) x, (int) y, (int) x + 4, (int) (y + h), 0xFF8A8F94);
+        FcsDraw.fill(g, (int) x, (int) y, (int) x + 4, (int) (y + h), 0xFF8A8F94);
         if (!venting) return;
         for (int k = 0; k < 3; k++) {
             double t = (time / 10 + k / 3.0) % 1;
@@ -88,8 +88,8 @@ final class PlantMimic {
 
     /** A vertical tank bar filled to {@code share}. */
     static void tank(GuiGraphics g, float x, float y, float w, float h, double share, int argb) {
-        g.fill((int) x - 1, (int) y - 1, (int) (x + w) + 1, (int) (y + h) + 1, OUTLINE);
-        g.fill((int) x, (int) y, (int) (x + w), (int) (y + h), 0xFFF4F6F4);
+        FcsDraw.fill(g, (int) x - 1, (int) y - 1, (int) (x + w) + 1, (int) (y + h) + 1, OUTLINE);
+        FcsDraw.fill(g, (int) x, (int) y, (int) (x + w), (int) (y + h), 0xFFF4F6F4);
         float f = (float) Math.max(0, Math.min(1, share));
         WindRoseView.fill(g, x, y + h * (1 - f), w, h * f, argb);
     }
@@ -130,23 +130,23 @@ final class PlantMimic {
         PumpCrossSection.text(g, t, x + 13 - AsciiHud.width(t, u) / 2, y + 5.5F - 4 * u, 0xFFFFFF, u);
         box(g, x + 3, y + 13, 20, 24, BODY);
         float d = (float) (y + 15 + 7 * (1 + Math.sin(angle)) / 2), p = (float) (y + 25 + 7 * (1 + Math.sin(angle + Math.PI / 2)) / 2);
-        g.fill((int) x + 5, (int) d, (int) x + 21, (int) d + 3, 0xFF9AA3A6);
-        g.fill((int) x + 5, (int) p, (int) x + 21, (int) p + 4, OUTLINE);
+        FcsDraw.fill(g, (int) x + 5, (int) d, (int) x + 21, (int) d + 3, 0xFF9AA3A6);
+        FcsDraw.fill(g, (int) x + 5, (int) p, (int) x + 21, (int) p + 4, OUTLINE);
         box(g, x, y + 39, 26, 10, water ? 0xFFCFE0EF : 0xFFE6E9EA);
-        if (!water) for (int k = 0; k < 5; k++) g.fill((int) x + 3 + k * 5, (int) y + 40, (int) x + 4 + k * 5, (int) y + 49, 0xFF9AA3A6);
+        if (!water) for (int k = 0; k < 5; k++) FcsDraw.fill(g, (int) x + 3 + k * 5, (int) y + 40, (int) x + 4 + k * 5, (int) y + 49, 0xFF9AA3A6);
         Component c = Component.literal(Math.round(cold) + "°");
         PumpCrossSection.text(g, c, x + 13 - AsciiHud.width(c, u) / 2, y + 44 - 4 * u, 0x1C2524, u);
     }
 
     /** 0.1.11.17: a thermometer 0..{@code max} °C with a mark at {@code mark}. */
     static void thermometer(GuiGraphics g, float x, float y, float h, double celsius, double max, double mark) {
-        g.fill((int) x - 1, (int) y - 1, (int) x + 5, (int) (y + h) + 1, OUTLINE);
-        g.fill((int) x, (int) y, (int) x + 4, (int) (y + h), 0xFFF4F6F4);
+        FcsDraw.fill(g, (int) x - 1, (int) y - 1, (int) x + 5, (int) (y + h) + 1, OUTLINE);
+        FcsDraw.fill(g, (int) x, (int) y, (int) x + 4, (int) (y + h), 0xFFF4F6F4);
         float f = (float) Math.max(0, Math.min(1, celsius / max));
         WindRoseView.fill(g, x, y + h * (1 - f), 4, h * f, colour(celsius));
         if (mark > 0) {
             float m = (float) (y + h * (1 - mark / max));
-            g.fill((int) x - 2, (int) m, (int) x + 6, (int) m + 1, 0xFF2A5D8A);
+            FcsDraw.fill(g, (int) x - 2, (int) m, (int) x + 6, (int) m + 1, 0xFF2A5D8A);
         }
     }
 }

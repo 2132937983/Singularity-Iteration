@@ -16,26 +16,28 @@ item_ids:
 
 ## Function
 
-The machine makes EU from the sunlight on it. The sun is weak in the morning and evening and strongest at noon; the machine reaches its rated output at 700 W/m² and stays there above it.
-Rain keeps about 70 % of the light and a thunderstorm about 37 %. A hot panel makes less (−0.4 % per °C above 25 °C), so deserts are sunny but hot.
-The machine needs open sky straight above it; under cover it gets only the diffuse light, in the dark nothing.
-The screen shows today's record: the sunlight on the panel, a clear day for comparison, and the output.
-At night, while it sees the sky, its night core keeps a lower output.
+The machine is a photon resonance panel: resonant nano-antennas on its surface absorb a wide spectrum, diffuse light too. It reaches its rated output in weak light (450 W/m²).
+Under cover it still gets 45 % of the sky light. Rain keeps about 85 %, a thunderstorm about 61 %.
+Heat hardly matters: the output falls only 0.2 % per °C above 25 °C, by 15 % at most.
+At night, with open sky straight above it, the machine radiates its heat to the cold clear sky and makes power from that flow: 25 % of its rating (96 EU/t). Rain halves it, a thunderstorm leaves a quarter.
+The screen shows today's record: the sunlight on the panel, a clear day for comparison and the output, with the night sky factor.
 
 ## Power data
 
 | Item | Value |
 |---|---|
-| Output voltage tier | EV (2,048 EU) |
-| Output | 2,048 EU/t |
+| Output voltage tier | HV (512 EU) |
+| Output | 384 EU/t |
+| Output at night | 96 EU/t |
+| Full output from | 450 W/m² |
 | Energy storage | 40,000,000 EU |
 
 The game measured these values from the block entity of this version.
 
 ## Procedure
 
-1. Place the generator under open sky.
-2. Connect an EV cable to the generator.
+1. Place the generator under open sky; it also works where it rains often or under cover.
+2. Connect a HV cable to the generator.
 3. Put a battery into the charge slot.
 
 ## Recipe

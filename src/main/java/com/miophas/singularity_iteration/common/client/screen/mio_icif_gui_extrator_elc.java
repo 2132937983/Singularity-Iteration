@@ -1,93 +1,100 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.menu.producer.ExtractorElcMenu;
+import com.miophas.singularity_iteration.common.processing.ProcessStatus;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * 提取机方块的 GUI 屏幕
+ * 提取机界面. 0.1.11.116 (processing overhaul M9): the instrument screen (docs/gui_processing_machines.md). The figure is a
+ * screw press from the side: the hopper feeds the barrel, the screw's flights turn and carry the charge to the outlet,
+ * the charge is pressed thinner on the way, the juice drips through the screen into the tray and the cake leaves at
+ * the end. The readouts give the recipe's energy, power and time and the operations a minute.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
-public class mio_icif_gui_extrator_elc extends mio_icif_screen<ExtractorElcMenu> {
+public class mio_icif_gui_extrator_elc extends ProcessInstrumentScreen<ExtractorElcMenu> {
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_extractor_elc.png");
-
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    private static final int PROGRESS_X = 79;
-    private static final int PROGRESS_Y = 34;
-
-    private static final int ENERGY_ICON_X = 56;
-    private static final int ENERGY_ICON_Y = 36;
+    private static final int JUICE = 0xFFC9A54A;
+    private float phase;
 
     public mio_icif_gui_extrator_elc(ExtractorElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+    }
+
+    private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
+
+    @Override
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
+        if (running()) phase = (phase + dt * 12) % 10;
+        int x0 = (int) cx - 38, x1 = (int) cx + 30, y0 = (int) cy - 12, y1 = (int) cy + 8;
+        // the hopper over the inlet
+        FcsDraw.quad(g, cx - 40, cy - 30, cx - 18, cy - 30, cx - 26, cy - 12, cx - 32, cy - 12, SHELL);
+        if (menu.getSlot(ExtractorElcMenu.INPUT_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 36, (int) cy - 26, (int) cx - 22, (int) cy - 18, FormingFigure.WORK);
+        // the barrel, the charge pressed thinner towards the outlet
+        FcsDraw.fill(g, x0, y0, x1, y1, SHELL);
+        FcsDraw.fill(g, x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
+        if (running()) for (int x = x0 + 2; x < x1 - 2; x++) {
+            float t = (float) (x - x0) / (x1 - x0);
+            int h = Math.round(7 - 4 * t);
+            FcsDraw.fill(g, x, (int) cy - 2 - h, x + 1, (int) cy - 2 + h, FormingFigure.WORK);
+        }
+        // the shaft and the flights (shallower towards the outlet), moving with the turn
+        FcsDraw.fill(g, x0 - 6, (int) cy - 3, x1 + 4, (int) cy - 1, STEEL);
+        for (int k = 0; k < 8; k++) {
+            float x = x0 + 4 + ((k * 8 + phase * 0.8F) % 62);
+            float t = (x - x0) / (x1 - x0);
+            float r = 7 - 3 * t;
+            FcsDraw.line(g, x - 2, cy - 2 - r, x + 2, cy - 2 + r, 1.4F, STEEL_LIGHT);
+        }
+        // the drive at the inlet end
+        FcsDraw.fill(g, x0 - 12, (int) cy - 8, x0 - 4, (int) cy + 4, STEEL);
+        // the screen under the barrel, the juice dripping into the tray
+        for (int x = x0 + 8; x < x1 - 4; x += 4) FcsDraw.fill(g, x, y1, x + 2, y1 + 1, STEEL_LIGHT);
+        FcsDraw.fill(g, x0 + 4, (int) cy + 26, x1 - 2, (int) cy + 34, SHELL);
+        FcsDraw.fill(g, x0 + 6, (int) cy + 29, x1 - 4, (int) cy + 32, JUICE);
+        if (running()) for (int k = 0; k < 5; k++) {
+            float dx = x0 + 12 + k * 12, f = ((phase / 10) + k * 0.37F) % 1;
+            FcsDraw.disc(g, dx, y1 + 2 + f * 16, 1.2F, JUICE);
+        }
+        // the cake leaving the outlet
+        if (running()) {
+            float f = phase / 10;
+            FcsDraw.fill(g, x1, (int) (cy - 4), x1 + 3 + Math.round(5 * f), (int) cy, FormingFigure.WORK);
+        }
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        // 绘制背景
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        ExtractorElcMenu menu = this.getMenu();
-        if (menu != null) {
-            drawExtractorProgress(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, menu.getProgressPixels(EXTRACTOR_PROGRESS_WIDTH));
-
-            drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());
-        }
-    }
-
-    /**
-     * 渲染自定义悬浮提示（进度条、能量等）
-     * 在绝对屏幕坐标系中渲染，避免与 renderLabels 的坐标变换冲突
-     */
-    @Override
-    protected void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        ExtractorElcMenu menu = this.getMenu();
-        if (menu == null) return;
-
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        // 检测进度条区域悬停
-        if (isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, EXTRACTOR_PROGRESS_WIDTH, EXTRACTOR_PROGRESS_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal(menu.getProgress() + "/" + menu.getMaxProgress()),
-                mouseX, mouseY);
-        }
-
-        // 检测能量图标区域悬停
-        if (isHovering(mouseX, mouseY, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal(menu.getEnergy() + "/" + menu.getMaxEnergy() + " EU"),
-                mouseX, mouseY);
-        }
+    protected Component headline() {
+        return Component.translatable(K + (running() ? "extracting" : "stopped"));
     }
 
     @Override
-    public void containerTick() {
-        super.containerTick();
+    protected int headlineColour() { return running() ? INK : DIM; }
 
-        // 直接从方块实体同步数据到客户端
-        ExtractorElcMenu menu = this.getMenu();
-        if (menu != null && menu.blockEntity != null) {
-            menu.setSyncData(0, menu.blockEntity.getProgress());
-            menu.setSyncData(1, menu.blockEntity.getMaxProgress());
-            menu.setSyncData(2, menu.blockEntity.isWorking() ? 1 : 0);
-            menu.setSyncData(3, menu.blockEntity.getEnergyStorage().getEnergyStored());
-            menu.setSyncData(4, menu.blockEntity.getEnergyStorage().getMaxEnergyStored());
-        }
+    @Override
+    protected List<Component> readouts() {
+        List<Component> lines = new ArrayList<>();
+        int max = menu.getMaxProgress();
+        lines.add(Component.translatable(K + "energy_line", (long) menu.getPower() * max, menu.getPower(), max));
+        if (max > 0) lines.add(Component.translatable(K + "rate_line", f1(1200.0 / max)));
+        return lines;
+    }
+
+    @Override
+    protected int status() { return menu.getStatus(); }
+
+    @Override
+    protected double energyFraction() { return menu.getEnergyPermille() / 1000.0; }
+
+    @Override
+    protected List<Component> figureTooltip() {
+        return List.of(Component.translatable(K + "tip.extractor.1"), Component.translatable(K + "tip.extractor.2"));
     }
 }

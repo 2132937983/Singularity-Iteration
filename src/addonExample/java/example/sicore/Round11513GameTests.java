@@ -67,13 +67,13 @@ public final class Round11513GameTests {
         h.succeed();
     }
 
-    /** Rated output: an RTG without pellets and an incomplete geomagnetic generator are 0; a photon panel its 512 EU/t peak. */
+    /** Rated output: an RTG without pellets and an incomplete geomagnetic generator are 0; a photon panel its peak (384 EU/t since 0.1.11.102, was 512). */
     @GameTest(template = "empty", timeoutTicks = 20)
     public static void ratedOutputs(GameTestHelper h) {
         long rtg = (long) call(place(h, new BlockPos(1, 2, 1), "generator/block_rt_generator"), "ratedOutput");
         long geo = (long) call(place(h, new BlockPos(3, 2, 1), "generator/block_geomagnetic_generator"), "ratedOutput");
         long photon = (long) call(place(h, new BlockPos(5, 2, 1), "generator/block_photon_resonance_solar_generator"), "ratedOutput");
-        h.assertTrue(rtg == 0 && geo == 0 && photon == 512, "rtg " + rtg + ", geomagnetic " + geo + ", photon " + photon);
+        h.assertTrue(rtg == 0 && geo == 0 && photon == 384, "rtg " + rtg + ", geomagnetic " + geo + ", photon " + photon);
         h.succeed();
     }
 

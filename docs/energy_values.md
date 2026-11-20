@@ -52,19 +52,19 @@
 | 名称 | ID | 输出等级 | 单包上限 EU | 额定输出 EU/t | 内部储能 EU | 每 tick 最多送出 EU | 说明（燃料、条件） |
 |---|---|---|---|---|---|---|---|
 | 无限发电机 | `generator/block_unlimit_generator` | IV | 8,192 | 8,192 | 100,000 | 8,192 | 创造模式专用 |
-| 量子太阳能发电机 | `generator/block_quantum_solar_panel` | IV | 8,192 | 4,096 | 10,000,000 | 8,192 | - |
-| 终极光子振谐太阳能发电机 | `generator/block_ultimate_photon_resonance_solar_generator` | IV | 8,192 | 4,096 | 400,000,000 | 8,192 | - |
-| 光子振谐太阳能发电机 | `generator/block_photon_resonance_solar_generator` | EV | 2,048 | 512 | 40,000,000 | 2,048 | - |
-| 终极混合太阳能发电机 | `generator/block_ultimate_hybrid_solar_panel` | HV | 512 | 512 | 1,000,000 | 512 | - |
+| 量子太阳能发电机 | `generator/block_quantum_solar_panel` | IV | 8,192 | 7,168 | 10,000,000 | 8,192 | 夜间输出：0 EU/t；满功率辐照：850 W/m² |
+| 终极光子振谐太阳能发电机 | `generator/block_ultimate_photon_resonance_solar_generator` | IV | 8,192 | 3,072 | 400,000,000 | 8,192 | 夜间输出：1,075 EU/t；满功率辐照：350 W/m² |
+| 终极混合太阳能发电机 | `generator/block_ultimate_hybrid_solar_panel` | HV | 512 | 768 | 1,000,000 | 1,024 | 夜间输出：0 EU/t；满功率辐照：850 W/m² |
+| 光子振谐太阳能发电机 | `generator/block_photon_resonance_solar_generator` | HV | 512 | 384 | 40,000,000 | 512 | 夜间输出：96 EU/t；满功率辐照：450 W/m² |
 | 柴油发电机 | `generator/block_diesel_generator` | EV | 2,048 | 120 | 1,000,000 | 512 | 燃料：柴油：0.5 mB/t → 120 EU/t (240 EU/mB) |
-| 混合太阳能发电机 | `generator/block_hybrid_solar_panel` | MV | 128 | 64 | 100,000 | 128 | - |
-| 进阶太阳能发电机 | `generator/block_mets_advanced_solar_generator` | MV | 128 | 64 | 200,000 | 128 | - |
+| 混合太阳能发电机 | `generator/block_hybrid_solar_panel` | MV | 128 | 96 | 100,000 | 128 | 夜间输出：0 EU/t；满功率辐照：850 W/m² |
 | 蒸汽涡轮发电机 | `generator/block_steam_turbine` | MV | 128 | 64 | 32,000 | 128 | 蒸汽消耗：128 mB/t → 64 EU/t (每 EU 2 mB)；过热蒸汽消耗：64 mB/t → 64 EU/t (每 EU 1 mB)；配冷凝机：蒸汽 80 mB/t、过热蒸汽约 49 mB/t → 64 EU/t |
+| 进阶太阳能发电机 | `generator/block_mets_advanced_solar_generator` | MV | 128 | 48 | 200,000 | 128 | 夜间输出：7 EU/t；满功率辐照：600 W/m² |
 | 进阶半流质发电机 | `generator/block_advanced_semifluid_generator` | MV | 128 | 36 | 100,000 | 128 | 燃料：沼气：0.9 mB/t → 36 EU/t (40 EU/mB)；燃料：生物质：3.6 mB/t → 36 EU/t (10 EU/mB)；燃料：原油：1.8 mB/t → 36 EU/t (20 EU/mB)；燃料：柴油：0.225 mB/t → 36 EU/t (160 EU/mB) |
 | 地热发电机 | `generator/block_geo_generator` | LV | 32 | 20 | 2,400 | 32 | 燃料：熔岩：2 mB/t → 20 EU/t (10 EU/mB)；周围岩浆（2 格内）：紧贴 1 EU/t，更远 0.5 EU/t，× 深度，最多 12 EU/t |
 | 半流质发电机 | `generator/block_semifluid_generator` | LV | 32 | 16 | 32,000 | 32 | 燃料：沼气：0.5 mB/t → 16 EU/t (32 EU/mB)；燃料：生物质：1 mB/t → 8 EU/t (8 EU/mB)；燃料：原油：0.5 mB/t → 8 EU/t (16 EU/mB)；燃料：柴油：0.25 mB/t → 32 EU/t (128 EU/mB) |
+| 高级太阳能发电机 | `generator/block_advanced_solar_panel` | LV | 32 | 12 | 32,000 | 32 | 夜间输出：0 EU/t；满功率辐照：850 W/m² |
 | 火力发电机 | `generator/block_thermal_generator` | LV | 32 | 10 | 4,000 | 32 | - |
-| 高级太阳能发电机 | `generator/block_advanced_solar_panel` | LV | 32 | 8 | 32,000 | 32 | - |
 | 太阳能发电机 | `generator/block_solar_generator` | LV | 32 | 1 | 2 | 32 | - |
 | 核聚变堆控制台 | `fusion/block_fusion_controller` | IV→UIV | 33,554,432 | - | 20,000,000 | 0 | 托卡马克聚变堆：输出不封顶（0.1.11.98 起；示例包层 41,440,000 EU/t，超过 Mek 聚变堆的二倍，更强的包层更多，只在电网最高电压 2,147,483,647 EU/t 处截断），经能量输出端口送出；聚变功率每档加料 612,500 EU/t；储能为输入（LuV），磁体维持 392,000 EU/t，启动 300,000,000 EU；燃料为氘燃料棒和氚燃料棒，满功率每 625 tick 各用一根；破裂缓解用 10k/30k/60k 冷却单元；包层热量到上限即熔毁核爆（默认为核反应堆最强爆炸的 50 倍，配置 fusionExplosionMultiplier）；聚变功率：每档加料 612,500 EU/t，16 档为 9,800,000 EU/t；输入储能：20,000,000 EU；磁体维持：392,000 EU/t；启动（中心螺线管）：300,000,000 EU，最快 30 秒；加热：每个加热端口 245,000 EU/t，最多为聚变功率的十分之一 |
 | 进阶掉落物发电机 | `generator/block_advanced_drop_generator` | HV | 512 | - | 100,000 | 512 | 烧掉落物：40 EU/t |
@@ -112,10 +112,10 @@
 | MFE | `wiring/block_mfe` | HV | 512 | 4,000,000 | 512 | 512 |
 | MFSU | `wiring/block_mfsu` | EV | 2,048 | 40,000,000 | 2,048 | 2,048 |
 | EESU储电箱 | `wiring/block_eesu` | IV | 8,192 | 400,000,000 | 8,192 | 8,192 |
-| 大型储电GESU输出模块（LuV） | `wiring/block_gesu_output_luv` | LUV | 32,768 | 65,536 | 0 | 32,768 |
+| 大型储电GESU核心 | `wiring/block_gesu_core` | MAX | 2,147,483,647 | 2,147,483,647 | 0 | 0 |
 | 大型储电GESU输入模块 | `wiring/block_gesu_input_iv` | MAX | 2,147,483,647 | 4,294,967,294 | 2,147,483,647 | 0 |
 | 大型储电GESU输出模块（IV） | `wiring/block_gesu_output_iv` | IV | 8,192 | 16,384 | 0 | 8,192 |
-| 大型储电GESU核心 | `wiring/block_gesu_core` | MAX | 2,147,483,647 | 2,147,483,647 | 0 | 0 |
+| 大型储电GESU输出模块（LuV） | `wiring/block_gesu_output_luv` | LUV | 32,768 | 65,536 | 0 | 32,768 |
 
 GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输出模块各自按等级收发。模块的储能是它们的缓冲。
 
@@ -145,7 +145,9 @@ GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输
 
 ## 8. 机器耗电
 
-「单次耗电」= 耗电 × 工时（默认配方、没有升级）。实际配方可能有自己的工时和耗电（例如精炼机），以 JEI 为准。
+「单次耗电」= 耗电 × 工时（空机、没有升级时的默认值）。实际配方可能有自己的工时和耗电（例如精炼机），以 JEI 为准。
+
+0.1.11.107 起的加工机器大修后，很多加工机器的单次耗电跟着输入走，空机测得的默认值只是起点：打粉机和旋风打粉机按材料的邦德功指数（铁约 600 EU）；压缩机、提取机、方块切割机、洗矿机和两台金属成型机按配方写的工时和功率；电炉和感应炉另有升温；热能离心机按配方的最低热量开工。各机器的计算方式见游戏手册。
 
 | 名称 | ID | 输入等级 | 单包上限 EU | 耗电 EU/t | 工时 tick | 单次耗电 EU | 内部储能 EU |
 |---|---|---|---|---|---|---|---|
@@ -165,20 +167,20 @@ GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输
 | 进阶金属成型机 | `producer/block_metal_former_advanced` | MV | 128 | 50 | 20 | 1,000 | 1,000 |
 | 方块切割机 | `producer/block_block_cutter` | MV | 128 | 48 | 900 | 43,200 | 43,200 |
 | 热能离心机 | `producer/block_centrifuge_elc` | MV | 128 | 48 | 500 | 24,000 | 24,000 |
-| 进阶高压压缩机 | `producer/block_compressor_advanced_elc` | MV | 128 | 25 | 70 | 1,750 | 1,750 |
 | 洗矿机 | `producer/block_washer_elc` | MV | 128 | 16 | 400 | 6,400 | 8,000 |
 | 感应炉 | `producer/block_induction_elc` | MV | 128 | 15 | 4,000 | 60,000 | 10,000 |
+| 进阶旋风打粉机 | `producer/block_powder_advanced_elc` | MV | 128 | 12 | 40 | 480 | 1,710 |
 | 电解机 | `producer/block_electrolyzer_elc` | LV | 32 | 10 | 20 | 200 | 400 |
 | 金属成型机 | `producer/block_metal_former` | LV | 32 | 10 | 200 | 2,000 | 2,000 |
+| 进阶高压压缩机 | `producer/block_compressor_advanced_elc` | MV | 128 | 8 | 75 | 600 | 20,000 |
 | 精炼机 | `producer/block_oil_refinery_elc` | MV | 128 | 8 | 10 | 80 | 2,000 |
 | 磁化机 | `producer/block_magnetizer` | LV | 32 | 5 | 100 | 500 | 100 |
-| 进阶旋风打粉机 | `producer/block_powder_advanced_elc` | MV | 128 | 5 | 150 | 750 | 750 |
 | 装罐机 | `producer/block_canner_elc` | LV | 32 | 4 | 200 | 800 | 800 |
-| 电炉 | `producer/block_furnace_elc` | LV | 32 | 3 | 100 | 300 | 300 |
-| 批量工作台 | `producer/block_batch_crafter` | MV | 128 | 2 | 40 | 80 | 20,000 |
-| 压缩机 | `producer/block_compressor_elc` | LV | 32 | 2 | 300 | 600 | 600 |
-| 提取机 | `producer/block_extractor_elc` | LV | 32 | 2 | 300 | 600 | 600 |
-| 打粉机 | `producer/block_powder_elc` | LV | 32 | 2 | 300 | 600 | 600 |
+| 电炉 | `producer/block_furnace_elc` | LV | 32 | 3 | 100 | 300 | 600 |
+| 批量工作台 | `producer/block_batch_crafter` | MV | 128 | 2 | 40 | 80 | 20,080 |
+| 压缩机 | `producer/block_compressor_elc` | LV | 32 | 2 | 300 | 600 | 18,600 |
+| 提取机 | `producer/block_extractor_elc` | LV | 32 | 2 | 300 | 600 | 1,200 |
+| 打粉机 | `producer/block_powder_elc` | LV | 32 | 2 | 300 | 600 | 1,800 |
 | 收割机 | `producer/block_harvest_elc` | LV | 32 | 1 | 10 | 10 | 10,000 |
 | 作物监管机 | `producer/block_matron_elc` | LV | 32 | 1 | 10 | 10 | 10,000 |
 | 泵 | `producer/block_pump_elc` | LV | 32 | 1 | 20 | 20 | 20 |
@@ -310,13 +312,13 @@ GESU 是多方块结构（核心加 6 个模块）：核心储能，输入和输
 | 核聚变堆控制台 | 41,440,000 | 示例包层（质子四联燃料棒＋铱超频散热片）；0.1.11.98 起不封顶，更强的包层更多 | IV→UIV | 33,554,432 | 828,800,000 | 994,560,000,000 |
 | 地磁发电机 | 30,720 | 手册：扰动为 1 时；平均约 8,300 | ZPMV | 131,072 | 614,400 | 737,280,000 |
 | 量子发电机 | 8,192 | 额定（代码） | IV | 8,192 | 163,840 | 196,608,000 |
+| 量子太阳能发电机 | 7,168 | 额定（实测） | IV | 8,192 | 143,360 | 172,032,000 |
 | 双涡轮增压动能发电机 | 4,800 | 手册：4,000 KU/t 风力或水力动能 | EV→IV | 8,192 | 96,000 | 115,200,000 |
-| 量子太阳能发电机 | 4,096 | 额定（实测） | IV | 8,192 | 81,920 | 98,304,000 |
-| 终极光子振谐太阳能发电机 | 4,096 | 额定（实测） | IV | 8,192 | 81,920 | 98,304,000 |
+| 终极光子振谐太阳能发电机 | 3,072 | 额定（实测） | IV | 8,192 | 61,440 | 73,728,000 |
 | 蒸汽隧道电力端口 | 2,048 | 手册：蒸汽隧道，每 tick 4 个包 | HV | 512 | 40,960 | 49,152,000 |
 | 涡轮增压动能发电机 | 1,700 | 手册：2,000 KU/t 风力或水力动能 | HV→EV | 2,048 | 34,000 | 40,800,000 |
-| 光子振谐太阳能发电机 | 512 | 额定（实测） | EV | 2,048 | 10,240 | 12,288,000 |
-| 终极混合太阳能发电机 | 512 | 额定（实测） | HV | 512 | 10,240 | 12,288,000 |
+| 终极混合太阳能发电机 | 768 | 额定（实测） | HV | 512 | 15,360 | 18,432,000 |
+| 光子振谐太阳能发电机 | 384 | 额定（实测） | HV | 512 | 7,680 | 9,216,000 |
 
 核反应堆的输出按燃料棒布局，手册「反应堆模拟器」和 JEI「反应堆布局」里的内置示例最高 660 EU/t（6 个反应仓，进料倍率 1x）。
 

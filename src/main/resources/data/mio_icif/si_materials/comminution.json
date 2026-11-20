@@ -1,0 +1,23 @@
+{
+  "_comment": "0.1.11.107: Bond work indices (kWh/t), Bond (1961) typical values; entries marked 'set' have no measured value and are game settings. Used by the macerators from 0.1.11.108.",
+  "entries": [
+    {"item": "minecraft:glass", "work_index": 3.1},
+    {"tag": "c:glass_blocks", "work_index": 3.1},
+    {"item": "minecraft:clay_ball", "work_index": 7.1},
+    {"item": "minecraft:clay", "work_index": 7.1},
+    {"_comment": "set", "tag": "c:netherracks", "work_index": 8.0},
+    {"tag": "c:ores/tin", "work_index": 10.8},
+    {"item": "minecraft:coal", "work_index": 11.4},
+    {"tag": "c:ores/coal", "work_index": 11.4},
+    {"tag": "c:ores/lead", "work_index": 11.4},
+    {"tag": "c:ores/iron", "work_index": 12.7},
+    {"tag": "c:gems/quartz", "work_index": 12.8},
+    {"tag": "c:ores/quartz", "work_index": 12.8},
+    {"tag": "c:ores/copper", "work_index": 13.1},
+    {"tag": "c:cobblestones", "work_index": 14.4},
+    {"tag": "c:ores/gold", "work_index": 14.8},
+    {"_comment": "set", "tag": "c:ores/diamond", "work_index": 16.0},
+    {"tag": "c:ores/uranium", "work_index": 17.9},
+    {"tag": "c:gravels", "work_index": 25.2}
+  ]
+}

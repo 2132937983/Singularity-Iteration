@@ -174,7 +174,7 @@ public enum MetalFormerMode {
         }
 
         // Check that the machine has enough energy.
-        if (getEffectiveEnergyPerTick() <= 0 || progress < Math.max(1, getRecipeProcessingTime()) && !hasEnoughEnergy()) {
+        if (getEffectiveEnergyPerTick() <= 0 || progress < maxProgress && !hasEnoughEnergy()) {
             return false;
         }
 
@@ -228,7 +228,8 @@ public enum MetalFormerMode {
 
     @Override
     protected void doWork() {
-        if (progress < Math.max(1, getRecipeProcessingTime()) && !consumeEnergy()) { stopWork(); return; }
+        updateProcessingParameters();   // 0.1.11.117: the length follows the current recipe and mode
+        if (progress < maxProgress && !consumeEnergy()) { stopWork(); return; }
         isWorking = true;
     }
 
@@ -238,8 +239,8 @@ public enum MetalFormerMode {
     @Override
     protected void updateProgress() {
         if (isWorking) {
-            int recipeMaxProgress = Math.max(1, getRecipeProcessingTime());
-            int progressPerTick = getProgressPerTick();
+            int recipeMaxProgress = maxProgress;   // 0.1.11.117: the field (was the recipe time beside a stale field)
+            int progressPerTick = takeProgressStep();   // 0.1.11.111: exact 0.7^n
             if (progress < recipeMaxProgress) {
                 progress = (int) Math.min(recipeMaxProgress, (long) progress + progressPerTick);
             }
@@ -344,6 +345,27 @@ public enum MetalFormerMode {
         return recipe.map(r -> r.value()).orElse(null);
     }
 
+    /** 0.1.11.115: why the metal former runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (itemHandler.getStackInSlot(INPUT_SLOT).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if ((switch (currentMode) { case ROLLING -> getRollingRecipe(); case CUTTING -> getCuttingRecipe(); case EXTRUDING -> getExtrudingRecipe(); }) == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        if (!(switch (currentMode) { case ROLLING -> canWorkRolling(itemHandler.getStackInSlot(INPUT_SLOT)); case CUTTING -> canWorkCutting(itemHandler.getStackInSlot(INPUT_SLOT)); case EXTRUDING -> canWorkExtruding(itemHandler.getStackInSlot(INPUT_SLOT)); })) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
+    /**
+     * 0.1.11.115 (processing overhaul M8): the recipe's power (10 EU/t for the recipes that give none, the machine's
+     * stock power), at the overclock's energy multiplier. The time was already the recipe's.
+     */
+    @Override
+    public long getEffectiveEnergyPerTick() {
+        long base = super.getEffectiveEnergyPerTick();
+        return Math.max(1, Math.round(base * (double) getRecipeEnergyPerTick() / DEFAULT_ENERGY_PER_TICK));
+    }
+
     /**
      * 获取当前配方相关的处理时间
      */
@@ -414,9 +436,23 @@ public enum MetalFormerMode {
         return currentMode;
     }
 
+    /**
+     * 0.1.11.117: the operation's length is the field, set from the recipe of the current mode (with the work cycle
+     * factor), like the advanced former; it stayed at the stock 200 before, so the overclocked ticks per operation and
+     * the work cycle were off for every recipe of another length.
+     */
+    @Override
+    protected void updateProcessingParameters() {
+        int target = cycleScaledTicks(Math.max(1, getRecipeProcessingTime()));
+        if (maxProgress != target) {
+            maxProgress = target;
+            if (progress > maxProgress) progress = maxProgress;
+        }
+    }
+
     @Override
     public int getMaxProgress() {
-        return getRecipeProcessingTime();
+        return maxProgress;
     }
 
     @Override

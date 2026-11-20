@@ -33,11 +33,11 @@ public class GeoScreen extends MimicScreen<GeoGeneratorMenu> {
         int yLevel = v(9);
         // the borehole: Y 100 at the top, Y -64 at the bottom; the depth factor 1..2 across
         float bx = x + 18, by = y + 4, bw = 60, bh = 52;
-        g.fill((int) bx - 1, (int) by - 1, (int) (bx + bw) + 1, (int) (by + bh) + 1, 0xFFB8C0C2);
-        g.fill((int) bx, (int) by, (int) (bx + bw), (int) (by + bh), 0xFFFBFCFC);
+        FcsDraw.fill(g, (int) bx - 1, (int) by - 1, (int) (bx + bw) + 1, (int) (by + bh) + 1, 0xFFB8C0C2);
+        FcsDraw.fill(g, (int) bx, (int) by, (int) (bx + bw), (int) (by + bh), 0xFFFBFCFC);
         for (int yy : new int[]{64, 0, -64}) {
             float ly = by + bh * (100 - yy) / 164F;
-            g.fill((int) bx, (int) ly, (int) (bx + bw), (int) ly + 1, 0xFFEDEFEF);
+            FcsDraw.fill(g, (int) bx, (int) ly, (int) (bx + bw), (int) ly + 1, 0xFFEDEFEF);
             Component c = Component.literal(String.valueOf(yy));
             PumpCrossSection.text(g, c, bx - 2 - com.miophas.singularity_iteration.common.client.suit.AsciiHud.width(c, u), ly - 4 * u, 0x5B6867, u);
         }
@@ -52,14 +52,14 @@ public class GeoScreen extends MimicScreen<GeoGeneratorMenu> {
         }
         float my = by + bh * (100 - Math.max(-64, Math.min(100, yLevel))) / 164F;
         double factor = v(7) / 1000.0;
-        g.fill((int) (bx + bw * (factor - 1)) - 2, (int) my - 2, (int) (bx + bw * (factor - 1)) + 3, (int) my + 3, 0xFF33393A);
+        FcsDraw.fill(g, (int) (bx + bw * (factor - 1)) - 2, (int) my - 2, (int) (bx + bw * (factor - 1)) + 3, (int) my + 3, 0xFF33393A);
         PlantMimic.label(g, nether ? Component.translatable(K + "nether") : Component.translatable(K + "depth").append(f("%.2f", factor)), bx + bw / 2, by + bh + 2, WindRoseView.DIM);
         // the sum
         float sx = x + 92;
         int sources = v(5), flowing = v(6);
         for (int i = 0; i < Math.min(24, sources + flowing); i++) {
             int cx = (int) sx + (i % 12) * 7, cy = y + 6 + (i / 12) * 8;
-            g.fill(cx, cy, cx + 5, cy + 6, i < sources ? LAVA : FLOW);
+            FcsDraw.fill(g, cx, cy, cx + 5, cy + 6, i < sources ? LAVA : FLOW);
         }
         if (sources + flowing > 24) PumpCrossSection.text(g, Component.literal("+" + (sources + flowing - 24)), sx + 86, y + 6, 0x5B6867, u);
         double world = v(4) / 100.0;
@@ -89,4 +89,8 @@ public class GeoScreen extends MimicScreen<GeoGeneratorMenu> {
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip1"), Component.translatable(K + "tip2"),
                 Component.translatable(K + "tip3")), mouseX, mouseY);
     }
+
+    /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */
+    @Override
+    protected boolean pixelArt() { return false; }
 }

@@ -362,6 +362,79 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
      * 
 tick 更新逻辑
      */
+    // ---- 0.1.11.113 (processing overhaul M6): the chamber temperature ----
+
+    /**
+     * A resistance furnace heats its chamber: the 3 EU/t heater raises it 10 °C a tick up to 1,100 °C, and a chamber
+     * left alone cools towards 20 °C (Newton's law, time constant 30 s). Food cooks from 250 °C; ores, metals and the rest
+     * need 1,000 °C. Below that the furnace heats (paying the 3 EU/t) and does not advance; once hot it runs 100 ticks at
+     * 3 EU/t as before.
+     */
+    public static final double AMBIENT = 20, MAX_TEMPERATURE = 1100, HEAT_PER_TICK = 10, COOL_TAU_TICKS = 600;
+    public static final double FOOD_TEMPERATURE = 250, SMELT_TEMPERATURE = 1000;
+
+    private double temperature = AMBIENT;
+    private long temperatureTime = Long.MIN_VALUE;
+    private boolean advancedThisTick;
+
+    /** Brings the temperature to game time {@code now}: an idle chamber (asleep too) cools by Newton's law. */
+    private void coolTo(long now) {
+        if (temperatureTime != Long.MIN_VALUE && now > temperatureTime)
+            temperature = AMBIENT + (temperature - AMBIENT) * Math.exp(-(now - temperatureTime) / COOL_TAU_TICKS);
+        temperatureTime = now;
+    }
+
+    /** The chamber temperature now (°C). */
+    public double temperature() {
+        if (level != null) coolTo(level.getGameTime());
+        return temperature;
+    }
+
+    /** The temperature the current item needs: food 250 °C, everything else 1,000 °C. */
+    public double requiredTemperature() {
+        if (level == null) return SMELT_TEMPERATURE;
+        var recipe = findRecipe();
+        if (recipe.isEmpty()) return SMELT_TEMPERATURE;
+        ItemStack result = com.miophas.singularity_iteration.common.util.RecipeResults.of(recipe.get().value(), level.registryAccess());
+        return result.has(net.minecraft.core.component.DataComponents.FOOD) ? FOOD_TEMPERATURE : SMELT_TEMPERATURE;
+    }
+
+    /** Advances only in a hot enough chamber. */
+    @Override
+    protected boolean advanceThisTick() {
+        advancedThisTick = temperature() >= requiredTemperature();
+        return advancedThisTick;
+    }
+
+    /** After the tick's work: a working furnace heats (paying its 3 EU/t itself while it waits for the temperature). */
+    private void heat() {
+        double before = temperature();
+        if (isWorking() && canWorkRedstone()) {
+            boolean paid = advancedThisTick || apiUseEnergy(DEFAULT_ENERGY_PER_TICK, true) >= DEFAULT_ENERGY_PER_TICK
+                && apiUseEnergy(DEFAULT_ENERGY_PER_TICK, false) >= DEFAULT_ENERGY_PER_TICK;
+            if (paid) temperature = Math.min(MAX_TEMPERATURE, temperature + HEAT_PER_TICK);
+        }
+        advancedThisTick = false;
+        if (Math.abs(temperature - before) > 0.5) setChanged();
+    }
+
+    /** Why the furnace runs, heats or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        var recipe = findRecipe();
+        if (recipe.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        ItemStack result = com.miophas.singularity_iteration.common.util.RecipeResults.of(recipe.get().value(), level.registryAccess());
+        ItemStack out = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (!out.isEmpty() && (!ItemStack.isSameItemSameComponents(out, result) || out.getCount() + result.getCount() > out.getMaxStackSize()))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return temperature() < requiredTemperature()
+            ? com.miophas.singularity_iteration.common.processing.ProcessStatus.HEATING : com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
     /** 0.1.10.8: canWork depends only on the inventory, the saved state and the stored energy. */
     @Override
     protected boolean idleSleepAllowed() {
@@ -375,6 +448,7 @@ tick 更新逻辑
 
         // 先调用父类的 tick 逻辑（消耗能量进行工作，包含电池槽放电）
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
+        blockEntity.heat();   // 0.1.11.113: the chamber temperature
 
         // 更新方块状态（运行/停止
     blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_furnace_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
@@ -388,11 +462,16 @@ tick 更新逻辑
         recipesUsed.forEach((recipeId, count) -> recipesTag.putInt(recipeId.toString(), count));
         tag.put("RecipesUsed", recipesTag);
         storedXp.save(tag);
+        tag.putDouble("furnace_temperature", temperature());   // 0.1.11.113
+        tag.putLong("furnace_temperature_time", temperatureTime);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        // 0.1.11.113: the chamber temperature (an old save starts cold)
+        temperature = tag.contains("furnace_temperature") ? Math.max(AMBIENT, Math.min(MAX_TEMPERATURE, tag.getDouble("furnace_temperature"))) : AMBIENT;
+        temperatureTime = tag.contains("furnace_temperature_time") ? tag.getLong("furnace_temperature_time") : Long.MIN_VALUE;
         currentRecipe = Optional.empty();
         recipeInputSnapshot = ItemStack.EMPTY;
         recipeManagerSnapshot = null;

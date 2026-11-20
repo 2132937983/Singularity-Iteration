@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.menu.producer.CondenserMenu;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -40,7 +42,7 @@ public class CondenserScreen extends MimicScreen<CondenserMenu> {
         PlantMimic.pipe(g, new float[]{x + 14, y + 26, x + 50, y + 26}, PlantMimic.colour(100), 3, flow, time);
         PlantMimic.box(g, x + 50, y + 12, 70, 30, 0xFFDBE6EF);
         // cooling tubes and the vent fans on top
-        for (int k = 0; k < 5; k++) g.fill(x + 56, y + 16 + k * 5, x + 114, y + 17 + k * 5, 0xFF9CB8CC);
+        for (int k = 0; k < 5; k++) FcsDraw.fill(g, x + 56, y + 16 + k * 5, x + 114, y + 17 + k * 5, 0xFF9CB8CC);
         for (int k = 0; k < 4; k++) {
             float cx = x + 60 + k * 16, cy = y + 8;
             boolean on = k < vents;
@@ -52,7 +54,7 @@ public class CondenserScreen extends MimicScreen<CondenserMenu> {
             }
         }
         float progress = (float) Math.min(1, menu.getProgress() / (double) MAX_PROGRESS);
-        g.fill(x + 50, y + 44, x + 120, y + 47, 0xFF33393A);
+        FcsDraw.fill(g, x + 50, y + 44, x + 120, y + 47, 0xFF33393A);
         WindRoseView.fill(g, x + 50, y + 44, 70 * progress, 3, PlantMimic.DISTILLED);
         PlantMimic.pipe(g, new float[]{x + 120, y + 30, x + 150, y + 30}, PlantMimic.DISTILLED, 3, flow * 0.3, time);
         PlantMimic.tank(g, x + 150, y + 8, 8, 44, menu.getDistilledAmount() / (double) DISTILLED_CAPACITY, PlantMimic.DISTILLED);

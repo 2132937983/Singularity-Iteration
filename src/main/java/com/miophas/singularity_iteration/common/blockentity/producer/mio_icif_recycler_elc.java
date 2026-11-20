@@ -55,7 +55,13 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         com.miophas.singularity_iteration.common.recipe.generic.RecyclerRecipe> recipes =
         new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(
             com.miophas.singularity_iteration.common.recipe.generic.RecyclerRecipes.RECYCLER_TYPE);
-    private int scexRecycleOutcome = -1;
+    /**
+     * 0.1.11.116 (processing overhaul M9): the yield is counted, not rolled. Each item adds its share (the recipe's chance,
+     * else 1/8) to the carry; a whole one makes a product. Eight items give exactly one scrap. The carry belongs to one
+     * product: another product starts it again.
+     */
+    private double yieldCarry;
+    private String yieldProduct = "";
 
     private final ContainerData containerData = new ContainerData() {
         @Override
@@ -189,12 +195,34 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         return recipe != null && recipe.getChance() >= 0 ? recipe.getChance() : RECYCLE_CHANCE;
     }
 
+    /** The share of a product one item gives (the recipe's chance, else 1/8). */
+    public double yieldShare() { return chance(); }
+
+    /** The carry towards the next product (0 to 1), counting a carry kept for another product as 0. */
+    public double yieldCarry() {
+        return productKey(product()).equals(yieldProduct) ? yieldCarry : 0;
+    }
+
+    private static String productKey(ItemStack product) {
+        return product.isEmpty() ? "" : net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(product.getItem()).toString();
+    }
+
+    /** Why the recycler runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (itemHandler.getStackInSlot(INPUT_SLOT).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!hasOutputSpace()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
     @Override
     protected void doWork() {
         if (!canWork()) { stopWork(); return; }
         if (progress < maxProgress) {
             if (!consumeEnergy()) { stopWork(); return; }
-            progress = (int) Math.min(maxProgress, (long) progress + getProgressPerTick());
+            progress = (int) Math.min(maxProgress, (long) progress + takeProgressStep());   // 0.1.11.111: exact 0.7^n
         }
         isWorking = true;
         if (progress >= maxProgress) finishRecycling();
@@ -205,15 +233,20 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
 
     private void finishRecycling() {
         if (level == null || !hasOutputSpace()) { stopWork(); return; }
-        if (scexRecycleOutcome < 0) scexRecycleOutcome = level.random.nextDouble() < chance() ? 1 : 0;
         ItemStack product = product();
-        var operation = scexRecycleOutcome == 1 && !product.isEmpty() ? RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
+        String key = productKey(product);
+        double carry = (key.equals(yieldProduct) ? yieldCarry : 0) + chance();
+        boolean yields = carry >= 1 - 1e-9;   // 0.1.11.116: counted (exactly one in eight), not rolled
+        if (yields) carry = Math.max(0, carry - 1);
+        var operation = yields && !product.isEmpty() ? RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
             new int[]{OUTPUT_SLOT}, java.util.List.of(product))
             : RecipeSlots.consumeOnly(itemHandler, INPUT_SLOT, 1);
         if (operation.isEmpty()) { stopWork(); return; }
-        int completed = progress, outcome = scexRecycleOutcome;
-        progress = 0; scexRecycleOutcome = -1;
-        if (!operation.get().commit()) { progress = completed; scexRecycleOutcome = outcome; stopWork(); return; }
+        int completed = progress;
+        progress = 0;
+        if (!operation.get().commit()) { progress = completed; stopWork(); return; }
+        yieldCarry = carry;
+        yieldProduct = key;
         finishWork();
         setChanged();
     }
@@ -238,7 +271,8 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         super.saveAdditional(tag, registries);
         tag.put("Items", itemHandler.serializeNBT(registries));
         tag.putInt("Progress", progress);
-        tag.putInt("scex_recycle_outcome", scexRecycleOutcome);
+        tag.putDouble("recycle_yield_carry", yieldCarry);   // 0.1.11.116
+        tag.putString("recycle_yield_product", yieldProduct);
     }
 
     @Override
@@ -247,8 +281,8 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         if (!tag.contains("inventory") && tag.contains("Items")) itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         if (!tag.contains("progress") && tag.contains("Progress")) progress = tag.getInt("Progress");
         progress = Math.max(0, Math.min(maxProgress, progress));
-        int outcome = tag.contains("scex_recycle_outcome") ? tag.getInt("scex_recycle_outcome") : -1;
-        scexRecycleOutcome = outcome >= 0 && outcome <= 1 ? outcome : -1;
+        yieldCarry = Math.max(0, Math.min(1, tag.getDouble("recycle_yield_carry")));   // 0.1.11.116 (the old rolled outcome is dropped)
+        yieldProduct = tag.getString("recycle_yield_product");
     }
 
     /** 0.1.10.8: canWork depends only on the inventory, the saved state and the stored energy. */

@@ -287,6 +287,39 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
         }
     }
 
+    // ---- 0.1.11.116 (processing overhaul M9): the recipe's own time and power ----
+
+    /**
+     * One extraction runs as the recipe writes it (most 100 t × 10 EU/t; gravel, gunpowder and the sulfur ones
+     * 150 t × 12 EU/t; tin cans 50 t × 5 EU/t); what it leaves out, the stock 300 t at 2 EU/t.
+     */
+    public static com.miophas.singularity_iteration.core.api.machine.ProcessCost costOf(@Nullable mio_icif_ExtractorRecipe recipe) {
+        if (recipe == null) return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
+        int ticks = recipe.processingTimeOverride().orElse(DEFAULT_WORK_TIME);
+        long power = recipe.energyPerTickOverride().isPresent() ? recipe.energyPerTickOverride().getAsInt() : DEFAULT_ENERGY_PER_TICK;
+        return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(ticks, power);
+    }
+
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        return costOf(findRecipe());
+    }
+
+    /** Why the extractor runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        var recipe = findRecipe();
+        if (recipe == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        ItemStack result = recipe.getResultItem(level.registryAccess()), out = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (!out.isEmpty() && (!ItemStack.isSameItemSameComponents(out, result) || out.getCount() + result.getCount() > out.getMaxStackSize()))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
     /**
      * 获取当前配方的结果物品（用于客户端显示）
      * @return 结果物品

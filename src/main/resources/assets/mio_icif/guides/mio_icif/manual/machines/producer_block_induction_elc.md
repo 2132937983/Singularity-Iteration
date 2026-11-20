@@ -18,7 +18,10 @@ item_ids:
 ## Function
 
 The Induction Furnace uses EU to smelt two items at the same time with the furnace recipes.
-The machine heats up during operation. Higher heat gives a higher speed. Without power, the heat drops.
+
+**Principle:** An induction coil heats the melt pool in the crucible. The heating power is up to 64 EU/t. Heating from room temperature to 1,600 °C takes about 30 seconds. The melt pool loses heat according to its temperature: 8 EU/t at full temperature. Once at temperature, the heater only makes up for the heat loss. Without heating, the melt pool cools with a time constant of about 4 minutes.
+
+**Smelting speed:** Smelting starts at 600 °C. A higher temperature is faster, and 1,600 °C is full speed: each of the two slots smelts one item every 12 tick. Smelting uses another 15 EU/t. Overclocking speeds up smelting, not heating.
 
 ## Power data
 
@@ -27,11 +30,13 @@ The machine heats up during operation. Higher heat gives a higher speed. Without
 | Input voltage tier | MV (128 EU) |
 | Maximum input | 128 EU/t |
 | Energy storage | 10,000 EU |
-| Use while working | 15 EU/t |
-| Operation time | 4,000 tick (200 s) |
-| Energy per operation | 60,000 EU |
+| Heating power | Up to 64 EU/t |
+| Smelting use | 15 EU/t |
+| Speed at full temperature | One item per slot every 12 tick |
+| Start / full-speed temperature | 600 °C / 1,600 °C |
+| Heat loss at full temperature | 8 EU/t (2 EU/t with the Thermal Retention Unit) |
 
-The game measured these values from the block entity of this version.
+The operation time and energy in the table are the values without overclocking. Each Overclocker Upgrade multiplies the operation time by 0.7 and the energy use by 1.6. The GUI and JEI show the actual values for the current input.
 
 ## Procedure
 
@@ -49,9 +54,8 @@ The game measured these values from the block entity of this version.
 
 ## Heat hold
 
-The heat hold switch (flame button in the side dock) keeps the furnace heating while it has nothing to smelt, up to full heat, and holds it there. The next item smelts at full speed at once. Holding full heat costs 1 EU/t.
-
-A <ItemLink id="mio_icif:upgrade/thermal_retention_upgrade" /> in an upgrade slot stops the heat loss of an idle furnace and makes the hold free. The heat gauge above the slots shows HOLD and INS for the two.
+When the "Heat hold" button in the GUI is on, the machine heats the melt pool to 1,600 °C and holds it there even when it has nothing to smelt. The next item smelts at full speed at once. While holding, the heater only makes up for the heat loss, about 8 EU/t at full temperature.
+With a <ItemLink id="mio_icif:upgrade/thermal_retention_upgrade" /> in an upgrade slot, the heat loss drops to one quarter, and holding costs about 2 EU/t.
 
 ## Recipe
 

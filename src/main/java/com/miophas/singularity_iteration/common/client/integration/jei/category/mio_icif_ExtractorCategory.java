@@ -35,11 +35,11 @@ public class mio_icif_ExtractorCategory extends SiItemMachineCategory<mio_icif_E
 
     @Override
     protected int ticks(mio_icif_ExtractorRecipe recipe) {
-        return (int) com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_extrator_elc.DEFAULT_WORK_TIME;
+        return com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_extrator_elc.costOf(recipe).ticks();   // 0.1.11.116
     }
 
     @Override
     protected long euPerTick(mio_icif_ExtractorRecipe recipe) {
-        return com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_extrator_elc.DEFAULT_ENERGY_PER_TICK;
+        return com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_extrator_elc.costOf(recipe).power();
     }
 }

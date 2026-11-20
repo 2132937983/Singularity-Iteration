@@ -16,11 +16,12 @@ item_ids:
 
 ## Function
 
-The machine makes EU from the sunlight on it. The sun is weak in the morning and evening and strongest at noon; the machine reaches its rated output at 700 W/m² and stays there above it.
-Rain keeps about 70 % of the light and a thunderstorm about 37 %. A hot panel makes less (−0.4 % per °C above 25 °C), so deserts are sunny but hot.
-The machine needs open sky straight above it; under cover it gets only the diffuse light, in the dark nothing.
-The screen shows today's record: the sunlight on the panel, a clear day for comparison, and the output.
-At night, while it sees the sky, its night core keeps a lower output.
+The machine is a concentrator: lenses focus the direct sunlight on its cells to make EU. It has the highest daytime output, but reaches its rated output only around noon (850 W/m²).
+The machine uses the direct sunlight only: it needs open sky straight above it and makes nothing under cover. Rain keeps about 37 %, a thunderstorm almost nothing; places without rain, such as deserts, have no weather loss.
+A liquid loop carries three quarters of the heat away: the cells are about 11 °C above the air at 800 W/m². The output falls 0.4 % per °C above 25 °C, even at full output. At noon in a desert it is about 88 % of the rating.
+The machine makes no EU at night. For power at night, use energy storage or a photon resonance solar generator.
+The screen shows today's record: the sunlight on the panel, a clear day for comparison and the output, with the direct share, the cell temperature and the cooling.
+The machine sends its 768 EU/t as two HV packets (512 EU each) a tick, so HV cable is enough.
 The machine charges items in four slots.
 
 ## Power data
@@ -28,17 +29,20 @@ The machine charges items in four slots.
 | Item | Value |
 |---|---|
 | Output voltage tier | HV (512 EU) |
-| Output | 512 EU/t |
+| Output | 768 EU/t |
+| Output at night | 0 EU/t |
+| Full output from | 850 W/m² |
 | Energy storage | 1,000,000 EU |
 
 The game measured these values from the block entity of this version.
 
 ## Procedure
 
-1. Place the panel in a dimension with a sky.
-2. Remove all opaque blocks above the panel.
-3. Connect an HV cable to the panel.
+1. Place the panel under open sky in direct sun, for example in a desert.
+2. Remove all blocks above the panel.
+3. Connect a HV cable to the panel.
 4. Put up to four batteries into the charge slots.
+5. For power at night, connect energy storage to the network.
 
 ## Recipe
 

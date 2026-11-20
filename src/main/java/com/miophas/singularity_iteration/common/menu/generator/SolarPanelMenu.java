@@ -17,9 +17,9 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class SolarPanelMenu extends mio_icif_generator_menu {
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
     public static final int SLOT_X = 10, SLOT_Y = 18, SLOT_STEP = 18;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     private final ContainerLevelAccess access;
     public final @Nullable mio_icif_solar_generator blockEntity;

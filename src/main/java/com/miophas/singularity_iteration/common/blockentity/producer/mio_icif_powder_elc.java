@@ -28,7 +28,7 @@ import java.util.Optional;
  * 使用电力将物品粉碎成粉末
  */
 @SuppressWarnings("null")
-public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
+public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity implements com.miophas.singularity_iteration.core.api.machine.ProcessCost.Source {
     // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput, com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput, com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
@@ -186,6 +186,59 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         }
         mio_icif_SingleItemRecipeInput recipeInput = new mio_icif_SingleItemRecipeInput(input);
         return recipeCache2.find(level, recipeInput);
+    }
+
+    /**
+     * 0.1.11.108 (processing overhaul M1): the cost of one operation follows the material's Bond work index at a fixed
+     * 2 EU/t: 47.2 EU per unit of work index (iron ore 600 EU, 300 ticks as before; glass 146 EU; gravel 1,191 EU). A
+     * recipe that sets its own time keeps it. Without input it is the old 600 EU.
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty() || level == null)
+            return com.miophas.singularity_iteration.core.api.machine.ProcessCost.fixed(DEFAULT_WORK_TIME, DEFAULT_ENERGY_PER_TICK);
+        return com.miophas.singularity_iteration.common.processing.Comminution.maceratorCost(input,
+            findRecipe().map(RecipeHolder::value).orElse(null), DEFAULT_ENERGY_PER_TICK, 1.0);
+    }
+
+    /**
+     * 0.1.11.110 (processing overhaul M3): why the macerator runs or stands, a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus}
+     * code for the screen.
+     */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        var recipe = findRecipe();
+        if (recipe.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        ItemStack result = recipe.get().value().getResultItem(level.registryAccess());
+        ItemStack out = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (!out.isEmpty() && (!ItemStack.isSameItemSameComponents(out, result) || out.getCount() + result.getCount() > out.getMaxStackSize()))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
+    /** 0.1.11.110: the work index of the input ×10 (0 without input), for the screen. */
+    public int workIndexTenths() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        return input.isEmpty() ? 0 : (int) Math.round(com.miophas.singularity_iteration.common.processing.SiMaterials.workIndexOrDefault(input) * 10);
+    }
+
+    /** 0.1.11.108: the energy of the hardest common operation (gravel, about 1,191 EU) sizes the buffer. */
+    public static final long MAX_OPERATION_ENERGY = 1200L;
+
+    /**
+     * 0.1.11.108: the buffer holds the stock 600 EU plus the hardest operation at the current overclock, so it does not
+     * change (and lose stored energy) when the input changes.
+     */
+    @Override
+    protected long getProcessingCapacity() {
+        double perOperation = MAX_OPERATION_ENERGY * upgradeStats.getEnergyUsageMultiplier() * upgradeStats.getProcessTimeMultiplier();
+        return baseCapacity + upgradeStats.getEnergyStorageCount() * com.miophas.singularity_iteration.core.runtime.upgrade.MachineUpgradeStats.ENERGY_STORAGE_BONUS
+            + (long) Math.ceil(perOperation);
     }
 
     /** 0.1.11.2: the id of the macerator recipe of the current input (for work cycle upgrades). */

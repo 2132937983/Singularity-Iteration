@@ -17,7 +17,12 @@ item_ids:
 ## Function
 
 The Thermal Centrifuge uses EU to heat up and then separates items into up to three products.
-The machine starts to process only after it reaches the minimum heat. Without power, the heat drops.
+
+**Heating:** Each recipe sets a minimum heat (Cobblestone 100 HU, clay 250 HU, crushed ores 500 to 4,000 HU, recipes without a value 5,000 HU). The machine starts when it has heated to what the recipe needs. It heats only when it has material, free output space, and is not turned off: +4 HU per tick for 4 EU, up to 5,000 HU. Otherwise it loses 2 HU per tick.
+
+**Rotor:** While working, the rotor speed rises by 10% per second. When not working, it falls by 5% per second. Below full speed, the machine runs in proportion to the speed. Full speed is 12,000 rpm, with a centrifugal force of about 16,000 g.
+
+The GUI draws a top view of the heating ring and the rotor. The large number is the rotor speed.
 
 ## Power data
 
@@ -29,8 +34,9 @@ The machine starts to process only after it reaches the minimum heat. Without po
 | Use while working | 48 EU/t |
 | Operation time | 500 tick (25 s) |
 | Energy per operation | 24,000 EU |
+| Heating | +4 HU and 4 EU per tick, up to 5,000 HU |
 
-The game measured these values from the block entity of this version.
+The operation time and energy in the table are the values without overclocking. Each Overclocker Upgrade multiplies the operation time by 0.7 and the energy use by 1.6. The GUI and JEI show the actual values for the current input.
 
 ## Procedure
 

@@ -24,30 +24,30 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public InductionElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_induction_elc blockEntity) {
-        super(mio_icif_menus.INDUCTION_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 11);
+        super(mio_icif_menus.INDUCTION_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 15);
     }
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_1, 37, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_1, 10, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_1, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 55, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 30, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_2, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 17, 58) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 115, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 61, 27) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -59,7 +59,7 @@ import org.jetbrains.annotations.Nullable;
                 collectXp(player);   // taking smelted items pours the banked XP straight into the XP bar
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 133, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 61, 47) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -79,11 +79,34 @@ import org.jetbrains.annotations.Nullable;
     protected int getBatterySlotIndex() { return BATTERY_SLOT; }
 
     @Override
-    protected int getDataSlotCount() { return 11; }
+    protected int getDataSlotCount() { return 15; }
 
     /** 0.1.9.1: the Thermal Retention Unit goes into this furnace's upgrade slots. */
     @Override
     protected boolean acceptsThermalRetention() { return true; }
+
+    /** 0.1.11.113: data 11 status (ProcessStatus), 12 °C, 13 EU/t now (heater and melt), 14 smelting rate ‰. */
+    public int getStatus() { return data.get(11); }
+    public int getTemperature() { return data.get(12); }
+    public int getPowerNow() { return data.get(13); }
+    public int getSmeltRatePermille() { return data.get(14); }
+
+    // ---- 0.1.11.113: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
 
     /** 0.1.9.1: heat hold switch on. */
     public boolean isHeatHold() { return (data.get(9) & 1) != 0; }
@@ -152,6 +175,10 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(8, (int) Math.min(Integer.MAX_VALUE, induction.getStoredExperience() * 10));
             this.setSyncData(9, (induction.heatHold() ? 1 : 0) | (induction.thermalRetention() ? 2 : 0));
             this.setSyncData(10, (induction.ticksToFullHeat() + 19) / 20);
+            this.setSyncData(11, induction.processStatus());
+            this.setSyncData(12, (int) Math.round(induction.temperature()));
+            this.setSyncData(13, (int) Math.min(Short.MAX_VALUE, induction.getCurrentEnergyCost()));
+            this.setSyncData(14, (int) Math.round(induction.smeltRate() * 1000));
         }
     }
 

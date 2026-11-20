@@ -81,10 +81,23 @@ public class mio_icif_PowderRecipe implements Recipe<mio_icif_SingleItemRecipeIn
     }
 
     /**
-     * Returns the processing time in ticks.
+     * Returns the processing time in ticks (the serializer default when the recipe gives none).
      */
     public int getProcessingTime() {
+        return processingTime < 0 ? mio_icif_PowderRecipeSerializer.DEFAULT_PROCESSING_TIME : processingTime;
+    }
+
+    /** 0.1.11.108: the time as written (-1 when the recipe gives none; what the serializer writes). */
+    public int getProcessingTimeRaw() {
         return processingTime;
+    }
+
+    /**
+     * 0.1.11.108 (processing overhaul M1): a time the recipe sets for the macerator, which then runs it for that many
+     * ticks at its own power; empty when the recipe gives none (the time follows the material's work index).
+     */
+    public java.util.OptionalInt processingTimeOverride() {
+        return processingTime > 0 ? java.util.OptionalInt.of(processingTime) : java.util.OptionalInt.empty();
     }
 
     /**

@@ -1,81 +1,96 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter;
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.common.menu.producer.BlockCutterMenu;
+import com.miophas.singularity_iteration.common.processing.ProcessStatus;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * æ¹ååå²æ?GUI ç±»ï¼æ§½ä½åæ ä¸?IC2 block_cutter.xml ä¸è´ï¼
+ * 方块切割机界面. 0.1.11.115 (processing overhaul M8): the instrument screen (docs/gui_processing_machines.md). The figure is
+ * the circular saw from the side, its blade turning while it cuts (steel grey for the iron blade, pale cyan for the
+ * diamond one) and the kerf going down into the block as the cut goes on. The readouts give the blade with its hardness
+ * and durability, the material's hardness and the wear of a cut, the recipe's energy, power and time.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
-public class mio_icif_gui_block_cutter extends mio_icif_screen<BlockCutterMenu> {
+public class mio_icif_gui_block_cutter extends ProcessInstrumentScreen<BlockCutterMenu> {
 
-private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_cutter_elc.png");
-
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    private static final int PROGRESS_X = 55;
-    private static final int PROGRESS_Y = 37;
-
-    private static final int ENERGY_X = 27;
-    private static final int ENERGY_Y = 36;
+    private static final int DIAMOND = 0xFF7FD3D8;
+    private float angle;
 
     public mio_icif_gui_block_cutter(BlockCutterMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+    }
+
+    private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
+    private ItemStack blade() { return menu.getSlot(mio_icif_block_cutter.BLADE_SLOT).getItem(); }
+    private int bladeHardness() {
+        ItemStack b = blade();
+        return b.is(mio_icif_resources.DIAMOND_CUT_BLADE.get()) ? 8 : b.is(mio_icif_resources.IRON_CUT_BLADE.get()) ? 2 : 0;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        BlockCutterMenu menu = this.menu;
-
-        // 固定渲染进度条背景
-        guiGraphics.blit(ATLAS_TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, 0,
-            (float) CUTTER_PROGRESS_BG_U, (float) CUTTER_PROGRESS_BG_V,
-            CUTTER_PROGRESS_BG_WIDTH, CUTTER_PROGRESS_BG_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-
-        // 有进度时渲染进度条填充
-        int progressPixels = menu.getProgressPixels(CUTTER_PROGRESS_WIDTH);
-        if (progressPixels > 0) {
-            guiGraphics.blit(ATLAS_TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, 0,
-                (float) CUTTER_PROGRESS_U, (float) CUTTER_PROGRESS_V,
-                progressPixels, CUTTER_PROGRESS_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        }
-
-        drawLightningEnergy(guiGraphics, x + ENERGY_X, y + ENERGY_Y, menu.getEnergy(), menu.getMaxEnergy());
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
+        float tau = 2 * (float) Math.PI;
+        if (running()) angle = (angle + dt * 3.5F * tau) % tau;
+        int max = menu.getMaxProgress();
+        float p = running() && max > 0 ? (float) menu.getProgress() / max : 0;
+        int bx0 = (int) cx - 26, bx1 = (int) cx + 26, by0 = (int) cy + 10, by1 = (int) cy + 34;
+        // the blade, coming down with the cut (behind the block: its lower part is in the cut)
+        float bcy = cy - 14 + p * 20;
+        int bh = bladeHardness();
+        int colour = bh == 8 ? DIAMOND : bh == 2 ? STEEL_LIGHT : SHELL;
+        FcsDraw.disc(g, cx, bcy, 22, colour);
+        if (bh > 0) for (int k = 0; k < 18; k++) blade(g, cx, bcy, angle + k * tau / 18, 21, 25, 1.6F, 0.2F, colour);
+        FcsDraw.disc(g, cx, bcy, 6, STEEL);
+        blade(g, cx, bcy, angle, 0, 6, 0.8F, 0.8F, STEEL_LIGHT);
+        FcsDraw.fill(g, (int) cx - 36, (int) bcy - 2, (int) cx - 6, (int) bcy + 2, STEEL);   // the arbor arm
+        // the block over it, with the kerf going down as the cut goes on
+        FcsDraw.fill(g, bx0, by0, bx1, by1, FormingFigure.WORK);
+        if (p > 0) FcsDraw.fill(g, (int) cx - 1, by0, (int) cx + 1, by0 + Math.round((by1 - by0) * p), colour);
     }
 
-    // 0.1.10.41: the saw-line progress and the lightning energy show their values on hover, as on the Compressor
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
+    protected Component headline() {
+        return Component.translatable(K + (running() ? "cutting" : "stopped"));
+    }
 
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
+    @Override
+    protected int headlineColour() { return running() ? INK : DIM; }
 
-        BlockCutterMenu menu = this.getMenu();
-        if (menu == null) return;
-
-        // the blade slot sits on the saw line: over the slot the blade's own tooltip shows
-        if (this.hoveredSlot == null
-                && isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, CUTTER_PROGRESS_BG_WIDTH, CUTTER_PROGRESS_BG_HEIGHT)) {
-            renderProgressTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getProgress(), menu.getMaxProgress());
+    @Override
+    protected List<Component> readouts() {
+        List<Component> lines = new ArrayList<>();
+        ItemStack b = blade();
+        int bh = bladeHardness();
+        if (bh == 0) lines.add(Component.translatable(K + "no_blade"));
+        else lines.add(Component.translatable(K + "blade", bh, b.getMaxDamage() - b.getDamageValue(), b.getMaxDamage()));
+        int mh = menu.getMaterialHardness();
+        if (mh > 0) {
+            double r = bh > 0 ? (double) mh / bh : 0;
+            lines.add(Component.translatable(K + "cut_wear", mh, String.format(java.util.Locale.ROOT, "%.2f", r * r)));
         }
+        lines.add(Component.translatable(K + "energy_line", (long) menu.getPower() * menu.getMaxProgress(), menu.getPower(), menu.getMaxProgress()));
+        return lines;
+    }
 
-        if (isHovering(mouseX, mouseY, x + ENERGY_X, y + ENERGY_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
-            renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
-        }
+    @Override
+    protected int status() { return menu.getStatus(); }
+
+    @Override
+    protected double energyFraction() { return menu.getEnergyPermille() / 1000.0; }
+
+    @Override
+    protected List<Component> figureTooltip() {
+        return List.of(Component.translatable(K + "tip.cutter.1"), Component.translatable(K + "tip.cutter.2"));
     }
 }

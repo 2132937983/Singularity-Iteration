@@ -35,12 +35,14 @@ public class mio_icif_BlockCutterCategory extends SiItemMachineCategory<mio_icif
 
     @Override
     protected int ticks(mio_icif_BlockCutterRecipe recipe) {
-        return (int) com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter.MAX_PROGRESS;
+        // 0.1.11.115: as the cutter runs it: the recipe's own time, else 900 t
+        return recipe.processingTimeOverride().orElse((int) com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter.MAX_PROGRESS);
     }
 
     @Override
     protected long euPerTick(mio_icif_BlockCutterRecipe recipe) {
-        return com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter.ENERGY_PER_TICK;
+        return recipe.energyPerTickOverride().isPresent() ? recipe.energyPerTickOverride().getAsInt()
+            : com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter.ENERGY_PER_TICK;
     }
 
     @Override

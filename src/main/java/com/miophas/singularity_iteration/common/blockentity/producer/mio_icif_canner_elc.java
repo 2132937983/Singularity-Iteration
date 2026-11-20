@@ -1598,6 +1598,21 @@ tick 更新逻辑
     }
 
     /**
+     * 0.1.11.116 (processing overhaul M9): why the canner runs or stands (a
+     * {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). It reads the canner's own checks: a
+     * stand with an input and power is "no recipe" (nothing to can, fill, empty or mix with what is there, or no room).
+     */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (isWorking) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        if (itemHandler.getStackInSlot(INPUT_SLOT).isEmpty() && currentMode != Mode.MIX)
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!hasEnoughEnergy()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+    }
+
+    /**
      * 设置工作模式
      * @param mode 新模
  */

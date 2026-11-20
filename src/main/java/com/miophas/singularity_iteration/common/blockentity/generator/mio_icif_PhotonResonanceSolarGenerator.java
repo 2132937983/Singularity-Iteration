@@ -13,17 +13,19 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class mio_icif_PhotonResonanceSolarGenerator extends mio_icif_MetsSolarGeneratorBase {
 
-    public static final int DAY_POWER = 512;
-    public static final int PRODUCTION = 2048;
+    /** 0.1.11.102: route B 384 EU/t (was 512), 25 % of it at night under a clear sky. */
+    public static final int DAY_POWER = 384;
     public static final long CAPACITY = 40000000L;
-    public static final int TIER = 4;
+    /** 0.1.11.103: HV like the ultimate hybrid of the same rank (was EV); a lower voltage is safe for old cabling. */
+    public static final int TIER = 3;
     public static final int SKY_UPDATE_INTERVAL = 128;
-    public static final float MIN_SKY_BRIGHTNESS = 0.1F;
+    public static final float NIGHT_SHARE = com.miophas.singularity_iteration.common.energy.SolarRoutes.PHOTON_NIGHT;
+    /** 0.1.11.102: route B, photon resonance (see SolarRoutes). */
+    public static final com.miophas.singularity_iteration.common.energy.SolarProfile PROFILE =
+        com.miophas.singularity_iteration.common.energy.SolarRoutes.PHOTON;
 
     public mio_icif_PhotonResonanceSolarGenerator(BlockPos pos, BlockState state) {
-        super(pos, state, DAY_POWER, PRODUCTION, CAPACITY, TIER, SKY_UPDATE_INTERVAL, MIN_SKY_BRIGHTNESS,
-            mio_icif_block_entities.PHOTON_RESONANCE_SOLAR_GENERATOR_ENTITY_TYPE.get(),
-            mio_icif_Block_PhotonResonanceSolarGenerator.LIT);
+        super(pos, state, DAY_POWER, CAPACITY, TIER, NIGHT_SHARE, mio_icif_block_entities.PHOTON_RESONANCE_SOLAR_GENERATOR_ENTITY_TYPE.get(), PROFILE);
     }
 
     @Override

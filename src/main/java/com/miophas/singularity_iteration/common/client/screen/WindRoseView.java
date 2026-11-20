@@ -73,6 +73,7 @@ final class WindRoseView {
 
     /** One line of text cut with an ellipsis to {@code maxW}. */
     static void line(GuiGraphics g, Component c, float x, float y, int rgb, float maxW) {
+        if (ReadoutPanel.active()) { ReadoutPanel.add(0, c, rgb); return; }   // 0.1.11.121: into the readout window
         float u = u();
         if (AsciiHud.width(c, u) > maxW) {
             // 0.1.11.24: the longest prefix that fits, by halving (it measured one character shorter at a time)

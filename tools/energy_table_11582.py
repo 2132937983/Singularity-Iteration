@@ -289,7 +289,8 @@ def build(dump):
                           formula='=IF(OR({ept}="",{prog}=""),"",{ept}*{prog})', width=14, note='= 耗电 × 工时'),
                       Col('cap', '内部储能 EU', lambda b: b.get('capacity', ''), 'int', width=16)],
                      machines,
-                     intro=['「单次耗电」= 耗电 × 工时（默认配方、没有升级）。实际配方可能有自己的工时和耗电（例如精炼机），以 JEI 为准。']))
+                     intro=['「单次耗电」= 耗电 × 工时（空机、没有升级时的默认值）。实际配方可能有自己的工时和耗电（例如精炼机），以 JEI 为准。',
+                            '0.1.11.107 起的加工机器大修后，很多加工机器的单次耗电跟着输入走，空机测得的默认值只是起点：打粉机和旋风打粉机按材料的邦德功指数（铁约 600 EU）；压缩机、提取机、方块切割机、洗矿机和两台金属成型机按配方写的工时和功率；电炉和感应炉另有升温；热能离心机按配方的最低热量开工。各机器的计算方式见游戏手册。']))
 
     others = sorted((b for b in blocks if b['kind'] == 'other' and 'gesu' not in b['id'] and not b['id'].startswith('wiring/cable/')),
                     key=lambda b: b['id'])

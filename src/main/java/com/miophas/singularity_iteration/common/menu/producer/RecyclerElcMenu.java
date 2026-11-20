@@ -23,12 +23,13 @@ import org.jetbrains.annotations.Nullable;
     public static final int UPGRADE_SLOT_COUNT = 4;
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 56;
-    private static final int INPUT_Y = 17;
-    private static final int BATTERY_X = 56;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
-    private static final int OUTPUT_Y = 35;
+    // 0.1.11.116: the instrument screen's left columns
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 56;   // 0.1.11.118: the furnace block
+    private static final int OUTPUT_X = 61;
+    private static final int OUTPUT_Y = 37;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -36,7 +37,8 @@ import org.jetbrains.annotations.Nullable;
     private static final int DATA_MAX_PROGRESS = 1;
     private static final int DATA_ENERGY = 2;
     private static final int DATA_MAX_ENERGY = 3;
-    private static final int DATA_COUNT = 4;
+    /** 0.1.11.116: 4 status (ProcessStatus), 5 yield share ‰, 6 carry towards the next product ‰, 7 EU/t, 8 stored energy ‰. */
+    private static final int DATA_COUNT = 9;
 
     public RecyclerElcMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -53,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
     public RecyclerElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_recycler_elc blockEntity) {
         this(containerId, playerInventory,
               blockEntity != null ? blockEntity.getItemHandler() : null,
-              blockEntity != null ? blockEntity.getContainerData() : null, blockEntity);
+              null, blockEntity);   // 0.1.11.116: the menu's own data, set in broadcastChanges
     }
 
     public RecyclerElcMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler,
@@ -93,7 +95,35 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(DATA_MAX_PROGRESS, recycler.getMaxProgress());
             setSyncData(DATA_ENERGY, (int) recycler.getEnergyStorage().getAmount());
             setSyncData(DATA_MAX_ENERGY, (int) recycler.getEnergyStorage().getCapacity());
+            setSyncData(4, recycler.processStatus());
+            setSyncData(5, (int) Math.round(1000 * recycler.yieldShare()));
+            setSyncData(6, (int) Math.round(1000 * recycler.yieldCarry()));
+            setSyncData(7, (int) Math.min(Short.MAX_VALUE, recycler.getEffectiveEnergyPerTick()));
+            setSyncData(8, (int) Math.round(1000.0 * recycler.getEnergyStorage().getAmount() / Math.max(1, recycler.getEnergyStorage().getCapacity())));
         }
+    }
+
+    public int getStatus() { return data.get(4); }
+    public int getYieldPermille() { return data.get(5); }
+    public int getCarryPermille() { return data.get(6); }
+    public int getPower() { return data.get(7); }
+    public int getEnergyPermille() { return data.get(8); }
+
+    // ---- 0.1.11.116: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
     }
 
     @Override

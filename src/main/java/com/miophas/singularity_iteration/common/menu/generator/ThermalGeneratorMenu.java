@@ -29,9 +29,9 @@ import org.jetbrains.annotations.Nullable;
     }
 
     /** 0.1.11.10: 248 x 204 with the chart recorder; fuel and battery slots on the left. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
     public static final int SLOT_X = 10, FUEL_Y = 30, BATTERY_Y = 76;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     /** Synced value {@code i} (see the block entity's getContainerData). */
     public int value(int i) { return data.get(i); }

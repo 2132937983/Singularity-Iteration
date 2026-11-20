@@ -30,13 +30,13 @@ public class MagnetogramScreen extends MimicScreen<GeomagneticGeneratorMenu> {
     protected void drawWindow(GuiGraphics g, int x, int y, double time) {
         float u = WindRoseView.u();
         float cx = x + 4, cy = y + 4, cw = 146, ch = 34;
-        g.fill((int) cx - 1, (int) cy - 1, (int) (cx + cw) + 1, (int) (cy + ch + 18) + 1, 0xFFB8C0C2);
-        g.fill((int) cx, (int) cy, (int) (cx + cw), (int) (cy + ch + 18), 0xFFFBFCFC);
+        FcsDraw.fill(g, (int) cx - 1, (int) cy - 1, (int) (cx + cw) + 1, (int) (cy + ch + 18) + 1, 0xFFB8C0C2);
+        FcsDraw.fill(g, (int) cx, (int) cy, (int) (cx + cw), (int) (cy + ch + 18), 0xFFFBFCFC);
         // day boundaries: the trace ends now, three days long
         int now = v(7);
         for (int d = 0; d <= 3; d++) {
             float bx = cx + cw * (1 - (now + d * (float) GeomagPhysics.DAY) / GeomagneticGeneratorMenu.SPAN);
-            if (bx > cx && bx < cx + cw) g.fill((int) bx, (int) cy, (int) bx + 1, (int) (cy + ch + 18), 0xFFE2E5EC);
+            if (bx > cx && bx < cx + cw) FcsDraw.fill(g, (int) bx, (int) cy, (int) bx + 1, (int) (cy + ch + 18), 0xFFE2E5EC);
         }
         float px = 0, py = 0;
         for (int i = 0; i < GeomagneticGeneratorMenu.TRACE; i++) {
@@ -52,7 +52,7 @@ public class MagnetogramScreen extends MimicScreen<GeomagneticGeneratorMenu> {
             int c = kp >= 5 ? 0xFFC0392B : kp >= 4 ? 0xFFD9A32B : 0xFF7FB08A;
             WindRoseView.fill(g, bx + 1, cy + ch + 18 - bh, cw / GeomagneticGeneratorMenu.KP - 2, bh, c);
         }
-        g.fill((int) (cx + cw) - 1, (int) cy, (int) (cx + cw), (int) (cy + ch + 18), 0xFFC0392B);
+        FcsDraw.fill(g, (int) (cx + cw) - 1, (int) cy, (int) (cx + cw), (int) (cy + ch + 18), 0xFFC0392B);
         double kp = v(5) / 10.0, dist = v(4) / 1000.0, site = v(6) / 1000.0;
         PumpCrossSection.text(g, Component.literal(f("%,d EU/t", v(3))), x + 156, y + 6, 0x2F6E4F, u);
         PumpCrossSection.text(g, Component.literal(f("Kp %.1f", kp)), x + 156, y + 18, kp >= 5 ? 0xC0392B : 0x1C2524, u);
@@ -86,4 +86,8 @@ public class MagnetogramScreen extends MimicScreen<GeomagneticGeneratorMenu> {
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip1"), Component.translatable(K + "tip2"),
                 Component.translatable(K + "tip3")), mouseX, mouseY);
     }
+
+    /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */
+    @Override
+    protected boolean pixelArt() { return false; }
 }

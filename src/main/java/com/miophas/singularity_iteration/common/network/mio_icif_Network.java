@@ -37,6 +37,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@code SuitPackets.ChunkGrid}</td><td>S2C</td><td>EU grid summary of the player's chunk</td></tr>
  *   <tr><td>{@code SuitPackets.ChunkGridRequest}</td><td>C2S</td><td>asks for {@code ChunkGrid}</td></tr>
  *   <tr><td>{@code MetalFormerModePacket}</td><td>C2S</td><td>sets the mode of a Metal Former</td></tr>
+ *   <tr><td>{@code SiMaterials.Sync}</td><td>S2C</td><td>the material table (work indices) for JEI and the machine screens (0.1.11.108)</td></tr>
  *   <tr><td>{@code FutureCommoditySync}</td><td>S2C</td><td>datapack futures commodity list and the commodities that the player has not unlocked</td></tr>
  *   <tr><td>{@code NuclearExplosionAnimationPacket}</td><td>S2C</td><td>starts the mushroom cloud animation of a nuclear explosion</td></tr>
  *   <tr><td>{@code LaserBlastFxPacket}</td><td>S2C</td><td>plasma blast effect of the mining laser's Ultra-High Energy Blast (0.1.10.11)</td></tr>
@@ -145,6 +146,11 @@ public class mio_icif_Network {
         );
 
         // S2C: datapack futures commodities, and the commodities that the player has not unlocked.
+        registrar.playToClient(   // 0.1.11.108: the material table (work indices) for JEI and the machine screens
+            com.miophas.singularity_iteration.common.processing.SiMaterials.Sync.TYPE,
+            com.miophas.singularity_iteration.common.processing.SiMaterials.Sync.CODEC,
+            com.miophas.singularity_iteration.common.processing.SiMaterials.Sync::handle
+        );
         registrar.playToClient(
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.TYPE,
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.CODEC,

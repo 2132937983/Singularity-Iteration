@@ -48,4 +48,8 @@ public class RtHeatScreen extends MimicScreen<RTHeatGeneratorMenu> {
         if (rx >= wx && rx < wx + ww && ry >= wy && ry < wy + wh)
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "heat_tip")), mouseX, mouseY);
     }
+
+    /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */
+    @Override
+    protected boolean pixelArt() { return false; }
 }

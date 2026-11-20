@@ -65,9 +65,9 @@ public class mio_icif_WasherCategory extends AbstractJeiRecipeCategory<mio_icif_
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, mio_icif_WasherRecipe recipe, IFocusGroup focuses) {
-        int ticks = mio_icif_washer_elc.DEFAULT_WORK_TIME;
+        int ticks = mio_icif_washer_elc.ticksOf(recipe);   // 0.1.11.117: as the machine runs it
         SiJei.arrow(builder, ARROW_X, ROW_Y, ticks);
-        SiJei.line(builder, SiJei.cost(ticks, mio_icif_washer_elc.DEFAULT_ENERGY_PER_TICK), WIDTH, LINES_Y);
+        SiJei.line(builder, SiJei.cost(ticks, mio_icif_washer_elc.powerOf(recipe)), WIDTH, LINES_Y);
         if (recipe.getWaterAmount() > 0) {
             SiJei.line(builder, Component.translatable("jei.mio_icif.washer.water", SiJei.number(recipe.getWaterAmount())), WIDTH, LINES_Y + SiJei.LINE_HEIGHT);
         }

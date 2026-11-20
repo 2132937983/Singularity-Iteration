@@ -50,10 +50,10 @@ public class SteamRepressurizerMenu extends mio_icif_machine_menu {
 
     // 0.1.11.16: the 248 x 204 mimic screen
     @Override
-    protected int getPlayerInventoryY() { return 122; }
+    protected int getPlayerInventoryY() { return 162; }   // 0.1.11.121: under the readout window
 
     @Override
-    protected int getPlayerHotbarY() { return 180; }
+    protected int getPlayerHotbarY() { return 220; }
 
     @Override
     protected void addPlayerInventory(net.minecraft.world.entity.player.Inventory playerInventory, int startY, int hotbarY) {

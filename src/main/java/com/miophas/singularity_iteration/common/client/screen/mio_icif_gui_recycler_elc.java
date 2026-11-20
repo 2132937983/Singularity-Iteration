@@ -1,79 +1,99 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.menu.producer.RecyclerElcMenu;
+import com.miophas.singularity_iteration.common.processing.ProcessStatus;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+/**
+ * 回收机界面. 0.1.11.116 (processing overhaul M9): the instrument screen (docs/gui_processing_machines.md). The figure is a
+ * twin-shaft shredder from the side: the two cutter rotors turn against each other under the hopper, the shreds fall
+ * into the bin below, and the bin fills with the carry towards the next product. The headline bar is that carry; the
+ * readouts give the yield (one in eight for scrap), the items to the next product, and the energy, power and time.
+ */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
-public class mio_icif_gui_recycler_elc extends mio_icif_screen<com.miophas.singularity_iteration.common.menu.producer.RecyclerElcMenu> {
+public class mio_icif_gui_recycler_elc extends ProcessInstrumentScreen<RecyclerElcMenu> {
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_recycler_elc.png");
+    private static final int SCRAP = 0xFF8C7B62;
+    private float angle, fall;
 
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    private static final int PROGRESS_X = 79;
-    private static final int PROGRESS_Y = 34;
-
-    private static final int ENERGY_ICON_X = 56;
-    private static final int ENERGY_ICON_Y = 36;
-
-    public mio_icif_gui_recycler_elc(com.miophas.singularity_iteration.common.menu.producer.RecyclerElcMenu menu, Inventory playerInventory, Component title) {
+    public mio_icif_gui_recycler_elc(RecyclerElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+    }
+
+    private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
+
+    @Override
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
+        float tau = 2 * (float) Math.PI;
+        if (running()) { angle = (angle + dt * 2.5F * tau) % tau; fall = (fall + dt * 1.6F) % 1; }
+        // the hopper
+        FcsDraw.quad(g, cx - 30, cy - 36, cx + 30, cy - 36, cx + 22, cy - 16, cx - 22, cy - 16, SHELL);
+        if (menu.getSlot(RecyclerElcMenu.INPUT_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 16, (int) cy - 30, (int) cx + 16, (int) cy - 20, FormingFigure.WORK);
+        // the housing and the two rotors turning against each other
+        FcsDraw.fill(g, (int) cx - 30, (int) cy - 16, (int) cx + 30, (int) cy + 12, SHELL);
+        FcsDraw.fill(g, (int) cx - 28, (int) cy - 14, (int) cx + 28, (int) cy + 10, CHAMBER);
+        for (int side = -1; side <= 1; side += 2) {
+            float rx = cx + side * 12, a = side * angle;
+            FcsDraw.disc(g, rx, cy - 2, 9, STEEL_LIGHT);
+            for (int k = 0; k < 6; k++) blade(g, rx, cy - 2, a + k * tau / 6, 8, 12, 2.2F, 0.6F, STEEL_LIGHT);
+            FcsDraw.disc(g, rx, cy - 2, 3, STEEL);
+        }
+        // the shreds falling into the bin
+        if (running()) for (int k = 0; k < 4; k++) {
+            float f = (fall + k * 0.25F) % 1;
+            FcsDraw.disc(g, cx - 6 + k * 4, cy + 12 + f * 12, 1.3F, FormingFigure.WORK);
+        }
+        // the bin, filled to the carry towards the next product
+        int bx0 = (int) cx - 24, bx1 = (int) cx + 24, by0 = (int) cy + 24, by1 = (int) cy + 38;
+        FcsDraw.fill(g, bx0, by0, bx1, by1, SHELL);
+        int h = Math.round((by1 - by0 - 3) * Math.min(1, menu.getCarryPermille() / 1000F));
+        if (h > 0) FcsDraw.fill(g, bx0 + 2, by1 - 2 - h, bx1 - 2, by1 - 2, SCRAP);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        com.miophas.singularity_iteration.common.menu.producer.RecyclerElcMenu menu = this.menu;
-        if (menu != null) {
-            int progress = menu.getProgress();
-            int maxProgress = menu.getMaxProgress();
-            int progressPixels = maxProgress > 0 ? (progress * ARROW_WIDTH) / maxProgress : 0;
-            // 标准进度箭头 / 闪电能量图标（都含图集底框），与其它机器保持一致：
-            // 底框是 GUI 的标准标识，不能省；能量短时超出上限时的越界采样由基类的夹取兜住。
-            drawProgressArrow(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, progressPixels);
-
-            drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());
-        }
+    protected Component headline() {
+        return Component.translatable(K + (running() ? "recycling" : "stopped"));
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
-
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        com.miophas.singularity_iteration.common.menu.producer.RecyclerElcMenu menu = this.menu;
-        if (menu == null) return;
-
-        if (isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, ARROW_WIDTH, ARROW_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal(menu.getProgress() + "/" + menu.getMaxProgress()),
-                mouseX - x, mouseY - y);
-        }
-
-        if (isHovering(mouseX, mouseY, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
-            renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
-        }
-    }
+    protected int headlineColour() { return running() ? INK : DIM; }
 
     @Override
-    public void containerTick() {
-        super.containerTick();
-        // 数据通过 ContainerData 自动同步，无需手动同步
+    protected float headlineBar() { return menu.getCarryPermille() / 1000F; }
+
+    @Override
+    protected List<Component> readouts() {
+        List<Component> lines = new ArrayList<>();
+        int share = menu.getYieldPermille();
+        if (share > 0) {
+            lines.add(Component.translatable(K + "yield_line", num(share / 10.0), num(1000.0 / share)));
+            int left = (int) Math.ceil((1000.0 - menu.getCarryPermille()) / share - 1e-6);
+            lines.add(Component.translatable(K + "carry_line", String.format(java.util.Locale.ROOT, "%.3f", menu.getCarryPermille() / 1000.0), Math.max(1, left)));
+        }
+        int max = menu.getMaxProgress();
+        lines.add(Component.translatable(K + "energy_line", (long) menu.getPower() * max, menu.getPower(), max));
+        return lines;
+    }
+
+    /** A whole number without the decimal (12.5, 8). */
+    private static String num(double v) { return Math.abs(v - Math.round(v)) < 0.05 ? Long.toString(Math.round(v)) : f1(v); }
+
+    @Override
+    protected int status() { return menu.getStatus(); }
+
+    @Override
+    protected double energyFraction() { return menu.getEnergyPermille() / 1000.0; }
+
+    @Override
+    protected List<Component> figureTooltip() {
+        return List.of(Component.translatable(K + "tip.recycler.1"), Component.translatable(K + "tip.recycler.2"));
     }
 }
-

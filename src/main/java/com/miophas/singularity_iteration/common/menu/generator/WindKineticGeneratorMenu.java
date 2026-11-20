@@ -51,9 +51,9 @@ import org.jetbrains.annotations.Nullable;
     public int getRotorHealthPercent() { return data.get(DATA_ROTOR_HEALTH); }
 
     /** 0.1.11.9: 248 x 204 with the wind rose and the power curve; the rotor slot on the left. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
     public static final int SLOT_X = 10, SLOT_Y = 46;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     /** Synced value {@code i} (see the block entity's getContainerData). */
     public int value(int i) { return data.get(i); }

@@ -2,17 +2,21 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "ICI",
-    "SMS",
+    "AMB",
     "ICI"
   ],
   "key": {
     "I": {"tag": "c:ingots/iridium"},
     "C": {
-      "tag": "c:circuits/advanced"
+      "item": "mio_icif:resource/item_quantum_core"
     },
-    "S": {
+    "A": {
       "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_quantum_solar_panel"
+    },
+    "B": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:generator/block_ultimate_photon_resonance_solar_generator"
     },
     "M": {
       "type": "mio_icif:electric",

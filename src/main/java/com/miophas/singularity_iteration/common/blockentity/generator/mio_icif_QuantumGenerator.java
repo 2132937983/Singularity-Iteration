@@ -23,18 +23,17 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 量子发电机 (Quantum Generator)
  *
- * 与太阳能发电机不同，量子发电机不需要阳光，可以全天候发电
- * 可以调节发电功率和电压等级
+ * 两条太阳能路线的合流终点（0.1.11.103：由量子太阳能发电机和终极光子振谐太阳能发电机合成）。
+ * 不需要阳光，不受天气和温度影响，全天候发电。界面只显示状态，没有调节功率或电压的控件。
  *
- * 默认配置 (参考ASP):
- * - 发电功率: 可配置，默认 512 EU/t
- * - 电压等级: 可配置，默认 HV (3)
+ * - 发电功率: 8192 EU/t，乘配置 GeneratorOutput 的倍率
+ * - 电压等级: IV，每 tick 一个包
  */
 @SuppressWarnings("null")
 public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.core.api.machine.IComparatorSource, IGeneratorBlock {
 
     // 默认配置 (参考ASP)
-    /** 0.1.11.12: an endgame generator above the quantum solar panel it is made from (was 512 EU/t at HV). */
+    /** 0.1.11.12: an endgame generator (was 512 EU/t at HV); 0.1.11.103: made from both solar routes' top panels. */
     public static final int DEFAULT_PRODUCTION = 8192;
     public static final int DEFAULT_TIER = 5; // IV
     public static final long DEFAULT_CAPACITY = 100000000L; // 1亿 EU

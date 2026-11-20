@@ -16,7 +16,8 @@ public class mio_icif_PhotonResonanceSolarGenerator extends mio_icif_MetsSolarGe
     /** 0.1.11.102: route B 384 EU/t (was 512), 25 % of it at night under a clear sky. */
     public static final int DAY_POWER = 384;
     public static final long CAPACITY = 40000000L;
-    public static final int TIER = 4;
+    /** 0.1.11.103: HV like the ultimate hybrid of the same rank (was EV); a lower voltage is safe for old cabling. */
+    public static final int TIER = 3;
     public static final int SKY_UPDATE_INTERVAL = 128;
     public static final float NIGHT_SHARE = com.miophas.singularity_iteration.common.energy.SolarRoutes.PHOTON_NIGHT;
     /** 0.1.11.102: route B, photon resonance (see SolarRoutes). */

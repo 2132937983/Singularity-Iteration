@@ -28,9 +28,10 @@ public record SolarGeneratorProfile(String registryId, boolean discrete,
         asp("block_hybrid_solar_panel", 96, 0, 100_000, 128),
         asp("block_ultimate_hybrid_solar_panel", 768, 0, 1_000_000, 512),
         asp("block_quantum_solar_panel", 6144, 0, 10_000_000, 8192),
-        mets("block_mets_advanced_solar_generator", 64, 200_000, 128, 128, .1F),
-        mets("block_photon_resonance_solar_generator", 512, 40_000_000, 2048, 128, .1F),
-        mets("block_ultimate_photon_resonance_solar_generator", 4096, 400_000_000, 8192, 64, .125F));
+        // 0.1.11.102: route B (photon resonance) 48 / 384 / 3072 EU/t, the last figure its night share
+        mets("block_mets_advanced_solar_generator", 48, 200_000, 128, 128, .15F),
+        mets("block_photon_resonance_solar_generator", 384, 40_000_000, 2048, 128, .25F),
+        mets("block_ultimate_photon_resonance_solar_generator", 3072, 400_000_000, 8192, 64, .35F));
     private static final Map<String, SolarGeneratorProfile> BY_ID = ALL.stream()
         .collect(Collectors.toUnmodifiableMap(SolarGeneratorProfile::registryId, Function.identity()));
 

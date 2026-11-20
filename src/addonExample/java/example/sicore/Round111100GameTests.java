@@ -61,12 +61,11 @@ public final class Round111100GameTests {
         h.succeed();
     }
 
-    /** The basic panel and route B use the standard profile and send one packet a tick (route A has its own since 0.1.11.101). */
+    /** The basic panel uses the standard profile and sends one packet a tick (route A has its own since 0.1.11.101, route B since 0.1.11.102). */
     @GameTest(template = "empty", timeoutTicks = 20)
     public static void routePanelsUseTheStandardProfile(GameTestHelper h) {
         Object s = standard();
-        String[] panels = {"generator/block_solar_generator", "generator/block_mets_advanced_solar_generator",
-            "generator/block_photon_resonance_solar_generator", "generator/block_ultimate_photon_resonance_solar_generator"};
+        String[] panels = {"generator/block_solar_generator"};
         int x = 0;
         for (String id : panels) {
             BlockPos at = new BlockPos(1 + x, 2, 1);

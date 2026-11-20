@@ -17,7 +17,8 @@ import net.neoforged.api.distmarker.OnlyIn;
  * 0.1.11.14: the screen of every solar panel, 248 x 204. A pyranometer record of today: the irradiance on the panel
  * through the day (amber, with the clear-sky envelope dashed and the 700 W/m² clipping level dotted) and the output
  * (blue, rated output at the top); a red line at the time now. 0.1.11.101: the dotted level is the panel's own full-output
- * level; a concentrator (route A) shows its direct-light share and cooling instead of the clouds, and its own tips. Under it the time, irradiance and clear sky; clouds, cell
+ * level; a concentrator (route A) shows its direct-light share and cooling instead of the clouds, and its own tips.
+ * 0.1.11.102: a photon resonance panel (route B) shows the night sky factor, "night sky" for its night output, and its own tips. Under it the time, irradiance and clear sky; clouds, cell
  * temperature and shade; output, today's energy and the state. Under the window the stored energy.
  */
 @OnlyIn(Dist.CLIENT)
@@ -42,6 +43,8 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
     private int clipLevel() { int c = v(mio_icif_solar_generator.DATA_PROFILE); return c > 0 ? c : (int) SolarPhysics.CLIP; }
     private boolean concentrator() { return (v(mio_icif_solar_generator.DATA_PROFILE + 1) & 1) != 0; }
     private boolean heldCell() { return (v(mio_icif_solar_generator.DATA_PROFILE + 1) & 2) != 0; }
+    /** 0.1.11.102: a photon resonance panel (route B). */
+    private boolean resonance() { return (v(mio_icif_solar_generator.DATA_PROFILE + 1) & 4) != 0; }
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
@@ -145,11 +148,12 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
                 .append(" · ").append(heldCell() ? Component.translatable(K + "cooling_held")
                     : Component.translatable(K + "cooling", Math.round(v(mio_icif_solar_generator.DATA_PROFILE + 2) / 10.0)))
             : Component.translatable(K + "env_line", f2(v(7) / 1000.0), f1(v(5) / 10.0), f3(v(6) / 1000.0));
+        if (resonance()) env.append(" · ").append(Component.translatable(K + "night_sky", f2(v(mio_icif_solar_generator.DATA_PROFILE + 3) / 1000.0)));
         WindRoseView.line(g, env.append(" · ").append(Component.translatable(K + shade)), tx, ty + lh, WindRoseView.DIM, w);
         double out = v(2) / 100.0, rated = v(3) / 100.0;
         boolean full = v(10) >= v(11) && v(11) > 0;
         String state; int colour;
-        if (v(15) != 0) { state = "state.core"; colour = 0x2A5D8A; }
+        if (v(15) != 0) { state = resonance() ? "state.sky" : "state.core"; colour = 0x2A5D8A; }
         else if (out <= 0 && v(13) <= 0) { state = "state.night"; colour = WindRoseView.DIM; }
         else if (out <= 0) { state = "state.none"; colour = WindRoseView.DIM; }
         else if (full) { state = "state.full"; colour = WindRoseView.DIM; }
@@ -181,11 +185,11 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
         if (rx >= WX && rx < WX + WW && ry >= WY && ry < WY + 58) {
-            String route = concentrator() ? "tip.a." : "tip.";
+            String route = concentrator() ? "tip.a." : resonance() ? "tip.b." : "tip.";
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.1"), Component.translatable(K + "tip.2"),
                 Component.translatable(K + "tip.3", clipLevel()), Component.translatable(K + route + "4")), mouseX, mouseY);
         } else if (rx >= WX && rx < WX + WW && ry >= WY + 58 && ry < WY + WH) {
-            String route = concentrator() ? "tip.a." : "tip.";
+            String route = concentrator() ? "tip.a." : resonance() ? "tip.b." : "tip.";
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + route + "5"), Component.translatable(K + route + "6")), mouseX, mouseY);
         }
     }

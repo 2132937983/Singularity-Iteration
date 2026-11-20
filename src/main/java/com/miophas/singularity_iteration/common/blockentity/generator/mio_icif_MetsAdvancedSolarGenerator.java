@@ -13,17 +13,18 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class mio_icif_MetsAdvancedSolarGenerator extends mio_icif_MetsSolarGeneratorBase {
 
-    public static final int DAY_POWER = 64;
+    /** 0.1.11.102: route B 48 EU/t (was 64), 15 % of it at night under a clear sky. */
+    public static final int DAY_POWER = 48;
     public static final long CAPACITY = 200000L;
     public static final int TIER = 2;
     public static final int SKY_UPDATE_INTERVAL = 128;
-    public static final float MIN_SKY_BRIGHTNESS = 0.1F;
-    /** 0.1.11.100: route B (photon resonance); the standard model until the overhaul's S2. */
+    public static final float NIGHT_SHARE = com.miophas.singularity_iteration.common.energy.SolarRoutes.METS_NIGHT;
+    /** 0.1.11.102: route B, photon resonance (see SolarRoutes). */
     public static final com.miophas.singularity_iteration.common.energy.SolarProfile PROFILE =
-        com.miophas.singularity_iteration.common.energy.SolarProfile.STANDARD;
+        com.miophas.singularity_iteration.common.energy.SolarRoutes.METS;
 
     public mio_icif_MetsAdvancedSolarGenerator(BlockPos pos, BlockState state) {
-        super(pos, state, DAY_POWER, CAPACITY, TIER, MIN_SKY_BRIGHTNESS, mio_icif_block_entities.METS_ADVANCED_SOLAR_GENERATOR_ENTITY_TYPE.get(), PROFILE);
+        super(pos, state, DAY_POWER, CAPACITY, TIER, NIGHT_SHARE, mio_icif_block_entities.METS_ADVANCED_SOLAR_GENERATOR_ENTITY_TYPE.get(), PROFILE);
     }
 
     @Override

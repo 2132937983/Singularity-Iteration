@@ -15,31 +15,33 @@ PALETTE = {
     "#": "#1B1E24",  # silhouette
     "x": "#383F4A",  # obsidian liner
     "l": "#4A5362",  # lit edge of the liner
-    "t": "#9AA9BA",  # ceramic return facing away from the light
-    "s": "#C3CFDC",  # ceramic half-tone
-    "w": "#E4EAF0",  # titanium face
-    "h": "#F5F8FA",  # polished edge
-    "p": "#FFFFFF",  # dome highlight
+    "d": "#7A8A9B",  # deepest ceramic bevel
+    "t": "#98A8B9",  # cool shadow
+    "s": "#B5C3D1",  # ceramic half-shadow
+    "w": "#CED8E2",  # titanium midtone
+    "h": "#EAF0F6",  # ceramic facing the light
+    "p": "#FFFFFF",  # specular glint
     "c": "#4CE6FF",  # quantum light
 }
 
-# Each row describes the left eight pixels, read from the outside towards the
-# centreline. A bevel (+) catches light on the left and falls into shade on the right.
+# The eight left pixels define each row. Reflect the silhouette, then shade the
+# right-hand ceramic facets for an upper-left light. The liner and lamps keep their colors.
+RIGHT_CERAMIC = str.maketrans({"p": "w", "h": "w", "s": "t", "t": "d"})
 HALVES = {
     "helmet": (
         "........",
         ".....###",
-        "...##+hp",
-        "..#+wwww",
-        "..#lssww",
-        ".#slwwww",
-        ".#txwwcc",
+        "...##pph",
+        "..#sphhw",
+        "..#lshhw",
+        ".#slshww",
+        ".#txswcc",
         ".#lxwwww",
-        ".#+xwwcc",
-        "..#xwwww",
+        ".#sxswcc",
+        "..#xswww",
         "..#xtwcc",
-        "..#xxtww",
-        "...#lsww",
+        "..#xxtsw",
+        "...#ltss",
         "....##xt",
         "......##",
         "........",
@@ -48,14 +50,14 @@ HALVES = {
         "........",
         "........",
         "..####..",
-        ".#++sw##",
-        ".#wshwxx",
-        ".#tswwww",
-        ".#w+wwxc",
+        ".#ppsh##",
+        ".#whhwxx",
+        ".#tswphw",
+        ".#shhwxc",
         ".##twwsc",
         "...#swxc",
-        "...#wswx",
-        "...#+sww",
+        "...#sswx",
+        "...#stsw",
         "...#lxts",
         "....#xxt",
         ".....###",
@@ -66,15 +68,15 @@ HALVES = {
         "........",
         "........",
         "....####",
-        "...#+xxs",
-        "...#wsxx",
-        "...#wwsx",
-        "...#wwl#",
-        "...#+t#.",
+        "...#hxxs",
+        "...#phxx",
+        "...#phsx",
+        "...#wsl#",
+        "...#ht#.",
         "...#ws#.",
         "...#ct#.",
         "...#ws#.",
-        "...#+x#.",
+        "...#sx#.",
         "...#tx#.",
         "...####.",
         "........",
@@ -88,11 +90,11 @@ HALVES = {
         "........",
         "........",
         "...####.",
-        "...#+s#.",
+        "...#ph#.",
         "...#cl#.",
         "...#xw#.",
-        "..#+ws#.",
-        ".#s+wt#.",
+        "..#hws#.",
+        ".#shst#.",
         ".#lxxx#.",
         ".######.",
         "........",
@@ -104,7 +106,7 @@ HALVES = {
 def sprite(half):
     if len(half) != 16 or any(len(row) != 8 for row in half):
         raise ValueError("A sprite requires 16 rows of eight half-width pixels.")
-    rows = [row.replace("+", "h") + row[::-1].replace("+", "s") for row in half]
+    rows = [row + row[::-1].translate(RIGHT_CERAMIC) for row in half]
     colors = {key: ImageColor.getcolor(value, "RGBA") if isinstance(value, str) else value
               for key, value in PALETTE.items()}
     image = Image.new("RGBA", (16, 16))

@@ -26,12 +26,12 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
     public static final int SLOT_COUNT = 7; // 输入 + 电池 + 输出 + 4个升级槽
 
     // 槽位位置
-    private static final int INPUT_X = 56;
-    private static final int INPUT_Y = 17;
-    private static final int BATTERY_X = 56;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
-    private static final int OUTPUT_Y = 35;
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 38;
+    private static final int OUTPUT_X = 10;
+    private static final int OUTPUT_Y = 58;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -46,7 +46,7 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.FURNACE_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 6, blockEntity);
+            null, DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -59,7 +59,9 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
     protected void addMachineSlots() {
         addInputSlot(INPUT_SLOT, INPUT_X, INPUT_Y);
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
-        this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 26, 26) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y) {   // 0.1.11.113: a normal slot
+            @Override
+            public boolean mayPlace(ItemStack stack) { return false; }
             @Override
             public void onTake(Player player, ItemStack stack) {
                 super.onTake(player, stack);
@@ -122,6 +124,30 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
             true);
     }
 
+    /** 0.1.11.113: data 6 status (ProcessStatus), 7 chamber °C, 8 °C the item needs (0-5 as before). */
+    public static final int DATA_COUNT = 9;
+
+    public int getStatus() { return data.get(6); }
+    public int getTemperature() { return data.get(7); }
+    public int getRequiredTemperature() { return data.get(8); }
+
+    // ---- 0.1.11.113: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
     /** Banked XP x10 (for the GUI readout). */
     public int getStoredXpTenths() { return data.get(5); }
 
@@ -159,6 +185,9 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
             this.data.set(3, energy);
             this.data.set(4, maxEnergy);
             this.data.set(5, (int) Math.min(Integer.MAX_VALUE, blockEntity.getStoredExperience() * 10));
+            this.data.set(6, blockEntity.processStatus());
+            this.data.set(7, (int) Math.round(blockEntity.temperature()));
+            this.data.set(8, (int) Math.round(blockEntity.requiredTemperature()));
         }
     }
 

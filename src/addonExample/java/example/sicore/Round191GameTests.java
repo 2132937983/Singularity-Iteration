@@ -158,21 +158,27 @@ public final class Round191GameTests {
     /** Thermal Retention Unit: an idle furnace keeps its heat; without the unit the heat drops. */
     @GameTest(template = "reactor_loop", batch = "round191_induction", timeoutTicks = 80)
     public static void thermalRetentionKeepsHeat(GameTestHelper h) {
+        // 0.1.11.113: the furnace has a temperature and always loses some heat; the unit cuts the loss to a quarter
         BlockEntity be = furnace(h);
-        Object storage = Round33GameTests.call(be, "getHeatStorage");
-        Round33GameTests.call(storage, "setHeat", 5000L);
-        var slots = (net.neoforged.neoforge.items.IItemHandlerModifiable) ((com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity) be).getItemHandler();
+        CompoundTag hot = new CompoundTag();
+        hot.putDouble("induction_temperature", 1000);
+        var machine = (com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity) be;
+        machine.loadAdditional(hot, h.getLevel().registryAccess());
+        var slots = (net.neoforged.neoforge.items.IItemHandlerModifiable) machine.getItemHandler();
         slots.setStackInSlot(5, Round33GameTests.item("upgrade/thermal_retention_upgrade"));
         h.runAfterDelay(40, () -> {
-            long kept = heat(be);
+            double insulatedLoss = 1000 - (double) Round33GameTests.call(be, "temperature");
+            machine.loadAdditional(hot, h.getLevel().registryAccess());
             slots.setStackInSlot(5, ItemStack.EMPTY);
-            h.runAfterDelay(20, () -> {
-                h.assertTrue(kept == 5000, "an insulated idle furnace lost heat: " + kept);
-                h.assertTrue(heat(be) < kept, "an idle furnace without the unit kept its heat: " + heat(be));
+            h.runAfterDelay(40, () -> {
+                double bareLoss = 1000 - (double) Round33GameTests.call(be, "temperature");
+                h.assertTrue(insulatedLoss > 0 && bareLoss > 3 * insulatedLoss,
+                    "40 idle ticks from 1,000 °C: lost " + insulatedLoss + " °C insulated, " + bareLoss + " °C without the unit");
                 h.succeed();
             });
         });
     }
+
 
     // ------------------------------------------------------------------ charge-agnostic matching
 

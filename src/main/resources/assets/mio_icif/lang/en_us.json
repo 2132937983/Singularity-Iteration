@@ -5841,5 +5841,22 @@
   "gui.mio_icif.process.tip.press.1": "A hydraulic press from the side: the cylinder drives the ram onto the charge in the die. The work is pressure times the volume pressed: harder material needs more pressure and a longer stroke.",
   "gui.mio_icif.process.tip.press.2": "Time and power follow the recipe: soft blocks 100 ticks × 5 EU/t, dense plates 400 × 20, industrial diamond 600 × 30.",
   "gui.mio_icif.process.tip.accumulator.1": "Right: the accumulator. The pump charges it from the grid; full pressure, 32 MPa, holds about 20,000 EU. The red line is the pressure the next stroke needs.",
-  "gui.mio_icif.process.tip.accumulator.2": "A stroke starts once the pressure is there and takes a quarter of the recipe's time; with a strong supply the strokes run back to back, four times the compressor's speed."
+  "gui.mio_icif.process.tip.accumulator.2": "A stroke starts once the pressure is there and takes a quarter of the recipe's time; with a strong supply the strokes run back to back, four times the compressor's speed.",
+  "gui.mio_icif.process.chamber": "Chamber %s °C",
+  "gui.mio_icif.process.needs_temperature": "%s · needs %s °C",
+  "gui.mio_icif.process.collect_xp": "XP %s",
+  "gui.mio_icif.process.melt": "Melt %s °C",
+  "gui.mio_icif.process.induction_power": "%s EU/t · smelting %s%%",
+  "gui.mio_icif.process.to_full_heat": "About %s s to full heat",
+  "gui.mio_icif.process.at_full_heat": "Full heat · holding about %s EU/t",
+  "gui.mio_icif.process.heat_hold": "Hold heat",
+  "gui.mio_icif.process.status.heating": "Heating up",
+  "gui.mio_icif.process.tip.collect_xp": "Puts the smelting experience banked in the furnace into your XP bar.",
+  "gui.mio_icif.process.tip.furnace.1": "A resistance furnace from the front: heating coils above and below heat the chamber, brighter as it gets hotter. They add 10 °C a tick up to 1,100 °C; an idle chamber cools slowly (Newton's law).",
+  "gui.mio_icif.process.tip.furnace.2": "Food cooks from 250 °C; ores, metals and the rest need 1,000 °C. Heating up costs the same 3 EU/t; once hot, an item takes 100 ticks.",
+  "gui.mio_icif.process.tip.heat_hold.1": "When on, the furnace keeps full heat with nothing to smelt, so the next item smelts at full speed at once.",
+  "gui.mio_icif.process.tip.heat_hold.2": "Holding only replaces the heat loss: about 8 EU/t at full heat, about 2 with a Thermal Retention Unit.",
+  "gui.mio_icif.process.tip.induction.1": "An induction furnace from above: the alternating current in the copper coil induces eddy currents in the crucible, which heat the charge directly; the colour is the melt temperature.",
+  "gui.mio_icif.process.tip.induction.2": "Up to 64 EU/t heats it from room temperature to 1,600 °C in about 30 seconds; the loss grows with the temperature, and an unheated furnace cools with a time constant of about 4 minutes.",
+  "gui.mio_icif.process.tip.induction.3": "Smelting starts at 600 °C and is at full speed at 1,600 °C: an item per lane every 12 ticks, for 15 EU/t more."
 }

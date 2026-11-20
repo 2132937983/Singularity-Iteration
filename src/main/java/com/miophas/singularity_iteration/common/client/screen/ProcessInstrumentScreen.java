@@ -96,6 +96,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
             if (s.x < 0 || s.x > W) continue;   // docked upgrade slots are drawn by the dock
             g.fill(x + s.x - 1, y + s.y - 1, x + s.x + 16, y + s.y + 16, s.y < SPLIT ? SLOT_PAPER : SLOT_GROUND);   // 17 px: a 1 px gap between neighbours
         }
+        panelButtons.clear();
         float dt = frameSeconds();
         drawFigure(g, x + FIG_X, y + FIG_Y, dt);
 
@@ -144,6 +145,53 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         PumpCrossSection.text(g, label, x + (w - AsciiHud.width(label, u)) / 2F, y + (h - 8 * u) / 2F, on ? 0xFFFFFF : DIM, u);
     }
 
+    // ---- 0.1.11.113: menu buttons drawn in the panel (flat, no outline) ----
+
+    private record PanelButton(int x, int y, int w, int h, int id, List<Component> tooltip) {}
+    private final java.util.ArrayList<PanelButton> panelButtons = new java.util.ArrayList<>();
+
+    /**
+     * Draws a flat button at panel coordinates (x, y) that sends menu button {@code id} when clicked; call it from
+     * {@link #drawExtras} every frame.
+     */
+    protected void menuButton(GuiGraphics g, int x, int y, int w, int h, Component label, boolean on, int id, int mouseX, int mouseY,
+                              List<Component> tooltip) {
+        boolean hover = inside(mouseX - leftPos, mouseY - topPos, x, y, w, h);
+        button(g, leftPos + x, topPos + y, w, h, label, on, hover);
+        panelButtons.add(new PanelButton(x, y, w, h, id, tooltip));
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && minecraft != null && minecraft.gameMode != null) {
+            for (PanelButton b : panelButtons) {
+                if (inside(mouseX - leftPos, mouseY - topPos, b.x, b.y, b.w, b.h)) {
+                    minecraft.gameMode.handleInventoryButtonClick(menu.containerId, b.id);
+                    minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /** Colour of a body at {@code celsius} (RGB with alpha): dark below 500 °C, then red, orange, yellow, pale yellow-white. */
+    protected static int glow(double celsius) {
+        double[][] stops = {{500, 0x5B, 0x68, 0x67}, {650, 0x8B, 0x1A, 0x10}, {850, 0xC8, 0x3A, 0x10}, {1050, 0xF0, 0x7A, 0x1C},
+            {1300, 0xF8, 0xC0, 0x40}, {1600, 0xFF, 0xF0, 0xB8}};
+        if (celsius <= stops[0][0]) return 0xFF5B6867;
+        for (int i = 1; i < stops.length; i++) {
+            if (celsius <= stops[i][0]) {
+                double t = (celsius - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]);
+                int r = (int) Math.round(stops[i - 1][1] + (stops[i][1] - stops[i - 1][1]) * t);
+                int gr = (int) Math.round(stops[i - 1][2] + (stops[i][2] - stops[i - 1][2]) * t);
+                int b = (int) Math.round(stops[i - 1][3] + (stops[i][3] - stops[i - 1][3]) * t);
+                return 0xFF000000 | r << 16 | gr << 8 | b;
+            }
+        }
+        return 0xFFFFF0B8;
+    }
+
     protected static boolean inside(double mx, double my, int x, int y, int w, int h) {
         return mx >= x && mx < x + w && my >= y && my < y + h;
     }
@@ -152,6 +200,12 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
+        for (PanelButton b : panelButtons) {
+            if (!b.tooltip.isEmpty() && inside(rx, ry, b.x, b.y, b.w, b.h)) {
+                g.renderComponentTooltip(this.font, b.tooltip, mouseX, mouseY);
+                return;
+            }
+        }
         if (inside(rx, ry, FIG_X - 40, FIG_Y - 40, 80, 80)) {
             g.renderComponentTooltip(this.font, figureTooltip(), mouseX, mouseY);
         } else if (inside(rx, ry, READ_X, PROGRESS_Y - 1, READ_W, 7)) {

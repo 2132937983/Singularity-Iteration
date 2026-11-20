@@ -5841,5 +5841,22 @@
   "gui.mio_icif.process.tip.press.1": "液压机侧视图：油缸推动压头压实模具里的物料。压实功等于压力乘以压下的体积，越硬的物料要越高的压力和越长的行程。",
   "gui.mio_icif.process.tip.press.2": "每件的时间和功率按配方：软料 100 tick × 5 EU/t，致密板 400 tick × 20 EU/t，工业钻石 600 tick × 30 EU/t。",
   "gui.mio_icif.process.tip.accumulator.1": "右边是蓄能器：油泵从电网充压，满压 32 MPa 约存 20,000 EU。红线是下一次冲压需要的油压。",
-  "gui.mio_icif.process.tip.accumulator.2": "油压够了才冲压，一次冲压只用配方时间的四分之一；供电够强时连续冲压，是压缩机的 4 倍速。"
+  "gui.mio_icif.process.tip.accumulator.2": "油压够了才冲压，一次冲压只用配方时间的四分之一；供电够强时连续冲压，是压缩机的 4 倍速。",
+  "gui.mio_icif.process.chamber": "炉温 %s °C",
+  "gui.mio_icif.process.needs_temperature": "%s · 需要 %s °C",
+  "gui.mio_icif.process.collect_xp": "经验 %s",
+  "gui.mio_icif.process.melt": "熔池 %s °C",
+  "gui.mio_icif.process.induction_power": "耗电 %s EU/t · 冶炼速度 %s%%",
+  "gui.mio_icif.process.to_full_heat": "约 %s 秒到满温",
+  "gui.mio_icif.process.at_full_heat": "满温 · 保温约 %s EU/t",
+  "gui.mio_icif.process.heat_hold": "保温",
+  "gui.mio_icif.process.status.heating": "升温中",
+  "gui.mio_icif.process.tip.collect_xp": "把炉里攒下的冶炼经验收进经验条。",
+  "gui.mio_icif.process.tip.furnace.1": "电阻炉正视图：上下两排电热丝加热炉膛，炉温越高越亮。电热丝每 tick 升温 10 °C，最高 1,100 °C；不工作时炉膛按牛顿冷却慢慢降温。",
+  "gui.mio_icif.process.tip.furnace.2": "食物 250 °C 就能开始，矿石、金属和其他物品要 1,000 °C；升温期间也付 3 EU/t，到温后 100 tick 一件。",
+  "gui.mio_icif.process.tip.heat_hold.1": "打开后，没有东西可炼时也保持满温，下一件立刻全速冶炼。",
+  "gui.mio_icif.process.tip.heat_hold.2": "保温只补散热：满温约 8 EU/t，装了保温单元约 2 EU/t。",
+  "gui.mio_icif.process.tip.induction.1": "感应炉俯视图：铜线圈里的交变电流在坩埚里感应出涡流，直接加热炉料；颜色就是熔池温度。",
+  "gui.mio_icif.process.tip.induction.2": "加热功率最高 64 EU/t，约 30 秒从室温升到 1,600 °C；散热与温度成正比，不加热时约 4 分钟降温（时间常数）。",
+  "gui.mio_icif.process.tip.induction.3": "600 °C 开始冶炼，1,600 °C 满速：两个格子每 12 tick 各炼一件，另耗 15 EU/t。"
 }

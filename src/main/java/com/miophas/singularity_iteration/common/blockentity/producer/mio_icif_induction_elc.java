@@ -71,9 +71,6 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
 
     public static final int MAX_HEAT = 10000;
     public static final int PROGRESS_TARGET = 4000;
-    public static final int HEAT_PROGRESS_DIVISOR = 30;
-    public static final int HEAT_UP_COST = 1;
-    public static final int HEAT_COOL_RATE = 4;
     public static final int WORK_ENERGY_COST = 15;
 
     public static final int HEAT_CAPACITY = 10000;
@@ -89,11 +86,10 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
 
     /**
      * 0.1.9.1 heat hold (GUI switch): the furnace keeps heating while it has nothing to smelt and
-     * holds full heat, so the next item smelts at full speed at once. Holding full heat costs
-     * {@link #HOLD_STANDBY_EU} EU/t, nothing with a Thermal Retention Unit.
+     * holds full heat, so the next item smelts at full speed at once. 0.1.11.113: holding full temperature costs what the
+     * furnace loses, 8 EU/t (2 EU/t with a Thermal Retention Unit; it was a flat 1 EU/t, nothing when insulated).
      */
     private boolean heatHold;
-    public static final long HOLD_STANDBY_EU = 1;
 
 
 
@@ -264,26 +260,75 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         return Math.max(base, (long) Math.ceil(base * upgradeStats.getEnergyUsageMultiplier()));
     }
 
+    // ---- 0.1.11.113 (processing overhaul M6): the melt temperature ----
+
+    /**
+     * An induction furnace heats the charge itself (eddy currents in the crucible). Temperature, not a heat counter:
+     * the 64 EU/t heater brings the crucible from 20 °C to 1,600 °C in about 30 seconds (heat capacity 24.3 EU/K); the
+     * furnace loses heat in proportion to how hot it is (8 EU/t at 1,600 °C; a quarter with a Thermal Retention Unit),
+     * so at temperature the thermostat only replaces that loss, and a furnace left alone cools with a time constant of
+     * about 4 minutes. Smelting starts at 600 °C and runs at full speed at 1,600 °C (an item every 12 ticks per lane, as
+     * the full heat did), with 15 EU/t for the melt on top.
+     */
+    public static final double AMBIENT = 20, MAX_TEMPERATURE = 1600, SMELT_START = 600;
+    public static final long HEATER_EU = 64;
+    public static final double HEAT_CAPACITY_EU_PER_K = 24.3, LOSS_AT_MAX_EU = 8, RETENTION_LOSS_SHARE = 0.25;
+    /** Progress per tick at full temperature: an operation in 12 ticks. */
+    public static final double FULL_SPEED_PROGRESS = PROGRESS_TARGET / 12.0;
+
+    private double temperature = AMBIENT;
+    /** EU the heater drew in the last tick (for the screen). */
+    private long heaterDraw;
+
+    /** Heat loss now (EU/t): proportional to the temperature above ambient; a quarter with thermal retention. */
+    public double heatLoss() {
+        double k = LOSS_AT_MAX_EU / (MAX_TEMPERATURE - AMBIENT) * (thermalRetention() ? RETENTION_LOSS_SHARE : 1);
+        return k * Math.max(0, temperature - AMBIENT);
+    }
+
+    public double temperature() { return temperature; }
+    public long heaterDraw() { return heaterDraw; }
+
+    /** Share of full smelting speed at the current temperature: 0 below 600 °C, 1 at 1,600 °C. */
+    public double smeltRate() {
+        return Math.max(0, Math.min(1, (temperature - SMELT_START) / (MAX_TEMPERATURE - SMELT_START)));
+    }
+
     @Override
     protected void onTick() {
-        boolean working = canWork();
-        boolean heating = working || heatHold || level != null && redstoneSignal();
-        boolean full = heatStorage.getHeatStored() >= heatStorage.getMaxHeatStored();
-        boolean insulated = thermalRetention();
-        if (heating && full && !working) {
-            // holding full heat: standby power, none when insulated
-            long standby = insulated ? 0 : scaledCost(HOLD_STANDBY_EU);
-            if (standby == 0 || apiGetStoredEnergy() >= standby && apiUseEnergy(standby, false) == standby) return;
-            if (!insulated) heatStorage.consumeHeatInternal(HEAT_COOL_RATE, false);
-            return;
+        boolean remote = isRemotelyDisabled();   // 0.1.11.113: a remote stop stops the heater too
+        boolean working = !remote && canWork();
+        boolean heating = !remote && (working || heatHold || level != null && redstoneSignal());
+        double loss = heatLoss();
+        double before = temperature;
+        heaterDraw = 0;
+        if (heating) {
+            // the thermostat: up to the heater's power, no more than reaches the top temperature
+            double needed = (MAX_TEMPERATURE - temperature) * HEAT_CAPACITY_EU_PER_K + loss;
+            long want = Math.min(HEATER_EU, (long) Math.ceil(Math.max(0, needed)));
+            long paid = want <= 0 ? 0 : apiUseEnergy(Math.min(want, apiGetStoredEnergy()), false);
+            heaterDraw = paid;
+            temperature += (paid - loss) / HEAT_CAPACITY_EU_PER_K;
+        } else {
+            temperature -= loss / HEAT_CAPACITY_EU_PER_K;
         }
-        long heatCost = scaledCost(HEAT_UP_COST);
-        if (heating && apiGetStoredEnergy() >= heatCost && apiUseEnergy(heatCost, false) == heatCost) {
-            heatStorage.generateHeatInternal(Math.max(HEAT_UP_RATE, Math.round(HEAT_UP_RATE * overclockSpeed())), false);
-        } else if (!insulated) {
-            // 0.1.9.1: a Thermal Retention Unit stops the heat loss of an idle furnace
-            heatStorage.consumeHeatInternal(HEAT_COOL_RATE, false);
-        }
+        temperature = Math.max(AMBIENT, Math.min(MAX_TEMPERATURE, temperature));
+        heatStorage.setHeat(Math.round((temperature - AMBIENT) / (MAX_TEMPERATURE - AMBIENT) * HEAT_CAPACITY));   // the old heat gauge, for other readers
+        if (Math.abs(temperature - before) > 0.5) setChanged();
+    }
+
+    /** 0.1.11.113: why the furnace runs, heats or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        if (itemHandler.getStackInSlot(INPUT_SLOT_1).isEmpty() && itemHandler.getStackInSlot(INPUT_SLOT_2).isEmpty())
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (findRecipe(INPUT_SLOT_1).isEmpty() && findRecipe(INPUT_SLOT_2).isEmpty())
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        if (prepareWorkingLanes().isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return smeltRate() <= 0
+            ? com.miophas.singularity_iteration.common.processing.ProcessStatus.HEATING : com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     /** True with a Thermal Retention Unit in an upgrade slot (0.1.9.1). */
@@ -303,12 +348,11 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         setChanged();
     }
 
-    /** Ticks until full heat at the current heating rate (0 when full). */
+    /** Ticks until full temperature at the heater's power (0 when there). */
     public int ticksToFullHeat() {
-        long missing = heatStorage.getMaxHeatStored() - heatStorage.getHeatStored();
-        if (missing <= 0) return 0;
-        long rate = Math.max(HEAT_UP_RATE, Math.round(HEAT_UP_RATE * overclockSpeed()));
-        return (int) Math.min(Integer.MAX_VALUE, (missing + rate - 1) / rate);
+        if (temperature >= MAX_TEMPERATURE - 0.5) return 0;
+        double net = Math.max(1, HEATER_EU - heatLoss());
+        return (int) Math.ceil((MAX_TEMPERATURE - temperature) * HEAT_CAPACITY_EU_PER_K / net);
     }
 
     /**
@@ -322,7 +366,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
             if (apiGetStoredEnergy() < workCost || apiUseEnergy(workCost, false) != workCost) {
                 stopWork(); return;
             }
-            long gain = Math.round(heatStorage.getHeatStored() / (double) HEAT_PROGRESS_DIVISOR * overclockSpeed());
+            long gain = Math.round(FULL_SPEED_PROGRESS * smeltRate() * overclockSpeed());   // 0.1.11.113: by temperature
             progress = (int) Math.min(PROGRESS_TARGET, (long) progress + gain);
         }
         isWorking = true;
@@ -341,7 +385,10 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         int completed = progress;
         progress = 0; isWorking = false;
         if (!operation.get().commit()) progress = completed;
-        else storedXp.add(xp);
+        else {
+            storedXp.add(xp);
+            super.finishWork();   // 0.1.11.113: counted for the work cycle upgrades, with the completion cue
+        }
         setChanged();
     }
 
@@ -362,7 +409,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
 
 
     public int getHeatPercent() {
-        return com.miophas.singularity_iteration.core.api.util.BoundedUnits.gauge(heatStorage.getHeatStored(), heatStorage.getMaxHeatStored(), 0, 100);
+        return (int) Math.round((temperature - AMBIENT) / (MAX_TEMPERATURE - AMBIENT) * 100);
     }
 
     public int gaugeProgressScaled(int i) {
@@ -387,6 +434,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         if (level == null) {
             return true;
         }
+        if (isRemotelyDisabled()) return false;   // 0.1.11.113: the remote stop was ignored here
         boolean powered = redstoneSignal();
         if (upgradeStats.isRedstoneInverted()) {
             return powered;
@@ -411,6 +459,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong("heat", heatStorage.getHeatStored());
+        tag.putDouble("induction_temperature", temperature);   // 0.1.11.113
         tag.putInt("progress", progress);
         tag.putBoolean("heat_hold", heatHold);
         storedXp.save(tag);
@@ -422,6 +471,9 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         if (tag.contains("heat", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) heatStorage.setHeat(tag.getLong("heat"));
         else if (tag.contains("heat_percent", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC))
             heatStorage.setHeat(com.miophas.singularity_iteration.core.api.util.BoundedUnits.multiplyDivide(Math.max(0, Math.min(100, tag.getLong("heat_percent"))), HEAT_CAPACITY, 100));
+        // 0.1.11.113: the temperature; an old save carries its heat over as the same share of the range
+        if (tag.contains("induction_temperature")) temperature = Math.max(AMBIENT, Math.min(MAX_TEMPERATURE, tag.getDouble("induction_temperature")));
+        else temperature = AMBIENT + (MAX_TEMPERATURE - AMBIENT) * Math.max(0, Math.min(1, heatStorage.getHeatStored() / (double) HEAT_CAPACITY));
         if (!tag.contains("progress") && tag.contains("progress1")) progress = tag.getInt("progress1");
         heatHold = tag.getBoolean("heat_hold");
         progress = Math.max(0, Math.min(PROGRESS_TARGET, progress));
@@ -454,8 +506,9 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         return PROGRESS_TARGET;
     }
 
+    /** Energy per tick now: the melt (15 EU/t at the overclock's multiplier while working) plus the heater. */
     public long getCurrentEnergyCost() {
-        return WORK_ENERGY_COST;
+        return (isWorking ? scaledCost(WORK_ENERGY_COST) : 0) + heaterDraw;
     }
 
     @Override

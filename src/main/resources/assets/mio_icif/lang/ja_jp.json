@@ -5841,5 +5841,22 @@
   "gui.mio_icif.process.tip.press.1": "油圧プレスを横から見た図：シリンダーがラムを押し下げ、型の中の材料を圧縮する。仕事は圧力×押し込む体積で、硬い材料ほど高い圧力と長いストロークが要る。",
   "gui.mio_icif.process.tip.press.2": "時間と電力はレシピどおり：柔らかい材料 100 tick × 5 EU/t、高密度板 400 × 20、工業用ダイヤモンド 600 × 30。",
   "gui.mio_icif.process.tip.accumulator.1": "右はアキュムレーター：ポンプが電力網から充圧し、満圧 32 MPa で約 20,000 EU を蓄える。赤線は次のストロークに必要な油圧。",
-  "gui.mio_icif.process.tip.accumulator.2": "油圧が足りるとプレスし、1回はレシピ時間の4分の1。電力が十分なら連続して、圧縮機の4倍速になる。"
+  "gui.mio_icif.process.tip.accumulator.2": "油圧が足りるとプレスし、1回はレシピ時間の4分の1。電力が十分なら連続して、圧縮機の4倍速になる。",
+  "gui.mio_icif.process.chamber": "炉内 %s °C",
+  "gui.mio_icif.process.needs_temperature": "%s · 必要 %s °C",
+  "gui.mio_icif.process.collect_xp": "経験値 %s",
+  "gui.mio_icif.process.melt": "溶湯 %s °C",
+  "gui.mio_icif.process.induction_power": "%s EU/t · 精錬 %s%%",
+  "gui.mio_icif.process.to_full_heat": "満温まで約 %s 秒",
+  "gui.mio_icif.process.at_full_heat": "満温 · 保温 約 %s EU/t",
+  "gui.mio_icif.process.heat_hold": "保温",
+  "gui.mio_icif.process.status.heating": "昇温中",
+  "gui.mio_icif.process.tip.collect_xp": "炉にたまった精錬の経験値を経験値バーへ入れる。",
+  "gui.mio_icif.process.tip.furnace.1": "抵抗炉を正面から見た図：上下の電熱線が炉内を加熱し、熱いほど明るくなる。1 tick に 10 °C、最高 1,100 °C。止まると炉内はゆっくり冷える（ニュートンの冷却）。",
+  "gui.mio_icif.process.tip.furnace.2": "食べ物は 250 °C から、鉱石・金属などは 1,000 °C が必要。昇温中も 3 EU/t を使い、温まれば 1個 100 tick。",
+  "gui.mio_icif.process.tip.heat_hold.1": "オンにすると、材料がなくても満温を保ち、次の材料をすぐ全速で精錬する。",
+  "gui.mio_icif.process.tip.heat_hold.2": "保温は放熱の分だけ：満温で約 8 EU/t、保温ユニット付きで約 2 EU/t。",
+  "gui.mio_icif.process.tip.induction.1": "誘導炉を上から見た図：銅コイルの交流がるつぼに渦電流を起こし、材料を直接加熱する。色は溶湯の温度。",
+  "gui.mio_icif.process.tip.induction.2": "最大 64 EU/t で室温から 1,600 °C まで約 30 秒。放熱は温度に比例し、加熱しないと時定数約 4 分で冷える。",
+  "gui.mio_icif.process.tip.induction.3": "600 °C で精錬が始まり、1,600 °C で全速：2つのレーンでそれぞれ 12 tick ごとに1個、さらに 15 EU/t。"
 }

@@ -25,8 +25,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * the old drawing is archived in {@link com.miophas.singularity_iteration.common.client.legacy.flight.LegacyManeuverJets}
  * (see {@link com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx}). It samples the back nozzles
  * for the light trails ({@link LightTrails}), draws the sole rings of the electromagnetic hover ({@link HoverField},
- * 0.1.11.126), the electromagnetic pulses of the firing attitude ports ({@link RcsPulse}, 0.1.11.127) and the field rings of
- * a graviton core.
+ * 0.1.11.126), the electromagnetic pulses of the firing attitude ports ({@link RcsPulse}, 0.1.11.127), the arc net of the
+ * ionised sheath at high speed ({@link ArcNet}, 0.1.11.128) and the field rings of a graviton core.
  *
  * <p>Model space: 1 unit = 1 block after the 1/16 scale of the parts; y points down. The local player in first person is
  * not rendered by vanilla, so this layer does not run then.
@@ -57,6 +57,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             return;
         }
         HoverField.drawSoles(pose, buffers, model, player, partial);   // 0.1.11.126 (E3): the electromagnetic hover
+        ArcNet.draw(pose, buffers, model, player);                       // 0.1.11.128 (E5): the ionised sheath past the barrier
         // a graviton core has no nozzles: its field rings stay (a field, not an exhaust)
         java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player, partial);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);

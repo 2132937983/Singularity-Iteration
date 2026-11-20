@@ -160,7 +160,7 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         if (prepareOperation().isEmpty()) { stopWork(); return; }
         if (progress < maxProgress) {
             if (getEffectiveEnergyPerTick() <= 0 || !hasEnoughEnergy() || !consumeEnergy()) { stopWork(); return; }
-            progress = (int) Math.min(maxProgress, (long) progress + getProgressPerTick());
+            progress = (int) Math.min(maxProgress, (long) progress + takeProgressStep());   // 0.1.11.111: exact 0.7^n
         }
         isWorking = true;
         if (progress >= maxProgress) finishCutting();

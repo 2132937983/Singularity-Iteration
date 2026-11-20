@@ -356,7 +356,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
         }
 
         // Increase the progress.
-        int progressPerTick = getProgressPerTick();
+        int progressPerTick = takeProgressStep();   // 0.1.11.111: exact 0.7^n
         progress += progressPerTick;
 
         // Check whether the work is complete.

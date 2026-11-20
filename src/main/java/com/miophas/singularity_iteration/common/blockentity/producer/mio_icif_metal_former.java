@@ -239,7 +239,7 @@ public enum MetalFormerMode {
     protected void updateProgress() {
         if (isWorking) {
             int recipeMaxProgress = Math.max(1, getRecipeProcessingTime());
-            int progressPerTick = getProgressPerTick();
+            int progressPerTick = takeProgressStep();   // 0.1.11.111: exact 0.7^n
             if (progress < recipeMaxProgress) {
                 progress = (int) Math.min(recipeMaxProgress, (long) progress + progressPerTick);
             }

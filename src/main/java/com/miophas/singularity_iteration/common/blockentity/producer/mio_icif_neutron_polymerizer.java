@@ -358,4 +358,10 @@ public class mio_icif_neutron_polymerizer extends GenericMachineBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new NeutronPolymerizerMenu(containerId, playerInventory, this);
     }
+
+    /** 0.1.11.111: keeps its own progress model (not the processing machines' exact 0.7^n) for the work cycle time. */
+    @Override
+    protected double exactProgressPerTick() {
+        return Math.max(1, getProgressPerTick());
+    }
 }

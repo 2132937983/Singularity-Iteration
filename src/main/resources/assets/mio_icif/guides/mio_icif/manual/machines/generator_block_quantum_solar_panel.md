@@ -28,7 +28,7 @@ The machine charges items in four slots.
 | Item | Value |
 |---|---|
 | Output voltage tier | IV (8,192 EU) |
-| Output | 6,144 EU/t |
+| Output | 7,168 EU/t |
 | Output at night | 0 EU/t |
 | Full output from | 850 W/m² |
 | Energy storage | 10,000,000 EU |

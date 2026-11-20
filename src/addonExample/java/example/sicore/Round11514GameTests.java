@@ -53,11 +53,11 @@ public final class Round11514GameTests {
     public static void solarPanelsShareOneImplementation(GameTestHelper h) {
         Class<?> base = common("blockentity.generator.mio_icif_solar_generator");
         Object[][] panels = {
-            // 0.1.11.101: route A (concentrator) 12 / 96 / 768 / 6144 EU/t, nothing at night
+            // 0.1.11.101: route A (concentrator) 12 / 96 / 768 / 7168 EU/t (the quantum 7168 since 0.1.11.106), nothing at night
             {"generator/block_solar_generator", 1, 0, 1}, {"generator/block_advanced_solar_panel", 12, 0, 4},
             {"generator/block_hybrid_solar_panel", 96, 0, 4}, {"generator/block_ultimate_hybrid_solar_panel", 768, 0, 4},
             // 0.1.11.102: route B (photon resonance) 48 / 384 / 3072 EU/t, 15 / 25 / 35 % at night
-            {"generator/block_quantum_solar_panel", 6144, 0, 4}, {"generator/block_mets_advanced_solar_generator", 48, 7, 1},
+            {"generator/block_quantum_solar_panel", 7168, 0, 4}, {"generator/block_mets_advanced_solar_generator", 48, 7, 1},
             {"generator/block_photon_resonance_solar_generator", 384, 96, 1}, {"generator/block_ultimate_photon_resonance_solar_generator", 3072, 1075, 1}};
         int x = 0;
         for (Object[] row : panels) {
@@ -73,7 +73,7 @@ public final class Round11514GameTests {
     }
 
     /** A panel with a roof over it gets the diffuse light only (at most 15 % of the clear sky). 0.1.11.102: the basic panel (the only standard one left). */
-    @GameTest(template = "empty", timeoutTicks = 40)
+    @GameTest(batch = "solar_cover", template = "empty", timeoutTicks = 40)
     public static void coveredPanelGetsDiffuseLightOnly(GameTestHelper h) {
         BlockPos at = new BlockPos(2, 1, 2);   // 0.1.11.105: the roof inside the 5x4x5 template (y 3); above it, neighbouring tests could clear it
         BlockEntity be = place(h, at, "generator/block_solar_generator");

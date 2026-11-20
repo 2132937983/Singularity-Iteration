@@ -33,7 +33,7 @@ public final class GeneratorOutput {
         new Entry("advanced_solar_panel", "Advanced Solar Panel (concentrator): 12 EU/t in direct sun, none at night"),
         new Entry("hybrid_solar_panel", "Hybrid Solar Panel (concentrator): 96 EU/t in direct sun, none at night"),
         new Entry("ultimate_hybrid_solar_panel", "Ultimate Hybrid Solar Panel (concentrator): 768 EU/t in direct sun, none at night"),
-        new Entry("quantum_solar_panel", "Quantum Solar Panel (concentrator): 6144 EU/t in direct sun, none at night"),
+        new Entry("quantum_solar_panel", "Quantum Solar Panel (concentrator): 7168 EU/t in direct sun, none at night"),
         new Entry("mets_advanced_solar_generator", "Advanced Solar Generator (photon resonance): 48 EU/t by day, 15 % at night under a clear sky"),
         new Entry("photon_resonance_solar_generator", "Photon Resonance Solar Generator: 384 EU/t by day, 25 % at night under a clear sky"),
         new Entry("ultimate_photon_resonance_solar_generator", "Ultimate Photon Resonance Solar Generator: 3072 EU/t by day, 35 % at night under a clear sky"),

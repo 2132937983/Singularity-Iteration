@@ -23,11 +23,11 @@ public record SolarGeneratorProfile(String registryId, boolean discrete,
     }
 
     private static final List<SolarGeneratorProfile> ALL = List.of(
-        // 0.1.11.101: route A (concentrator) 12 / 96 / 768 / 6144 EU/t by day, nothing at night; the ultimate hybrid sends two 512 EU packets a tick
+        // 0.1.11.101: route A (concentrator) 12 / 96 / 768 / 7168 EU/t by day (the quantum 7168 since 0.1.11.106), nothing at night; the ultimate hybrid sends two 512 EU packets a tick
         asp("block_advanced_solar_panel", 12, 0, 32_000, 32),
         asp("block_hybrid_solar_panel", 96, 0, 100_000, 128),
         asp("block_ultimate_hybrid_solar_panel", 768, 0, 1_000_000, 512),
-        asp("block_quantum_solar_panel", 6144, 0, 10_000_000, 8192),
+        asp("block_quantum_solar_panel", 7168, 0, 10_000_000, 8192),
         // 0.1.11.102: route B (photon resonance) 48 / 384 / 3072 EU/t, the last figure its night share
         mets("block_mets_advanced_solar_generator", 48, 200_000, 128, 128, .15F),
         mets("block_photon_resonance_solar_generator", 384, 40_000_000, 512, 128, .25F),   // 0.1.11.103: HV packets (was 2048, EV)

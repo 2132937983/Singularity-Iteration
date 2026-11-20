@@ -42,7 +42,7 @@ public final class Round111105GameTests {
         {"generator/block_advanced_solar_panel", "A", 0, 3.3, 1.4, 2.9, 3.5},
         {"generator/block_hybrid_solar_panel", "A", 1, 28.6, 11.7, 25.7, 30.5},
         {"generator/block_ultimate_hybrid_solar_panel", "A", 2, 238.9, 95.3, 215.7, 253.1},
-        {"generator/block_quantum_solar_panel", "A", 3, 1937.2, 741.4, 1937.2, 1937.2},
+        {"generator/block_quantum_solar_panel", "A", 3, 2260.1, 865.0, 2260.1, 2260.1},   // 0.1.11.106: 7168 EU/t (was 6144)
         {"generator/block_mets_advanced_solar_generator", "B", 1, 20.7, 18.0, 19.8, 21.2},
         {"generator/block_photon_resonance_solar_generator", "B", 2, 194.9, 166.1, 187.7, 199.7},
         {"generator/block_ultimate_photon_resonance_solar_generator", "B", 3, 1767.5, 1470.2, 1707.4, 1807.6}};
@@ -118,12 +118,12 @@ public final class Round111105GameTests {
         for (int rank = 1; rank <= 3; rank++) {
             int a = rank, b = rank + 3;
             String pair = PANELS[a][0] + " / " + PANELS[b][0];
-            h.assertTrue(avg[a][0] > avg[b][0], pair + ": route A must win a clear day in the plains");
+            h.assertTrue(avg[a][0] > 1.15 * avg[b][0], pair + ": route A must win a clear day in the plains by more than 15 %");
             h.assertTrue(avg[a][3] > avg[b][3], pair + ": route A must win the desert");
             h.assertTrue(avg[b][1] > avg[a][1] && avg[b][2] > avg[a][2], pair + ": route B must win rain and thunderstorms");
             h.assertTrue(nights[b] > 0 && nights[a] == 0, pair + ": only route B makes power at night");
             double longA = 0.82 * avg[a][0] + 0.18 * avg[a][1], longB = 0.82 * avg[b][0] + 0.18 * avg[b][1];
-            h.assertTrue(longB > 0.75 * longA && longB < 1.10 * longA, pair + ": long run in the plains A " + longA + ", B " + longB);
+            h.assertTrue(longB > 0.75 * longA && longB < longA, pair + ": long run in the plains A " + longA + ", B " + longB);
         }
         // route A: the cooling pays off in the desert (share of the clear-plains output)
         for (int i = 1; i < 4; i++)

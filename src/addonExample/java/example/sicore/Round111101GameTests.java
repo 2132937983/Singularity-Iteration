@@ -12,7 +12,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * 0.1.11.101 (solar overhaul S1): route A is a concentrator. The four panels make 12 / 96 / 768 / 6144 EU/t in direct sun
+ * 0.1.11.101 (solar overhaul S1): route A is a concentrator. The four panels make 12 / 96 / 768 / 7168 EU/t (the quantum 6144 until 0.1.11.106) in direct sun
  * and nothing at night; a covered one makes nothing; clouds leave the clear-sky index cubed; heat costs output after
  * clipping and the hybrid panels' cooling takes it back; the ultimate hybrid sends two HV packets a tick. (The mod's
  * common classes by reflection: addon examples do not compile against them.)
@@ -36,7 +36,7 @@ public final class Round111101GameTests {
         {"generator/block_advanced_solar_panel", "ADVANCED", 12, 1},
         {"generator/block_hybrid_solar_panel", "HYBRID", 96, 1},
         {"generator/block_ultimate_hybrid_solar_panel", "ULTIMATE_HYBRID", 768, 2},
-        {"generator/block_quantum_solar_panel", "QUANTUM", 6144, 1}};
+        {"generator/block_quantum_solar_panel", "QUANTUM", 7168, 1}};
 
     /** Rated output, no night core, the route's profile and the packets a tick. */
     @GameTest(template = "empty", timeoutTicks = 20)
@@ -58,7 +58,7 @@ public final class Round111101GameTests {
     }
 
     /** Under a roof a concentrator gets no light at all (a standard panel keeps the diffuse part). */
-    @GameTest(template = "empty", timeoutTicks = 40)
+    @GameTest(batch = "solar_cover", template = "empty", timeoutTicks = 40)
     public static void coveredConcentratorMakesNothing(GameTestHelper h) {
         BlockPos at = new BlockPos(2, 1, 2);   // 0.1.11.105: the roof inside the 5x4x5 template (y 3); above it, neighbouring tests could clear it
         h.setBlock(at, block("generator/block_ultimate_hybrid_solar_panel"));

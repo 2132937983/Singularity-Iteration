@@ -18,7 +18,7 @@ Solar generators start from the basic solar generator, split into two routes and
 | Item | Concentrator route | Photon resonance route |
 |---|---|---|
 | Machines | Advanced → Hybrid → Ultimate hybrid → Quantum solar | Advanced (METS) → Photon resonance → Ultimate photon resonance |
-| Rated output by day | 12 / 96 / 768 / 6,144 EU/t | 48 / 384 / 3,072 EU/t |
+| Rated output by day | 12 / 96 / 768 / 7,168 EU/t | 48 / 384 / 3,072 EU/t |
 | At night | 0 | 15 / 25 / 35 % of the rating (clear night) |
 | Full output from | 850 W/m² | 600 / 450 / 350 W/m² |
 | Under cover | nothing | keeps 30 / 45 / 60 % of the sky light |

@@ -92,7 +92,7 @@ public final class Round111102GameTests {
      * Under a roof the ultimate photon resonance panel keeps 60 % of the sky light it sees (the basic panel 15 %). 0.1.11.105:
      * checked against the panel's own sky light and weather (a neighbouring basic panel's roof was not always in place).
      */
-    @GameTest(template = "empty", timeoutTicks = 40)
+    @GameTest(batch = "solar_cover", template = "empty", timeoutTicks = 40)
     public static void coveredPanelKeepsMoreSkyLight(GameTestHelper h) {
         BlockPos at = new BlockPos(2, 1, 2);   // 0.1.11.105: the roof inside the 5x4x5 template (y 3); above it, neighbouring tests could clear it
         h.setBlock(at, block("generator/block_ultimate_photon_resonance_solar_generator"));

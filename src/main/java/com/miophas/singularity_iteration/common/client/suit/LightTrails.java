@@ -33,7 +33,7 @@ import org.joml.Vector3f;
  * 0.1.11.122: the light trails of the special flight ({@link LightTrailRules}): a short red line with a curtain of red light
  * hanging under it, one behind each back nozzle of a quantum flyer in maneuver flight and of a flying Wingman, growing with
  * the speed. A player's nozzles are sampled where its model is drawn ({@link ManeuverFlightLayer}), so the trail leaves the
- * real ports (the four pods of the base frame make one trail a side); a Wingman's from its pose. The trails are drawn in the
+ * real ports (0.1.11.123: since the finished quantum suit, the two pods' thruster_nozzle_left/right, which move as the pods open); a Wingman's from its pose. The trails are drawn in the
  * world pass ({@code AFTER_PARTICLES}): the curtains alpha-blended, then the lines additive. The own flyer in first person
  * is not drawn by the game, so it leaves no trail.
  */
@@ -63,7 +63,7 @@ public final class LightTrails {
         if (FxBudget.tier(player) == FxLodRules.FAR) return;
         double[] sum = new double[6];
         int[] count = new int[2];
-        for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player)) {
+        for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player, partial)) {   // 0.1.11.123: the main nozzles move with the opening pods
             if (n.kind() != QuantumNozzles.Kind.MAIN || n.part() != QuantumNozzles.Part.BODY || !NozzleDraw.push(pose, model, n)) continue;
             Vector3f at = pose.last().pose().transformPosition(0, 0, 0, new Vector3f());
             pose.popPose();

@@ -5885,5 +5885,19 @@
   "gui.mio_icif.process.tip.former.2": "時間はレシピどおり（100〜400 tick）、10 EU/t（レシピに電力があればその値）。",
   "gui.mio_icif.process.tip.former_advanced": "上級版はレシピ時間の5分の1、50 EU/t で加工する。",
   "gui.mio_icif.process.tip.cutter.1": "ブロックカッターを横から見た図：丸のこがブロックを切り下ろし、切り溝が進むにつれ深くなる。鉄の刃は灰色、ダイヤモンドの刃は淡い水色。",
-  "gui.mio_icif.process.tip.cutter.2": "1回の切断で刃は（材料硬度 ÷ 刃の硬度）² ポイント摩耗する：鉄の刃 64、ダイヤモンドの刃 1,024。使い切ると折れる。"
+  "gui.mio_icif.process.tip.cutter.2": "1回の切断で刃は（材料硬度 ÷ 刃の硬度）² ポイント摩耗する：鉄の刃 64、ダイヤモンドの刃 1,024。使い切ると折れる。",
+  "gui.mio_icif.process.extracting": "抽出中",
+  "gui.mio_icif.process.recycling": "リサイクル中",
+  "gui.mio_icif.process.rate_line": "%s 回/分",
+  "gui.mio_icif.process.yield_line": "収率 %s%% · %s 個で 1 個",
+  "gui.mio_icif.process.carry_line": "累積 %s · あと %s 個",
+  "gui.mio_icif.process.tank_in": "入 %s/%s mB %s",
+  "gui.mio_icif.process.tank_out": "出 %s/%s mB %s",
+  "gui.mio_icif.process.swap": "交換",
+  "gui.mio_icif.process.tip.extractor.1": "スクリュープレス：スクリューが原料を出口へ送り、溝が浅くなるにつれて汁と使える部分を搾り出す。",
+  "gui.mio_icif.process.tip.extractor.2": "レシピに書かれた時間と電力で動く。書かれていなければ 300 t × 2 EU/t。",
+  "gui.mio_icif.process.tip.recycler.1": "二軸破砕機：逆回転する二本の刃軸が物を裂き、破片から使える部分を選別する。",
+  "gui.mio_icif.process.tip.recycler.2": "産出は累積：一個ごとに収率を加え、1 になると一個出る。ランダムはない。",
+  "gui.mio_icif.process.tip.canner.1": "モードにより缶詰め、セルを右タンクへ空ける、左タンクからセルを満たす、左タンクの液体を混ぜて右タンクへ送る。",
+  "gui.mio_icif.process.tip.canner.2": "左が入力タンク、右が出力タンク（各 8,000 mB）。「交換」で入れ替える。"
 }

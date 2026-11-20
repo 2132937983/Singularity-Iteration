@@ -25,12 +25,13 @@ public class ExtractorElcMenu extends mio_icif_machine_menu {
     public static final int SLOT_COUNT = 7;
 
     // 槽位位置
-    private static final int INPUT_X = 56;
-    private static final int INPUT_Y = 17;
-    private static final int BATTERY_X = 56;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
-    private static final int OUTPUT_Y = 35;
+    // 0.1.11.116: the instrument screen's left columns
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 38;
+    private static final int OUTPUT_X = 30;
+    private static final int OUTPUT_Y = 18;
     private static final int[] UPGRADE_SLOT_X = {152, 152, 152, 152};
     private static final int[] UPGRADE_SLOT_Y = {8, 26, 44, 62};
 
@@ -45,7 +46,7 @@ public class ExtractorElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.EXTRACTOR_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 5, blockEntity);
+            null, DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -57,7 +58,7 @@ public class ExtractorElcMenu extends mio_icif_machine_menu {
     @Override
     protected void addMachineSlots() {
         addInputSlot(INPUT_SLOT, INPUT_X, INPUT_Y);
-        this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 26, 26));
+        this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 16, 16));
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
         for (int i = 0; i < 4; i++) {
             addUpgradeSlot(UPGRADE_SLOT_START + i, UPGRADE_SLOT_X[i], UPGRADE_SLOT_Y[i]);
@@ -126,8 +127,37 @@ public class ExtractorElcMenu extends mio_icif_machine_menu {
             int maxEnergy = (int) blockEntity.getEnergyStorage().getCapacity();
             this.setSyncData(3, energy);
             this.setSyncData(4, maxEnergy);
+            this.setSyncData(5, blockEntity.processStatus());
+            this.setSyncData(6, (int) Math.min(Short.MAX_VALUE, blockEntity.getEffectiveEnergyPerTick()));
+            this.setSyncData(7, (int) Math.round(1000.0 * energy / Math.max(1, maxEnergy)));
         }
     }
+
+    /** 0.1.11.116: data 5 status (ProcessStatus), 6 EU/t, 7 stored energy ‰ (0-4 as before). */
+    public static final int DATA_COUNT = 8;
+    public int getProgress() { return data.get(0); }
+    public int getMaxProgress() { return data.get(1); }
+    public int getStatus() { return data.get(5); }
+    public int getPower() { return data.get(6); }
+    public int getEnergyPermille() { return data.get(7); }
+
+    // ---- 0.1.11.116: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
 
     /**
      * Large slot class (26x26).

@@ -5885,5 +5885,19 @@
   "gui.mio_icif.process.tip.former.2": "Time follows the recipe (100 to 400 ticks), at 10 EU/t (or the recipe's own power when it gives one).",
   "gui.mio_icif.process.tip.former_advanced": "The advanced former does a recipe in a fifth of its time at 50 EU/t.",
   "gui.mio_icif.process.tip.cutter.1": "A block cutter from the side: the circular saw comes down through the block, the kerf deepening as it goes; an iron blade is grey, a diamond blade pale cyan.",
-  "gui.mio_icif.process.tip.cutter.2": "Each cut wears the blade by (material hardness ÷ blade hardness)² points: 64 for an iron blade, 1,024 for a diamond one; a worn blade breaks."
+  "gui.mio_icif.process.tip.cutter.2": "Each cut wears the blade by (material hardness ÷ blade hardness)² points: 64 for an iron blade, 1,024 for a diamond one; a worn blade breaks.",
+  "gui.mio_icif.process.extracting": "Extracting",
+  "gui.mio_icif.process.recycling": "Recycling",
+  "gui.mio_icif.process.rate_line": "%s operations/min",
+  "gui.mio_icif.process.yield_line": "Yield %s%% · 1 per %s items",
+  "gui.mio_icif.process.carry_line": "Carry %s · next in %s",
+  "gui.mio_icif.process.tank_in": "In %s/%s mB %s",
+  "gui.mio_icif.process.tank_out": "Out %s/%s mB %s",
+  "gui.mio_icif.process.swap": "Swap",
+  "gui.mio_icif.process.tip.extractor.1": "Screw press: the screw carries the charge to the outlet in ever shallower flights and squeezes out the juice and what can be used.",
+  "gui.mio_icif.process.tip.extractor.2": "Each extraction runs the recipe's own time and power; a recipe without them runs 300 t at 2 EU/t.",
+  "gui.mio_icif.process.tip.recycler.1": "Twin-shaft shredder: two rotors turning against each other shred the item, and the usable part is sorted from the shreds.",
+  "gui.mio_icif.process.tip.recycler.2": "The yield is counted: each item adds its share, and a whole one makes a product. No chance involved.",
+  "gui.mio_icif.process.tip.canner.1": "By mode it cans, empties a cell into the right tank, fills a cell from the left tank, or mixes the left tank into the right one.",
+  "gui.mio_icif.process.tip.canner.2": "The left tank takes in, the right one gives out, 8,000 mB each; Swap exchanges them."
 }

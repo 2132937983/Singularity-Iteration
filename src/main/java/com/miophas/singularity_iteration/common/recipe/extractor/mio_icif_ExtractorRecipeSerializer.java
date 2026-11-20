@@ -26,8 +26,9 @@ public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilde
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_ExtractorRecipe::getGroup),
             Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(mio_icif_ExtractorRecipe::getIngredient),
             ItemStack.CODEC.fieldOf("result").forGetter(mio_icif_ExtractorRecipe::getResult),
-            Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_ExtractorRecipe::getProcessingTime),
-            Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_ExtractorRecipe::getEnergyPerTick)
+            // 0.1.11.116: absent is -1 (the extractor then runs its stock 300 t at 2 EU/t)
+            Codec.INT.optionalFieldOf("processingtime", -1).forGetter(mio_icif_ExtractorRecipe::getProcessingTimeRaw),
+            Codec.INT.optionalFieldOf("energypertick", -1).forGetter(mio_icif_ExtractorRecipe::getEnergyPerTickRaw)
         ).apply(instance, mio_icif_ExtractorRecipe::new)
     );
 
@@ -54,8 +55,8 @@ public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilde
         String group = buffer.readUtf();
         Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buffer);
         ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
-        int processingTime = buffer.readVarInt();
-        int energyPerTick = buffer.readVarInt();
+        int processingTime = buffer.readVarInt() - 1;   // 0.1.11.116: -1 (none) travels as 0
+        int energyPerTick = buffer.readVarInt() - 1;
         return new mio_icif_ExtractorRecipe(group, ingredient, result, processingTime, energyPerTick);
     }
 
@@ -66,8 +67,8 @@ public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilde
         buffer.writeUtf(recipe.getGroup());
         Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, recipe.getIngredient());
         ItemStack.STREAM_CODEC.encode(buffer, recipe.getResult());
-        buffer.writeVarInt(recipe.getProcessingTime());
-        buffer.writeVarInt(recipe.getEnergyPerTick());
+        buffer.writeVarInt(recipe.getProcessingTimeRaw() + 1);
+        buffer.writeVarInt(recipe.getEnergyPerTickRaw() + 1);
     }
 }
 

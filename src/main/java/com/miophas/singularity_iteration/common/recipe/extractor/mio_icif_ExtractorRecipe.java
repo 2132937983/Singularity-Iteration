@@ -77,12 +77,28 @@ public class mio_icif_ExtractorRecipe implements Recipe<mio_icif_ExtractorRecipe
 
     @Override
     public int getProcessingTime() {
-        return processingTime;
+        return processingTime < 0 ? mio_icif_ExtractorRecipeSerializer.DEFAULT_PROCESSING_TIME : processingTime;
     }
 
     @Override
     public int getEnergyPerTick() {
-        return energyPerTick;
+        return energyPerTick < 0 ? mio_icif_ExtractorRecipeSerializer.DEFAULT_ENERGY_PER_TICK : energyPerTick;
+    }
+
+    /** 0.1.11.116: the time as written, -1 when the recipe gives none (what the serializer writes). */
+    public int getProcessingTimeRaw() { return processingTime; }
+
+    /** 0.1.11.116: the EU/t as written, -1 when the recipe gives none. */
+    public int getEnergyPerTickRaw() { return energyPerTick; }
+
+    /** 0.1.11.116 (processing overhaul M9): the time the recipe sets, if any. */
+    public java.util.OptionalInt processingTimeOverride() {
+        return processingTime > 0 ? java.util.OptionalInt.of(processingTime) : java.util.OptionalInt.empty();
+    }
+
+    /** 0.1.11.116 (processing overhaul M9): the EU/t the recipe sets, if any. */
+    public java.util.OptionalInt energyPerTickOverride() {
+        return energyPerTick > 0 ? java.util.OptionalInt.of(energyPerTick) : java.util.OptionalInt.empty();
     }
 
     /**

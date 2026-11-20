@@ -1,263 +1,137 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.menu.producer.CannerElcMenu;
+import com.miophas.singularity_iteration.common.processing.ProcessStatus;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import com.miophas.singularity_iteration.common.menu.producer.CannerElcMenu;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
- * 装罐机方块的 GUI类
+ * 装罐机界面. 0.1.11.116 (processing overhaul M9): the instrument screen (docs/gui_processing_machines.md). The figure has the
+ * input tank on the left, the output tank on the right and the can or cell in the middle under its filler; the pipes
+ * that work in the current mode carry moving dots: canning fills the can from the hopper, "cell to tank" empties the
+ * cell into the right tank, "tank to cell" fills it from the left one, and mixing runs the left tank through the mixer
+ * into the right one. The headline is the mode; the buttons switch the mode and swap the tanks.
  */
 @OnlyIn(Dist.CLIENT)
-public class mio_icif_gui_canner_elc extends mio_icif_screen<com.miophas.singularity_iteration.common.menu.producer.CannerElcMenu> {
+@SuppressWarnings("null")
+public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMenu> {
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_canner_elc.png");
-
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 184;
-
-    // 进度条位置(74, 22)
-    private static final int PROGRESS_X = 74;
-    private static final int PROGRESS_Y = 22;
-    private static final int PROGRESS_WIDTH = 24;
-    private static final int PROGRESS_HEIGHT = 15;
-
-    private static final int ENERGY_ICON_X = 9;
-    private static final int ENERGY_ICON_Y = 61;
-
-    // 输入液体槽位置
-    private static final int INPUT_FLUID_TANK_X = 39;
-    private static final int INPUT_FLUID_TANK_Y = 42;
-
-    // 输出液体槽位置
-    private static final int OUTPUT_FLUID_TANK_X = 117;
-    private static final int OUTPUT_FLUID_TANK_Y = 42;
-
-    // 模式按钮位置和尺寸
-    private static final int MODE_BUTTON_X = 63;
-    private static final int MODE_BUTTON_Y = 81;
-    private static final int MODE_BUTTON_WIDTH = 50;
-    private static final int MODE_BUTTON_HEIGHT = 14;
-
-    // 模式图标纹理位置（4种模式对应的图标）
-    // 模式0（装罐）：(96, 20)
-    private static final int[] MODE_ICON_TEXTURE_Y = {211, 211, 211, 227};
-    private static final int[] MODE_ICON_TEXTURE_X = {62, 114, 166, 2};
-    private static final int MODE_ICON_WIDTH = 50;
-    private static final int MODE_ICON_HEIGHT = 14;
-
-    // 交换液体按钮位置和尺寸(77, 64)
-    private static final int SWAP_BUTTON_X = 77;
-    private static final int SWAP_BUTTON_Y = 64;
-    private static final int SWAP_BUTTON_WIDTH = 22;
-    private static final int SWAP_BUTTON_HEIGHT = 13;
+    private static final String[] MODES = {"mode_canning", "mode_empty_to_tank", "mode_fill_from_tank", "mode_mix"};
+    private float flow;
 
     public mio_icif_gui_canner_elc(CannerElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
     }
 
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
+    private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
+    private int mode() { return Math.max(0, Math.min(3, menu.getMode())); }
 
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        CannerElcMenu menu = this.getMenu();
-        if (menu != null) {
-            int inputFluidAmount = menu.getInputFluidAmount();
-            int inputFluidCapacity = menu.getInputFluidCapacity();
-            FluidStack inputFluid = menu.getInputFluid();
-            drawFluidTank(guiGraphics, x + INPUT_FLUID_TANK_X, y + INPUT_FLUID_TANK_Y,
-                inputFluid, inputFluidAmount, inputFluidCapacity);
-
-            int outputFluidAmount = menu.getOutputFluidAmount();
-            int outputFluidCapacity = menu.getOutputFluidCapacity();
-            FluidStack outputFluid = menu.getOutputFluid();
-            drawFluidTank(guiGraphics, x + OUTPUT_FLUID_TANK_X, y + OUTPUT_FLUID_TANK_Y,
-                outputFluid, outputFluidAmount, outputFluidCapacity);
-
-            int progressPixels = menu.getProgressPixels();
-            guiGraphics.blit(ATLAS_TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, 0,
-                (float) PROGRESS_BAR_BG_U, (float) PROGRESS_BAR_BG_V,
-                PROGRESS_BAR_BG_WIDTH, PROGRESS_BAR_BG_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-            if (progressPixels > 0) {
-                guiGraphics.blit(ATLAS_TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, 0, (float) ARROW_U, (float) ARROW_V, progressPixels, PROGRESS_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
-
-            drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());
-
-            int mode = menu.getMode();
-            if (mode >= 0 && mode < 4) {
-                int iconTextureY = MODE_ICON_TEXTURE_Y[mode];
-                int iconTextureX = MODE_ICON_TEXTURE_X[mode];
-                guiGraphics.blit(ATLAS_TEXTURE, x + MODE_BUTTON_X, y + MODE_BUTTON_Y, 0, (float) iconTextureX, (float) iconTextureY, MODE_ICON_WIDTH, MODE_ICON_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
-
-            if (mode == 0) {
-                guiGraphics.fill(x + 59, y + 53, x + 59 + 12, y + 53 + 18, 0xFFc6c6c6);
-                guiGraphics.fill(x + 100, y + 53, x + 100 + 17, y + 53 + 23, 0xFFc6c6c6);
-            }
-
-            if (mode == 1) {
-                guiGraphics.fill(x + 59, y + 53, x + 59 + 12, y + 53 + 18, 0xFFc6c6c6);
-                guiGraphics.blit(ATLAS_TEXTURE, x + 71, y + 43, 0, (float) 56, (float) 164, 26, 18, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
-
-            if (mode == 2) {
-                guiGraphics.fill(x + 100, y + 53, x + 100 + 17, y + 53 + 23, 0xFFc6c6c6);
-                guiGraphics.blit(ATLAS_TEXTURE, x + 71, y + 43, 0, (float) 56, (float) 164, 26, 18, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
-
-            if (isHoveringModeButton(mouseX, mouseY, x, y)) {
-                guiGraphics.fill(x + MODE_BUTTON_X, y + MODE_BUTTON_Y,
-                    x + MODE_BUTTON_X + MODE_BUTTON_WIDTH, y + MODE_BUTTON_Y + MODE_BUTTON_HEIGHT,
-                    0x40FFFFFF);
-            }
-
-            if (isHoveringSwapButton(mouseX, mouseY, x, y)) {
-                guiGraphics.fill(x + SWAP_BUTTON_X, y + SWAP_BUTTON_Y,
-                    x + SWAP_BUTTON_X + SWAP_BUTTON_WIDTH, y + SWAP_BUTTON_Y + SWAP_BUTTON_HEIGHT,
-                    0x40FFFFFF);
-            }
-        }
+    private void tank(GuiGraphics g, int x, int y, FluidStack fluid, int capacity) {
+        g.fill(x, y, x + 14, y + 52, SHELL);
+        g.fill(x + 2, y + 2, x + 12, y + 50, CHAMBER);
+        mio_icif_GuiUtils.renderFluidBar(g, x + 2, y + 2, 10, 48, fluid, capacity);
     }
 
-    private boolean isHoveringModeButton(int mouseX, int mouseY, int guiX, int guiY) {
-        return mouseX >= guiX + MODE_BUTTON_X && mouseX <= guiX + MODE_BUTTON_X + MODE_BUTTON_WIDTH &&
-               mouseY >= guiY + MODE_BUTTON_Y && mouseY <= guiY + MODE_BUTTON_Y + MODE_BUTTON_HEIGHT;
-    }
-
-    private boolean isHoveringSwapButton(int mouseX, int mouseY, int guiX, int guiY) {
-        return mouseX >= guiX + SWAP_BUTTON_X && mouseX <= guiX + SWAP_BUTTON_X + SWAP_BUTTON_WIDTH &&
-               mouseY >= guiY + SWAP_BUTTON_Y && mouseY <= guiY + SWAP_BUTTON_Y + SWAP_BUTTON_HEIGHT;
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
-
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        CannerElcMenu menu = this.getMenu();
-        if (menu == null) return;
-
-        // 检查鼠标是否在进度条区域
-        if (isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, PROGRESS_WIDTH, PROGRESS_HEIGHT)) {
-            renderProgressTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getProgress(), menu.getMaxProgress());
-        }
-
-        // 检查鼠标是否在电能标志区域
-        if (isHovering(mouseX, mouseY, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
-            renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
-        }
-
-        // 检查鼠标是否在输入流体槽区域
-        if (mouseX >= x + INPUT_FLUID_TANK_X && mouseX <= x + INPUT_FLUID_TANK_X + FLUID_TANK_BG_WIDTH &&
-            mouseY >= y + INPUT_FLUID_TANK_Y && mouseY <= y + INPUT_FLUID_TANK_Y + FLUID_TANK_BG_HEIGHT) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal((!menu.getInputFluid().isEmpty() ? menu.getInputFluid().getFluid().getFluidType().getDescription().getString() + ": " : "") + menu.getInputFluidAmount() + "/" + menu.getInputFluidCapacity() + " mB"),
-                mouseX - x, mouseY - y);
-        }
-
-        // 检查鼠标是否在输出流体槽区域
-        if (mouseX >= x + OUTPUT_FLUID_TANK_X && mouseX <= x + OUTPUT_FLUID_TANK_X + FLUID_TANK_BG_WIDTH &&
-            mouseY >= y + OUTPUT_FLUID_TANK_Y && mouseY <= y + OUTPUT_FLUID_TANK_Y + FLUID_TANK_BG_HEIGHT) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal((!menu.getOutputFluid().isEmpty() ? menu.getOutputFluid().getFluid().getFluidType().getDescription().getString() + ": " : "") + menu.getOutputFluidAmount() + "/" + menu.getOutputFluidCapacity() + " mB"),
-                mouseX - x, mouseY - y);
-        }
-
-        // 检查鼠标是否在模式按钮区域
-        if (mouseX >= x + MODE_BUTTON_X && mouseX <= x + MODE_BUTTON_X + MODE_BUTTON_WIDTH &&
-            mouseY >= y + MODE_BUTTON_Y && mouseY <= y + MODE_BUTTON_Y + MODE_BUTTON_HEIGHT) {
-            Component modeName = switch (menu.getMode()) {
-                case 0 -> Component.translatable("gui.mio_icif.canner.mode_canning");
-                case 1 -> Component.translatable("gui.mio_icif.canner.mode_empty_to_tank");
-                case 2 -> Component.translatable("gui.mio_icif.canner.mode_fill_from_tank");
-                case 3 -> Component.translatable("gui.mio_icif.canner.mode_mix");
-                default -> Component.translatable("gui.mio_icif.canner.mode_unknown");
-            };
-            guiGraphics.renderTooltip(this.font,
-                Component.translatable("gui.mio_icif.canner.mode_tooltip", modeName),
-                mouseX - x, mouseY - y);
-        }
-
-        // 检查鼠标是否在交换液体按钮区域
-        if (mouseX >= x + SWAP_BUTTON_X && mouseX <= x + SWAP_BUTTON_X + SWAP_BUTTON_WIDTH &&
-            mouseY >= y + SWAP_BUTTON_Y && mouseY <= y + SWAP_BUTTON_Y + SWAP_BUTTON_HEIGHT) {
-            guiGraphics.renderTooltip(this.font,
-                Component.translatable("gui.mio_icif.canner.swap_fluids"),
-                mouseX - x, mouseY - y);
+    /** A pipe from (x1, y1) to (x2, y2), with dots moving along it while it works. */
+    private void pipe(GuiGraphics g, float x1, float y1, float x2, float y2, boolean active) {
+        FcsDraw.line(g, x1, y1, x2, y2, 2.4F, active ? STEEL : STEEL_LIGHT);
+        if (active && running()) for (int k = 0; k < 3; k++) {
+            float f = (flow + k / 3F) % 1;
+            FcsDraw.disc(g, x1 + (x2 - x1) * f, y1 + (y2 - y1) * f, 1.4F, 0xFF000000 | BLUE);
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        if (mouseX >= x + MODE_BUTTON_X && mouseX <= x + MODE_BUTTON_X + MODE_BUTTON_WIDTH &&
-            mouseY >= y + MODE_BUTTON_Y && mouseY <= y + MODE_BUTTON_Y + MODE_BUTTON_HEIGHT) {
-            if (this.minecraft != null && this.minecraft.gameMode != null) {
-                net.minecraft.client.resources.sounds.SimpleSoundInstance clickSound =
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(), 1.0F);
-                this.minecraft.getSoundManager().play(clickSound);
-                this.menu.clickMenuButton(this.minecraft.player, 0);
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 0);
-            }
-            return true;
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
+        if (running()) flow = (flow + dt * 1.2F) % 1;
+        int m = mode();
+        tank(g, (int) cx - 46, (int) cy - 30, menu.getInputFluid(), menu.getInputFluidCapacity());
+        tank(g, (int) cx + 32, (int) cy - 30, menu.getOutputFluid(), menu.getOutputFluidCapacity());
+        // the filler head over the can
+        g.fill((int) cx - 8, (int) cy - 24, (int) cx + 8, (int) cy - 16, STEEL);
+        g.fill((int) cx - 2, (int) cy - 16, (int) cx + 2, (int) cy - 8, STEEL);
+        // the pipes of the mode
+        pipe(g, cx - 32, cy - 26, cx - 8, cy - 20, m == 2 || m == 3);   // left tank -> filler
+        pipe(g, cx + 8, cy - 20, cx + 32, cy - 26, m == 1 || m == 3);   // filler -> right tank
+        if (m == 0) {   // the hopper of the food or fuel
+            FcsDraw.quad(g, cx - 10, cy - 40, cx + 10, cy - 40, cx + 4, cy - 26, cx - 4, cy - 26, SHELL);
+            if (menu.getSlot(CannerElcMenu.MATERIAL_SLOT).hasItem()) g.fill((int) cx - 6, (int) cy - 37, (int) cx + 6, (int) cy - 32, FormingFigure.WORK);
+            if (running()) FcsDraw.disc(g, cx, cy - 26 + flow * 18, 1.6F, FormingFigure.WORK);
         }
-
-        if (mouseX >= x + SWAP_BUTTON_X && mouseX <= x + SWAP_BUTTON_X + SWAP_BUTTON_WIDTH &&
-            mouseY >= y + SWAP_BUTTON_Y && mouseY <= y + SWAP_BUTTON_Y + SWAP_BUTTON_HEIGHT) {
-            if (this.minecraft != null && this.minecraft.gameMode != null) {
-                net.minecraft.client.resources.sounds.SimpleSoundInstance clickSound =
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(), 1.0F);
-                this.minecraft.getSoundManager().play(clickSound);
-                this.menu.clickMenuButton(this.minecraft.player, 1);
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 1);
-            }
-            return true;
-        }
-
-        return super.mouseClicked(mouseX, mouseY, button);
+        // the can (or cell), filled with the progress (emptied in "cell to tank")
+        int x0 = (int) cx - 9, x1 = (int) cx + 9, y0 = (int) cy - 6, y1 = (int) cy + 26;
+        g.fill(x0, y0, x1, y1, STEEL_LIGHT);
+        g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
+        int max = menu.getMaxProgress();
+        float p = max > 0 && running() ? (float) menu.getProgress() / max : 0;
+        float level = m == 1 ? 1 - p : p;
+        int h = Math.round((y1 - y0 - 4) * level);
+        if (h > 0) g.fill(x0 + 2, y1 - 2 - h, x1 - 2, y1 - 2, m == 0 ? FormingFigure.WORK : 0xFF000000 | BLUE);
+        g.fill(x0 - 4, y1, x1 + 4, y1 + 3, STEEL);   // the stand
     }
 
     @Override
-    public void containerTick() {
-        super.containerTick();
+    protected Component headline() {
+        return Component.translatable("gui.mio_icif.canner." + MODES[mode()]);
     }
 
     @Override
-    protected void renderSlot(GuiGraphics guiGraphics, Slot slot) {
-        // 在单元水槽模式下隐藏材料槽
-        if (slot.index == CannerElcMenu.MATERIAL_SLOT && this.menu.getMode() == 1) {
-            // 不渲染材料槽
-            return;
-        }
-        super.renderSlot(guiGraphics, slot);
+    protected int headlineColour() { return running() ? INK : DIM; }
+
+    private static Component tankLine(String key, FluidStack fluid, int amount, int capacity) {
+        Component name = fluid.isEmpty() ? Component.literal("") : fluid.getHoverName();
+        return Component.translatable(K + key, String.format(Locale.ROOT, "%,d", amount), String.format(Locale.ROOT, "%,d", capacity), name);
     }
 
     @Override
-    protected void renderSlotHighlight(GuiGraphics guiGraphics, Slot slot, int mouseX, int mouseY, float partialTick) {
-        // 在单元水槽模式下禁用材料槽的高光效果
-        if (slot.index == CannerElcMenu.MATERIAL_SLOT && this.menu.getMode() == 1) {
-            // 不渲染高光
-            return;
-        }
-        super.renderSlotHighlight(guiGraphics, slot, mouseX, mouseY, partialTick);
+    protected List<Component> readouts() {
+        List<Component> lines = new ArrayList<>();
+        lines.add(tankLine("tank_in", menu.getInputFluid(), menu.getInputFluidAmount(), menu.getInputFluidCapacity()));
+        lines.add(tankLine("tank_out", menu.getOutputFluid(), menu.getOutputFluidAmount(), menu.getOutputFluidCapacity()));
+        int max = menu.getMaxProgress();
+        lines.add(Component.translatable(K + "energy_line", (long) menu.getPower() * max, menu.getPower(), max));
+        return lines;
     }
 
+    @Override
+    protected int status() { return menu.getStatus(); }
+
+    @Override
+    protected double energyFraction() { return menu.getEnergyPermille() / 1000.0; }
+
+    @Override
+    protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+        int by = Math.min(y - topPos, PROGRESS_Y - 14);
+        menuButton(g, x - leftPos, by, 44, 11, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
+            List.of(Component.translatable(K + "tip.switch_mode")));
+        menuButton(g, x - leftPos + 46, by, 44, 11, Component.translatable(K + "swap"), false, 1, mouseX, mouseY,
+            List.of(Component.translatable("gui.mio_icif.canner.swap_fluids")));
+    }
+
+    @Override
+    protected List<Component> figureTooltip() {
+        return List.of(Component.translatable(K + "tip.canner.1"), Component.translatable(K + "tip.canner.2"));
+    }
+
+    // the material slot is not used for "cell to tank" (as before)
+    @Override
+    protected void renderSlot(GuiGraphics g, Slot slot) {
+        if (slot.index == CannerElcMenu.MATERIAL_SLOT && menu.getMode() == 1) return;
+        super.renderSlot(g, slot);
+    }
+
+    @Override
+    protected void renderSlotHighlight(GuiGraphics g, Slot slot, int mouseX, int mouseY, float partialTick) {
+        if (slot.index == CannerElcMenu.MATERIAL_SLOT && menu.getMode() == 1) return;
+        super.renderSlotHighlight(g, slot, mouseX, mouseY, partialTick);
+    }
 }

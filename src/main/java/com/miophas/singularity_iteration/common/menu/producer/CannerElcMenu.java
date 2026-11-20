@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public CannerElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_canner_elc blockEntity) {
-        super(mio_icif_menus.CANNER_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 12);
+        super(mio_icif_menus.CANNER_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 15);
         this.recipeLevel = playerInventory.player.level();
         // The two fluid handler slots have no GUI slots.
         markMachineSlots(8);
@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 41, 17) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 10, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return !isBattery(stack) && !isUpgrade(stack)
@@ -45,13 +45,13 @@ import org.jetbrains.annotations.Nullable;
                 return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 119, 17) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 10, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, MATERIAL_SLOT, 80, 44) {
+        this.addSlot(new SlotItemHandler(itemHandler, MATERIAL_SLOT, 30, 18) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 ItemStack inputCan = itemHandler.getStackInSlot(INPUT_SLOT);
@@ -62,7 +62,7 @@ import org.jetbrains.annotations.Nullable;
                 return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 8, 80) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 38) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
@@ -70,23 +70,37 @@ import org.jetbrains.annotations.Nullable;
         });
         // 与原版 IC2 ContainerCanner 一致：升级槽 (152, 26)，间距 18
         for (int i = 0; i < 4; i++) {
-            addUpgradeSlot(itemHandler, UPGRADE_SLOT_START + i, 152, 26 + i * 18);
+            addUpgradeSlot(itemHandler, UPGRADE_SLOT_START + i, 152, 8 + i * 18);
         }
     }
 
-    // The GUI height is 184. Set the player inventory position with the original IC2 logic.
-    // Inventory Y = 184 - 82 = 102, hotbar Y = 184 - 24 = 160
-    @Override
-    protected int getPlayerInventoryY() { return 102; }
+    // ---- 0.1.11.116: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
 
     @Override
-    protected int getPlayerHotbarY() { return 160; }
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
 
     @Override
     protected int getBatterySlotIndex() { return BATTERY_SLOT; }
 
     @Override
-    protected int getDataSlotCount() { return 12; }
+    protected int getDataSlotCount() { return 15; }
+
+    /** 0.1.11.116: data 12 status (ProcessStatus), 13 EU/t, 14 stored energy ‰ (0-11 as before). */
+    public int getStatus() { return data.get(12); }
+    public int getPower() { return data.get(13); }
+    public int getEnergyPermille() { return data.get(14); }
 
     public int getProgress() { return data.get(0); }
     public int getMaxProgress() { return data.get(1); }
@@ -154,6 +168,9 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(9, canner.getModeId());
             this.setSyncData(10, canner.getInputFluidTypeId());
             this.setSyncData(11, canner.getOutputFluidTypeId());
+            this.setSyncData(12, canner.processStatus());
+            this.setSyncData(13, (int) Math.min(Short.MAX_VALUE, canner.getEffectiveEnergyPerTick()));
+            this.setSyncData(14, (int) Math.round(1000.0 * canner.getEnergyStorage().getAmount() / Math.max(1, canner.getEnergyStorage().getCapacity())));
         }
     }
 }

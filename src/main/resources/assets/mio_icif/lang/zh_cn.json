@@ -5885,5 +5885,19 @@
   "gui.mio_icif.process.tip.former.2": "每件的时间按配方（100 到 400 tick），功率 10 EU/t（配方写了功率的按配方）。",
   "gui.mio_icif.process.tip.former_advanced": "进阶版用配方时间的五分之一完成一件，功率 50 EU/t。",
   "gui.mio_icif.process.tip.cutter.1": "方块切割机侧视图：圆锯向下切开方块，锯缝随进度加深；铁刀片是灰色，钻石刀片是浅青色。",
-  "gui.mio_icif.process.tip.cutter.2": "每切一块，刀片磨损（材料硬度 ÷ 刀片硬度）² 点耐久：铁刀片 64 点、钻石刀片 1,024 点，磨完就断。"
+  "gui.mio_icif.process.tip.cutter.2": "每切一块，刀片磨损（材料硬度 ÷ 刀片硬度）² 点耐久：铁刀片 64 点、钻石刀片 1,024 点，磨完就断。",
+  "gui.mio_icif.process.extracting": "提取中",
+  "gui.mio_icif.process.recycling": "回收中",
+  "gui.mio_icif.process.rate_line": "速度 %s 次/分钟",
+  "gui.mio_icif.process.yield_line": "产出率 %s%% · 每 %s 件出 1 个",
+  "gui.mio_icif.process.carry_line": "累计 %s · 再 %s 件出下一个",
+  "gui.mio_icif.process.tank_in": "进液 %s/%s mB %s",
+  "gui.mio_icif.process.tank_out": "出液 %s/%s mB %s",
+  "gui.mio_icif.process.swap": "交换液体",
+  "gui.mio_icif.process.tip.extractor.1": "螺旋压榨：螺杆把物料推向出口，越往前螺槽越浅，把汁液和可用的部分挤出来。",
+  "gui.mio_icif.process.tip.extractor.2": "每次按配方写的工时和功率运行，没写的按 300 t × 2 EU/t。",
+  "gui.mio_icif.process.tip.recycler.1": "双轴撕碎：两根反向转动的刀轴把物品撕碎，从碎料里分选出可用的部分。",
+  "gui.mio_icif.process.tip.recycler.2": "产出按比例累计：每件加上产出率，满 1 出一个，没有随机。",
+  "gui.mio_icif.process.tip.canner.1": "按模式装罐、把单元倒进右罐、从左罐灌装单元，或把左罐的液体混合后送进右罐。",
+  "gui.mio_icif.process.tip.canner.2": "左边是进液罐，右边是出液罐，各 8,000 mB；「交换液体」把两罐对调。"
 }

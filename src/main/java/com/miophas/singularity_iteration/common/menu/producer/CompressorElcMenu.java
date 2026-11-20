@@ -25,12 +25,12 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
     public static final int SLOT_COUNT = 8;
 
     // 槽位位置
-    private static final int INPUT_X = 56;
-    private static final int INPUT_Y = 17;
-    private static final int BATTERY_X = 56;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
-    private static final int OUTPUT_Y = 35;
+    private static final int INPUT_X = 10;
+    private static final int INPUT_Y = 18;
+    private static final int BATTERY_X = 10;
+    private static final int BATTERY_Y = 38;
+    private static final int OUTPUT_X = 10;
+    private static final int OUTPUT_Y = 58;
     private static final int[] UPGRADE_SLOT_X = {152, 152, 152, 152};
     private static final int[] UPGRADE_SLOT_Y = {8, 26, 44, 62};
 
@@ -44,7 +44,7 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.COMPRESSOR_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 5, blockEntity);
+            null, DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -62,7 +62,7 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
 
         // Output slot (large slot)
-        this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 26, 26));
+        addOutputSlot(OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y);
 
         // 4个升级槽
         for (int i = 0; i < 4; i++) {
@@ -127,6 +127,31 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
             true);
     }
 
+    /** 0.1.11.112: data 5 status (ProcessStatus), 6 EU per pressing, 7 EU/t, 8 stored energy ‰ (the first five as before). */
+    public static final int DATA_COUNT = 9;
+
+    public int getStatus() { return data.get(5); }
+    public int getEnergyPerOperation() { return data.get(6); }
+    public int getPower() { return data.get(7); }
+    public int getEnergyPermille() { return data.get(8); }
+
+    // ---- 0.1.11.112: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
+
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204, INVENTORY_X = 44, INVENTORY_Y = 124, HOTBAR_Y = 182;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
@@ -139,6 +164,13 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
             int maxEnergy = (int) be.getEnergyStorage().getCapacity();
             this.setSyncData(3, energy);
             this.setSyncData(4, maxEnergy);
+            if (be instanceof mio_icif_compressor_elc c) {
+                var cost = c.processCost();
+                this.setSyncData(5, c.processStatus());
+                this.setSyncData(6, (int) Math.min(Short.MAX_VALUE, cost.energy()));
+                this.setSyncData(7, (int) Math.min(Short.MAX_VALUE, cost.power()));
+                this.setSyncData(8, (int) Math.round(1000.0 * be.getEnergyStorage().getAmount() / Math.max(1, be.getEnergyStorage().getCapacity())));
+            }
         }
     }
 

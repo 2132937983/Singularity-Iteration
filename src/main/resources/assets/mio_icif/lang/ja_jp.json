@@ -5833,5 +5833,13 @@
   "gui.mio_icif.process.tip.cyclone.2": "サイクロンが細粉を運び出し、粗い粒は戻して再粉砕する（循環負荷）。過粉砕しないので1個あたりの電力は粉砕機より 20 %% 少ない。",
   "gui.mio_icif.process.tip.cyclone.3": "ローターには慣性がある：稼働中は毎秒 +10 %%、待機中は毎秒 −5 %%。速いほど細かく、速く処理する。",
   "gui.mio_icif.process.tip.hold.1": "オンにすると、待機中も 1 tick に 1 EU を使って回転を保つ。",
-  "gui.mio_icif.process.tip.hold.2": "次の材料はすぐ全速で処理される。レッドストーン停止中は保持しない。"
+  "gui.mio_icif.process.tip.hold.2": "次の材料はすぐ全速で処理される。レッドストーン停止中は保持しない。",
+  "gui.mio_icif.process.pressing": "プレス中",
+  "gui.mio_icif.process.press_material": "%s · 必要油圧 %s MPa",
+  "gui.mio_icif.process.accumulator": "油圧 %s MPa",
+  "gui.mio_icif.process.status.charging": "アキュムレーター充圧中",
+  "gui.mio_icif.process.tip.press.1": "油圧プレスを横から見た図：シリンダーがラムを押し下げ、型の中の材料を圧縮する。仕事は圧力×押し込む体積で、硬い材料ほど高い圧力と長いストロークが要る。",
+  "gui.mio_icif.process.tip.press.2": "時間と電力はレシピどおり：柔らかい材料 100 tick × 5 EU/t、高密度板 400 × 20、工業用ダイヤモンド 600 × 30。",
+  "gui.mio_icif.process.tip.accumulator.1": "右はアキュムレーター：ポンプが電力網から充圧し、満圧 32 MPa で約 20,000 EU を蓄える。赤線は次のストロークに必要な油圧。",
+  "gui.mio_icif.process.tip.accumulator.2": "油圧が足りるとプレスし、1回はレシピ時間の4分の1。電力が十分なら連続して、圧縮機の4倍速になる。"
 }

@@ -60,6 +60,15 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     /** A bar under the headline (0..1, e.g. a rotor speed), or negative for none. */
     protected float headlineBar() { return -1; }
 
+    /** 0.1.11.112: a red mark on the headline bar (0..1, e.g. the pressure the next stroke needs), or negative for none. */
+    protected float headlineBarMarker() { return -1; }
+
+    /** 0.1.11.112: the stored share of the buffer (0..1) for the energy bar; by default from the synced energy. */
+    protected double energyFraction() {
+        long e = Integer.toUnsignedLong(menu.getEnergy()), cap = Math.max(1, Integer.toUnsignedLong(menu.getMaxEnergy()));
+        return (double) e / cap;
+    }
+
     /** The readout lines under the headline (material, energy, the machine's own figures). */
     protected abstract List<Component> readouts();
 
@@ -98,6 +107,11 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         float hb = headlineBar();
         if (hb >= 0) {
             bar(g, rx, (int) ty - 1, READ_W, 3, hb, 0xFF000000 | AMBER);
+            float mark = headlineBarMarker();
+            if (mark >= 0) {
+                int mx = rx + Math.round(READ_W * Math.min(1, mark));
+                g.fill(mx, (int) ty - 2, mx + 1, (int) ty + 3, 0xFF000000 | RED);
+            }
             ty += 4;
         }
         for (Component c : readouts()) {
@@ -113,8 +127,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         // progress and stored energy
         int max = menu.getMaxProgress(), p = menu.getProgress();
         bar(g, rx, y + PROGRESS_Y, READ_W, 5, max > 0 ? (double) p / max : 0, 0xFF000000 | BLUE);
-        long e = Integer.toUnsignedLong(menu.getEnergy()), cap = Math.max(1, Integer.toUnsignedLong(menu.getMaxEnergy()));
-        bar(g, rx, y + ENERGY_Y, READ_W, 3, (double) e / cap, 0xFF000000 | AMBER);
+        bar(g, rx, y + ENERGY_Y, READ_W, 3, energyFraction(), 0xFF000000 | AMBER);
     }
 
     protected static void bar(GuiGraphics g, int x, int y, int w, int h, double fraction, int argb) {

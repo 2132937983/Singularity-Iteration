@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * 拥有4个物品槽：输入槽、电池槽、输出槽、额外槽
  */
 @SuppressWarnings("null")
-public class mio_icif_compressor_elc extends AbstractStandardMachineBlockEntity {
+public class mio_icif_compressor_elc extends AbstractStandardMachineBlockEntity implements com.miophas.singularity_iteration.core.api.machine.ProcessCost.Source {
     // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput, com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE);
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput, com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE);
@@ -329,6 +329,43 @@ public static final long DEFAULT_ENERGY_PER_TICK = 2L; // 每tick消
      * 从当前配方获取处理时
  * @return 处理时间（ticks
  */
+    /**
+     * 0.1.11.112 (processing overhaul M5): one pressing runs as the recipe writes it (time and EU/t: soft blocks
+     * 100 t × 5 EU/t, dense plates 400 t × 20 EU/t, industrial diamond 600 t × 30 EU/t); a recipe without them, or no
+     * input, the stock 300 t at 2 EU/t.
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.ProcessCost processCost() {
+        return com.miophas.singularity_iteration.common.processing.Pressing.cost(getCurrentRecipe());
+    }
+
+    /**
+     * 0.1.11.112: the buffer holds the stock 600 EU plus the hardest pressing (18,000 EU) at the current overclock, so it
+     * does not change (and lose stored energy) with the input.
+     */
+    @Override
+    protected long getProcessingCapacity() {
+        double perOperation = com.miophas.singularity_iteration.common.processing.Pressing.MAX_OPERATION_ENERGY
+            * upgradeStats.getEnergyUsageMultiplier() * upgradeStats.getProcessTimeMultiplier();
+        return baseCapacity + upgradeStats.getEnergyStorageCount() * com.miophas.singularity_iteration.core.runtime.upgrade.MachineUpgradeStats.ENERGY_STORAGE_BONUS
+            + (long) Math.ceil(perOperation);
+    }
+
+    /** 0.1.11.112: why the compressor runs or stands (a {@link com.miophas.singularity_iteration.common.processing.ProcessStatus} code). */
+    public int processStatus() {
+        if (level == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.REDSTONE_OFF;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
+        var recipe = getCurrentRecipe();
+        if (recipe == null || input.getCount() < recipe.getIngredientCount()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
+        ItemStack result = recipe.getResult(), out = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (!out.isEmpty() && (!ItemStack.isSameItemSameComponents(out, result) || out.getCount() + result.getCount() > out.getMaxStackSize()))
+            return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
+        if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
+        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+    }
+
     public int getRecipeProcessingTime() {
         var recipe = getCurrentRecipe();
         return recipe != null ? recipe.getProcessingTime() : DEFAULT_WORK_TIME;

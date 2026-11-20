@@ -84,14 +84,30 @@ public class mio_icif_CompressorRecipe implements Recipe<mio_icif_CompressorReci
      * Returns the processing time in ticks.
      */
     public int getProcessingTime() {
-        return processingTime;
+        return processingTime < 0 ? mio_icif_CompressorRecipeSerializer.DEFAULT_PROCESSING_TIME : processingTime;
+    }
+
+    /** 0.1.11.112: the time as written, -1 when the recipe gives none (what the serializer writes). */
+    public int getProcessingTimeRaw() { return processingTime; }
+
+    /** 0.1.11.112: the EU/t as written, -1 when the recipe gives none. */
+    public int getEnergyPerTickRaw() { return energyPerTick; }
+
+    /** 0.1.11.112 (processing overhaul M5): the time the recipe sets, if any. */
+    public java.util.OptionalInt processingTimeOverride() {
+        return processingTime > 0 ? java.util.OptionalInt.of(processingTime) : java.util.OptionalInt.empty();
+    }
+
+    /** 0.1.11.112 (processing overhaul M5): the EU/t the recipe sets, if any. */
+    public java.util.OptionalInt energyPerTickOverride() {
+        return energyPerTick > 0 ? java.util.OptionalInt.of(energyPerTick) : java.util.OptionalInt.empty();
     }
 
     /**
      * 获取每tick消耗的能量
      */
     public int getEnergyPerTick() {
-        return energyPerTick;
+        return energyPerTick < 0 ? mio_icif_CompressorRecipeSerializer.DEFAULT_ENERGY_PER_TICK : energyPerTick;
     }
 
     /**

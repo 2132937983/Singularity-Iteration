@@ -34,10 +34,10 @@ public final class Round111111GameTests {
             ResourceLocation.fromNamespaceAndPath("mio_icif", "upgrade/overclocker_upgrade")), n));
     }
 
-    /** With 2 overclockers: ⌈45 × 0.49⌉ = 23, ⌈70 × 0.49⌉ = 35, ⌈900 × 0.49⌉ = 441 ticks per operation. */
+    /** With 2 overclockers: ⌈45 × 0.49⌉ = 23, ⌈75 × 0.49⌉ = 37 (0.1.11.112: the advanced compressor's stock stroke is 75 t), ⌈900 × 0.49⌉ = 441 ticks per operation. */
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void exactOverclockTimes(GameTestHelper h) {
-        Object[][] machines = {{"producer/block_recycler_elc", 23}, {"producer/block_compressor_advanced_elc", 35}, {"producer/block_block_cutter", 441}};
+        Object[][] machines = {{"producer/block_recycler_elc", 23}, {"producer/block_compressor_advanced_elc", 37}, {"producer/block_block_cutter", 441}};
         AbstractProcessingMachineBlockEntity[] placed = new AbstractProcessingMachineBlockEntity[machines.length];
         for (int i = 0; i < machines.length; i++) {
             placed[i] = place(h, new BlockPos(1 + 2 * i, 2, 1), (String) machines[i][0]);

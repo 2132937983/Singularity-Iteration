@@ -5833,5 +5833,13 @@
   "gui.mio_icif.process.tip.cyclone.2": "The cyclone takes the fines away and sends the coarse part back (the circulating load), so nothing is overground: 20 %% less energy per item than the macerator.",
   "gui.mio_icif.process.tip.cyclone.3": "The rotor has inertia: +10 %% a second while working, −5 %% a second while idle. Faster means finer and quicker.",
   "gui.mio_icif.process.tip.hold.1": "When on, the mill spends 1 EU a tick to keep its speed while idle.",
-  "gui.mio_icif.process.tip.hold.2": "The next item then starts at full speed. A redstone stop does not hold."
+  "gui.mio_icif.process.tip.hold.2": "The next item then starts at full speed. A redstone stop does not hold.",
+  "gui.mio_icif.process.pressing": "Pressing",
+  "gui.mio_icif.process.press_material": "%s · needs %s MPa",
+  "gui.mio_icif.process.accumulator": "Oil %s MPa",
+  "gui.mio_icif.process.status.charging": "Charging the accumulator",
+  "gui.mio_icif.process.tip.press.1": "A hydraulic press from the side: the cylinder drives the ram onto the charge in the die. The work is pressure times the volume pressed: harder material needs more pressure and a longer stroke.",
+  "gui.mio_icif.process.tip.press.2": "Time and power follow the recipe: soft blocks 100 ticks × 5 EU/t, dense plates 400 × 20, industrial diamond 600 × 30.",
+  "gui.mio_icif.process.tip.accumulator.1": "Right: the accumulator. The pump charges it from the grid; full pressure, 32 MPa, holds about 20,000 EU. The red line is the pressure the next stroke needs.",
+  "gui.mio_icif.process.tip.accumulator.2": "A stroke starts once the pressure is there and takes a quarter of the recipe's time; with a strong supply the strokes run back to back, four times the compressor's speed."
 }

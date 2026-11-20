@@ -5833,5 +5833,13 @@
   "gui.mio_icif.process.tip.cyclone.2": "旋风分离器带走细粉，粗颗粒返回再磨（循环负荷），不会过磨，所以每件耗电比打粉机低 20%%。",
   "gui.mio_icif.process.tip.cyclone.3": "转子有惯性：有活时每秒加速 10%%，没活时每秒减速 5%%；转速越高，分级越细，处理越快。",
   "gui.mio_icif.process.tip.hold.1": "打开后，空闲时每 tick 花 1 EU 保持当前转速。",
-  "gui.mio_icif.process.tip.hold.2": "下一件可以立刻全速开工；被红石关闭时不保持。"
+  "gui.mio_icif.process.tip.hold.2": "下一件可以立刻全速开工；被红石关闭时不保持。",
+  "gui.mio_icif.process.pressing": "冲压中",
+  "gui.mio_icif.process.press_material": "%s · 所需油压 %s MPa",
+  "gui.mio_icif.process.accumulator": "油压 %s MPa",
+  "gui.mio_icif.process.status.charging": "蓄能器充压中",
+  "gui.mio_icif.process.tip.press.1": "液压机侧视图：油缸推动压头压实模具里的物料。压实功等于压力乘以压下的体积，越硬的物料要越高的压力和越长的行程。",
+  "gui.mio_icif.process.tip.press.2": "每件的时间和功率按配方：软料 100 tick × 5 EU/t，致密板 400 tick × 20 EU/t，工业钻石 600 tick × 30 EU/t。",
+  "gui.mio_icif.process.tip.accumulator.1": "右边是蓄能器：油泵从电网充压，满压 32 MPa 约存 20,000 EU。红线是下一次冲压需要的油压。",
+  "gui.mio_icif.process.tip.accumulator.2": "油压够了才冲压，一次冲压只用配方时间的四分之一；供电够强时连续冲压，是压缩机的 4 倍速。"
 }

@@ -112,6 +112,16 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
         return true;
     }
 
+    /**
+     * 0.1.11.112: the operation length already has the overclock in it (the timing scales the ticks), so the ticks per
+     * operation are just that length; the base computation divided it by the overclock speed a second time.
+     */
+    @Override
+    public int getTicksPerOperation() {
+        recalculateUpgradeStats();
+        return Math.max(1, maxProgress);
+    }
+
     @Override
     protected int workCycleBaseTicks() {
         return timing == null ? Math.max(1, maxProgress) : timing.ticks();

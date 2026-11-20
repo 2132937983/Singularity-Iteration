@@ -9,8 +9,10 @@ public final class ProcessStatus {
     private ProcessStatus() {}
 
     public static final int RUNNING = 0, NO_INPUT = 1, NO_RECIPE = 2, OUTPUT_FULL = 3, NO_POWER = 4, REDSTONE_OFF = 5;
+    /** 0.1.11.112: the advanced compressor's accumulator is building up the pressure of the next stroke. */
+    public static final int CHARGING = 6;
     /** Language key suffixes, by code. */
-    public static final String[] KEYS = {"running", "no_input", "no_recipe", "output_full", "no_power", "redstone_off"};
+    public static final String[] KEYS = {"running", "no_input", "no_recipe", "output_full", "no_power", "redstone_off", "charging"};
 
     /** True for a code the screen shows as a stop (red), not a wait. */
     public static boolean isFault(int code) {

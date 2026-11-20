@@ -38,15 +38,14 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
-        SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
-        SiGuiTheme.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.FUEL_Y - 1);
-        SiGuiTheme.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.EMPTY_Y - 1);
-        SiGuiTheme.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.BATTERY_Y - 1);
+        VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
+        VanillaFrame.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.FUEL_Y - 1);
+        VanillaFrame.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.EMPTY_Y - 1);
+        VanillaFrame.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.BATTERY_Y - 1);
         for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            SiGuiTheme.slot(g, x + EngineMenu.INVENTORY_X - 1 + c * 18, y + EngineMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + EngineMenu.INVENTORY_X - 1 + c * 18, y + EngineMenu.HOTBAR_Y - 1);
-        g.fill(x + WX - 1, y + WY - 1, x + WX + WW + 1, y + WY + WH + 1, 0xFF7A7F85);
-        g.fill(x + WX, y + WY, x + WX + WW, y + WY + WH, WindRoseView.PAPER);
+            VanillaFrame.slot(g, x + EngineMenu.INVENTORY_X - 1 + c * 18, y + EngineMenu.INVENTORY_Y - 1 + r * 18);
+        for (int c = 0; c < 9; c++) VanillaFrame.slot(g, x + EngineMenu.INVENTORY_X - 1 + c * 18, y + EngineMenu.HOTBAR_Y - 1);
+        VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
         gauges(g, x + WX, y + WY, partialTick);
         record(g, x + WX + 4, y + WY + 47, WW - 8, 16);
         readings(g, x + WX + 4, y + WY + 66);

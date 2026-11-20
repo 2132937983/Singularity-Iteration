@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.menu.generator.WaterGeneratorMenu;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -43,7 +45,7 @@ public class WaterGeneratorScreen extends MimicScreen<WaterGeneratorMenu> {
         if (front && speed > 0.05)
             for (int r = 0; r < 4; r++) {
                 int dx = (int) ((time * speed * 1.2 + r * 7) % 26);
-                g.fill(fx + 30 - dx - 4, fy + 5 + r * 7, fx + 30 - dx, fy + 6 + r * 7, 0xD0FFFFFF);
+                FcsDraw.fill(g, fx + 30 - dx - 4, fy + 5 + r * 7, fx + 30 - dx, fy + 6 + r * 7, 0xD0FFFFFF);
             }
         PlantMimic.label(g, Component.translatable(K + "in_front"), fx + 16, fy + 36, WindRoseView.DIM);
         PlantMimic.label(g, Component.literal(f("%.2f m/s", speed)), fx + 56, fy + 12, 0x2A5D8A);

@@ -58,15 +58,15 @@ public class BoilerScreen extends MimicScreen<SteamGeneratorMenu> {
     private void button(GuiGraphics g, int bx, int by, int event, String value, float u) {
         Component c;
         if (value != null) {
-            g.fill(bx, by, bx + BTN_W, by + BTN_H, 0xFF2B3036);
+            FcsDraw.fill(g, bx, by, bx + BTN_W, by + BTN_H, 0xFF2B3036);
             c = Component.literal(value);
             PumpCrossSection.text(g, c, bx + (BTN_W - AsciiHud.width(c, u)) / 2, by + (BTN_H - 8 * u) / 2, 0xE6E9EC, u);
             return;
         }
         int delta = Math.abs(event) >= 2000 ? Math.abs(event) - 2000 : Math.abs(event);
         boolean up = event > 0;
-        g.fill(bx, by, bx + BTN_W, by + BTN_H, up ? 0xFF4F7A5E : 0xFF8A5A4A);
-        g.fill(bx, by, bx + BTN_W, by + 1, up ? 0xFF6E9B7E : 0xFFA9786A);
+        FcsDraw.fill(g, bx, by, bx + BTN_W, by + BTN_H, up ? 0xFF4F7A5E : 0xFF8A5A4A);
+        FcsDraw.fill(g, bx, by, bx + BTN_W, by + 1, up ? 0xFF6E9B7E : 0xFFA9786A);
         c = Component.literal((up ? "+" : "−") + delta);
         PumpCrossSection.text(g, c, bx + (BTN_W - AsciiHud.width(c, u)) / 2, by + (BTN_H - 8 * u) / 2, 0xFFFFFF, u);
     }
@@ -128,12 +128,12 @@ public class BoilerScreen extends MimicScreen<SteamGeneratorMenu> {
         PlantMimic.label(g, outName, x + 105, y + 20, WindRoseView.DIM);
         // temperature gauge: 0..500 °C, the critical point and the limit
         float gx = x + 140, gy = y + 8, gh = 44;
-        g.fill((int) gx - 1, (int) gy - 1, (int) gx + 7, (int) (gy + gh) + 1, PlantMimic.OUTLINE);
-        g.fill((int) gx, (int) gy, (int) gx + 6, (int) (gy + gh), 0xFFF4F6F4);
+        FcsDraw.fill(g, (int) gx - 1, (int) gy - 1, (int) gx + 7, (int) (gy + gh) + 1, PlantMimic.OUTLINE);
+        FcsDraw.fill(g, (int) gx, (int) gy, (int) gx + 6, (int) (gy + gh), 0xFFF4F6F4);
         float tf = Math.max(0, Math.min(1, heat / 500F));
         WindRoseView.fill(g, gx, gy + gh * (1 - tf), 6, gh * tf, PlantMimic.colour(heat));
         float crit = gy + gh * (1 - 374 / 500F);
-        g.fill((int) gx - 2, (int) crit, (int) gx + 8, (int) crit + 1, 0xFF2A5D8A);
+        FcsDraw.fill(g, (int) gx - 2, (int) crit, (int) gx + 8, (int) crit + 1, 0xFF2A5D8A);
         PumpCrossSection.text(g, Component.literal("374"), gx + 9, crit - 4 * u, 0x2A5D8A, u);
         PumpCrossSection.text(g, Component.literal("500"), gx + 9, gy - 4 * u, 0xC0392B, u);
         // scale

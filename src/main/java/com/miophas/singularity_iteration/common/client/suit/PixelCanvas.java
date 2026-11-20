@@ -19,8 +19,15 @@ public final class PixelCanvas {
     private short parts;
     private int depth;
     private short current;
+    private final int ground;
 
     public PixelCanvas(int x0, int y0, int w, int h, float cx, float cy, float scale) {
+        this(x0, y0, w, h, cx, cy, scale, 0xFF8B8B8B);
+    }
+
+    /** {@code ground}: the colour under the canvas (translucent fills blend over it where nothing is drawn yet). */
+    public PixelCanvas(int x0, int y0, int w, int h, float cx, float cy, float scale, int ground) {
+        this.ground = ground;
         this.x0 = x0; this.y0 = y0; this.w = w; this.h = h; this.cx = cx; this.cy = cy; this.scale = scale;
         this.rgb = new int[w * h];
         this.part = new short[w * h];
@@ -48,7 +55,7 @@ public final class PixelCanvas {
             part[k] = p;
             return;
         }
-        int under = rgb[k] == 0 ? 0xFF8B8B8B : rgb[k];   // over the empty window: its fill
+        int under = rgb[k] == 0 ? ground : rgb[k];   // over the empty window: its fill
         float t = a / 255F;
         int r = Math.round(((argb >> 16) & 255) * t + ((under >> 16) & 255) * (1 - t));
         int g = Math.round(((argb >> 8) & 255) * t + ((under >> 8) & 255) * (1 - t));

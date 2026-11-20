@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -45,7 +47,7 @@ public class ShaftScreen<M extends MimicGeneratorMenu> extends MimicScreen<M> {
         PlantMimic.label(g, Component.literal(eu + " EU/t"), x + 176, y + 16, 0x2F6E4F);
         // input load: how much of the generator's intake the shaft fills
         float load = (float) Math.min(1, kuIn / (double) max);
-        g.fill(x + 120, y + 42, x + 160, y + 45, 0xFF33393A);
+        FcsDraw.fill(g, x + 120, y + 42, x + 160, y + 45, 0xFF33393A);
         WindRoseView.fill(g, x + 120, y + 42, 40 * load, 3, 0xFF2A5D8A);
 
         line(g, x, y, 0, Component.translatable(K + "in", kuIn, f("%,d", max), Math.round(load * 100) + "%"), WindRoseView.INK);

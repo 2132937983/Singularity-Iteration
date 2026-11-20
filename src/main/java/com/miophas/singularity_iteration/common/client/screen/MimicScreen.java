@@ -35,17 +35,27 @@ abstract class MimicScreen<T extends AbstractContainerMenu> extends mio_icif_scr
         // which flushes the batch first (PumpCrossSection).
         g.drawManaged(() -> {
             int x = leftPos, y = topPos;
-            SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
+            // 0.1.11.119: the vanilla container look (docs/gui_processing_machines.md)
+            VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
             for (Slot slot : menu.slots) {
                 if (slot.x < 0 || slot.x > imageWidth) continue;   // docked upgrade slots draw their own frames
-                SiGuiTheme.slot(g, x + slot.x - 1, y + slot.y - 1);
+                VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
             }
-            g.fill(x + wx - 1, y + wy - 1, x + wx + ww + 1, y + wy + wh + 1, 0xFF7A7F85);
-            g.fill(x + wx, y + wy, x + wx + ww, y + wy + wh, WindRoseView.PAPER);
-            drawWindow(g, x + wx, y + wy, PlantMimic.time(partialTick));
+            VanillaFrame.inset(g, x + wx - 1, y + wy - 1, ww + 2, wh + 2, WindRoseView.PAPER);
+            // 0.1.11.119: the diagram as pixel art (one cell a GUI pixel); the text is drawn over it afterwards
+            if (pixelArt()) com.miophas.singularity_iteration.common.client.suit.FcsDraw.beginPixels(
+                new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + wx, y + wy, ww, wh, x + wx, y + wy, 1F, WindRoseView.PAPER));
+            try {
+                drawWindow(g, x + wx, y + wy, PlantMimic.time(partialTick));
+            } finally {
+                com.miophas.singularity_iteration.common.client.suit.FcsDraw.endPixels(g);
+            }
             drawStrip(g, x, y + STRIP_Y);
         });
     }
+
+    /** 0.1.11.119: whether the window is drawn as pixel art; a screen whose window is a chart keeps it smooth. */
+    protected boolean pixelArt() { return true; }
 
     /** The diagram (the top ~58 px of the window) and the reading lines (from {@link #LINES_Y}). */
     protected abstract void drawWindow(GuiGraphics g, int x, int y, double time);

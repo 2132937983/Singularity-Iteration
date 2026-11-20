@@ -101,7 +101,7 @@ public class CreativeGeneratorScreen extends AbstractContainerScreen<CreativeGen
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
-        SiGuiTheme.panel(g, x, y, W, H);
+        VanillaFrame.panel(g, x, y, W, H);
         SiGuiTheme.well(g, x + 8, y + 18, W - 16, 32);
         int lamp = !menu.enabled() || menu.rate() == 0 ? SiGuiTheme.LED_OFF : menu.lastSent() > 0 ? SiGuiTheme.GOOD : SiGuiTheme.WARN;
         SiGuiTheme.led(g, x + W - 16, y + 22, lamp);

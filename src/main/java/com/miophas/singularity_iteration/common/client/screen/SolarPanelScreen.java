@@ -49,15 +49,14 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
-        SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
+        VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
         int slots = menu.slots.size() - 36;
-        for (int i = 0; i < slots; i++) SiGuiTheme.slot(g, x + SolarPanelMenu.SLOT_X - 1, y + SolarPanelMenu.SLOT_Y - 1 + i * SolarPanelMenu.SLOT_STEP);
+        for (int i = 0; i < slots; i++) VanillaFrame.slot(g, x + SolarPanelMenu.SLOT_X - 1, y + SolarPanelMenu.SLOT_Y - 1 + i * SolarPanelMenu.SLOT_STEP);
         for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            SiGuiTheme.slot(g, x + SolarPanelMenu.INVENTORY_X - 1 + c * 18, y + SolarPanelMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + SolarPanelMenu.INVENTORY_X - 1 + c * 18, y + SolarPanelMenu.HOTBAR_Y - 1);
+            VanillaFrame.slot(g, x + SolarPanelMenu.INVENTORY_X - 1 + c * 18, y + SolarPanelMenu.INVENTORY_Y - 1 + r * 18);
+        for (int c = 0; c < 9; c++) VanillaFrame.slot(g, x + SolarPanelMenu.INVENTORY_X - 1 + c * 18, y + SolarPanelMenu.HOTBAR_Y - 1);
 
-        g.fill(x + WX - 1, y + WY - 1, x + WX + WW + 1, y + WY + WH + 1, 0xFF7A7F85);
-        g.fill(x + WX, y + WY, x + WX + WW, y + WY + WH, WindRoseView.PAPER);
+        VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
         chart(g, x + CX, y + CY);
         readings(g, x + WX + 4, y + WY + 61);
         strip(g, x, y + STRIP_Y);

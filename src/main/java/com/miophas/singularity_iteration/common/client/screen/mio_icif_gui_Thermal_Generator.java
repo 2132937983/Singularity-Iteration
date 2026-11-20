@@ -41,15 +41,14 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
-        SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
-        SiGuiTheme.slot(g, x + ThermalGeneratorMenu.SLOT_X - 1, y + ThermalGeneratorMenu.FUEL_Y - 1);
-        SiGuiTheme.slot(g, x + ThermalGeneratorMenu.SLOT_X - 1, y + ThermalGeneratorMenu.BATTERY_Y - 1);
+        VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
+        VanillaFrame.slot(g, x + ThermalGeneratorMenu.SLOT_X - 1, y + ThermalGeneratorMenu.FUEL_Y - 1);
+        VanillaFrame.slot(g, x + ThermalGeneratorMenu.SLOT_X - 1, y + ThermalGeneratorMenu.BATTERY_Y - 1);
         for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            SiGuiTheme.slot(g, x + ThermalGeneratorMenu.INVENTORY_X - 1 + c * 18, y + ThermalGeneratorMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + ThermalGeneratorMenu.INVENTORY_X - 1 + c * 18, y + ThermalGeneratorMenu.HOTBAR_Y - 1);
+            VanillaFrame.slot(g, x + ThermalGeneratorMenu.INVENTORY_X - 1 + c * 18, y + ThermalGeneratorMenu.INVENTORY_Y - 1 + r * 18);
+        for (int c = 0; c < 9; c++) VanillaFrame.slot(g, x + ThermalGeneratorMenu.INVENTORY_X - 1 + c * 18, y + ThermalGeneratorMenu.HOTBAR_Y - 1);
 
-        g.fill(x + WX - 1, y + WY - 1, x + WX + WW + 1, y + WY + WH + 1, 0xFF7A7F85);
-        g.fill(x + WX, y + WY, x + WX + WW, y + WY + WH, WindRoseView.PAPER);
+        VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
         chart(g, x + CX, y + CY, partialTick);
         column(g, x + COL, y + WY + 5);
         strip(g, x, y + STRIP_Y);

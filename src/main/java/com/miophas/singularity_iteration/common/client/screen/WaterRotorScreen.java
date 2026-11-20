@@ -49,10 +49,10 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
                 if (kind == WaterPhysics.OUTSIDE) continue;
                 int cx = gx + (i % d) * s, cy = gy + (i / d) * s;
                 int c = kind == WaterPhysics.MOVING ? MOVING : kind == WaterPhysics.STILL ? STILL : kind == WaterPhysics.AIR ? AIR : SOLID;
-                g.fill(cx, cy, cx + s - 1, cy + s - 1, c);
+                FcsDraw.fill(g, cx, cy, cx + s - 1, cy + s - 1, c);
                 if (kind == WaterPhysics.MOVING && s >= 4) {
                     int dx = (int) ((time * Math.max(0.2, speed) * 0.5 + i) % (s - 2));
-                    g.fill(cx + dx, cy + s / 2 - 1, cx + dx + 1, cy + s / 2, 0xC0FFFFFF);
+                    FcsDraw.fill(g, cx + dx, cy + s / 2 - 1, cx + dx + 1, cy + s / 2, 0xC0FFFFFF);
                 }
             }
             float cx = gx + d * s / 2F, cy = gy + d * s / 2F, r = d * s / 2F;
@@ -73,8 +73,8 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
         gauge(g, bx, y + 18, bw, Component.translatable(K + "disc"), share, Math.round(share * 100) + "%", share < 0.8 ? 0xFFC0602A : 0xFF2F6E4F, u);
         // a day of the current: the tide at sea, a flat line elsewhere
         int tx = bx, ty = y + 34, tw = bw, th = 20;
-        g.fill(tx - 1, ty - 1, tx + tw + 1, ty + th + 1, 0xFFB8C0C2);
-        g.fill(tx, ty, tx + tw, ty + th, 0xFFFBFCFC);
+        FcsDraw.fill(g, tx - 1, ty - 1, tx + tw + 1, ty + th + 1, 0xFFB8C0C2);
+        FcsDraw.fill(g, tx, ty, tx + tw, ty + th, 0xFFFBFCFC);
         double spring = WaterPhysics.spring(v(14));
         float px = tx, py = ty + th;
         for (int i = 0; i <= 48; i++) {
@@ -86,7 +86,7 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
             py = ny;
         }
         float now = tx + tw * v(15) / 24000F;
-        g.fill((int) now, ty, (int) now + 1, ty + th, 0xFFC0392B);
+        FcsDraw.fill(g, (int) now, ty, (int) now + 1, ty + th, 0xFFC0392B);
         PlantMimic.label(g, Component.literal(ku + " KU/t"), x + 194, y + 24, 0x2A5D8A);
         if (source == 2) PlantMimic.label(g, Component.translatable(spring >= 1.15 ? K + "spring" : spring <= 0.85 ? K + "neap" : K + "mid"), x + 194, y + 40, WindRoseView.DIM);
 
@@ -109,8 +109,8 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
         PumpCrossSection.text(g, label, x, y, 0x2A2E33, u);
         int bx = x + 30;
         int bw = w - 30;
-        g.fill(bx - 1, y + 1, bx + bw + 1, y + 8, PlantMimic.OUTLINE);
-        g.fill(bx, y + 2, bx + bw, y + 7, 0xFFF4F6F4);
+        FcsDraw.fill(g, bx - 1, y + 1, bx + bw + 1, y + 8, PlantMimic.OUTLINE);
+        FcsDraw.fill(g, bx, y + 2, bx + bw, y + 7, 0xFFF4F6F4);
         WindRoseView.fill(g, bx, y + 2, (float) (bw * Math.max(0, Math.min(1, share))), 5, argb);
         PumpCrossSection.text(g, Component.literal(right), bx + bw + 3, y, 0x1C2524, u);
     }

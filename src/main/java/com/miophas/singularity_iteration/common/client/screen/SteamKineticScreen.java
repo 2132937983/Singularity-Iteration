@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+
 import com.miophas.singularity_iteration.common.menu.generator.SteamKineticGeneratorMenu;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -36,7 +38,7 @@ public class SteamKineticScreen extends MimicScreen<SteamKineticGeneratorMenu> {
         PlantMimic.machine(g, x + 118, y + 25, 8, "KU", 0xFFDDE3E6, u);
         // turbine wear under the casing
         float life = v(14) / 1000F;
-        g.fill(x + 46, y + 45, x + 86, y + 48, 0xFF33393A);
+        FcsDraw.fill(g, x + 46, y + 45, x + 86, y + 48, 0xFF33393A);
         WindRoseView.fill(g, x + 46, y + 45, 40 * life, 3, life > 0.25F ? 0xFF2F6E4F : 0xFFC0392B);
         // condensate tank
         PlantMimic.tank(g, x + 96, y + 36, 6, 18, v(16) > 0 ? v(6) / (double) v(16) : 0, PlantMimic.DISTILLED);

@@ -25,11 +25,16 @@ public final class FcsDraw {
     /** Routes the primitives (and {@link #fill}) into {@code canvas} until {@link #endPixels}. */
     public static void beginPixels(PixelCanvas canvas) { pixels = canvas; }
 
-    /** Stops routing and draws the canvas. */
+    private static final java.util.ArrayList<Runnable> deferredText = new java.util.ArrayList<>();
+
+    /** Stops routing, draws the canvas, then the text written while it was open (labels stay on top of the pixels). */
     public static void endPixels(GuiGraphics g) {
         PixelCanvas c = pixels;
         pixels = null;
         if (c != null) c.draw(g);
+        java.util.List<Runnable> texts = new java.util.ArrayList<>(deferredText);
+        deferredText.clear();
+        for (Runnable r : texts) r.run();
     }
 
     /** An axis-aligned fill: {@code g.fill} normally, a canvas rectangle while a pixel canvas is open. */
@@ -216,6 +221,7 @@ public final class FcsDraw {
     public static Font font() { return Minecraft.getInstance().font; }
 
     public static void text(GuiGraphics g, String s, float x, float y, int argb, float scale) {
+        if (pixels != null) { deferredText.add(() -> text(g, s, x, y, argb, scale)); return; }
         g.pose().pushPose();
         g.pose().translate(x, y, 0);
         g.pose().scale(scale, scale, 1);
@@ -224,6 +230,7 @@ public final class FcsDraw {
     }
 
     public static void text(GuiGraphics g, Component s, float x, float y, int argb, float scale) {
+        if (pixels != null) { deferredText.add(() -> text(g, s, x, y, argb, scale)); return; }
         g.pose().pushPose();
         g.pose().translate(x, y, 0);
         g.pose().scale(scale, scale, 1);

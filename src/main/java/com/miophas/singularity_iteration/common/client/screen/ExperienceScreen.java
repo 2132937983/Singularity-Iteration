@@ -55,4 +55,8 @@ public class ExperienceScreen<M extends MimicGeneratorMenu> extends MimicScreen<
         if (rx >= wx && rx < wx + ww && ry >= wy && ry < wy + wh)
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip1")), mouseX, mouseY);
     }
+
+    /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */
+    @Override
+    protected boolean pixelArt() { return false; }
 }

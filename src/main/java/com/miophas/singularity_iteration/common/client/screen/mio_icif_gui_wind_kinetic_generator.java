@@ -67,7 +67,8 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKin
         };
         int col = status == mio_icif_Wind_Kinetic_Generator.STATUS_OVERLOAD || status == mio_icif_Wind_Kinetic_Generator.STATUS_BLOCKED_ROTOR
             ? WindRoseView.RED : status == mio_icif_Wind_Kinetic_Generator.STATUS_GENERATING ? 0x2F6E4F : WindRoseView.DIM;
-        WindRoseView.line(g, Component.translatable(K + "output_ku", v(1)).append(" · ").append(Component.translatable(K + key)), tx, ty + 2 * lh, col, WW - 8);
+        // 0.1.11.145: the output leads, the state beside it
+        ReadoutPanel.headline(Component.literal(v(1) + " KU/t"), Component.translatable(K + key), col);
 
         ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 62);
 
@@ -96,7 +97,7 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKin
         FcsDraw.line(g, px, py, px, py + ph, 0.5F, 0xFF5B6867);
         if (!(rotorStack.getItem() instanceof IKineticRotor rotor)) {
             Component c = Component.translatable(K + "insert_rotor");
-            PumpCrossSection.text(g, c, px + pw / 2 - AsciiHud.width(c, u) / 2, py + ph / 2 - 4 * u, WindRoseView.DIM, u);
+            PumpCrossSection.text(g, c, px + pw / 2 - PumpCrossSection.width(c, u) / 2, py + ph / 2 - 4 * u, WindRoseView.DIM, u);
             return;
         }
         int min = rotor.getMinWindStrength(rotorStack), max = rotor.getMaxWindStrength(rotorStack);
@@ -109,7 +110,7 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKin
             float mx = (float) X.applyAsDouble(mark[0]);
             FcsDraw.line(g, mx, py, mx, py + ph, 0.35F, 0xFFB6BFBE);
             Component c = Component.translatable(K + (mark[1] == 0 ? "cut_in" : "cut_out"), mark[0]);
-            PumpCrossSection.text(g, c, mx - AsciiHud.width(c, u) / 2, py + ph + 1, WindRoseView.DIM, u);
+            PumpCrossSection.text(g, c, mx - PumpCrossSection.width(c, u) / 2, py + ph + 1, WindRoseView.DIM, u);
         }
         int ink = 0xFF23454A;
         float pMin = min * eff * WindPhysics.OUTPUT_MODIFIER, pMax = max * eff * WindPhysics.OUTPUT_MODIFIER;

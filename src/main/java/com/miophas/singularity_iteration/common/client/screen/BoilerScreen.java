@@ -60,15 +60,15 @@ public class BoilerScreen extends MimicScreen<SteamGeneratorMenu> {
         if (value != null) {
             FcsDraw.fill(g, bx, by, bx + BTN_W, by + BTN_H, 0xFF2B3036);
             c = Component.literal(value);
-            PumpCrossSection.text(g, c, bx + (BTN_W - AsciiHud.width(c, u)) / 2, by + (BTN_H - 8 * u) / 2, 0xE6E9EC, u);
+            PumpCrossSection.text(g, c, bx + (BTN_W - PumpCrossSection.width(c, u)) / 2, by + (BTN_H - 8 * u) / 2, 0xE6E9EC, u);
             return;
         }
         int delta = Math.abs(event) >= 2000 ? Math.abs(event) - 2000 : Math.abs(event);
         boolean up = event > 0;
         FcsDraw.fill(g, bx, by, bx + BTN_W, by + BTN_H, up ? 0xFF4F7A5E : 0xFF8A5A4A);
         FcsDraw.fill(g, bx, by, bx + BTN_W, by + 1, up ? 0xFF6E9B7E : 0xFFA9786A);
-        c = Component.literal((up ? "+" : "−") + delta);
-        PumpCrossSection.text(g, c, bx + (BTN_W - AsciiHud.width(c, u)) / 2, by + (BTN_H - 8 * u) / 2, 0xFFFFFF, u);
+        c = Component.literal((up ? "+" : "−") + (delta >= 1000 ? delta / 1000 + "k" : String.valueOf(delta)));   // 0.1.11.145: fits the button in the vanilla font
+        PumpCrossSection.text(g, c, bx + (BTN_W - PumpCrossSection.width(c, u)) / 2, by + (BTN_H - 8 * u) / 2, 0xFFFFFF, u);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class BoilerScreen extends MimicScreen<SteamGeneratorMenu> {
         int steamColour = water ? PlantMimic.WATER : PlantMimic.colour(superheated ? 401 : Math.max(100, heat));
         double out = menu.getOutputMB() > 0 ? Math.min(1.5, menu.getOutputMB() / 40000.0) : 0;
         PlantMimic.pipe(g, new float[]{x + 80, y + 16, x + 130, y + 16}, steamColour, 3, out, time);
-        PlantMimic.label(g, outName, x + 105, y + 20, WindRoseView.DIM);
+        PlantMimic.label(g, outName, x + 108, y + 22, WindRoseView.DIM);   // 0.1.11.145: clear of the drum in the vanilla font
         // temperature gauge: 0..500 °C, the critical point and the limit
         float gx = x + 140, gy = y + 8, gh = 44;
         FcsDraw.fill(g, (int) gx - 1, (int) gy - 1, (int) gx + 7, (int) (gy + gh) + 1, PlantMimic.OUTLINE);
@@ -138,7 +138,7 @@ public class BoilerScreen extends MimicScreen<SteamGeneratorMenu> {
         PumpCrossSection.text(g, Component.literal("500"), gx + 9, gy - 4 * u, 0xC0392B, u);
         // scale
         float calc = menu.getMaxCalcification() > 0 ? (float) menu.getCalcification() / menu.getMaxCalcification() : 0;
-        PlantMimic.tank(g, x + 160, y + 8, 5, 44, calc, 0xFFC9B48A);
+        PlantMimic.tank(g, x + 168, y + 8, 5, 44, calc, 0xFFC9B48A);   // 0.1.11.145: room for the vanilla font
 
         line(g, x, y, 0, Component.translatable(K + "boiler_line", menu.getPressure(), f("%.1f", heat), menu.getLastHeatInput()), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "boiler_flow", menu.getInputMB(), f("%,d", menu.getOutputMB()))
@@ -150,7 +150,8 @@ public class BoilerScreen extends MimicScreen<SteamGeneratorMenu> {
         else if (menu.getOutputMB() <= 0) { state = heat < 100 ? (menu.getLastHeatInput() > 0 ? "state.heating" : "state.cold") : "state.hot_idle"; colour = 0xA0602A; }
         else if (superheated) { state = "state.supercritical"; colour = 0x2F6E4F; }
         else { state = "state.boiling"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state, Math.round(calc * 100) + "%"), colour);
+        // 0.1.11.145: the steam made is the main readout; the state beside it
+        ReadoutPanel.headline(Component.literal(f("%,d mB/t", menu.getOutputMB())), Component.translatable(K + state, Math.round(calc * 100) + "%"), colour);
     }
 
     @Override

@@ -42,7 +42,7 @@ public class StirlingKineticScreen extends MimicScreen<StirlingKineticGeneratorM
         PlantMimic.flywheel(g, x + 98, y + 22, 13, angle);
         PlantMimic.label(g, Component.literal(rpm + " rpm"), x + 98, y + 39, v(10) != 0 ? 0xC0392B : 0x2A5D8A);
         PlantMimic.machine(g, x + 156, y + 22, 7, "KU", 0xFFDDE3E6, u);
-        PlantMimic.label(g, Component.literal(v(6) + " KU/t"), x + 156, y + 33, 0x2A5D8A);
+        PlantMimic.label(g, Component.literal(v(6) + " KU/t"), x + 150, y + 33, 0x2A5D8A);   // 0.1.11.145: room for the vanilla font
         PlantMimic.thermometer(g, x + 172, y + 6, 46, hot, 800, StirlingPhysics.DESIGN_HOT);
         PlantMimic.thermometer(g, x + 180, y + 6, 46, cold, 800, 0);
 
@@ -57,7 +57,7 @@ public class StirlingKineticScreen extends MimicScreen<StirlingKineticGeneratorM
         else if (flow < 0.5) state = v(8) > 0 ? "state.coasting" : "state.no_heat";
         else if (hot < 400) state = "state.warming";
         else { state = "state.running"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(v(6) + " KU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

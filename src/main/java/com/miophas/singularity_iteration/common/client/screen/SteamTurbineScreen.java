@@ -46,7 +46,7 @@ public class SteamTurbineScreen extends MimicScreen<SteamTurbineMenu> {
             PlantMimic.vent(g, x + 140, y + 34, 18, v(7) > 0, time);
             PumpCrossSection.text(g, Component.translatable(K + "to_air"), x + 148, y + 44, WindRoseView.DIM, u);
         }
-        PlantMimic.label(g, Component.literal(f("%.1f EU/t", v(3) / 100.0)), x + 114, y + 38, 0x2A5D8A);
+        PlantMimic.label(g, Component.literal(f("%.1f EU/t", v(3) / 100.0)), x + 146, y + 21, 0x2A5D8A);   // 0.1.11.145: room for the vanilla font
 
         Component fluid = hasSteam ? BuiltInRegistries.FLUID.byId(v(2)).getFluidType().getDescription() : Component.translatable(K + "no_steam");
         line(g, x, y, 0, Component.translatable(K + "inlet", fluid, f("%.0f", v(12) / 10.0), v(11), f("%,d", v(0)), f("%,d", v(1))), WindRoseView.INK);
@@ -54,7 +54,9 @@ public class SteamTurbineScreen extends MimicScreen<SteamTurbineMenu> {
         line(g, x, y, 1, Component.translatable(K + "expansion", f("%.1f", v(14) / 100.0), Math.round(quality * 100) + "%", v(13), f("%.2f", v(4) / 1000.0)),
             quality < 0.88 ? 0xC0392B : WindRoseView.DIM);
         Component exhaustLine = condensing ? Component.translatable(K + "to_condenser", v(6)) : Component.translatable(K + "vented", v(7));
-        line(g, x, y, 2, Component.translatable(K + "output", f("%.1f", v(3) / 100.0)).append(" · ").append(exhaustLine), 0x2F6E4F);
+        // 0.1.11.145: the output leads; the exhaust goes on its own line
+        ReadoutPanel.headline(Component.literal(f("%.1f EU/t", v(3) / 100.0)), null, 0);
+        line(g, x, y, 2, exhaustLine, WindRoseView.DIM);
     }
 
     @Override

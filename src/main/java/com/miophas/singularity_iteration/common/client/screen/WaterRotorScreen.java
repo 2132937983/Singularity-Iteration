@@ -67,7 +67,7 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
             PlantMimic.label(g, Component.translatable(K + "no_rotor"), x + 33, y + 26, WindRoseView.DIM);
         }
         // gauges
-        int bx = x + 70, bw = 110;
+        int bx = x + 70, bw = 88;   // 0.1.11.145: room for the vanilla font
         gauge(g, bx, y + 4, bw, Component.translatable(K + "flow"), Math.min(1, speed / 1.6), f("%.2f m/s", speed), MOVING, u);
         double share = v(12) > 0 ? v(11) / (double) v(12) : 0;
         gauge(g, bx, y + 18, bw, Component.translatable(K + "disc"), share, Math.round(share * 100) + "%", share < 0.8 ? 0xFFC0602A : 0xFF2F6E4F, u);
@@ -87,8 +87,8 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
         }
         float now = tx + tw * v(15) / 24000F;
         FcsDraw.fill(g, (int) now, ty, (int) now + 1, ty + th, 0xFFC0392B);
-        PlantMimic.label(g, Component.literal(ku + " KU/t"), x + 194, y + 24, 0x2A5D8A);
-        if (source == 2) PlantMimic.label(g, Component.translatable(spring >= 1.15 ? K + "spring" : spring <= 0.85 ? K + "neap" : K + "mid"), x + 194, y + 40, WindRoseView.DIM);
+        PlantMimic.label(g, Component.literal(ku + " KU/t"), x + 186, y + 38, 0x2A5D8A);
+        if (source == 2) PlantMimic.label(g, Component.translatable(spring >= 1.15 ? K + "spring" : spring <= 0.85 ? K + "neap" : K + "mid"), x + 186, y + 48, WindRoseView.DIM);
 
         line(g, x, y, 0, Component.translatable(K + "line_source", Component.translatable(K + sourceKey(source)), f("%.2f", speed), v(11), v(12),
             Math.round(share * 100) + "%"), WindRoseView.INK);
@@ -102,7 +102,7 @@ public class WaterRotorScreen extends MimicScreen<WaterKineticGeneratorMenu> {
         else if (share < 0.8) state = "state.blocked";
         else if (v(13) < 950) state = "state.wake";
         else { state = "state.running"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(ku + " KU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     static void gauge(GuiGraphics g, int x, int y, int w, Component label, double share, String right, int argb, float u) {

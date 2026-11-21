@@ -52,8 +52,8 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<WindGeneratorMe
         WindRoseView.line(g, Component.translatable(K + "height_line", v(4), v(5), v(6)), tx, ty + lh, WindRoseView.DIM, WW - 8);
         boolean generating = v(0) != 0;
         String state = generating ? "state.run" : v(1) > 0 ? "state.full" : v(4) <= v(6) ? "state.too_low" : "state.weak";
-        WindRoseView.line(g, Component.translatable(K + "output_eu", v(1)).append(" · ").append(Component.translatable(K + state)),
-            tx, ty + 2 * lh, generating ? 0x2F6E4F : WindRoseView.DIM, WW - 8);
+        // 0.1.11.145: the output leads, the state beside it
+        ReadoutPanel.headline(Component.literal(v(1) + " EU/t"), Component.translatable(K + state), generating ? 0x2F6E4F : WindRoseView.DIM);
 
         ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 62);
 
@@ -78,7 +78,7 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<WindGeneratorMe
         FcsDraw.disc(g, (float) X.applyAsDouble(h), (float) Y.applyAsDouble(k * (h - base)), 1.8F, 0xFFC0392B);
         PumpCrossSection.text(g, Component.translatable(K + "axis_eu"), px + 2, py - 1, WindRoseView.DIM, u);
         Component a = Component.translatable(K + "axis_height", base, base + 192);
-        PumpCrossSection.text(g, a, px + pw - AsciiHud.width(a, u), py + ph + 1, WindRoseView.DIM, u);
+        PumpCrossSection.text(g, a, px + pw - PumpCrossSection.width(a, u), py + ph + 1, WindRoseView.DIM, u);
     }
 
     @Override

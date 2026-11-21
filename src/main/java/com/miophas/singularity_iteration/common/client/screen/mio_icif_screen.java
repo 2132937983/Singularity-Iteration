@@ -636,7 +636,12 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        WindRoseView.vanillaText = calmChrome();   // 0.1.11.145: window text in the vanilla font on the calm screens
+        try {
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
+        } finally {
+            WindRoseView.vanillaText = false;
+        }
         renderUpgradeHint(guiGraphics, mouseX, mouseY);
         // 子类可以通过重写 renderCustomTooltips 来添加自定义悬浮提示
         renderCustomTooltips(guiGraphics, mouseX, mouseY);

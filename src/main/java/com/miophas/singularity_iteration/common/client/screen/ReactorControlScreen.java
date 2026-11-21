@@ -102,7 +102,7 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
             g.fill(lx - 1, ly - 1, lx + 52, ly + 14, SiGuiTheme.OUTLINE);
             g.fill(lx, ly, lx + 51, ly + 13, on ? (int) lamps[i][2] : 0xFFC9CED1);
             Component c = Component.translatable(K + lamps[i][0]);
-            PumpCrossSection.text(g, c, lx + 25.5F - AsciiHud.width(c, u) / 2, ly + 6.5F - 4 * u, on ? 0xFFFFFF : 0x5B6867, u);
+            PumpCrossSection.text(g, c, lx + 25.5F - PumpCrossSection.width(c, u) / 2, ly + 6.5F - 4 * u, on ? 0xFFFFFF : 0x5B6867, u);
         }
         for (int i = 0; i < BUTTONS.length; i++) {
             int[] b = BUTTONS[i];
@@ -112,12 +112,12 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
             g.fill(bx - 1, by - 1, bx + b[2] + 1, by + b[3] + 1, SiGuiTheme.OUTLINE);
             g.fill(bx, by, bx + b[2], by + b[3], fill);
             Component c = BUTTON_TEXT[i] != null ? Component.literal(BUTTON_TEXT[i]) : Component.translatable(K + "reset");
-            PumpCrossSection.text(g, c, bx + b[2] / 2F - AsciiHud.width(c, u) / 2, by + b[3] / 2F - 4 * u, b[4] == 10 ? 0xFFFFFF : 0x2A2E33, u);
+            PumpCrossSection.text(g, c, bx + b[2] / 2F - PumpCrossSection.width(c, u) / 2, by + b[3] / 2F - 4 * u, b[4] == 10 ? 0xFFFFFF : 0x2A2E33, u);
         }
         int sp = v(12);
         Component spText = sp >= mio_icif_nuclear_reactor_generator.MAX_SETPOINT ? Component.translatable(K + "setpoint_off")
             : Component.translatable(K + "setpoint", sp + "%");
-        PumpCrossSection.text(g, spText, x + PX + 54 - AsciiHud.width(spText, u) / 2, y + 98, 0x1C2524, u);
+        PumpCrossSection.text(g, spText, x + PX + 54 - PumpCrossSection.width(spText, u) / 2, y + 98, 0x1C2524, u);
         PumpCrossSection.text(g, Component.translatable(K + "feed", menu.getFeedRate()), x + PX + 2, y + 130, 0x1C2524, u);
     }
 

@@ -17,7 +17,15 @@ final class WindRoseView {
 
     static final int PAPER = 0xFFF4F6F4, RING = 0xFFD5DAD8, INK = 0x1C2524, DIM = 0x5B6867, SECTOR = 0x23454A, RED = 0xC0392B;
 
+    /**
+     * 0.1.11.145: whether the window text is in the vanilla font (set while a screen of the calm layout renders, see
+     * {@code mio_icif_screen.calmChrome}); the other screens keep the small Unifont until they move to the calm layout.
+     */
+    static boolean vanillaText;
+
+    /** The scale of the window text: 1 in the vanilla font, else 2 / GUI scale (small Unifont). */
     static float u() {
+        if (vanillaText) return 1F;
         return (float) Math.min(1.0, 2.0 / Math.max(1.0, Minecraft.getInstance().getWindow().getGuiScale()));
     }
 
@@ -51,7 +59,7 @@ final class WindRoseView {
             double a = Math.toRadians(k * 90);
             Component c = Component.translatable("gui.mio_icif.wind.point." + points[k]);
             float tx = cx + (float) Math.sin(a) * (r + 5), ty = cy - (float) Math.cos(a) * (r + 5);
-            PumpCrossSection.text(g, c, tx - AsciiHud.width(c, u) / 2, ty - 4 * u, DIM, u);
+            PumpCrossSection.text(g, c, tx - PumpCrossSection.width(c, u) / 2, ty - 4 * u, DIM, u);
         }
         if (facing >= 0) needle(g, cx, cy, r, facing, 1.0F, 0xFF1C2524);
         needle(g, cx, cy, r * 0.95F, bearing, 0.8F, 0xFFC0392B);
@@ -75,13 +83,13 @@ final class WindRoseView {
     static void line(GuiGraphics g, Component c, float x, float y, int rgb, float maxW) {
         if (ReadoutPanel.active()) { ReadoutPanel.add(0, c, rgb); return; }   // 0.1.11.121: into the readout window
         float u = u();
-        if (AsciiHud.width(c, u) > maxW) {
+        if (PumpCrossSection.width(c, u) > maxW) {
             // 0.1.11.24: the longest prefix that fits, by halving (it measured one character shorter at a time)
             String s = c.getString();
             int lo = 1, hi = s.length();
             while (lo < hi) {
                 int mid = (lo + hi + 1) >>> 1;
-                if (AsciiHud.width(s.substring(0, mid) + "…", u) > maxW) hi = mid - 1; else lo = mid;
+                if (PumpCrossSection.width(s.substring(0, mid) + "…", u) > maxW) hi = mid - 1; else lo = mid;
             }
             c = Component.literal(s.substring(0, lo) + "…");
         }

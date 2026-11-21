@@ -39,7 +39,7 @@ public class ExperienceScreen<M extends MimicGeneratorMenu> extends MimicScreen<
         if (v(1) > 0 && v(0) >= v(1)) state = "state.full";
         else if (v(3) != 0) { state = "state.running"; colour = 0x2F6E4F; }
         else state = "state.no_xp";
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(v(4) + " EU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

@@ -169,7 +169,7 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
         if (on) { state = "state.run"; colour = 0x2F6E4F; }
         else if (energy() >= capacity()) { state = "state.full"; colour = dim; }
         else { state = "state.off"; colour = 0xC0392B; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(num(v(5)) + " EU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads
         line(g, x, y, 3, Component.translatable(K + "line_source"), dim);
     }
 

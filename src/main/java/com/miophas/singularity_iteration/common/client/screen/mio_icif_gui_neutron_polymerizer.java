@@ -138,8 +138,8 @@ public class mio_icif_gui_neutron_polymerizer extends mio_icif_screen<NeutronPol
         float ramp = v(5) / 1000F;
         String stateKey = !working ? "state.idle" : ramp < 0.99F ? "state.warming" : "state.run";
         Component state = Component.translatable(K + stateKey);
-        line(g, Component.translatable(K + "log"), x, y, INK, w - AsciiHud.width(state, u) - 2);
-        PumpCrossSection.text(g, state, x + w - AsciiHud.width(state, u), y, working ? INK : FADED, u);
+        line(g, Component.translatable(K + "log"), x, y, INK, w - PumpCrossSection.width(state, u) - 2);
+        PumpCrossSection.text(g, state, x + w - PumpCrossSection.width(state, u), y, working ? INK : FADED, u);
         y += lh;
         if (st == null) {
             line(g, Component.translatable(K + "no_recipe"), x, y, FADED, w);
@@ -211,13 +211,13 @@ public class mio_icif_gui_neutron_polymerizer extends mio_icif_screen<NeutronPol
         Component acc = Component.translatable(K + "accelerator");
         float ax = x + 140;
         PumpCrossSection.text(g, acc, ax, y + 6 - 4.5F * u, 0x2A2E33, u);
-        float barX = ax + AsciiHud.width(acc, u) + 3, barW = x + 241 - 22 - barX;
+        float barX = ax + PumpCrossSection.width(acc, u) + 3, barW = x + 241 - 22 - barX;
         g.fill((int) barX - 1, y + 2, (int) (barX + barW) + 1, y + 10, SiGuiTheme.SLOT_SHADOW);
         g.fill((int) barX, y + 3, (int) (barX + barW), y + 9, SiGuiTheme.SCREEN_BG);
         float ramp = v(5) / 1000F;
         if (ramp > 0) g.fillGradient((int) barX, y + 3, (int) (barX + barW * ramp), y + 9, 0xFFD2902A, 0xFFC8423C);
         Component pct = Component.literal(Math.round(ramp * 100) + "%");
-        PumpCrossSection.text(g, pct, x + 241 - AsciiHud.width(pct, u), y + 6 - 4.5F * u, 0x2A2E33, u);
+        PumpCrossSection.text(g, pct, x + 241 - PumpCrossSection.width(pct, u), y + 6 - 4.5F * u, 0x2A2E33, u);
     }
 
     @Override
@@ -250,10 +250,10 @@ public class mio_icif_gui_neutron_polymerizer extends mio_icif_screen<NeutronPol
 
     private void line(GuiGraphics g, Component c, float x, float y, int rgb, float maxW) {
         float u = u();
-        if (AsciiHud.width(c, u) > maxW) {
+        if (PumpCrossSection.width(c, u) > maxW) {
             String s = c.getString();
             int n = s.length();
-            while (n > 1 && AsciiHud.width(s.substring(0, n) + "…", u) > maxW) n--;
+            while (n > 1 && PumpCrossSection.width(s.substring(0, n) + "…", u) > maxW) n--;
             c = Component.literal(s.substring(0, n) + "…");
         }
         PumpCrossSection.text(g, c, x, y, rgb, u);

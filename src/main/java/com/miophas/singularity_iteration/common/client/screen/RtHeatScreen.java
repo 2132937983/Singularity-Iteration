@@ -33,7 +33,8 @@ public class RtHeatScreen extends MimicScreen<RTHeatGeneratorMenu> {
         PumpCrossSection.text(g, Component.translatable(K + "pellets", pellets), x + 136, y + 18, 0x1C2524, u);
         line(g, x, y, 0, Component.translatable(K + "heat_line", pellets, rate), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "heat_front"), WindRoseView.DIM);
-        line(g, x, y, 2, Component.translatable(K + (pellets > 0 ? "state.running" : "state.no_pellets")), pellets > 0 ? 0x2F6E4F : 0xA0602A);
+        ReadoutPanel.headline(Component.literal(rate + " HU/t"), Component.translatable(K + (pellets > 0 ? "state.running" : "state.no_pellets")),
+            pellets > 0 ? 0x2F6E4F : 0xA0602A);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

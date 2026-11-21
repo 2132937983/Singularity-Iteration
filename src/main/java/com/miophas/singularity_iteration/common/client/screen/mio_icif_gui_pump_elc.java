@@ -132,8 +132,8 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
             : isWorkingNow() ? "state.run" : "state.idle";
         Component state = Component.translatable(K + stateKey);
         boolean warn = !stateKey.equals("state.run") && !stateKey.equals("state.idle");
-        line(g, mode, x, y, 0x2A2E33, w - AsciiHud.width(state, u) - 2);
-        PumpCrossSection.text(g, state, x + w - AsciiHud.width(state, u), y, warn ? 0xC8423C : stateKey.equals("state.run") ? 0x3C9A52 : 0x80868D, u);
+        line(g, mode, x, y, 0x2A2E33, w - PumpCrossSection.width(state, u) - 2);
+        PumpCrossSection.text(g, state, x + w - PumpCrossSection.width(state, u), y, warn ? 0xC8423C : stateKey.equals("state.run") ? 0x3C9A52 : 0x80868D, u);
         y += lh;
         Fluid fluid = bodyFluid();
         line(g, fluid == null ? Component.literal("—") : fluid.getFluidType().getDescription(), x, y, 0x2A2E33, w);
@@ -184,10 +184,10 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
 
     private void line(GuiGraphics g, Component c, float x, float y, int rgb, float maxW) {
         float u = u();
-        if (AsciiHud.width(c, u) > maxW) {
+        if (PumpCrossSection.width(c, u) > maxW) {
             String s = c.getString();
             int n = s.length();
-            while (n > 1 && AsciiHud.width(s.substring(0, n) + "…", u) > maxW) n--;
+            while (n > 1 && PumpCrossSection.width(s.substring(0, n) + "…", u) > maxW) n--;
             c = Component.literal(s.substring(0, n) + "…");
         }
         PumpCrossSection.text(g, c, x, y, rgb, u);
@@ -232,7 +232,7 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
                 default -> Component.translatable(K + "target.value", (v(10) >= 0 ? "+" : "") + v(10));
             };
             int col = active ? 0x2A2E33 : 0x9AA0A6;
-            PumpCrossSection.text(g, label, bx + c[1] / 2F - AsciiHud.width(label, u) / 2, by + CTRL_H / 2F - 4.5F * u, col, u);
+            PumpCrossSection.text(g, label, bx + c[1] / 2F - PumpCrossSection.width(label, u) / 2, by + CTRL_H / 2F - 4.5F * u, col, u);
         }
     }
 

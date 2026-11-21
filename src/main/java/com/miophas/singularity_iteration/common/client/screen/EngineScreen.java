@@ -160,7 +160,8 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
             case EngineGovernor.LOW_LOAD -> { state = "state.low_load"; colour = 0xA0602A; }
             default -> { state = "state.running"; colour = GREEN; }
         }
-        WindRoseView.line(g, Component.translatable(K + state), tx, ty + 2 * lh, colour & 0xFFFFFF, w);
+        // 0.1.11.145: the output leads, the state beside it
+        ReadoutPanel.headline(Component.literal(f1(v(4) / 100.0) + " EU/t"), Component.translatable(K + state), colour & 0xFFFFFF);
     }
 
     private void strip(GuiGraphics g, int x, int sy) {

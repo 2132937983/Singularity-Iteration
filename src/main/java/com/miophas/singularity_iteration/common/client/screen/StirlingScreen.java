@@ -37,7 +37,7 @@ public class StirlingScreen<M extends MimicGeneratorMenu> extends MimicScreen<M>
         PlantMimic.flywheel(g, x + 82, y + 30, 11, angle);
         PlantMimic.machine(g, x + 128, y + 30, 8, "G", 0xFFDDE3E6, u);
         PlantMimic.pipe(g, new float[]{x + 136, y + 30, x + 168, y + 30}, 0xFF2F6E4F, 3, eu > 0 ? Math.min(1.5, eu / 100.0) : 0, time);
-        PlantMimic.label(g, Component.literal(eu + " EU/t"), x + 152, y + 20, 0x2F6E4F);
+        PlantMimic.label(g, Component.literal(eu + " EU/t"), x + 152, y + 12, 0x2F6E4F);   // 0.1.11.145: room for the vanilla font
         PlantMimic.label(g, Component.literal(Math.round(rpm) + " rpm"), x + 82, y + 45, 0x2A5D8A);
         PlantMimic.thermometer(g, x + 180, y + 6, 46, hot, 800, StirlingPhysics.DESIGN_HOT);
         PlantMimic.thermometer(g, x + 192, y + 6, 46, cold, 800, 0);
@@ -49,13 +49,13 @@ public class StirlingScreen<M extends MimicGeneratorMenu> extends MimicScreen<M>
         else if (flow < 0.5) state = "state.no_heat";
         else if (hot < 400) state = "state.warming";
         else { state = "state.running"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(eu + " EU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     /** The heat pipe and the engine on the left of the window. */
     static void drawEngine(GuiGraphics g, int x, int y, double time, double hot, double cold, boolean water, double flow, double angle, float u) {
         PlantMimic.pipe(g, new float[]{x + 4, y + 10, x + 26, y + 10}, flow > 0.5 ? PlantMimic.HEAT : 0xFFB0B6B8, 3, flow > 0.5 ? Math.min(1.5, flow / 200) : 0, time);
-        PlantMimic.label(g, Component.translatable(K + "heat_in"), x + 14, y + 14, WindRoseView.DIM);
+        PlantMimic.label(g, Component.translatable(K + "heat_in"), x + 13, y + 14, WindRoseView.DIM);
         PlantMimic.stirling(g, x + 26, y + 5, hot, cold, water, angle, u);
         if (water) PlantMimic.pipe(g, new float[]{x + 4, y + 49, x + 26, y + 49}, PlantMimic.WATER, 3, flow > 0.5 ? 0.5 : 0, time);
     }

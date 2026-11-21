@@ -45,7 +45,7 @@ public class RtgScreen extends MimicScreen<RTGeneratorMenu> {
         double cold = v(5) / 10.0, hot = RtgPhysics.hot(cold, pellets), factor = v(4) / 1000.0, eu = v(8) / 100.0;
         PlantMimic.thermometer(g, x + 6, y + 6, 46, hot, 700, 0);
         PlantMimic.thermometer(g, x + 16, y + 6, 46, Math.max(0, cold), 700, 0);
-        PlantMimic.label(g, Component.literal(Math.round(hot) + "°"), x + 8, y - 2 + 58, 0xA8461F);
+        PlantMimic.label(g, Component.literal(Math.round(hot) + "°"), x + 11, y + 54, 0xA8461F);   // 0.1.11.145: room for the vanilla font
         ChartView.draw(g, x + 30, y + 4, 100, 52, i -> v(RTGeneratorMenu.CHART + i), Math.max(10, base * 13.0), 0xFFD9531E, new int[0],
             new ChartView.Ref(base * 10.0, 0xFF5B6867, Component.literal(String.valueOf(base))));
         PumpCrossSection.text(g, Component.literal(f("%.1f EU/t", eu)), x + 136, y + 6, 0x2F6E4F, u);
@@ -60,7 +60,7 @@ public class RtgScreen extends MimicScreen<RTGeneratorMenu> {
         else if (v(1) > 0 && v(0) >= v(1)) state = "state.full";
         else if (v(7) != 0) state = "state.lava";
         else { state = "state.running"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(f("%.1f EU/t", eu)), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

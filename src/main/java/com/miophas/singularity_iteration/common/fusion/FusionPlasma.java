@@ -26,6 +26,22 @@ import net.minecraft.nbt.CompoundTag;
  *       that cools below {@link #REIGNITE_KEV} keV (a lower feed step) is heated again; one that falls below
  *       {@link #COLLAPSE_KEV} keV with no heating ends.</li>
  *   <li>Fuel: one unit of deuterium and one of tritium per tick for each 1/16 of the full fusion rate.</li>
+ *   <li>0.1.11.134 (F2), the operating limits:
+ *     <ul>
+ *       <li>L-mode and H-mode: the confinement above is H-mode's. The plasma enters H-mode when the power through its edge
+ *           (alpha + outside heating - bremsstrahlung) reaches the Martin 2008 threshold P_LH = 0.0488 n^0.717 B^0.803
+ *           S^0.941 MW (about 87 MW at 10²⁰ m⁻³) and leaves it below {@link #LH_HYSTERESIS} of it; in L-mode the
+ *           confinement time is halved ({@link #L_MODE_FACTOR}). One heating port (40 MW) cannot bring a dense plasma into
+ *           H-mode.</li>
+ *       <li>ELMs: in H-mode the edge relaxes every {@link #ELM_BASE_SECONDS} s at the reference power (more often with more
+ *           power, 1-6 s), throwing {@link #ELM_SHARE} of the thermal energy onto the divertor; the conduction between them
+ *           is lower by as much, so the average balance is unchanged.</li>
+ *       <li>The feed goes up to {@link #MAX_FEED} steps, past the reference {@link #REFERENCE_FEED}. The Greenwald density
+ *           n_G = I_p / (π a²) (1.19 × 10²⁰ m⁻³) and the Troyon limit β_N = β a B / I_p ≤ {@link #BETA_N_LIMIT}: from
+ *           {@link #RISK_FROM} of either, the plasma may disrupt ({@link #hazard} per second, a few percent at the limit,
+ *           certain within seconds past it). The reference burn is at 0.84 of the Greenwald density and 0.87 of the beta
+ *           limit: safe.</li>
+ *     </ul></li>
  *   <li>The superconducting magnets: the upkeep {@link #MAGNET_UPKEEP} EU/t is the cryogenic plant's load (1% of
  *       {@link #FULL_POWER}); they cool in {@link #COOLDOWN_TICKS} ticks of paid upkeep and quench when it is not paid.</li>
  *   <li>Start-up: the central solenoid takes {@link #STARTUP_ENERGY} EU at up to {@link #STARTUP_RATE} EU/t. Its flux
@@ -45,11 +61,12 @@ public final class FusionPlasma {
     public static final long FULL_POWER = 39_200_000L;
     /** 0.1.11.98: the highest output, the EU grid's top voltage (MAX, 2,147,483,647 EU/t): an overflow guard, not a cap. */
     public static final long OUTPUT_LIMIT = Integer.MAX_VALUE;
-    public static final int MIN_FEED = 1, MAX_FEED = 16;
+    /** 0.1.11.134: the feed goes past the reference (16 steps) up to 20, into the density and beta limits. */
+    public static final int MIN_FEED = 1, REFERENCE_FEED = 16, MAX_FEED = 20;
     /** The fusion power of the reference burn (16 feed steps, {@link #REFERENCE_KEV} keV): 9,800,000 EU/t. */
     public static final long FULL_FUSION = 9_800_000L;
     /** The full fusion power over the 16 steps (0.1.11.133: the power now grows with the square of the step). */
-    public static final long FUSION_PER_FEED = FULL_FUSION / MAX_FEED;
+    public static final long FUSION_PER_FEED = FULL_FUSION / REFERENCE_FEED;
     public static final double ALPHA_SHARE = 0.2, NEUTRON_SHARE = 0.8;
     public static final double START_KEV = 1.0;
     public static final long MAGNET_UPKEEP = FULL_POWER / 100;        // 392,000 EU/t
@@ -73,6 +90,15 @@ public final class FusionPlasma {
     /** The Lawson triple product for ignition (keV s/m³). */
     public static final double LAWSON = 3.0e21;
     public static final double SECONDS_PER_TICK = 0.05;
+    // ---------------------------------------------------------------- 0.1.11.134: the operating limits
+    /** Field on axis (T), minor radius (m), plasma current (MA), plasma surface (m²): ITER's. */
+    public static final double FIELD = 5.3, MINOR_RADIUS = 2.0, PLASMA_CURRENT = 15.0, SURFACE = 683.0;
+    /** The Greenwald density (m⁻³): I_p / (π a²) x 10²⁰. */
+    public static final double GREENWALD = PLASMA_CURRENT / (Math.PI * MINOR_RADIUS * MINOR_RADIUS) * 1.0e20;
+    public static final double BETA_N_LIMIT = 3.5, RISK_FROM = 0.9;
+    public static final double LH_HYSTERESIS = 0.8, L_MODE_FACTOR = 0.5;
+    public static final double ELM_BASE_SECONDS = 2.0, ELM_SHARE = 0.015, ELM_MIN_SECONDS = 1.0, ELM_MAX_SECONDS = 6.0;
+    private static final double MU0 = 4.0e-7 * Math.PI;
     private static final double KEV_J = 1.602176634e-16, FUSION_J = 17.6e3 * KEV_J, BREMS = 5.35e-37;
     private static final double SV_REF = sigmaV(REFERENCE_KEV);
     private static final double P_REF = fusionWatts(REFERENCE_DENSITY, REFERENCE_KEV);
@@ -120,7 +146,37 @@ public final class FusionPlasma {
 
     /** The density (m⁻³) a feed step aims at. */
     public static double targetDensity(int feed) {
-        return REFERENCE_DENSITY * clampFeed(feed) / MAX_FEED;
+        return REFERENCE_DENSITY * clampFeed(feed) / REFERENCE_FEED;
+    }
+
+    /** 0.1.11.134: the L-H power threshold (W) at a density: Martin 2008. */
+    public static double lhThreshold(double density) {
+        return 0.0488 * Math.pow(Math.max(0, density) / 1.0e20, 0.717) * Math.pow(FIELD, 0.803) * Math.pow(SURFACE, 0.941) * 1.0e6;
+    }
+
+    /** 0.1.11.134: the normalised beta β_N (β in %, x a B / I_p) at a density and temperature. */
+    public static double betaN(double density, double kev) {
+        double pressure = 2 * density * kev * KEV_J;   // electrons and ions
+        double beta = pressure / (FIELD * FIELD / (2 * MU0)) * 100;
+        return beta * MINOR_RADIUS * FIELD / PLASMA_CURRENT;
+    }
+
+    /**
+     * 0.1.11.134: the chance per second that a plasma at {@code f} of a limit disrupts: none below {@link #RISK_FROM}, rising to
+     * 2% at the limit, then 2% more per 1% past it.
+     */
+    public static double hazard(double f) {
+        if (f < RISK_FROM) return 0;
+        if (f <= 1) {
+            double k = (f - RISK_FROM) / (1 - RISK_FROM);
+            return 0.02 * k * k * k;
+        }
+        return 0.02 + 2.0 * (f - 1);
+    }
+
+    /** 0.1.11.134: the time between two ELMs (s) at a power through the edge (W). */
+    public static double elmInterval(double edgeWatts) {
+        return Math.max(ELM_MIN_SECONDS, Math.min(ELM_MAX_SECONDS, ELM_BASE_SECONDS * LOSS_REF / Math.max(edgeWatts, 1.0e3)));
     }
 
     /** Fusion power (EU/t) at a density and temperature. */
@@ -130,7 +186,7 @@ public final class FusionPlasma {
     }
 
     /** Fusion power (EU/t) at a feed step's target density and a temperature. */
-    public static long fusionPower(int feed, double kev) {
+    public static long fusionPower(int feed, double kev) {   // at a feed step's target density
         return fusionPower(targetDensity(feed), kev);
     }
 
@@ -143,6 +199,9 @@ public final class FusionPlasma {
     public enum State { OFF, COOLING, CHARGING, HEATING, BURNING, DISRUPTED, QUENCHED }
 
     public enum Event { NONE, PLASMA_START, IGNITION, PULSE_END, DISRUPTION, QUENCH }
+
+    /** 0.1.11.134: why the last disruption came. */
+    public enum Cause { NONE, QUENCH, STRUCTURE, ASH, BLANKET, DENSITY_LIMIT, BETA_LIMIT }
 
     /**
      * What the structure offers the plasma this tick. {@code energy}: EU the controller can spend; {@code deuterium},
@@ -161,6 +220,23 @@ public final class FusionPlasma {
     private double kev, density, fuelCarry, lastTau;
     private int cooled, burnTicks, ash, timer;
     private long charged, lastHeating, lastFusion, lastAlpha, lastLoss;
+    private boolean hMode;
+    private int elmTicks, elms;
+    private double lastGreenwald, lastBeta;
+    private Cause cause = Cause.NONE;
+    private java.util.random.RandomGenerator random = new java.util.SplittableRandom();
+
+    /** 0.1.11.134: a fixed random source (tests). */
+    public void random(java.util.random.RandomGenerator random) { this.random = random; }
+    /** 0.1.11.134: H-mode, the ELMs so far in this plasma, the share of the Greenwald density and of the beta limit. */
+    public boolean hMode() { return hMode; }
+    public int elms() { return elms; }
+    public double greenwaldFraction() { return lastGreenwald; }
+    public double betaFraction() { return lastBeta; }
+    /** 0.1.11.134: why the last disruption came. */
+    public Cause cause() { return cause; }
+    /** 0.1.11.134: the ticks to the next ELM (H-mode). */
+    public int elmTicks() { return elmTicks; }
 
     public State state() { return state; }
     public double kev() { return kev; }
@@ -208,7 +284,7 @@ public final class FusionPlasma {
             state = state == State.QUENCHED ? State.COOLING : State.CHARGING;
             if (state == State.COOLING) cooled = 0;
         }
-        if (!in.formed() && hasPlasma()) return disrupt(Event.DISRUPTION, false);
+        if (!in.formed() && hasPlasma()) return disrupt(Event.DISRUPTION, false, 0, Cause.STRUCTURE);
         if (!in.formed() || !in.run()) {
             if (hasPlasma()) endPlasma();
             state = State.OFF;
@@ -223,7 +299,7 @@ public final class FusionPlasma {
                 cooled = Math.max(0, cooled - 2);
                 return new Result(0, 0, 0, 0, Event.NONE);
             }
-            return disrupt(hasPlasma() ? Event.DISRUPTION : Event.QUENCH, true);
+            return disrupt(hasPlasma() ? Event.DISRUPTION : Event.QUENCH, true, 0, Cause.QUENCH);
         }
         budget -= MAGNET_UPKEEP;
         used += MAGNET_UPKEEP;
@@ -251,7 +327,7 @@ public final class FusionPlasma {
                     endPlasma();
                     return new Result(used, 0, 0, 0, Event.PULSE_END);
                 }
-                if (in.blanketOverheated()) return disrupt(Event.DISRUPTION, false, used);
+                if (in.blanketOverheated()) return disrupt(Event.DISRUPTION, false, used, Cause.BLANKET);
                 // the density follows the feed step; the thermal energy stays
                 if (density <= 0) density = targetDensity(feed);
                 double w = thermalJoules(density, kev);
@@ -275,19 +351,44 @@ public final class FusionPlasma {
                 }
                 // the power balance
                 double fusionW = fusionWatts(density, kev), alphaW = ALPHA_SHARE * fusionW, auxW = heating / EU_PER_WATT;
-                double bremsW = bremsWatts(density, kev);
-                lastTau = tauE(density, alphaW + auxW - bremsW);
-                double lossW = w / lastTau + bremsW;
-                w = Math.max(0, w + (alphaW + auxW - lossW) * SECONDS_PER_TICK);
+                double bremsW = bremsWatts(density, kev), edgeW = alphaW + auxW - bremsW, threshold = lhThreshold(density);
+                // L-H transition, with hysteresis
+                if (!hMode && edgeW >= threshold) {
+                    hMode = true;
+                    elmTicks = (int) Math.round(elmInterval(edgeW) / SECONDS_PER_TICK);
+                } else if (hMode && edgeW < LH_HYSTERESIS * threshold) {
+                    hMode = false;
+                }
+                lastTau = tauE(density, edgeW) * (hMode ? 1 : L_MODE_FACTOR);
+                double conductionW = w / lastTau, lossW = conductionW + bremsW;
+                double elmW = 0;
+                if (hMode) {
+                    // ELMs carry ELM_SHARE of W at each crash; the conduction between them is lower by their average
+                    double interval = elmInterval(edgeW);
+                    elmW = Math.min(conductionW, ELM_SHARE * w / interval);
+                }
+                w = Math.max(0, w + (alphaW + auxW - (conductionW - elmW) - bremsW) * SECONDS_PER_TICK);
+                if (hMode && --elmTicks <= 0) {
+                    w *= 1 - ELM_SHARE;
+                    elms++;
+                    elmTicks = Math.max(1, (int) Math.round(elmInterval(edgeW) / SECONDS_PER_TICK));
+                }
                 kev = w / (3 * density * KEV_J * VOLUME);
                 lastAlpha = Math.round(alphaW * EU_PER_WATT);
                 lastLoss = Math.round(lossW * EU_PER_WATT);
-                if (state == State.HEATING && kev >= IGNITION_MIN_KEV && alphaMargin(density, kev) >= 0) {
+                // the density and beta limits
+                lastGreenwald = density / GREENWALD;
+                lastBeta = betaN(density, kev) / BETA_N_LIMIT;
+                double chance = 1 - Math.exp(-(hazard(lastGreenwald) + hazard(lastBeta)) * SECONDS_PER_TICK);
+                if (chance > 0 && random.nextDouble() < chance)
+                    return disrupt(Event.DISRUPTION, false, used, hazard(lastGreenwald) >= hazard(lastBeta) ? Cause.DENSITY_LIMIT : Cause.BETA_LIMIT);
+                if (state == State.HEATING && kev >= IGNITION_MIN_KEV && alphaMargin(density, kev) >= 0
+                    && ALPHA_SHARE * fusionW - bremsW >= LH_HYSTERESIS * threshold) {   // 0.1.11.134: and alpha alone keeps H-mode
                     state = State.BURNING;
                     event = Event.IGNITION;
                 }
                 // fuel: one unit of each per tick for each 1/16 of the full fusion rate
-                fuelCarry += (double) MAX_FEED * fusion / FULL_FUSION;
+                fuelCarry += (double) REFERENCE_FEED * fusion / FULL_FUSION;
                 long fuel = (long) Math.floor(fuelCarry);
                 fuelCarry -= fuel;
                 fuel = Math.min(fuel, Math.min(in.deuterium(), in.tritium()));
@@ -295,7 +396,7 @@ public final class FusionPlasma {
                 lastFusion = fusion;
                 if (fusion > 0) {
                     ash = in.exhaust() ? 0 : ash + 1;
-                    if (ash >= ASH_LIMIT) return disrupt(Event.DISRUPTION, false, used);
+                    if (ash >= ASH_LIMIT) return disrupt(Event.DISRUPTION, false, used, Cause.ASH);
                 }
                 if (!steady && ++burnTicks >= PULSE_TICKS) {
                     endPlasma();
@@ -320,6 +421,11 @@ public final class FusionPlasma {
     }
 
     private void clearPlasma() {
+        hMode = false;
+        elmTicks = 0;
+        elms = 0;
+        lastGreenwald = 0;
+        lastBeta = 0;
         kev = 0;
         density = 0;
         fuelCarry = 0;
@@ -329,12 +435,9 @@ public final class FusionPlasma {
         ash = 0;
     }
 
-    private Result disrupt(Event event, boolean quench) {
-        return disrupt(event, quench, 0);
-    }
-
-    private Result disrupt(Event event, boolean quench, long used) {
+    private Result disrupt(Event event, boolean quench, long used, Cause why) {
         boolean plasma = hasPlasma();
+        if (plasma || quench) cause = why;
         clearPlasma();
         if (quench) {
             state = State.QUENCHED;
@@ -358,6 +461,10 @@ public final class FusionPlasma {
         tag.putDouble("Kev", kev);
         tag.putDouble("Density", density);
         tag.putDouble("FuelCarry", fuelCarry);
+        tag.putBoolean("HMode", hMode);
+        tag.putInt("ElmTicks", elmTicks);
+        tag.putInt("Elms", elms);
+        tag.putString("Cause", cause.name());
         tag.putInt("Cooled", cooled);
         tag.putInt("Burn", burnTicks);
         tag.putInt("Ash", ash);
@@ -375,6 +482,14 @@ public final class FusionPlasma {
         kev = Math.max(0, tag.getDouble("Kev"));
         density = Math.max(0, tag.getDouble("Density"));   // 0.1.11.133; an older save finds it again from the feed step
         fuelCarry = Math.max(0, Math.min(1, tag.getDouble("FuelCarry")));
+        hMode = tag.getBoolean("HMode");
+        elmTicks = Math.max(0, tag.getInt("ElmTicks"));
+        elms = Math.max(0, tag.getInt("Elms"));
+        try {
+            cause = tag.contains("Cause") ? Cause.valueOf(tag.getString("Cause")) : Cause.NONE;
+        } catch (IllegalArgumentException e) {
+            cause = Cause.NONE;
+        }
         cooled = Math.max(0, Math.min(COOLDOWN_TICKS, tag.getInt("Cooled")));
         burnTicks = Math.max(0, tag.getInt("Burn"));
         ash = Math.max(0, tag.getInt("Ash"));

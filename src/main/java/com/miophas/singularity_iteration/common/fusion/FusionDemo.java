@@ -73,7 +73,7 @@ public final class FusionDemo {
         // 0.1.11.94: 60k coolant cells for the disruption mitigation (it took ice before)
         items.setStackInSlot(FusionControllerBlockEntity.SLOT_MITIGATION,
             new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_coolant_six")), 4));
-        c.setFeed(FusionPlasma.MAX_FEED);
+        c.setFeed(FusionPlasma.REFERENCE_FEED);   // 0.1.11.134: the feed goes on past it, into the limits
 
         // the lever on top of the controller
         BlockPos lever = controller.above();

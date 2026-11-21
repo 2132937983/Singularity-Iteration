@@ -531,7 +531,10 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             // 0.1.11.133: the plasma's power balance: density (10^17 m^-3), confinement time (ms), triple product (10^18 keV s/m^3),
             // alpha heating and losses (EU/t)
             Math.round(plasma.density() / 1.0e17), Math.round(plasma.tauE() * 1000), Math.round(plasma.tripleProduct() / 1.0e18),
-            plasma.lastAlpha(), plasma.lastLoss()};
+            plasma.lastAlpha(), plasma.lastLoss(),
+            // 0.1.11.134: the operating limits: Greenwald and beta fractions (per mille), H-mode, the last disruption's cause, ELMs
+            Math.round(plasma.greenwaldFraction() * 1000), Math.round(plasma.betaFraction() * 1000), plasma.hMode() ? 1 : 0,
+            plasma.cause().ordinal(), plasma.elms()};
     }
 
     /**

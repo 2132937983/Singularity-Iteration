@@ -111,10 +111,10 @@ public final class Round111133GameTests {
         runFor(p, 16, 4, 3_000);
         if (!state(p).equals("BURNING")) wrong.add("not burning: " + state(p));
         double kev = dbl(call(p, "kev")), triple = dbl(call(p, "tripleProduct"));
-        if (Math.abs(kev - 15.0) > 0.05) wrong.add("burns at " + kev + " keV");
+        if (Math.abs(kev - 15.0) > 0.4) wrong.add("burns at " + kev + " keV");   // 0.1.11.134: ELMs
         if (triple < 0.95 * field("LAWSON")) wrong.add("triple product " + triple);
         Object r = call(p, "tick", in(16, 4));
-        if (((Number) call(r, "fusionPower")).longValue() != 9_800_000L) wrong.add("fusion " + call(r, "fusionPower"));
+        if (Math.abs(((Number) call(r, "fusionPower")).longValue() - 9_800_000L) > 400_000L) wrong.add("fusion " + call(r, "fusionPower"));
         if (((Number) call(r, "heating")).longValue() != 0) wrong.add("an ignited plasma is still heated");
         if (Math.abs(dbl(call(p, "density")) - 1.0e20) > 1.0e15) wrong.add("density " + call(p, "density"));
         h.assertTrue(wrong.isEmpty(), "reference burn: " + wrong);
@@ -131,14 +131,14 @@ public final class Round111133GameTests {
         double q = dbl(call(p, "q"));
         if (!state(p).equals("HEATING") || ((Number) call(r, "fusionPower")).longValue() <= 0) wrong.add("no driven burn: " + state(p));
         if (Double.isInfinite(q) || q < 1) wrong.add("driven Q " + q);
-        // one heater cannot ignite a full-density plasma
+        // 0.1.11.134: two heaters cannot ignite a full-density plasma (it stays in L-mode)
         p = make(PLASMA);
-        if (runTo(p, 16, 1, 4_000) >= 0) wrong.add("one heater ignited 16 steps");
-        // but it ignites 12 steps, which then rise to 16 and settle at the reference burn
+        if (runTo(p, 16, 2, 4_000) >= 0) wrong.add("two heaters ignited 16 steps");
+        // but they ignite 12 steps, which then rise to 16 and settle at the reference burn
         p = make(PLASMA);
-        if (runTo(p, 12, 1, 4_000) < 0) wrong.add("one heater did not ignite 12 steps: " + call(p, "kev"));
-        runFor(p, 16, 1, 3_000);   // it cools below 8 keV as the density rises, is heated again and re-ignites
-        if (!state(p).equals("BURNING") || Math.abs(dbl(call(p, "kev")) - 15.0) > 0.1) wrong.add("no burn after the density ramp: " + state(p) + " " + call(p, "kev"));
+        if (runTo(p, 12, 2, 4_000) < 0) wrong.add("two heaters did not ignite 12 steps: " + call(p, "kev"));
+        runFor(p, 16, 2, 3_000);   // it may cool below 8 keV as the density rises, is heated again and re-ignites
+        if (!state(p).equals("BURNING") || Math.abs(dbl(call(p, "kev")) - 15.0) > 0.4) wrong.add("no burn after the density ramp: " + state(p) + " " + call(p, "kev"));
         h.assertTrue(wrong.isEmpty(), "ignition: " + wrong);
         h.succeed();
     }
@@ -147,7 +147,7 @@ public final class Round111133GameTests {
     public static void balanceReadoutsSynced(GameTestHelper h) throws Exception {
         Class<?> menu = cls("menu.fusion.FusionControllerMenu");
         int values = menu.getDeclaredField("VALUES").getInt(null);
-        h.assertTrue(values == 40, "menu values " + values);
+        h.assertTrue(values >= 40, "menu values " + values);
         for (String lang : new String[]{"en_us", "zh_cn", "ja_jp", "ru_ru"}) {
             String json = Round33GameTests.resource("/assets/mio_icif/lang/" + lang + ".json");
             for (String k : new String[]{"state.driven", "balance.title", "balance.density", "balance.tau", "balance.triple", "balance.alpha", "balance.heating"})

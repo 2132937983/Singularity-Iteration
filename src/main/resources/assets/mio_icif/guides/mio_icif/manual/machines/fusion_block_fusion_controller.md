@@ -66,7 +66,7 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
    - A deuterium fuel rod also works in a nuclear reactor as a neutron source: each adjacent fuel rod takes one more pulse per cycle, for 5,000 cycles (half a tritium rod), with no decay heat; then the empty fuel rod is left.
 3. Fill the blanket (9 columns x 6 rows; column 1 faces the plasma) with components.
 4. Apply a redstone signal. The reactor goes through: magnet cooldown (30 s), solenoid charge, heating, ignition (over 10 keV, once the alpha heating covers the losses), burn (15 keV at 16 steps, about 170 million K).
-5. Set the feed (1-16) with the screen's buttons. After ignition the heating switches off by itself. The output leaves through the power output ports.
+5. Set the feed (1-20; 16 is the reference, 17 and up approach the operating limits, see below) with the screen's buttons. After ignition the heating switches off by itself. The output leaves through the power output ports.
 
 ## Automation
 
@@ -86,8 +86,14 @@ The fuel injection port and the disruption mitigation port have slots of their o
   - losses = conduction (the energy confinement time τE follows ITER's IPB98 scaling in the density and the heating power, about 2 s in the reference burn) + bremsstrahlung.
 - **Ignition**: once the plasma is over 10 keV and the alpha heating alone covers the losses, the heating ports switch off and Q is infinite. If an ignited plasma cools below 8 keV (a lower feed step, say), the heating comes back on.
 - **The Lawson criterion**: at too low a density n·T·τE stays short of about 3 × 10²¹ keV·s/m³ and the plasma cannot ignite. At 8 steps and below it can only burn **driven**: the heating stays on and Q is finite (about 0.5-13 with one heater).
-- **How many heaters**: ignition takes 9 steps or more. One heater ignites only 9 to 13 steps; for more, ignite low and then raise the feed (as real machines raise the density step by step). Two or more heaters ignite 16 steps directly, four in about 4 seconds.
-- Hover over the readouts on the right of the screen for the density, τE, the triple product (as a share of the Lawson criterion), the alpha heating against the losses, and the outside heating.
+- **L-mode and H-mode**: the confinement time above is that of the high-confinement mode (H-mode). The plasma enters H-mode only when the power through its edge (alpha heating + outside heating - bremsstrahlung) reaches the L-H threshold (the Martin 2008 scaling: about 87 MW at 10²⁰ m⁻³, more at higher density); below 80% of it, it falls back to the low-confinement mode (L-mode), with half the confinement time.
+- **How many heaters**: ignition takes 9 steps or more, in H-mode. One heater (about 40 MW) cannot bring a plasma at ignition densities into H-mode: it only burns driven at low steps. Two ignite 9 to 14 steps; for more, ignite low and then raise the feed (as real machines raise the density step by step). Three or more ignite 16 steps directly, four in about 4 seconds.
+- **ELMs (edge-localised modes)**: the edge of an H-mode plasma collapses now and then, throwing about 1.5% of the thermal energy onto the divertor (about every 2 s at the reference burn, more often with more edge power, 1-6 s). The conduction between them is lower by as much, so the average power is unchanged, but the fusion power swings by a few percent.
+- **Operating limits**: the feed goes up to 20 steps. Past the reference of 16 the power grows with the square of the density (about 1.56 times at 20), at the cost of nearing two limits:
+  - the Greenwald density n_G = I_p/(πa²) ≈ 1.19 × 10²⁰ m⁻³ (84% at 16 steps, about 100% at 19);
+  - the Troyon beta limit β_N ≤ 3.5 (87% at 16 steps and 15 keV).
+  - From 90% of either the plasma may disrupt: about 2% a second at 100%, and 2% a second more for each 1% past it. So 16 steps are safe, 17 almost, 18 are a risk, and 19-20 disrupt within seconds. The screen says what caused a disruption.
+- Hover over the readouts on the right of the screen for the density, τE, the triple product (as a share of the Lawson criterion), the alpha heating against the losses, the outside heating, the confinement mode (with the ELM count in H-mode), and the Greenwald density and beta limit fractions (yellow from 90%, red from 100%).
 - The solenoid's flux carries the plasma for about 400 s (counted from the heating), then it must charge again. With two electron cyclotron heaters the plasma current is driven without it (1.25% of the fusion power each), and the burn is steady.
 - The plasma uses 1 unit of deuterium and 1 unit of tritium per tick for each 1/16 of the full fusion rate (16 of each at full power). When the fuel runs out, the plasma ends gently.
 - Once it makes power, the console keeps 40 ticks of magnet upkeep from its own output.
@@ -105,6 +111,7 @@ The fuel injection port and the disruption mitigation port have slots of their o
   - the magnets quench;
   - the structure is broken while there is plasma;
   - helium ash builds up without an exhaust port (60 s).
+  - the plasma runs past an operating limit (density or beta, see above).
 
   It destroys the components in the blanket's first column and heats the blanket by half its maximum. With a coolant cell in the disruption mitigation slot, one is injected (used up) instead: the components survive and the blanket heats less: 30% with a 10k coolant cell, 20% with a 30k one, 5% with a 60k one (a used cell counts the cold it has left). A disruption never damages the structure.
 - **Meltdown:** a blanket at its maximum heat (overheated by itself, or by a disruption's heat on top) melts down: the console and its contents are gone, and a nuclear blast goes off at the centre of the torus. Its power is 50 times the nuclear reactor's explosion power limit (config fusionExplosionMultiplier; by default 50 x 45 = 2,250), its largest radius twice that but at most 2,000 blocks. With the multiplier at 0 an overheated blanket only disrupts the plasma; with enableNuclearExplosion off it is a local explosion that breaks nothing around.

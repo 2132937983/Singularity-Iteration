@@ -23,6 +23,7 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
     private static final String[] PARTS = {"central_solenoid", "toroidal_coil", "poloidal_coil", "vacuum_vessel", "blanket", "divertor", "port_slot",
         "controller", "plasma"};
     private static final String[] STATES = {"off", "cooling", "charging", "heating", "burning", "disrupted", "quenched"};
+    private static final String[] CAUSES = {"none", "quench", "structure", "ash", "blanket", "density_limit", "beta_limit"};
     private static final String[] STATUS = {"ok", "unformed", "no_signal", "no_cryo", "no_heater", "no_exhaust", "no_power_port", "no_fuel",
         "blanket_invalid"};
 
@@ -81,7 +82,11 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
             Component.translatable(K + "triple", String.format(Locale.ROOT, "%.2f", triple), lawson)
                 .withStyle(lawson >= 100 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.GRAY),
             Component.translatable(K + "alpha", compact(v(38)), compact(v(39))).withStyle(net.minecraft.ChatFormatting.GRAY),
-            Component.translatable(K + "heating", compact(v(33))).withStyle(net.minecraft.ChatFormatting.GRAY));
+            Component.translatable(K + "heating", compact(v(33))).withStyle(net.minecraft.ChatFormatting.GRAY),
+            // 0.1.11.134: the confinement mode and the operating limits
+            Component.translatable(K + (v(42) == 1 ? "h_mode" : "l_mode"), v(44)).withStyle(v(42) == 1 ? net.minecraft.ChatFormatting.AQUA : net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "limits", v(40) / 10, v(41) / 10).withStyle(Math.max(v(40), v(41)) >= 1000 ? net.minecraft.ChatFormatting.RED
+                : Math.max(v(40), v(41)) >= 900 ? net.minecraft.ChatFormatting.YELLOW : net.minecraft.ChatFormatting.GRAY));
     }
 
     @Override
@@ -123,7 +128,9 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
             // two electron cyclotron heaters drive the current: a steady burn, its pulse clock never starts
             case 4 -> v(14) == 0 && v(20) >= 2 ? Component.translatable("gui.mio_icif.fusion.progress.steady")
                 : Component.translatable("gui.mio_icif.fusion.progress.burn", v(14) / 20);
-            case 5, 6 -> Component.translatable("gui.mio_icif.fusion.progress.timer", (v(30) + 19) / 20);
+            // 0.1.11.134: a disruption says why it came
+            case 5, 6 -> Component.translatable("gui.mio_icif.fusion.progress.timer", (v(30) + 19) / 20).append(v(43) > 0 && v(43) < CAUSES.length
+                ? Component.literal(" ").append(Component.translatable("gui.mio_icif.fusion.cause." + CAUSES[(int) v(43)])) : Component.empty());
             default -> Component.empty();
         };
         mio_icif_screen.drawFitted(g, font, stateText.copy().append(" ").append(progress), tx, ty + 10 * line++, tw, SiGuiTheme.TEXT_SCREEN, false);

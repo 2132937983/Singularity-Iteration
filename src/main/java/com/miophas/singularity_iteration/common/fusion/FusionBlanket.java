@@ -35,8 +35,8 @@ public final class FusionBlanket {
     public static final double LITHIUM_GAIN = 0.2;
     /** EU/t of blanket output per EU/t the rods give in the fission reactor's terms, at full neutron power. */
     public static final long EU_PER_FISSION_EU = 14_000L;
-    /** The neutron power at full fusion power (16 feed steps). */
-    public static final long FULL_NEUTRONS = Math.round(FusionPlasma.MAX_FEED * FusionPlasma.FUSION_PER_FEED * FusionPlasma.NEUTRON_SHARE);
+    /** The neutron power at full fusion power (the reference burn, 16 feed steps). */
+    public static final long FULL_NEUTRONS = Math.round(FusionPlasma.FULL_FUSION * FusionPlasma.NEUTRON_SHARE);
 
     /** One cycle: the new stacks, the hull heat, the output (EU/t) and its parts. */
     public record Cycle(ItemStack[] stacks, long hull, long maxHull, long output, double fissionEu, double lithiumShare,

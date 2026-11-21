@@ -102,10 +102,11 @@ public final class Round11592GameTests {
         double kev = ((Number) call(p, "kev")).doubleValue();
         if (Math.abs(kev - 15.0) > 0.2) wrong.add("burns at " + kev + " keV, expected about 15");
         Object r = call(p, "tick", run(16, 4, 0, energy, d, t, true));
-        if (lng(call(r, "fusionPower")) != 9_800_000L) wrong.add("fusion power " + call(r, "fusionPower") + " at 16 steps");
+        // 0.1.11.134: ELMs shake the burn by a few percent
+        if (Math.abs(lng(call(r, "fusionPower")) - 9_800_000L) > 400_000L) wrong.add("fusion power " + call(r, "fusionPower") + " at 16 steps");
         if (lng(call(r, "heating")) != 0 || !Double.isInfinite(((Number) call(p, "q")).doubleValue())) wrong.add("an ignited plasma still heated: " + call(r, "heating"));
-        if (lng(call(r, "neutronPower")) != 7_840_000L) wrong.add("neutron power " + call(r, "neutronPower"));
-        if (lng(call(r, "fuelUsed")) != 16) wrong.add("fuel " + call(r, "fuelUsed") + " a tick at 16 steps");
+        if (Math.abs(lng(call(r, "neutronPower")) - 7_840_000L) > 320_000L) wrong.add("neutron power " + call(r, "neutronPower"));
+        if (Math.abs(lng(call(r, "fuelUsed")) - 16) > 1) wrong.add("fuel " + call(r, "fuelUsed") + " a tick at 16 steps");
         h.assertTrue(wrong.isEmpty(), "plasma: " + wrong);
         h.succeed();
     }
@@ -221,7 +222,7 @@ public final class Round11592GameTests {
         }
         h.assertTrue(grid[0].is(item("normal/item_tritium_cell")), "no tritium after " + cycles + " cycles: " + grid[0]);
         double bred = 5.0 * num(CONTROLLER, "FUEL_PER_CELL") / (cycles * num(CONTROLLER, "CYCLE_TICKS"));
-        h.assertTrue(bred > num(PLASMA, "MAX_FEED"), "five lithium cells breed " + bred + " units a tick, the plasma burns " + num(PLASMA, "MAX_FEED"));
+        h.assertTrue(bred > num(PLASMA, "REFERENCE_FEED"), "five lithium cells breed " + bred + " units a tick, the plasma burns " + num(PLASMA, "REFERENCE_FEED"));
         h.succeed();
     }
 

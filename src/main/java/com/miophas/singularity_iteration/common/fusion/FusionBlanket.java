@@ -24,6 +24,15 @@ import net.minecraft.world.item.ItemStack;
  *       top voltage, as an overflow guard).</li>
  *   <li>Too hot (the hull at its maximum, 10,000 + platings) is an overheated blanket: the plasma disrupts.</li>
  * </ul>
+ *
+ * <p>0.1.11.135 (fusion overhaul F3): a fusion-fission hybrid blanket feeding a steam plant. The blanket gives heat, not
+ * electricity: the alpha particles' share on the first wall and divertor (a quarter of the neutron power), the neutrons'
+ * own energy, {@link #LITHIUM_GAIN} more for each neutron lithium-6 takes (4.8 MeV on 14.1), and the fission the neutrons
+ * cause in the rods, {@link #THERMAL_PER_FISSION_EU} EU/t of heat for each EU/t the rods give in the fission reactor's
+ * terms, times f. The console turns {@link #EFFICIENCY_PERCENT}% of it into electricity (a steam cycle, as a light-water
+ * reactor's). The readouts: the blanket's energy multiplication M (its heat over the neutron power), the fissions each
+ * fusion neutron causes (fission heat / 200 MeV over neutron power / 14.1 MeV), and the tritium bred each cycle. The
+ * demonstration blanket keeps its 41,440,000 EU/t: 35% of 118,400,000 EU/t of heat, M 14.9, about one fission per neutron.
  */
 public final class FusionBlanket {
     private FusionBlanket() {}
@@ -32,15 +41,25 @@ public final class FusionBlanket {
     public static final int PEAK_NEUTRONS = 2;
     public static final double ATTENUATION = 0.6;
     public static final int BREED_PER_NEUTRON = 40;
-    public static final double LITHIUM_GAIN = 0.2;
-    /** EU/t of blanket output per EU/t the rods give in the fission reactor's terms, at full neutron power. */
-    public static final long EU_PER_FISSION_EU = 14_000L;
+    /** 0.1.11.135: lithium-6 + n releases 4.8 MeV on top of the neutron's 14.1 (it was 0.2). */
+    public static final double LITHIUM_GAIN = 4.8 / 14.1;
+    /** 0.1.11.135: the alpha heat on the first wall and divertor, per unit of neutron power (20 / 80). */
+    public static final double ALPHA_PER_NEUTRON = FusionPlasma.ALPHA_SHARE / FusionPlasma.NEUTRON_SHARE;
+    /** 0.1.11.135: heat (EU/t) per EU/t the rods give in the fission reactor's terms, at full neutron power. */
+    public static final long THERMAL_PER_FISSION_EU = 45_250L;
+    /** 0.1.11.135: the steam plant's efficiency (%). */
+    public static final int EFFICIENCY_PERCENT = 35;
+    /** 0.1.11.135: the energy of a fission and of a fusion neutron (MeV). */
+    public static final double FISSION_MEV = 200.0, NEUTRON_MEV = 14.1;
     /** The neutron power at full fusion power (the reference burn, 16 feed steps). */
     public static final long FULL_NEUTRONS = Math.round(FusionPlasma.FULL_FUSION * FusionPlasma.NEUTRON_SHARE);
 
     /** One cycle: the new stacks, the hull heat, the output (EU/t) and its parts. */
     public record Cycle(ItemStack[] stacks, long hull, long maxHull, long output, double fissionEu, double lithiumShare,
-                        boolean overheated, boolean invalid) {}
+                        boolean overheated, boolean invalid, long thermal, long bred) {
+        /** 0.1.11.135: the blanket's energy multiplication for a neutron power. */
+        public double multiplication(long neutronPower) { return FusionBlanket.multiplication(neutronPower, lithiumShare, fissionEu); }
+    }
 
     /** Fusion neutrons per slot for a share {@code f} (0-1) of the full neutron power. */
     public static int[] neutrons(double f) {
@@ -50,12 +69,36 @@ public final class FusionBlanket {
         return out;
     }
 
-    /** The output for a neutron power, a lithium share and the rods' fission output (fission-reactor EU/t). */
-    public static long output(long neutronPower, double lithiumShare, double fissionEu) {
+    /** 0.1.11.135: the fission heat (EU/t) the rods give for a neutron power. */
+    public static double fissionHeat(long neutronPower, double fissionEu) {
         if (neutronPower <= 0) return 0;
         double f = Math.min(1.0, (double) neutronPower / FULL_NEUTRONS);
-        double eu = neutronPower * (1 + LITHIUM_GAIN * lithiumShare) + EU_PER_FISSION_EU * fissionEu * f;
-        return (long) Math.min(FusionPlasma.OUTPUT_LIMIT, Math.max(0, Math.floor(eu)));   // 0.1.11.98: no cap
+        return THERMAL_PER_FISSION_EU * fissionEu * f;
+    }
+
+    /** 0.1.11.135: the heat (EU/t) of the first wall, divertor and blanket: alpha, neutrons, lithium, fission. */
+    public static double thermal(long neutronPower, double lithiumShare, double fissionEu) {
+        if (neutronPower <= 0) return 0;
+        return neutronPower * (1 + ALPHA_PER_NEUTRON + LITHIUM_GAIN * lithiumShare) + fissionHeat(neutronPower, fissionEu);
+    }
+
+    /** The output (electric, EU/t) for a neutron power, a lithium share and the rods' fission output (fission-reactor EU/t). */
+    public static long output(long neutronPower, double lithiumShare, double fissionEu) {
+        double heat = thermal(neutronPower, lithiumShare, fissionEu);
+        double eu = Math.floor(Math.floor(heat) * EFFICIENCY_PERCENT / 100.0);
+        return (long) Math.min(FusionPlasma.OUTPUT_LIMIT, Math.max(0, eu));   // 0.1.11.98: no cap
+    }
+
+    /** 0.1.11.135: the blanket's energy multiplication M: its heat (without the alpha share) over the neutron power. */
+    public static double multiplication(long neutronPower, double lithiumShare, double fissionEu) {
+        if (neutronPower <= 0) return 0;
+        return (thermal(neutronPower, lithiumShare, fissionEu) - ALPHA_PER_NEUTRON * neutronPower) / neutronPower;
+    }
+
+    /** 0.1.11.135: fissions per fusion neutron: (fission heat / 200 MeV) over (neutron power / 14.1 MeV). */
+    public static double fissionsPerNeutron(long neutronPower, double fissionEu) {
+        if (neutronPower <= 0) return 0;
+        return fissionHeat(neutronPower, fissionEu) / FISSION_MEV / (neutronPower / NEUTRON_MEV);
     }
 
     /**
@@ -69,15 +112,18 @@ public final class FusionBlanket {
         try {
             for (int i = 0; i < SLOTS; i++) parts[i] = ReactorInventory.read(grid[i]);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            return new Cycle(copy(grid), hull, 10_000, 0, 0, 0, false, true);
+            return new Cycle(copy(grid), hull, 10_000, 0, 0, 0, false, true, 0, 0);
         }
         double f = Math.min(1.0, Math.max(0, (double) neutronPower / FULL_NEUTRONS));
         int[] ext = neutrons(f);
         // the share of the neutrons the lithium cells take (before they turn into tritium this cycle)
-        long lithium = 0, total = 0;
+        long lithium = 0, total = 0, bred = 0;
         for (int i = 0; i < SLOTS; i++) {
             total += ext[i];
-            if (parts[i] != null && parts[i].profile().kind() == Kind.LITHIUM && parts[i].stored() < parts[i].profile().capacity()) lithium += ext[i];
+            if (parts[i] != null && parts[i].profile().kind() == Kind.LITHIUM && parts[i].stored() < parts[i].profile().capacity()) {
+                lithium += ext[i];
+                if (neutronPower > 0) bred += (long) ext[i] * BREED_PER_NEUTRON;   // 0.1.11.135: tritium units this cycle
+            }
         }
         ReactorCycle.Result r = ReactorCycle.step(parts, COLUMNS, Math.max(0, hull), neutronPower > 0, ext, BREED_PER_NEUTRON);
         Part[] next = r.parts();
@@ -87,7 +133,7 @@ public final class FusionBlanket {
         double lithiumShare = total > 0 ? (double) lithium / total : 0;
         long hullAfter = Math.min(r.hullHeat(), r.maxHullHeat());
         return new Cycle(out, hullAfter, r.maxHullHeat(), output(neutronPower, lithiumShare, r.euPerTick()), r.euPerTick(), lithiumShare,
-            r.hullHeat() >= r.maxHullHeat(), false);
+            r.hullHeat() >= r.maxHullHeat(), false, Math.round(thermal(neutronPower, lithiumShare, r.euPerTick())), bred);
     }
 
     private static ItemStack[] copy(ItemStack[] grid) {

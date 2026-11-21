@@ -86,7 +86,15 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
             // 0.1.11.134: the confinement mode and the operating limits
             Component.translatable(K + (v(42) == 1 ? "h_mode" : "l_mode"), v(44)).withStyle(v(42) == 1 ? net.minecraft.ChatFormatting.AQUA : net.minecraft.ChatFormatting.GRAY),
             Component.translatable(K + "limits", v(40) / 10, v(41) / 10).withStyle(Math.max(v(40), v(41)) >= 1000 ? net.minecraft.ChatFormatting.RED
-                : Math.max(v(40), v(41)) >= 900 ? net.minecraft.ChatFormatting.YELLOW : net.minecraft.ChatFormatting.GRAY));
+                : Math.max(v(40), v(41)) >= 900 ? net.minecraft.ChatFormatting.YELLOW : net.minecraft.ChatFormatting.GRAY),
+            // 0.1.11.135: the plant: the blanket's heat, the steam cycle, multiplication, breeding, engineering Q
+            Component.translatable(K + "plant"),
+            Component.translatable(K + "thermal", compact(v(45)), FusionBlanket.EFFICIENCY_PERCENT, compact(v(4))).withStyle(net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "multiplication", String.format(Locale.ROOT, "%.1f", v(46) / 100.0), String.format(Locale.ROOT, "%.2f", v(47) / 100.0))
+                .withStyle(net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "tbr", String.format(Locale.ROOT, "%.2f", v(48) / 100.0))
+                .withStyle(v(48) >= 100 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "q_eng", String.format(Locale.ROOT, "%.1f", v(49) / 100.0)).withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 
     @Override

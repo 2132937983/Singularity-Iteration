@@ -108,6 +108,10 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
     private int feed = FusionPlasma.MIN_FEED;
     private long deuterium, tritium, hull, maxHull = 10_000, output, buffer;
     private double fissionEu, lithiumShare;
+    /** 0.1.11.135: the blanket's heat (EU/t), energy multiplication, fissions per neutron, tritium breeding ratio. */
+    private long thermal;
+    private double multiplication, fissionsPerNeutron, tbr;
+    private long cycleFuel;
     private boolean formed, blanketOverheated, blanketInvalid, recheck = true;
     private int checkIn, cycleIn, radiationIn = 20;
     private final List<BlockPos> ports = new ArrayList<>();
@@ -267,6 +271,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             c.deuterium, c.tritium, c.exhausts > 0, c.blanketOverheated));
         if (r.energyUsed() > 0) c.apiUseEnergy(r.energyUsed(), false);
         c.deuterium -= r.fuelUsed();
+        c.cycleFuel += r.fuelUsed();
         c.tritium -= r.fuelUsed();
         c.lastFusion = r.fusionPower();
         c.lastHeating = r.heating();
@@ -281,6 +286,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         if (--c.cycleIn <= 0) {
             c.cycleIn = CYCLE_TICKS;
             c.blanketCycle(r.neutronPower());
+            c.cycleFuel = 0;
         }
         // 0.1.11.94: a blanket at its maximum heat melts down (with the blast off, the plasma only disrupts, as before)
         if (c.hull >= c.maxHull && c.formed && c.meltdown((ServerLevel) level)) return;
@@ -312,6 +318,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         blanketInvalid = cycle.invalid();
         if (cycle.invalid()) {
             output = 0;
+            thermal = 0;
             return;
         }
         for (int i = 0; i < FusionBlanket.SLOTS; i++)
@@ -323,6 +330,12 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         fissionEu = cycle.fissionEu();
         lithiumShare = cycle.lithiumShare();
         output = plasma.hasPlasma() ? cycle.output() : 0;
+        // 0.1.11.135: the plant's readouts
+        long neutrons = plasma.hasPlasma() ? neutronPower : 0;
+        thermal = plasma.hasPlasma() ? cycle.thermal() : 0;
+        multiplication = FusionBlanket.multiplication(neutrons, lithiumShare, fissionEu);
+        fissionsPerNeutron = FusionBlanket.fissionsPerNeutron(neutrons, fissionEu);
+        tbr = cycleFuel > 0 ? (double) cycle.bred() / cycleFuel : 0;
     }
 
     /** What a disruption does to the blanket (the structure is never damaged). */
@@ -534,7 +547,11 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             plasma.lastAlpha(), plasma.lastLoss(),
             // 0.1.11.134: the operating limits: Greenwald and beta fractions (per mille), H-mode, the last disruption's cause, ELMs
             Math.round(plasma.greenwaldFraction() * 1000), Math.round(plasma.betaFraction() * 1000), plasma.hMode() ? 1 : 0,
-            plasma.cause().ordinal(), plasma.elms()};
+            plasma.cause().ordinal(), plasma.elms(),
+            // 0.1.11.135: the plant: heat (EU/t), energy multiplication, fissions per neutron, tritium breeding ratio, engineering Q
+            // (all x100)
+            thermal, Math.round(multiplication * 100), Math.round(fissionsPerNeutron * 100), Math.round(tbr * 100),
+            lastUsed > 0 ? Math.round(output * 100.0 / lastUsed) : 0};
     }
 
     /**

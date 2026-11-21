@@ -197,10 +197,11 @@ public final class Round11592GameTests {
         if (lng(call(cls(BLANKET), "output", full, 1.0, 1e12)) != limit) wrong.add("the output is not bounded by the grid's top voltage");
         if (limit != Integer.MAX_VALUE) wrong.add("the output limit is " + limit + ", not the grid's top voltage");
         // weaker blankets give less
-        long lithium = lng(call(cycle(blanket("L", "L", "L", "L", "L", "L"), 0, full), "output"));
-        if (lithium >= cap || lithium <= full) wrong.add("a lithium blanket gives " + lithium);
+        // 0.1.11.135: the blanket makes heat; the steam cycle turns 35% of it into electricity
         long empty = lng(call(cycle(blanket("", "", "", "", "", ""), 0, full), "output"));
-        if (empty != full) wrong.add("an empty blanket gives " + empty + ", expected the neutron power " + full);
+        if (empty != full * 125 / 100 * 35 / 100) wrong.add("an empty blanket gives " + empty + ", expected 35% of the alpha and neutron heat");
+        long lithium = lng(call(cycle(blanket("L", "L", "L", "L", "L", "L"), 0, full), "output"));
+        if (lithium >= cap || lithium <= empty) wrong.add("a lithium blanket gives " + lithium);
         long uranium = lng(call(cycle(blanket("UV", "VU", "UV", "VU", "UV", "VU"), 0, full), "output"));
         if (uranium >= cap) wrong.add("a few uranium rods already reach the cap: " + uranium);
         // no plasma: no output, the rods rest (subcritical)

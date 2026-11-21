@@ -37,7 +37,7 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
 
 | Item | Value |
 |---|---|
-| Output | no cap; 41,440,000 EU/t with the example blanket |
+| Output | no cap; heat x 35% steam cycle efficiency; 41,440,000 EU/t with the example blanket (118,400,000 EU/t of heat) |
 | Fusion power | grows with the square of the feed step: 9,800,000 EU/t at 16 steps, a quarter of that at 8 |
 | Input voltage tier | LuV (32,768 EU), any face |
 | Input storage | 20,000,000 EU |
@@ -102,8 +102,14 @@ The fuel injection port and the disruption mitigation port have slots of their o
 
 - The fusion neutrons weaken column by column: at full power each slot of columns 1, 2 and 3 gets 2, 1 and 1 neutrons per cycle, and the columns after that get none.
 - Fuel rods count them as extra pulses, so they make more heat and more power (the nuclear reactor's own rules). Lithium cells breed 40 per neutron and become tritium fuel rods at 10,000; about 5 lithium cells in column 1 keep the tritium self-sufficient.
-- Output = neutron power x (1 + 0.2 x the share of neutrons the lithium cells take) + 14,000 x the rods' fission output (in nuclear reactor EU/t) x the power fraction. There is no cap (it stops only at the grid's top voltage, 2,147,483,647 EU/t, against overflow).
-- For example, proton quad rods boxed in by iridium overclocked vents give 41,440,000 EU/t (past the full power advancement at 39,200,000); blankets with more fission give more. A blanket at its maximum heat (10,000 plus platings) melts down (see below).
+- This is a **fusion-fission hybrid** blanket: it only makes heat, and the console's steam cycle turns **35%** of it into electricity (like a pressurised-water reactor). The heat has four parts:
+  - the alpha particles' heat on the first wall and divertor: a quarter of the neutron power;
+  - the neutrons' own energy: the neutron power x 1;
+  - the 4.8 MeV lithium-6 releases when it takes a neutron: the neutron power x 0.34 x the share of neutrons the lithium cells take;
+  - the fission the neutrons cause (about 200 MeV each): 45,250 x the rods' fission output (in nuclear reactor EU/t) x the power fraction.
+- Output = heat x 35%. There is no cap (it stops only at the grid's top voltage, 2,147,483,647 EU/t, against overflow).
+- The "Power plant" part of the screen's hover readout shows: the heat and the electricity; the blanket's energy multiplication M (its heat over the neutron power: about 1.3 for lithium only, about 14.9 for the example blanket); the fissions each fusion neutron causes (about 1 in the example blanket); the tritium breeding ratio TBR (tritium bred each cycle over tritium burned: above 1 to be self-sufficient); and the engineering Q (output over the console's own power draw).
+- For example, proton quad rods boxed in by iridium overclocked vents give 118,400,000 EU/t of heat and 41,440,000 EU/t of output (past the full power advancement at 39,200,000); a blanket without fuel rods gives only 35% of its heat, an empty one about 3,430,000 EU/t; blankets with more fission give more. A blanket at its maximum heat (10,000 plus platings) melts down (see below).
 
 ## Hazards
 

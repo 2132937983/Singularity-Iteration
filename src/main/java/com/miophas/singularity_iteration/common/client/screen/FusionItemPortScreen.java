@@ -38,7 +38,7 @@ public class FusionItemPortScreen extends AbstractContainerScreen<FusionItemPort
 
     /** What a slot takes, for its faint picture. */
     private ItemStack icon(int slot) {
-        if (menu.kind() == Kind.COOLANT) return new ItemStack(mio_icif_reactors.COOLANT_SIX.get());
+        if (menu.kind() == Kind.COOLANT) return new ItemStack(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.FROZEN_NEON_PELLET.get());   // 0.1.11.137
         if (slot < FusionItemPortBlockEntity.TRITIUM_0) return new ItemStack(mio_icif_normal.DEUTERIUM_CELL.get());
         if (slot < FusionItemPortBlockEntity.EMPTY_0) return new ItemStack(mio_icif_normal.TRITIUM_CELL.get());
         return new ItemStack(mio_icif_normal.FUEL_ROD.get());

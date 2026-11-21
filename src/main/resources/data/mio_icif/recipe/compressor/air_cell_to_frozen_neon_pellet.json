@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "energypertick": 32,
+  "ingredient": {
+    "type": "mio_icif:fluid_cell",
+    "fluid": "mio_icif:air"
+  },
+  "processingtime": 400,
+  "result": {
+    "id": "mio_icif:normal/item_frozen_neon_pellet",
+    "count": 1
+  }
+}

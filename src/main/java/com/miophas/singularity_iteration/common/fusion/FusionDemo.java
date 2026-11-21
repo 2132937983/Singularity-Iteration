@@ -70,9 +70,8 @@ public final class FusionDemo {
                 items.setStackInSlot(row * FusionBlanket.COLUMNS + col, new ItemStack(BLANKET[row].charAt(col) == 'p' ? rod : vent));
         items.setStackInSlot(FusionControllerBlockEntity.SLOT_DEUTERIUM, new ItemStack(mio_icif_normal.DEUTERIUM_CELL.get(), 64));
         items.setStackInSlot(FusionControllerBlockEntity.SLOT_TRITIUM, new ItemStack(mio_icif_normal.TRITIUM_CELL.get(), 64));
-        // 0.1.11.94: 60k coolant cells for the disruption mitigation (it took ice before)
-        items.setStackInSlot(FusionControllerBlockEntity.SLOT_MITIGATION,
-            new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_coolant_six")), 4));
+        // 0.1.11.137: frozen neon pellets for the disruption mitigation (60k coolant cells until 0.1.11.136, ice before)
+        items.setStackInSlot(FusionControllerBlockEntity.SLOT_MITIGATION, new ItemStack(mio_icif_normal.FROZEN_NEON_PELLET.get(), 16));
         c.setFeed(FusionPlasma.REFERENCE_FEED);   // 0.1.11.134: the feed goes on past it, into the limits
 
         // the lever on top of the controller

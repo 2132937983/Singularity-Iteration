@@ -73,7 +73,7 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
 The fuel injection port and the disruption mitigation port have slots of their own; right-click one to open its screen (like the nuclear reactor's fluid port):
 
 - **Fuel injection port**: 2 slots of deuterium fuel rods, 2 of tritium fuel rods and 2 outputs for the empty fuel rods. Pipes and hoppers can only put fuel rods into their own slots, and can only take the empty fuel rods out.
-- **Disruption mitigation port**: 4 slots of coolant cells (10k, 30k, 60k).
+- **Disruption mitigation port**: 4 slots of frozen neon pellets (coolant cells too, in this version).
 - Once the structure is formed, the console takes one rod or cell from a port whenever its deuterium, tritium or mitigation slot is empty, and sends its empty fuel rods to the fuel injection port's outputs. While the structure is not formed, the items stay in the port.
 - The screen shows whether the port is linked to the console, and the fuel or coolant cells the console holds. Breaking a port drops its contents.
 - Hoppers can also feed the console itself, but it only exposes the fuel slots and the empty-rod outputs, never the blanket. Coolant cells go in only through a disruption mitigation port or by hand.
@@ -120,8 +120,15 @@ The fuel injection port and the disruption mitigation port have slots of their o
   - helium ash builds up without an exhaust port (60 s).
   - the plasma runs past an operating limit (density or beta, see above).
 
-  It destroys the components in the blanket's first column and heats the blanket by half its maximum. With a coolant cell in the disruption mitigation slot, one is injected (used up) instead: the components survive and the blanket heats less: 30% with a 10k coolant cell, 20% with a 30k one, 5% with a 60k one (a used cell counts the cold it has left). A disruption never damages the structure.
-- **Meltdown:** a blanket at its maximum heat (overheated by itself, or by a disruption's heat on top) melts down: the console and its contents are gone, and a nuclear blast goes off at the centre of the torus. Its power is 50 times the nuclear reactor's explosion power limit (config fusionExplosionMultiplier; by default 50 x 45 = 2,250), its largest radius twice that but at most 2,000 blocks. With the multiplier at 0 an overheated blanket only disrupts the plasma; with enableNuclearExplosion off it is a local explosion that breaks nothing around.
+  The plasma's thermal energy strikes the first wall, and the blanket heats in proportion to it: 1 at the reference burn (16 steps, 15 keV), less at low steps or early in the heating, more at 20 steps.
+  - Unmitigated: the blanket heats by half its maximum at the reference burn; from 25% of the reference plasma energy, the components in the blanket's first column are destroyed.
+  - **Shattered pellet injection**: with a **frozen neon pellet** in the disruption mitigation slot, one is shattered into the plasma just before (used up). The neon turns the heat into radiation spread evenly over the whole wall: the components survive, and the blanket heats by only 5% of its maximum at the reference burn. A compressor freezes frozen neon pellets from compressed air cells (32 EU/t, 400 ticks).
+  - Coolant cells still go in the mitigation slot in this version (10k 30%, 30k 20%, 60k 5%, scaled the same way); a later version drops them.
+  - A disruption never damages the structure.
+- **Meltdown:** a blanket at its maximum heat (overheated by itself, or by a disruption's heat on top) melts down: the console and its contents are gone. A tokamak holds a few grams of fuel and cannot blow up like a bomb, so by default:
+  - the superconducting magnets quench and their stored energy (ITER: about 51 GJ) goes at once: an ordinary blast of power 16 at the centre of the torus and one of power 8 by each of the eight toroidal field coils round the plasma ring, tearing open the vacuum vessel and the blanket (breaking nothing with enableNuclearExplosion off);
+  - the melted hybrid blanket (with its fission fuel) leaves a radioactive zone of 48 blocks radius for 24 hours (real time).
+  - With the config fusionNuclearMeltdown set to true it is the old nuclear blast: fusionExplosionMultiplier times the nuclear reactor's explosion power limit (by default 50 x 45 = 2,250). With fusionExplosionMultiplier at 0 neither happens: an overheated blanket only disrupts the plasma.
 - **Quench:** without the magnet upkeep, the magnets lose superconductivity. After 60 s they must be cooled again.
 - **Radiation:** while the plasma burns, living things within 16 blocks of the torus take 0-3 radiation damage a second. Shielding blocks reduce it, and a full hazmat suit protects completely.
 

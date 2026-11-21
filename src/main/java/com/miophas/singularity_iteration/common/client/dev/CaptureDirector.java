@@ -2561,6 +2561,57 @@ public final class CaptureDirector {
      * shot in each stage (magnet cooling, solenoid charging, heating, ignition, full power), then the running reactor from
      * outside and the GESU it charges. Each shot logs the controller's values ("[fusioncapture]").
      */
+    /**
+     * Scene "fusion_meltdown", 0.1.11.137: the demonstration tokamak burning, then its blanket overheated: the default
+     * meltdown (the magnets' stored energy as an ordinary blast, a contaminated zone) from outside, before and after.
+     */
+    private static void sceneFusionMeltdown() {
+        BlockPos c = new BlockPos(30, -55, 10);
+        var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
+        var lever = new java.util.concurrent.atomic.AtomicReference<BlockPos>();
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            look(sp, 44.5, -45, 28.5, 130, 16);
+        });
+        server(20, sp -> {
+            var level = sp.serverLevel();
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.placeStructure(level, c);
+            lever.set(com.miophas.singularity_iteration.common.fusion.FusionDemo.equip(level, c, false));
+            if (level.getBlockEntity(c) instanceof com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity f) ref.set(f);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        until(400, () -> ref.get() != null && ref.get().isFormed());
+        server(1, sp -> com.miophas.singularity_iteration.common.fusion.FusionDemo.lever(sp.serverLevel(), lever.get(), true));
+        until(3000, () -> ref.get() != null && ref.get().plasma().state() == com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.BURNING);
+        server(40, sp -> look(sp, 44.5, -45, 28.5, 130, 16));
+        shot(10, "fusion_meltdown/1_burning");
+        server(1, sp -> {
+            ref.get().devOverheat();
+            org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[fusioncapture] overheat | hull {}/{} | formed {}", ref.get().hull(), ref.get().maxHull(), ref.get().isFormed());
+        });
+        server(1, sp -> org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[fusioncapture] next tick | hull {}/{} | removed {} | block {}",
+            ref.get().hull(), ref.get().maxHull(), ref.get().isRemoved(), sp.serverLevel().getBlockState(c).getBlock()));
+        server(60, sp -> {
+            var level = sp.serverLevel();
+            BlockPos centre = new BlockPos(18, -55, 6);
+            org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[fusioncapture] meltdown | console {} | radiation at centre {} | zone {}",
+                level.getBlockState(c).getBlock(), String.format("%.2f",
+                    com.miophas.singularity_iteration.common.blockentity.reactor.NukeRadiationZoneManager.getRadiationIntensity(level, centre)),
+                com.miophas.singularity_iteration.common.blockentity.reactor.NukeRadiationZoneManager.isInRadiationZone(level, centre.offset(40, 0, 0)));
+            look(sp, 44.5, -45, 28.5, 130, 16);
+        });
+        shot(20, "fusion_meltdown/2_after");
+        server(1, sp -> look(sp, 18.5, -40, 6.5, 0, 89));
+        shot(30, "fusion_meltdown/3_crater_from_above");
+        client(80, () -> Minecraft.getInstance().stop());
+    }
+
     private static void sceneFusion() {
         BlockPos c = new BlockPos(30, -55, 10);   // the structure stands on the grass (y -61) from x 6 to 30, z -6 to 18
         BlockPos gesu = new BlockPos(22, -59, -9);
@@ -4323,6 +4374,13 @@ public final class CaptureDirector {
         if (OUT != null && "fusion_coils".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneFusionCoils();
+        }
+    }
+
+    static {
+        if (OUT != null && "fusion_meltdown".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneFusionMeltdown();
         }
     }
 

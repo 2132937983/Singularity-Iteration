@@ -156,10 +156,10 @@ public final class Round11594GameTests {
         if (!(s10 > s30 && s30 > s60) || Math.abs(s60 - 0.05) > 1e-9) wrong.add("mitigation shares " + s10 + " / " + s30 + " / " + s60);
         long hull0 = ((long[]) call(c, "screenValues"))[10];
         items.setStackInSlot(mit, new ItemStack(item("reactor/item_reactor_coolant_six")));
-        call(c, "disrupt", true, 15.0);
+        call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
         long hull60 = ((long[]) call(c, "screenValues"))[10] - hull0;
         items.setStackInSlot(mit, new ItemStack(item("reactor/item_reactor_collant_simple")));
-        call(c, "disrupt", true, 15.0);
+        call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
         long hull10 = ((long[]) call(c, "screenValues"))[10] - hull0 - hull60;
         if (!(hull10 > hull60) || hull60 <= 0) wrong.add("a 10k cell (" + hull10 + " HU) is not worse than a 60k cell (" + hull60 + " HU)");
         items.setStackInSlot(d, new ItemStack(item("normal/item_deuterium_cell"), 2));

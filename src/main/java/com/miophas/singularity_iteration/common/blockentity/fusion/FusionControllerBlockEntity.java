@@ -133,15 +133,65 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
     public static final long BEST_COLD = 60_000L;
     public static final double UNMITIGATED_HEAT_SHARE = 0.5;
 
+    /**
+     * What the disruption mitigation takes: 0.1.11.137, frozen neon pellets (shattered pellet injection), and for this version
+     * still the coolant cells (to be dropped in a later version).
+     */
     public static boolean isCoolant(ItemStack stack) {
+        return isNeonPellet(stack) || isCoolantCell(stack);
+    }
+
+    /** 0.1.11.137: a frozen neon pellet. */
+    public static boolean isNeonPellet(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(mio_icif_normal.FROZEN_NEON_PELLET.get());
+    }
+
+    /** A reactor coolant cell (10k, 30k, 60k): the mitigation until 0.1.11.136, kept for one version. */
+    public static boolean isCoolantCell(ItemStack stack) {
         if (stack.isEmpty()) return false;
         var id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id.getNamespace().equals("mio_icif") && COOLANT_CELLS.contains(id.getPath());
     }
 
+    /** 0.1.11.137: the share of the blanket's maximum heat a disruption gives with a neon pellet, at the reference plasma. */
+    public static final double NEON_HEAT_SHARE = 0.05;
+    /** 0.1.11.137: an unmitigated disruption destroys the first column only from this share of the reference plasma's energy. */
+    public static final double DESTROY_FROM = 0.25;
+    /** 0.1.11.137: the magnet blast and the contamination of a meltdown (when it is not the old nuclear one). */
+    public static final float MAGNET_BLAST_POWER = 16.0F;
+    /** 0.1.11.137: the eight blasts round the plasma ring (one by each toroidal field coil). */
+    public static final float COIL_BLAST_POWER = 8.0F;
+    public static final int COIL_BLASTS = 8;
+
+    /** 0.1.11.137: {@link #COIL_BLASTS} plasma cells evenly spread by angle round the torus's centre, at the ring's mid-plane. */
+    public static List<BlockPos> coilBlastPoints(List<BlockPos> plasma, BlockPos centre) {
+        List<BlockPos> out = new ArrayList<>();
+        if (plasma.isEmpty()) return out;
+        double midY = plasma.stream().mapToInt(BlockPos::getY).average().orElse(centre.getY());
+        for (int k = 0; k < COIL_BLASTS; k++) {
+            double angle = 2 * Math.PI * k / COIL_BLASTS;
+            BlockPos best = null;
+            double bestScore = Double.MAX_VALUE;
+            for (BlockPos p : plasma) {
+                double a = Math.atan2(p.getZ() - centre.getZ(), p.getX() - centre.getX());
+                double d = Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle))) * 10 + Math.abs(p.getY() - midY);
+                if (d < bestScore) { bestScore = d; best = p; }
+            }
+            if (best != null && !out.contains(best)) out.add(best);
+        }
+        return out;
+    }
+    public static final int CONTAMINATION_RADIUS = 48;
+    public static final float CONTAMINATION_POWER = 400.0F;
+
+    /** 0.1.11.137: a plasma's thermal energy over the reference burn's: what a disruption throws onto the wall scales with it. */
+    public static double energyShare(double joules) {
+        return Math.max(0, joules / FusionPlasma.thermalJoules(FusionPlasma.REFERENCE_DENSITY, FusionPlasma.REFERENCE_KEV));
+    }
+
     /** The cold a coolant cell has left: its capacity less the heat it holds (0 for anything else). */
     public static long coldOf(ItemStack stack) {
-        if (!isCoolant(stack)) return 0;
+        if (!isCoolantCell(stack)) return 0;
         try {
             var part = ReactorInventory.read(stack.copyWithCount(1));
             return part == null ? 0 : Math.max(0, part.profile().capacity() - part.stored());
@@ -266,7 +316,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         boolean signal = level.hasNeighborSignal(pos);
         boolean run = signal && c.cryos > 0 && !c.blanketInvalid;
         boolean hadPlasma = c.plasma.hasPlasma();
-        double kevBefore = c.plasma.kev();
+        double kevBefore = c.plasma.kev(), energyBefore = c.plasma.thermalEnergy();
         FusionPlasma.Result r = c.plasma.tick(new FusionPlasma.Inputs(c.formed, run, c.feed, c.heaters, c.cyclotron, c.apiGetStoredEnergy(),
             c.deuterium, c.tritium, c.exhausts > 0, c.blanketOverheated));
         if (r.energyUsed() > 0) c.apiUseEnergy(r.energyUsed(), false);
@@ -278,7 +328,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         c.lastUsed = r.energyUsed();
         switch (r.event()) {
             case IGNITION -> MioAchievements.at(level, pos, "fusion_ignition", "ignited");
-            case DISRUPTION -> c.disrupt(hadPlasma, kevBefore);
+            case DISRUPTION -> c.disrupt(hadPlasma, energyBefore);
             default -> { }
         }
         if (!c.plasma.hasPlasma()) c.output = 0;
@@ -339,20 +389,24 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
     }
 
     /** What a disruption does to the blanket (the structure is never damaged). */
-    private void disrupt(boolean hadPlasma, double kev) {
+    private void disrupt(boolean hadPlasma, double joules) {
         output = 0;
         if (!hadPlasma || level == null) return;
+        // 0.1.11.137: the heat thrown onto the wall scales with the plasma's thermal energy (the reference burn's = 1)
+        double share = energyShare(joules);
         ItemStack coolant = items.getStackInSlot(SLOT_MITIGATION);
+        boolean neon = isNeonPellet(coolant);
         long cold = coldOf(coolant);
-        boolean mitigated = cold > 0;
+        boolean mitigated = neon || cold > 0;
         Component coolantName = coolant.getHoverName();
         long heat;
         if (mitigated) {
             items.extractItem(SLOT_MITIGATION, 1, false);
-            heat = Math.round(maxHull * mitigatedHeatShare(cold));
+            heat = Math.round(maxHull * share * (neon ? NEON_HEAT_SHARE : mitigatedHeatShare(cold)));
         } else {
-            for (int row = 0; row < FusionBlanket.ROWS; row++) items.setStackInSlot(row * FusionBlanket.COLUMNS, ItemStack.EMPTY);
-            heat = Math.round(maxHull * UNMITIGATED_HEAT_SHARE);
+            if (share >= DESTROY_FROM)
+                for (int row = 0; row < FusionBlanket.ROWS; row++) items.setStackInSlot(row * FusionBlanket.COLUMNS, ItemStack.EMPTY);
+            heat = Math.round(maxHull * share * UNMITIGATED_HEAT_SHARE);
         }
         // 0.1.11.94: the heat may take the blanket to its maximum: a meltdown on the next tick (with the blast off, it stops
         // just below, as before)
@@ -376,7 +430,28 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         float power = explosionPower();
         if (power <= 0) return false;
         BlockPos centre = FusionStructure.tokamak().centre(worldPosition, facing());
-        boolean nuclear = com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get();
+        boolean terrain = com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get();
+        // 0.1.11.137: by default no nuclear blast (a tokamak holds a few grams of fuel): the superconducting magnets' stored
+        // energy goes off as an ordinary blast at the torus's centre, and the melted hybrid blanket leaves a contaminated zone
+        if (!com.miophas.singularity_iteration.common.Singularity_Iteration_Config.FUSION_NUCLEAR_MELTDOWN.get()) {
+            for (Player p : server.getEntitiesOfClass(Player.class, new AABB(centre).inflate(64)))
+                p.displayClientMessage(Component.translatable("message.mio_icif.fusion.meltdown_magnet"), false);
+            for (int i = 0; i < SLOTS; i++) items.setStackInSlot(i, ItemStack.EMPTY);
+            deuterium = tritium = 0;
+            BlockPos at = worldPosition;
+            server.setBlock(at, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            server.explode(null, centre.getX() + 0.5, centre.getY() + 0.5, centre.getZ() + 0.5, MAGNET_BLAST_POWER,
+                terrain ? Level.ExplosionInteraction.BLOCK : Level.ExplosionInteraction.NONE);
+            // the toroidal field coils hold most of the stored energy: it goes where the coils meet the plasma, all round the ring
+            for (BlockPos p : coilBlastPoints(FusionStructure.tokamak().positions(at, facing(), FusionStructure.Part.PLASMA), centre))
+                server.explode(null, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, COIL_BLAST_POWER,
+                    terrain ? Level.ExplosionInteraction.BLOCK : Level.ExplosionInteraction.NONE);
+            com.miophas.singularity_iteration.common.blockentity.reactor.NukeRadiationZoneManager.createRadiationZone(server, centre,
+                CONTAMINATION_RADIUS, CONTAMINATION_POWER);
+            MioAchievements.at(server, at, "meltdown", "reactor_meltdown");
+            return true;
+        }
+        boolean nuclear = terrain;
         com.miophas.singularity_iteration.common.reactor.ReactorBlastEffects.Prepared blast = null;
         if (nuclear) {
             try {
@@ -523,6 +598,11 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
     public boolean isFormed() { return formed; }
     public long output() { return output; }
     public long hull() { return hull; }
+    /** 0.1.11.137: the capture tool's meltdown scene: the blanket at its maximum heat (a meltdown on the next tick). */
+    public void devOverheat() {
+        hull = maxHull;
+        cycleIn = CYCLE_TICKS;   // no blanket cycle (whose vents would cool it) before the meltdown check
+    }
     public long maxHull() { return maxHull; }
     public long deuterium() { return deuterium; }
     public long tritium() { return tritium; }

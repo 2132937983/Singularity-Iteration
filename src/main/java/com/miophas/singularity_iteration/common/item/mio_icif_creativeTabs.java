@@ -882,6 +882,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_reactors.LITHIUM_CELL.get());
                 output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.TRITIUM_CELL.get());   // 0.1.10.36: neutron source
                 output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.DEUTERIUM_CELL.get());   // 0.1.11.92: fusion fuel
+                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.FROZEN_NEON_PELLET.get());   // 0.1.11.137
                 output.accept(mio_icif_reactors.ISOTOPE_ROD.get());
 
                 // Uranium Fuel Rods

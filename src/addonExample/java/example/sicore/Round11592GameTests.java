@@ -322,13 +322,13 @@ public final class Round11592GameTests {
         items.setStackInSlot(0, new ItemStack(item("reactor/item_reactor_iridium_oc_vent")));
         items.setStackInSlot(9, new ItemStack(item("reactor/item_reactor_iridium_oc_vent")));
         items.setStackInSlot(slot, new ItemStack(item("reactor/item_reactor_coolant_six"), 2));
-        call(c, "disrupt", true, 15.0);
+        call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
         List<String> wrong = new ArrayList<>();
         if (items.getStackInSlot(0).isEmpty() || items.getStackInSlot(9).isEmpty()) wrong.add("the coolant did not spare the first column");
         if (items.getStackInSlot(slot).getCount() != 1) wrong.add("the mitigation did not use exactly one coolant cell");
         items.setStackInSlot(slot, ItemStack.EMPTY);
         items.setStackInSlot(1, new ItemStack(item("reactor/item_reactor_iridium_oc_vent")));
-        call(c, "disrupt", true, 15.0);
+        call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
         if (!items.getStackInSlot(0).isEmpty() || !items.getStackInSlot(9).isEmpty()) wrong.add("without coolant the first column survived");
         if (items.getStackInSlot(1).isEmpty()) wrong.add("the second column was destroyed too");
         h.assertTrue(wrong.isEmpty(), "disruption: " + wrong);

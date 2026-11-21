@@ -334,6 +334,12 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
                      "爆炸以环面中心为中心，最大水平半径为威力的两倍，但不超过 2000 格",
                      "0：聚变堆不爆炸，包层过热只使等离子体破裂；enableNuclearExplosion=false 时退化为不破坏周围地形的局部爆炸")
             .defineInRange("fusionExplosionMultiplier", 50.0, 0.0, 1000.0);
+    // 0.1.11.137：聚变堆熔毁默认不再是核爆
+    public static final ModConfigSpec.BooleanValue FUSION_NUCLEAR_MELTDOWN = NUCLEAR_BUILDER
+            .comment("聚变堆熔毁是否按旧规则（0.1.11.94–136）引发核爆，威力由 fusionExplosionMultiplier 决定",
+                     "false（默认）：熔毁为超导磁体储能释放的普通爆炸（环面中心威力 16，等离子体环上 8 个线圈旁各威力 8），并留下 48 格的放射性污染区",
+                     "托卡马克里只有几克燃料，物理上不可能发生核爆；fusionExplosionMultiplier 为 0 时两种熔毁都不会发生")
+            .define("fusionNuclearMeltdown", false);
     // 0.1.10.37：核爆把深层矿石转为深层铱矿石的概率
     public static final ModConfigSpec.DoubleValue NUKE_IRIDIUM_ORE_CHANCE = NUCLEAR_BUILDER
             .comment("核弹与反应堆核爆把爆炸范围内每个深层矿石（#mio_icif:nuke_transmutable）转为深层铱矿石的概率",

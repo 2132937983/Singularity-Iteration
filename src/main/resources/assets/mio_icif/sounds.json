@@ -450,6 +450,15 @@
       }
     ]
   },
+  "suit.em_hum": {
+    "subtitle": "mio_icif.subtitle.suit.em_hum",
+    "sounds": [
+      {
+        "name": "minecraft:block/beacon/ambient",
+        "attenuation_distance": 24
+      }
+    ]
+  },
   "maneuver.boom": {
     "subtitle": "subtitles.mio_icif.maneuver.boom",
     "sounds": [

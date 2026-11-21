@@ -41,6 +41,7 @@ public final class MachineSoundGameTests {
             if (!def.has("subtitle")) problems.add("no subtitle for " + key);
             for (JsonElement s : def.getAsJsonArray("sounds")) {
                 String name = s.isJsonObject() ? s.getAsJsonObject().get("name").getAsString() : s.getAsString();
+                if (name.startsWith("minecraft:")) continue;   // 0.1.11.129: a placeholder on a vanilla sound (suit.em_hum) ships with the game
                 String file = "assets/mio_icif/sounds/" + name.substring(name.indexOf(':') + 1) + ".ogg";
                 int channels = vorbisChannels(file);
                 if (channels < 0) problems.add("missing or unreadable " + file);

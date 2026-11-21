@@ -1182,10 +1182,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "僚機の報告（ロック、撃破、損傷、電力、救助など）を編隊HUDの横に字幕で表示。オフ：アクションバー。",
   "mio_icif.configuration.wingman_callout_sound": "僚機の報告音",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "僚機の報告ごとに短い合図音を鳴らす。",
-  "mio_icif.configuration.classic_flight_fx": "従来の飛行エフェクト",
-  "mio_icif.configuration.classic_flight_fx.tooltip": "相位ワープスタイル（光の円錐、星の流れ、音速突破時のワープ）ではなく、従来の飛行エフェクト（発光コーン、スラスター粒子、陽炎）を使う。",
-  "mio_icif.configuration.wingman_engine_sound": "僚機のエンジン音",
-  "mio_icif.configuration.wingman_engine_sound.tooltip": "飛行中の僚機のタービン音。速度とともに音量と音程が上がる。",
+  "mio_icif.configuration.wingman_engine_sound": "僚機の推進音",
+  "mio_icif.configuration.wingman_engine_sound.tooltip": "飛行中の僚機の電磁的なうなり。速度とともに音量と音程が上がる。",
   "mio_icif.configuration.impact_shake": "衝撃カメラ振動",
   "mio_icif.configuration.impact_shake.tooltip": "量子飛行での激しい着地、高速での壁への衝突、離陸時のカメラ振動（0 = オフ、1 = 標準、2 = 強い）。",
   "mio_icif.configuration.impact_fov": "加速・急制動の視野変化",
@@ -1533,8 +1531,6 @@
   "mio_icif.configuration.order_markers.tooltip": "ワールド内の待機点、制圧リング、集中攻撃の枠。",
   "mio_icif.configuration.holo_table_cells": "ホロテーブルのセル数",
   "mio_icif.configuration.holo_table_cells.tooltip": "一辺の地形セル数（多いほど細かく、重い）。",
-  "mio_icif.configuration.thruster_fx": "スラスター演出",
-  "mio_icif.configuration.thruster_fx.tooltip": "スラスター炎の陽炎、全開時のショックダイヤモンド、着地時の塵のリング。",
   "mio_icif.subtitle.command.wheel_open": "コマンドホイールが開く",
   "mio_icif.subtitle.command.wheel_select": "コマンドホイールの選択音",
   "mio_icif.subtitle.command.order_ack": "僚機が応答する",
@@ -4304,7 +4300,7 @@
   "mio_icif.configuration.suit_glow_strength.tooltip": "スーツの発光の強さ。1.0 = 既定。",
   "gui.mio_icif.equipment_console.appearance.suit_glow": "スーツの発光（ライトと回路ライン）",
   "mio_icif.configuration.motion_fx": "スーツの動作エフェクト",
-  "mio_icif.configuration.motion_fx.tooltip": "通常モードの量子スーツ：ジェットパック飛行の背中と足裏の噴射、ブーストジャンプの踏み切りリング、強い着地の衝撃リング、疾走時の気流の筋。武装庫のパーツのイオン軌跡・突入発光・継ぎ目の光も含む。",
+  "mio_icif.configuration.motion_fx.tooltip": "通常モードの量子スーツ：ブーストジャンプの踏み切りリング、強い着地の衝撃リング、ダッシュの気流線（他のプレイヤーにも見える）。",
   "mio_icif.configuration.visor_glass": "バイザーガラス",
   "mio_icif.configuration.visor_glass.tooltip": "既定はオフ。ナノか量子のヘルメットを着けた一人称で：かすかな縁、色のにじみ、振り向くと流れる映り込み、雨粒、ヘルメットがほぼ空のときのヒビ。",
   "gui.mio_icif.equipment_console.appearance.visor_glass": "バイザーガラス（一人称）",
@@ -5899,5 +5895,6 @@
   "gui.mio_icif.process.tip.recycler.1": "二軸破砕機：逆回転する二本の刃軸が物を裂き、破片から使える部分を選別する。",
   "gui.mio_icif.process.tip.recycler.2": "産出は累積：一個ごとに収率を加え、1 になると一個出る。ランダムはない。",
   "gui.mio_icif.process.tip.canner.1": "モードにより缶詰め、セルを右タンクへ空ける、左タンクからセルを満たす、左タンクの液体を混ぜて右タンクへ送る。",
-  "gui.mio_icif.process.tip.canner.2": "左が入力タンク、右が出力タンク（各 8,000 mB）。「交換」で入れ替える。"
+  "gui.mio_icif.process.tip.canner.2": "左が入力タンク、右が出力タンク（各 8,000 mB）。「交換」で入れ替える。",
+  "mio_icif.subtitle.suit.em_hum": "電磁推進：うなり"
 }

@@ -54,6 +54,12 @@ If you hit a wall, the throttle closes.
 While you ride (boat, minecart, horse or a seat), the jetpack and the maneuver thrusters stay off and use no energy.
 Set the camera roll and the speed field of view in the mod configuration screen.
 
-## Thruster effects
+## Propulsion
 
-Since 0.1.10.2 heat haze shimmers over the thruster flames, shock diamonds stand in the plumes at full burn, and a dust ring runs over the ground when you land. The Wingmen's jets shimmer too. Client option: thruster_fx.
+Since 0.1.11.124 the quantum suit flies electromagnetically and throws out no reaction mass: the thruster flames, heat haze, shock diamonds, landing dust and ignition sounds are gone, and the client options thruster_fx and classic_flight_fx were removed. The flight shows by state:
+
+- **Hover** (throttle under 35%): the ring over the head and the float on the back rise and sink every 3.2 seconds, their light swelling with them. A thin ring of light lies under each quantum boot and sends a ripple out on every stroke; within 6 blocks of the ground a wide ripple runs over it too, fainter the higher you are.
+- **Maneuvering**: an attitude port that fires shows one electromagnetic pulse at the shoulder, waist or calf (a point of light, a ring snapping out, two jagged micro arcs) for 2 ticks; firing on, it crackles every tick.
+- **High speed** (past the sound barrier: in at Mach 1, out below Mach 0.9): the two acceleration pods on the back swing out in half a second and light up; each pod leaves a red light trail (a thin bright red line with a red curtain hanging under it, fading downwards); a net of flickering white, pale yellow and violet arcs covers the body. Slowing down, the pods fold back first. A graviton frame has no pods.
+- The light trail grows from Mach 0.3 and is full from Mach 0.9; the arc net from Mach 0.95, full from Mach 1.3. In first person you do not see your own trail or net.
+- In normal mode (jetpack flight) the suit hums electromagnetically, with no ignition or shutdown cue; for now the hum is the vanilla beacon's, until the suit has its own sound.

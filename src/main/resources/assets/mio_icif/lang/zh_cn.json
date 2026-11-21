@@ -3053,10 +3053,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "在编队 HUD 旁以字幕显示僚机播报（锁定、击杀、受损、电力、救援等）；关闭时显示在动作栏。",
   "mio_icif.configuration.wingman_callout_sound": "僚机播报提示音",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "每条僚机播报伴随一声短促的提示音。",
-  "mio_icif.configuration.classic_flight_fx": "经典飞行特效",
-  "mio_icif.configuration.classic_flight_fx.tooltip": "使用旧的飞行特效（发光锥、推进器粒子、热浪），而不是相位跃迁风格（光锥、星流、冲过音障时的跃迁）。",
-  "mio_icif.configuration.wingman_engine_sound": "僚机引擎声",
-  "mio_icif.configuration.wingman_engine_sound.tooltip": "飞行中的僚机发出涡轮引擎声，音量和音调随速度升高。",
+  "mio_icif.configuration.wingman_engine_sound": "僚机推进声",
+  "mio_icif.configuration.wingman_engine_sound.tooltip": "飞行中的僚机发出电磁嗡鸣，音量和音调随速度升高。",
   "mio_icif.configuration.impact_shake": "冲击镜头震动",
   "mio_icif.configuration.impact_shake.tooltip": "量子飞行中重落地、高速撞墙和起飞时的镜头震动（0 = 关闭，1 = 默认，2 = 强烈）。",
   "mio_icif.configuration.impact_fov": "加力与急刹视野冲击",
@@ -3376,8 +3374,6 @@
   "mio_icif.configuration.order_markers.tooltip": "世界中的待机点、压制圆环与集中攻击框。",
   "mio_icif.configuration.holo_table_cells": "全息台格数",
   "mio_icif.configuration.holo_table_cells.tooltip": "每边的地形格数（越多越精细，也越慢）。",
-  "mio_icif.configuration.thruster_fx": "推进器特效",
-  "mio_icif.configuration.thruster_fx.tooltip": "推进器火焰的热浪扭曲、全推力时的激波钻石、着陆时的尘环。",
   "mio_icif.subtitle.command.wheel_open": "指挥轮盘展开",
   "mio_icif.subtitle.command.wheel_select": "指挥轮盘选择",
   "mio_icif.subtitle.command.order_ack": "僚机确认",
@@ -4304,7 +4300,7 @@
   "mio_icif.configuration.suit_glow_strength.tooltip": "套装发光的强度。1.0 = 默认。",
   "gui.mio_icif.equipment_console.appearance.suit_glow": "套装发光（灯光与电路线）",
   "mio_icif.configuration.motion_fx": "套装动作效果",
-  "mio_icif.configuration.motion_fx.tooltip": "普通模式下的量子套装：喷气背包飞行时背部与脚底的喷射、强化跳跃的起跳光环、重落地的冲击环、疾跑时的气流线。以及武装库飞行部件的离子尾迹、再入发光与接缝光线。",
+  "mio_icif.configuration.motion_fx.tooltip": "普通模式下的量子套装：强化跳跃的起跳光环、重落地的冲击环、冲刺时的气流线（其他玩家也能看到）。",
   "mio_icif.configuration.visor_glass": "面罩玻璃",
   "mio_icif.configuration.visor_glass.tooltip": "默认关闭。第一人称佩戴纳米或量子头盔时：淡淡的边缘、彩色边纹、随转头滑动的反光、雨中的水滴、头盔几乎没电时的裂纹。",
   "gui.mio_icif.equipment_console.appearance.visor_glass": "面罩玻璃（第一人称）",
@@ -5899,5 +5895,6 @@
   "gui.mio_icif.process.tip.recycler.1": "双轴撕碎：两根反向转动的刀轴把物品撕碎，从碎料里分选出可用的部分。",
   "gui.mio_icif.process.tip.recycler.2": "产出按比例累计：每件加上产出率，满 1 出一个，没有随机。",
   "gui.mio_icif.process.tip.canner.1": "按模式装罐、把单元倒进右罐、从左罐灌装单元，或把左罐的液体混合后送进右罐。",
-  "gui.mio_icif.process.tip.canner.2": "左边是进液罐，右边是出液罐，各 8,000 mB；「交换液体」把两罐对调。"
+  "gui.mio_icif.process.tip.canner.2": "左边是进液罐，右边是出液罐，各 8,000 mB；「交换液体」把两罐对调。",
+  "mio_icif.subtitle.suit.em_hum": "电磁推进：嗡鸣"
 }

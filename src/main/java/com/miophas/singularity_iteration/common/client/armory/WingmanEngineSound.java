@@ -14,7 +14,8 @@ import net.minecraft.util.RandomSource;
  * 0.1.11.65 (hit feel and constructivist FX phase Q4): the engine of a flying Wingman, a looping turbine drone at the suit
  * that rises with its speed (louder and higher; a boost kicks it up), fades out on the ground and stops when the Wingman is
  * gone. One loop per Wingman within {@link #RANGE} blocks; client option {@code wingman_engine_sound}. Before, a Wingman
- * flew in silence between its boost and lock-on chirps.
+ * flew in silence between its boost and lock-on chirps. 0.1.11.129 (armour and flight overhaul E6): the field hum of an
+ * electromagnetic drive ({@code suit.em_hum}) instead of the turbine.
  */
 public final class WingmanEngineSound extends AbstractTickableSoundInstance {
     /** Blocks within which a Wingman's engine plays. */
@@ -26,7 +27,7 @@ public final class WingmanEngineSound extends AbstractTickableSoundInstance {
     private int boosts = Integer.MIN_VALUE, boostAge = 100;
 
     private WingmanEngineSound(WingmanEntity wingman) {
-        super(mio_icif_sounds.ARMORY_TURBINE_LOOP.get(), SoundSource.NEUTRAL, RandomSource.create());
+        super(mio_icif_sounds.SUIT_EM_HUM.get(), SoundSource.NEUTRAL, RandomSource.create());   // 0.1.11.129 (E6): was the turbine
         this.wingman = wingman;
         this.looping = true;
         this.delay = 0;

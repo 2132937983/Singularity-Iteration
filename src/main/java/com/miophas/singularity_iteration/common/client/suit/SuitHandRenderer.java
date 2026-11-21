@@ -105,7 +105,8 @@ public final class SuitHandRenderer {
         com.miophas.singularity_iteration.common.client.suit.nano.NanoModuleLayer.drawArm(pose, buffers, light, player, arm, right, partial);
         QuantumWornMounts.drawArm(model, pose, buffers, light, player, partial, right);
         // 0.1.10.31 (S-9): the palm thruster while hovering in Special Maneuver flight
-        SuitThrustLayer.drawPalm(pose, buffers, player, arm, right);
+        if (com.miophas.singularity_iteration.common.client.legacy.flight.LegacyFlightFx.ENABLED)   // 0.1.11.124 (E1): archived
+            com.miophas.singularity_iteration.common.client.legacy.flight.SuitThrustLayer.drawPalm(pose, buffers, player, arm, right);
         event.setCanceled(true);
     }
 

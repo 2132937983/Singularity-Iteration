@@ -91,4 +91,8 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<WindGeneratorMe
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.height")), mouseX, mouseY);
         }
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

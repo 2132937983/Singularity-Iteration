@@ -163,16 +163,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     }
 
     @Override
-    protected boolean showUpgradeHint() { return !calm() && super.showUpgradeHint(); }   // the empty upgrade slots say the same
-
-    @Override
-    protected int statusLampColor() { return calm() ? 0 : super.statusLampColor(); }
-
-    @Override
-    protected void drawTitle(GuiGraphics g) {
-        if (!calm()) { super.drawTitle(g); return; }
-        g.drawString(font, fit(title, W - 16), 8, titleLabelY, VanillaFrame.TITLE, false);   // left, as in the vanilla containers
-    }
+    protected boolean calmChrome() { return calm(); }
 
     /** Optional extra drawing in the readout column (bars, buttons), below the readouts at {@code y}. */
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) { }

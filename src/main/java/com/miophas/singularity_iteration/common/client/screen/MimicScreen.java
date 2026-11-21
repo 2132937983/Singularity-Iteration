@@ -76,4 +76,8 @@ abstract class MimicScreen<T extends AbstractContainerMenu> extends mio_icif_scr
     }
 
     protected static String f(String pattern, Object... args) { return String.format(java.util.Locale.ROOT, pattern, args); }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

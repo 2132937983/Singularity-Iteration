@@ -33,17 +33,27 @@ public final class ReadoutPanel {
         if (open != null) open.add(new Entry(order, seq++, text, rgb));
     }
 
-    /** Draws the window at (x, y) (outer edge, w x h) with the collected lines, and closes the panel. */
+    /** 0.1.11.144: the third level of text (the calm layout's muted lines). */
+    public static final int MUTED = 0x80868A;
+
+    /**
+     * Writes the collected lines in the area at (x, y) (outer edge, w x h; the window's left edge is x + 1) and closes the
+     * panel. 0.1.11.144 (calm layout): no window, the text sits on the panel; the first line in the body colour, the
+     * later lines muted, a line in a state colour (running, fault) keeps it.
+     */
     public static void end(GuiGraphics g, int x, int y, int w, int h) {
         List<Entry> lines = open;
         open = null;
-        VanillaFrame.inset(g, x, y, w, h, VanillaFrame.PANEL);
         if (lines == null) return;
         lines.sort((a, b) -> a.order != b.order ? Integer.compare(a.order, b.order) : Integer.compare(a.seq, b.seq));
         Font font = Minecraft.getInstance().font;
-        int maxW = w - 8, rows = (h - 4) / ROW_H, ty = y + 4, used = 0;
+        int maxW = w - 2, rows = (h - 4) / ROW_H, ty = y + 4, used = 0;
+        x -= 3;   // the text starts at the window's left edge (x + 1); it was 3 pixels inside the window
+        boolean firstLine = true;
         for (Entry e : lines) {
             int colour = vanilla(e.rgb);
+            if (colour == TEXT && !firstLine) colour = MUTED;
+            firstLine = false;
             // the pieces: the " · " parts, a part too wide for a row broken into its words
             List<String> pieces = new ArrayList<>(), joins = new ArrayList<>();
             for (String part : e.text.getString().split(" · ")) {

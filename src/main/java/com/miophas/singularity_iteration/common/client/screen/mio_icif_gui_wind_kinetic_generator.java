@@ -158,4 +158,8 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKin
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.factors"), Component.translatable(K + "tip.wake")), mouseX, mouseY);
         }
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

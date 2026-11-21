@@ -390,4 +390,8 @@ public class FusionControllerScreen extends mio_icif_screen<FusionControllerMenu
             Component.translatable(B + "tbr", String.format(Locale.ROOT, "%.2f", v(48) / 100.0)).withStyle(v(48) >= 100 ? ChatFormatting.GREEN : ChatFormatting.GRAY),
             Component.translatable(B + "q_eng", String.format(Locale.ROOT, "%.1f", v(49) / 100.0)).withStyle(ChatFormatting.GRAY));
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

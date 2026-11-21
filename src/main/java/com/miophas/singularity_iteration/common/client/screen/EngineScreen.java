@@ -188,4 +188,8 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.6")), mouseX, mouseY);
         }
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

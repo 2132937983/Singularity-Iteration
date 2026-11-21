@@ -51,14 +51,8 @@ public class FusionItemPortScreen extends AbstractContainerScreen<FusionItemPort
         int[] xs = FusionItemPortMenu.slotX(menu.kind());
         for (int i = 0; i < xs.length; i++) {
             SiGuiTheme.slot(g, x + xs[i] - 1, y + FusionItemPortMenu.SLOT_Y - 1);
-            if (!menu.getSlot(i).hasItem()) {
-                // a faint picture of what goes in
-                g.renderFakeItem(icon(i), x + xs[i], y + FusionItemPortMenu.SLOT_Y);
-                g.pose().pushPose();
-                g.pose().translate(0, 0, 200);
-                g.fill(x + xs[i], y + FusionItemPortMenu.SLOT_Y, x + xs[i] + 16, y + FusionItemPortMenu.SLOT_Y + 16, 0xB4A8ACB1);
-                g.pose().popPose();
-            }
+            // what goes in: its silhouette (0.1.11.151; a faint picture of the item before)
+            if (!menu.getSlot(i).hasItem()) VanillaFrame.ghost(g, icon(i), x + xs[i], y + FusionItemPortMenu.SLOT_Y);
         }
         if (menu.kind() == Kind.FUEL) {
             // the empty rods come out: an arrow from the fuel to them

@@ -1257,6 +1257,7 @@
   "gui.mio_icif.canner.mode_mix": "Смешивание",
   "gui.mio_icif.canner.mode_unknown": "Неизвестно",
   "gui.mio_icif.canner.mode_tooltip": "Режим: %s",
+  "gui.mio_icif.canner.tip.switch_mode": "Переключает по кругу: %1$s, %2$s, %3$s, %4$s; сейчас: %5$s.",
   "gui.mio_icif.canner.swap_fluids": "Поменять жидкости",
   "gui.mio_icif.canner.slot.can": "Сюда: пустая жестяная банка",
   "gui.mio_icif.canner.slot.full_cell": "Сюда: заполненная капсула или ведро",

@@ -1235,6 +1235,7 @@
   "gui.mio_icif.canner.mode_mix": "混合",
   "gui.mio_icif.canner.mode_unknown": "未知",
   "gui.mio_icif.canner.mode_tooltip": "模式: %s",
+  "gui.mio_icif.canner.tip.switch_mode": "在%1$s、%2$s、%3$s、%4$s四种模式之间循环切换；当前：%5$s。",
   "gui.mio_icif.canner.swap_fluids": "交换液体",
   "gui.mio_icif.canner.slot.can": "放这里：空锡罐",
   "gui.mio_icif.canner.slot.full_cell": "放这里：装有液体的单元或桶",

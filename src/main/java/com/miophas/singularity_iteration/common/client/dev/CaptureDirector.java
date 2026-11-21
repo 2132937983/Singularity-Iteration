@@ -2621,6 +2621,96 @@ public final class CaptureDirector {
         client(40, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "viewport_ctm", 0.1.11.149: the diagnostic viewport's connected texture: a 3 x 3 wall, a ring of 8 (the middle
+     * missing), an L of three and a lone viewport, before two rows of vacuum vessel blocks (seen through the glass); from the
+     * front, at an angle and close up. Waits for the world (the first server step of a scene is skipped while there is no player).
+     */
+    private static void sceneViewportCtm() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        until(600, () -> Minecraft.getInstance().player != null && Minecraft.getInstance().getSingleplayerServer() != null);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            var viewport = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "fusion/block_fusion_viewport")).defaultBlockState();
+            var vessel = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "fusion/block_fusion_vacuum_vessel")).defaultBlockState();
+            BlockPos o = new BlockPos(0, -60, -20);
+            for (int dx = 0; dx < 3; dx++)
+                for (int dy = 0; dy < 3; dy++) {
+                    level.setBlock(o.offset(dx, dy, 0), viewport, 3);                                 // the 3 x 3 wall
+                    if (dx != 1 || dy != 1) level.setBlock(o.offset(4 + dx, dy, 0), viewport, 3);    // the ring of 8
+                }
+            for (BlockPos p : new BlockPos[] {o.offset(8, 0, 0), o.offset(9, 0, 0), o.offset(8, 1, 0), o.offset(11, 0, 0)})
+                level.setBlock(p, viewport, 3);                                                          // the L and the lone one
+            for (int x = -1; x <= 12; x++)
+                for (int y = 0; y < 2; y++) level.setBlock(o.offset(x, y, -3), vessel, 3);              // behind the glass
+            look(sp, 6.0, -59, -11, 180, 8);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        client(60, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "viewport_ctm/1_front");
+        server(1, sp -> look(sp, 14.5, -58, -13, 140, 12));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "viewport_ctm/2_angle");
+        server(1, sp -> look(sp, 1.5, -59.6, -16.0, 180, 2));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "viewport_ctm/3_close");
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
+     * Scene "slot_silhouettes", 0.1.11.151: the empty slots of machines show what goes there, as vanilla's armour slots: each
+     * machine placed, its screen opened by a right click (as a player opens it) and shot: the condenser (vents, battery), the
+     * canner, the electric furnace, the heat generator (coils), the steam kinetic generator (turbine), the RTG (pellets), the wind
+     * kinetic generator (rotor), the fluid heat generator (cells), the miner (drill, scanner) and the fusion fuel injection port.
+     */
+    private static void sceneSlotSilhouettes() {
+        String[][] machines = {
+            {"condenser", "producer/block_condenser"},
+            {"canner", "producer/block_canner_elc"},
+            {"furnace", "producer/block_furnace_elc"},
+            {"heat_generator", "hugenerator/block_heat_generator_elc", "heat_generator/block_heat_generator_elc"},
+            {"steam_kinetic", "kugenerator/block_steam_kinetic_generator", "kinetic_generator/block_steam_kinetic_generator",
+                "producer/block_steam_kinetic_generator", "block_steam_kinetic_generator"},
+            {"rtg", "generator/block_rt_generator"},
+            {"wind", "kugenerator/block_wind_kinetic_generator", "kinetic_generator/block_wind_kinetic_generator"},
+            {"fluid_heat", "hugenerator/block_fluid_heat_generator", "heat_generator/block_fluid_heat_generator"},
+            {"miner", "producer/block_miner_elc", "block_miner_elc"},
+            {"fusion_fuel_port", "fusion/block_fusion_fuel_port"}};
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        until(600, () -> Minecraft.getInstance().player != null && Minecraft.getInstance().getSingleplayerServer() != null);
+        server(40, sp -> {
+            sp.serverLevel().setDayTime(6000);
+            sp.serverLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, sp.serverLevel().getServer());
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        });
+        for (int i = 0; i < machines.length; i++) {
+            String[] m = machines[i];
+            BlockPos at = new BlockPos(3 * i, -60, 6);
+            server(5, sp -> {
+                var level = sp.serverLevel();
+                net.minecraft.world.level.block.Block block = null;
+                for (int k = 1; k < m.length && block == null; k++) {
+                    var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", m[k]);
+                    if (net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(id)) block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(id);
+                }
+                if (block == null) { Singularity_Iteration.LOGGER.warn("Capture: no block for {}", m[0]); return; }
+                level.setBlock(at, block.defaultBlockState(), 3);
+                look(sp, at.getX() + 0.5, -60, at.getZ() - 2.5, 0, 20);
+                var hit = new net.minecraft.world.phys.BlockHitResult(at.getCenter(), net.minecraft.core.Direction.NORTH, at, false);
+                level.getBlockState(at).useWithoutItem(level, sp, hit);
+            });
+            client(25, () -> { CaptureDirector.hoverGui = null; });
+            shot(1, "slot_silhouettes/" + (i + 1) + "_" + m[0]);
+            client(1, () -> { if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.closeContainer(); });
+        }
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
     private static void sceneFusionFx() {
         BlockPos c = new BlockPos(30, -55, 10);
         var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
@@ -4496,6 +4586,20 @@ public final class CaptureDirector {
         if (OUT != null && "fusion_ctm".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneFusionCtm();
+        }
+    }
+
+    static {
+        if (OUT != null && "slot_silhouettes".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSlotSilhouettes();
+        }
+    }
+
+    static {
+        if (OUT != null && "viewport_ctm".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneViewportCtm();
         }
     }
 

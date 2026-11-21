@@ -101,6 +101,22 @@ public class FusionControllerScreen extends mio_icif_screen<FusionControllerMenu
         return Long.toString(v);
     }
 
+    /**
+     * 0.1.11.151: the silhouettes of what goes into the fuel slots (deuterium rod, tritium rod) and the mitigation slot (a frozen
+     * neon pellet; coolant cells too); the empty-rod outputs and the blanket show none.
+     */
+    @Override
+    protected net.minecraft.world.item.ItemStack slotGhost(Slot slot) {
+        String id = switch (slot.index - FusionBlanket.SLOTS) {
+            case 0 -> "normal/item_deuterium_cell";
+            case 1 -> "normal/item_tritium_cell";
+            case 4 -> "normal/item_frozen_neon_pellet";
+            default -> null;
+        };
+        return id == null ? net.minecraft.world.item.ItemStack.EMPTY : new net.minecraft.world.item.ItemStack(
+            net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", id)));
+    }
+
     // ------------------------------------------------------------------ background
 
     @Override

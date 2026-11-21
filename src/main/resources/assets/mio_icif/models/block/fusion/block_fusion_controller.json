@@ -1,28 +1,8 @@
 {
-  "parent": "block/block",
+  "parent": "minecraft:block/orientable",
   "textures": {
-    "casing": "mio_icif:block/fusion/component/casing",
-    "dark_metal": "mio_icif:block/fusion/component/dark_metal",
-    "vent": "mio_icif:block/fusion/component/vent",
-    "screen": "mio_icif:block/fusion/component/screen_off",
-    "light": "mio_icif:block/fusion/component/light_off",
-    "top": "mio_icif:block/fusion/component/controller_top",
-    "particle": "#casing"
-  },
-  "elements": [
-    {"name":"chassis","from":[0,0,2],"to":[16,15,16],"faces":{"south":{"uv":[0,1,16,16],"texture":"#casing","cullface":"south"},"west":{"uv":[2,1,16,16],"texture":"#casing","cullface":"west"},"east":{"uv":[0,1,14,16],"texture":"#casing","cullface":"east"},"up":{"uv":[0,2,16,16],"texture":"#vent"},"down":{"uv":[0,0,16,14],"texture":"#casing","cullface":"down"}}},
-    {"name":"chin","from":[0,0,0],"to":[16,2,2],"faces":{"north":{"uv":[0,14,16,16],"texture":"#casing","cullface":"north"},"west":{"uv":[0,14,2,16],"texture":"#casing","cullface":"west"},"east":{"uv":[14,14,16,16],"texture":"#casing","cullface":"east"},"down":{"uv":[0,14,16,16],"texture":"#casing","cullface":"down"}}},
-    {"name":"left_jamb","from":[0,2,0],"to":[2,15,2],"faces":{"north":{"uv":[14,1,16,14],"texture":"#casing","cullface":"north"},"west":{"uv":[0,1,2,14],"texture":"#casing","cullface":"west"},"east":{"uv":[14,1,16,14],"texture":"#dark_metal"}}},
-    {"name":"right_jamb","from":[14,2,0],"to":[16,15,2],"faces":{"north":{"uv":[0,1,2,14],"texture":"#casing","cullface":"north"},"west":{"uv":[0,1,2,14],"texture":"#dark_metal"},"east":{"uv":[14,1,16,14],"texture":"#casing","cullface":"east"}}},
-    {"name":"brow","from":[2,12,0],"to":[14,15,2],"faces":{"north":{"uv":[2,1,14,4],"texture":"#casing","cullface":"north"},"down":{"uv":[2,14,14,16],"texture":"#dark_metal"}}},
-    {"name":"sill","from":[2,3,0],"to":[14,5,2],"faces":{"north":{"uv":[2,11,14,13],"texture":"#casing","cullface":"north"},"up":{"uv":[2,0,14,2],"texture":"#dark_metal"}}},
-    {"name":"display","from":[2,5,1],"to":[14,12,2],"faces":{"north":{"uv":[0,0,16,16],"texture":"#screen"}}},
-    {"name":"status_strip","from":[2,2,0],"to":[14,3,2],"faces":{"north":{"uv":[0,0,16,16],"texture":"#light","cullface":"north"}}},
-    {"name":"cap_left","from":[0,15,0],"to":[4,16,16],"faces":{"north":{"uv":[12,0,16,1],"texture":"#casing","cullface":"north"},"south":{"uv":[0,0,4,1],"texture":"#casing","cullface":"south"},"west":{"uv":[0,0,16,1],"texture":"#casing","cullface":"west"},"east":{"uv":[0,0,16,1],"texture":"#dark_metal"},"up":{"uv":[0,0,4,16],"texture":"#top","cullface":"up"}}},
-    {"name":"cap_right","from":[12,15,0],"to":[16,16,16],"faces":{"north":{"uv":[0,0,4,1],"texture":"#casing","cullface":"north"},"south":{"uv":[12,0,16,1],"texture":"#casing","cullface":"south"},"west":{"uv":[0,0,16,1],"texture":"#dark_metal"},"east":{"uv":[0,0,16,1],"texture":"#casing","cullface":"east"},"up":{"uv":[12,0,16,16],"texture":"#top","cullface":"up"}}},
-    {"name":"cap_front","from":[4,15,0],"to":[12,16,5],"faces":{"north":{"uv":[4,0,12,1],"texture":"#casing","cullface":"north"},"south":{"uv":[4,0,12,1],"texture":"#vent"},"up":{"uv":[4,0,12,5],"texture":"#top","cullface":"up"}}},
-    {"name":"grille_1","from":[4,15,6],"to":[12,16,7],"faces":{"north":{"uv":[4,0,12,1],"texture":"#vent"},"south":{"uv":[4,0,12,1],"texture":"#vent"},"up":{"uv":[4,6,12,7],"texture":"#top","cullface":"up"}}},
-    {"name":"grille_2","from":[4,15,8],"to":[12,16,9],"faces":{"north":{"uv":[4,0,12,1],"texture":"#vent"},"south":{"uv":[4,0,12,1],"texture":"#vent"},"up":{"uv":[4,8,12,9],"texture":"#top","cullface":"up"}}},
-    {"name":"cap_rear","from":[4,15,10],"to":[12,16,16],"faces":{"north":{"uv":[4,0,12,1],"texture":"#vent"},"south":{"uv":[4,0,12,1],"texture":"#casing","cullface":"south"},"up":{"uv":[4,10,12,16],"texture":"#top","cullface":"up"}}}
-  ]
+    "top": "mio_icif:block/fusion/cryostat",
+    "side": "mio_icif:block/fusion/cryostat",
+    "front": "mio_icif:block/fusion/controller_front"
+  }
 }

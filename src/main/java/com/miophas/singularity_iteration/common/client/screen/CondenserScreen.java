@@ -33,6 +33,13 @@ public class CondenserScreen extends MimicScreen<CondenserMenu> {
         return n;
     }
 
+    /** 0.1.11.151: the four vent slots show a vent's silhouette; the others their type's (the battery). */
+    @Override
+    protected net.minecraft.world.item.ItemStack slotGhost(net.minecraft.world.inventory.Slot slot) {
+        return slot.index < 4 ? new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_vent"))) : super.slotGhost(slot);
+    }
+
     @Override
     protected void drawWindow(GuiGraphics g, int x, int y, double time) {
         float u = WindRoseView.u();

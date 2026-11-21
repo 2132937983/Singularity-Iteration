@@ -1180,6 +1180,8 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRON.get());
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_ADVIRON.get());
                 output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_TITANIUM.get());
+                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRIDIUM.get());
+                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_NETHERITE.get());
                 output.accept(mio_icif_blocks.FUSION_CONTROLLER.get());   // 0.1.11.89: fusion reactor
                 output.accept(mio_icif_blocks.FUSION_CENTRAL_SOLENOID.get());
                 output.accept(mio_icif_blocks.FUSION_TOROIDAL_COIL.get());
@@ -1196,8 +1198,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.FUSION_CRYO_PORT.get());
                 output.accept(mio_icif_blocks.FUSION_POWER_PORT.get());
                 output.accept(mio_icif_blocks.FUSION_MITIGATION_PORT.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRIDIUM.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_NETHERITE.get());
+
                 // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive); use the Creative Generator
                 output.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
 

@@ -102,13 +102,12 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
 
         if (ArmorFeatureToggle.isEnabled(stack, "night_vision")) {
             if (armor.consumeEnergy(stack, NIGHT_VISION_COST)) {
-                int skylight = level.getMaxLocalRawBrightness(player.blockPosition());
-                if (skylight > 8) {
-                    player.removeEffect(MobEffects.BLINDNESS);
-                } else {
-                    player.removeEffect(MobEffects.CONFUSION);
-                    player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, true, true, false));
-                }
+                // 0.1.11.150: night vision in any light (the energy saving that applied it only at a light level of 8 or less is
+                // gone): in a bright spot the effect was not renewed, and below 10 s vanilla makes it flicker, all the time where
+                // the light changes often (the Nether). Renewed every tick at 15 s, it never gets near the flicker.
+                player.removeEffect(MobEffects.BLINDNESS);
+                player.removeEffect(MobEffects.CONFUSION);
+                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, true, true, false));
             }
             // IC2原版行为：能量不足或夜视关闭时，不移除夜视效果，让效果自然过期
         }

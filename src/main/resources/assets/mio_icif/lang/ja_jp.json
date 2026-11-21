@@ -2325,6 +2325,7 @@
   "gui.mio_icif.canner.mode_fill_from_tank": "タンク → セル",
   "gui.mio_icif.canner.mode_mix": "混合",
   "gui.mio_icif.canner.mode_tooltip": "モード: %s",
+  "gui.mio_icif.canner.tip.switch_mode": "%1$s・%2$s・%3$s・%4$sの4つのモードを順に切り替える。現在：%5$s。",
   "gui.mio_icif.canner.mode_unknown": "不明",
   "gui.mio_icif.canner.swap_fluids": "流体を入れ替える",
   "gui.mio_icif.canner.slot.can": "ここに：空の錫缶",

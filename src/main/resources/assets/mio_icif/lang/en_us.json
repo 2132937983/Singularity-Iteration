@@ -1205,6 +1205,7 @@
   "gui.mio_icif.canner.mode_mix": "Mix",
   "gui.mio_icif.canner.mode_unknown": "Unknown",
   "gui.mio_icif.canner.mode_tooltip": "Mode: %s",
+  "gui.mio_icif.canner.tip.switch_mode": "Cycles %1$s, %2$s, %3$s and %4$s; now: %5$s.",
   "gui.mio_icif.canner.swap_fluids": "Swap Fluids",
   "gui.mio_icif.canner.slot.can": "Put here: an empty tin can",
   "gui.mio_icif.canner.slot.full_cell": "Put here: a filled cell or bucket",

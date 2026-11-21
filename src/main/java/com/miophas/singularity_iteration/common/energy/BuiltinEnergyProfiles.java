@@ -132,6 +132,9 @@ public final class BuiltinEnergyProfiles {
         id("wiring/cable/block_tin_cable_1"), id("wiring/cable/block_cable"),
         id("wiring/cable/block_gold_cable_1"), id("wiring/cable/block_glass_cable"));
 
+    /** 0.1.11.150: multiblock input modules that feed a machine (loads, not storage). */
+    private static final Set<ResourceLocation> LOAD_MODULES = Set.of(id("producer/block_large_fabricator_input_iv"), id("oilrig/block_oil_rig_input"));
+
     public static void install() {
         GENERATOR_PACKETS.forEach((id, packet) -> EnergyNodeRegistry.register(id,
             EnergyNodeProfile.generator(packet, DYNAMIC_TIER_GENERATORS.contains(id))));
@@ -141,6 +144,11 @@ public final class BuiltinEnergyProfiles {
             SPECIAL_CABLES.contains(id), MEASURED_BLAST_CABLES.contains(id), false)));
         BASIC_PROCESSORS.forEach(id -> EnergyNodeRegistry.register(id, new EnergyNodeProfile(
             EnergyNodeProfile.Role.CONSUMER, 0, -1, -1, true, false, false, false)));
+        // 0.1.11.150: the input modules of two multiblock machines are loads (the engine counted every multiblock energy part as
+        // storage): they share the generators with the other machines and draw on storage like any machine, as IC2's Mass
+        // Fabricator does. Not standard processors: their IV tier stays their packet limit.
+        LOAD_MODULES.forEach(id -> EnergyNodeRegistry.register(id, new EnergyNodeProfile(
+            EnergyNodeProfile.Role.CONSUMER, 0, -1, -1, false, false, false, false)));
         EnergyNodeRegistry.registerAdmissionPolicy(state -> {
             var type = BuiltInRegistries.BLOCK.getKey(state.getBlock());
             return "mio_icif".equals(type.getNamespace())

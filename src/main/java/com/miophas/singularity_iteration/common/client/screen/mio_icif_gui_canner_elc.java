@@ -131,8 +131,13 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
         // 0.1.11.141: two icons in the figure window's corner (the names move to the tooltips)
+        // 0.1.11.150: the canner's own modes (it showed the metal former's "rolling, cutting, extruding")
+        Component[] modes = new Component[MODES.length + 1];
+        for (int i = 0; i < MODES.length; i++) modes[i] = Component.translatable("gui.mio_icif.canner." + MODES[i]);
+        modes[MODES.length] = Component.translatable("gui.mio_icif.canner." + MODES[mode()]);
         iconButton(g, 1, ICON_CYCLE, false, 0, mouseX, mouseY,
-            List.of(Component.translatable(K + "switch_mode"), Component.translatable(K + "tip.switch_mode").withStyle(net.minecraft.ChatFormatting.GRAY)));
+            List.of(Component.translatable(K + "switch_mode"),
+                Component.translatable("gui.mio_icif.canner.tip.switch_mode", (Object[]) modes).withStyle(net.minecraft.ChatFormatting.GRAY)));
         iconButton(g, 0, ICON_SWAP, false, 1, mouseX, mouseY,
             List.of(Component.translatable(K + "swap"), Component.translatable("gui.mio_icif.canner.swap_fluids").withStyle(net.minecraft.ChatFormatting.GRAY)));
     }

@@ -130,11 +130,17 @@ public final class VanillaFrame {
     }
 
     /**
-     * 0.1.11.142 (0.1.11.146 shared): a ghost of {@code stack} at the screen position (x, y) of an empty slot's item, as the
-     * vanilla armour and smithing slots show what goes there: the item under a wash of the slot's grey.
+     * 0.1.11.142 (0.1.11.146 shared): what goes into an empty slot, at the screen position (x, y) of its item. 0.1.11.151: the item's
+     * silhouette when it has one ({@link SlotSilhouettes}), an outline as vanilla's armour slots draw; else the item under a wash
+     * of the slot's grey (vanilla items: no silhouette is made from vanilla textures).
      */
     public static void ghost(GuiGraphics g, net.minecraft.world.item.ItemStack stack, int x, int y) {
         if (stack.isEmpty()) return;
+        net.minecraft.resources.ResourceLocation sprite = SlotSilhouettes.sprite(stack);
+        if (sprite != null) {
+            g.blitSprite(sprite, x, y, 16, 16);
+            return;
+        }
         g.renderFakeItem(stack, x, y);
         g.pose().pushPose();
         g.pose().translate(0, 0, 200);   // above the item (near z 150)

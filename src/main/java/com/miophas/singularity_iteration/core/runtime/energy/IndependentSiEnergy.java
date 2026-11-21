@@ -2759,6 +2759,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private static boolean isStorage(Port port) {
         if (port.transformer != null) return false;
         var tile = port.tile;
+        // 0.1.11.150: an explicit consumer profile wins: a machine's multiblock input module (the Large Fabricator's, the oil
+        // rig's) is a load, not storage. As storage it took only the generators' surplus after every machine (shared with the
+        // batteries, none of their energy), a few hundred EU/t in a busy base.
+        var profile = EnergyNodeRegistry.profile(BuiltInRegistries.BLOCK.getKey(port.state.getBlock()));
+        if (profile != null && profile.role() == com.miophas.singularity_iteration.core.api.energy.EnergyNodeProfile.Role.CONSUMER) return false;
         return tile instanceof AbstractEnergyStorageBlockEntity
             || tile instanceof com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyCore
             || tile instanceof com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyPart

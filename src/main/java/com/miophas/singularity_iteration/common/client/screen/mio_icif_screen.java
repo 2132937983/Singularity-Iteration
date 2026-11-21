@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -316,9 +317,36 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     @Override
     public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);   // blur + renderBg
+        renderSlotSilhouettes(guiGraphics);
         renderStatusLamp(guiGraphics);
         renderDock(guiGraphics, mouseX, mouseY);
     }
+
+    /**
+     * 0.1.11.151: what goes into each empty machine slot, drawn as its silhouette (as vanilla's armour slots show armour) over the
+     * slot's frame, before the items. The item comes from {@link #slotGhost}; a slot {@link #slotShown} hides gets none, nor do
+     * the player's slots and the dock's.
+     */
+    protected void renderSlotSilhouettes(GuiGraphics g) {
+        for (Slot slot : this.menu.slots) {
+            if (slot.container instanceof net.minecraft.world.entity.player.Inventory || !slot.isActive() || slot.hasItem()) continue;
+            if (slot.x < 0 || slot.y < 0 || slot.x > this.imageWidth || slot.y > this.imageHeight || !slotShown(slot)) continue;
+            VanillaFrame.ghost(g, slotGhost(slot), this.leftPos + slot.x, this.topPos + slot.y);
+        }
+    }
+
+    /**
+     * 0.1.11.151 (from the 0.1.11.142 process screens): the item an empty machine slot takes, or empty. By default the item of
+     * its type in the machine's slot layout (battery, cell, rotor, turbine, coil...: {@link SlotSilhouettes#forType}); a screen
+     * names the others (vents, cans, blades...).
+     */
+    protected net.minecraft.world.item.ItemStack slotGhost(Slot slot) {
+        return this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu machine
+            ? SlotSilhouettes.forType(machine.machineSlotType(slot)) : net.minecraft.world.item.ItemStack.EMPTY;
+    }
+
+    /** 0.1.11.142 (0.1.11.151 here): whether a machine slot is drawn (a slot the current mode does not use can hide). */
+    protected boolean slotShown(Slot slot) { return true; }
 
     // ================================================================ left utility dock
     /*

@@ -192,6 +192,28 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
         };
     }
 
+    /**
+     * 0.1.11.151: the type a machine slot has in its machine's slot layout (battery, cell, rotor...), or null (a player slot, a
+     * machine without a layout). On the client a machine menu's slots stand on a copy of the machine's inventory, slot for
+     * slot; the layout is then read from the machine bound to the menu.
+     */
+    public @org.jetbrains.annotations.Nullable com.miophas.singularity_iteration.core.prefab.inventory.SlotType machineSlotType(net.minecraft.world.inventory.Slot slot) {
+        if (slot.container instanceof Inventory) return null;
+        IItemHandler handler = null;
+        int index = slot.getContainerSlot();
+        if (slot instanceof net.neoforged.neoforge.items.SlotItemHandler s) {
+            handler = s.getItemHandler();
+            index = s.getSlotIndex();
+        }
+        if (!(handler instanceof com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler) && machineBinding != null) {
+            IItemHandler bound = machineBinding.clientHandler();
+            // only the copy made for this menu stands slot for slot on the machine's inventory
+            if (bound != null && handler != null && handler.getSlots() == bound.getSlots()) handler = bound;
+        }
+        return handler instanceof com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler machine && machine.getLayout() != null
+            && index >= 0 && index < machine.getSlots() ? machine.getLayout().getInternalSlotType(index) : null;
+    }
+
     /** Append metadata after the existing machine data; its indices and object stay unchanged. */
     protected final void addMachineBindingData() {
         if (machineBinding != null) addDataSlots(machineBinding);

@@ -119,9 +119,13 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         return new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(id)));
     }
 
-    /** 0.1.11.143: the ghost item of an empty machine slot (what goes there), or empty; by default the battery slot's. */
+    /**
+     * 0.1.11.143: the ghost item of an empty machine slot (what goes there), or empty; by default the battery slot's. 0.1.11.151:
+     * else the item of the slot's type (the base screen draws it, as a silhouette).
+     */
+    @Override
     protected net.minecraft.world.item.ItemStack slotGhost(Slot slot) {
-        return batterySlot(slot) ? itemOf("mio_icif:normal/item_chargebat_lev0") : net.minecraft.world.item.ItemStack.EMPTY;
+        return batterySlot(slot) ? itemOf("mio_icif:normal/item_chargebat_lev0") : super.slotGhost(slot);
     }
 
     /** 0.1.11.143: the hover text of an empty machine slot, or null; by default the battery slot's. */
@@ -130,6 +134,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     }
 
     /** 0.1.11.142: whether a machine slot is drawn (a slot the current mode does not use can hide, frame and all). */
+    @Override
     protected boolean slotShown(Slot slot) { return true; }
 
     /**
@@ -283,10 +288,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
             n++;
         }
         drawExtras(g, right, y + CALM_LINE_Y, mouseX, mouseY);
-        for (Slot s : menu.slots) {   // 0.1.11.143: ghosts in the empty machine slots
-            if (s.x < 0 || s.x > W || s.y > FIG_WIN_Y + FIG_WIN_H || s.hasItem() || !slotShown(s)) continue;
-            ghost(g, slotGhost(s), s.x, s.y);
-        }
+        // 0.1.11.143: ghosts in the empty machine slots; 0.1.11.151: the base screen draws them (silhouettes), after this
     }
 
     /**

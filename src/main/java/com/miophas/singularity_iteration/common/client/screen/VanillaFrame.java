@@ -128,4 +128,26 @@ public final class VanillaFrame {
         g.disableScissor();
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
+
+    /**
+     * 0.1.11.142 (0.1.11.146 shared): a ghost of {@code stack} at the screen position (x, y) of an empty slot's item, as the
+     * vanilla armour and smithing slots show what goes there: the item under a wash of the slot's grey.
+     */
+    public static void ghost(GuiGraphics g, net.minecraft.world.item.ItemStack stack, int x, int y) {
+        if (stack.isEmpty()) return;
+        g.renderFakeItem(stack, x, y);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 200);   // above the item (near z 150)
+        g.fill(x, y, x + 16, y + 16, 0xB08B8B8B);
+        g.pose().popPose();
+    }
+
+    /** 0.1.11.146: text twice the vanilla font size (the main readout of the calm layout). */
+    public static void bigText(GuiGraphics g, net.minecraft.network.chat.Component c, int x, int y, int rgb) {
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0);
+        g.pose().scale(2F, 2F, 1F);
+        g.drawString(net.minecraft.client.Minecraft.getInstance().font, c, 0, 0, rgb, false);
+        g.pose().popPose();
+    }
 }

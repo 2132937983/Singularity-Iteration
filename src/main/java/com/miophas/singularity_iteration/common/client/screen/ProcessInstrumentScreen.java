@@ -137,13 +137,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      * the item under a wash of the slot's grey. (sx, sy) is the slot's item position (GUI-relative).
      */
     protected void ghost(GuiGraphics g, net.minecraft.world.item.ItemStack stack, int sx, int sy) {
-        if (stack.isEmpty()) return;
-        int gx = leftPos + sx, gy = topPos + sy;
-        g.renderFakeItem(stack, gx, gy);
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 200);   // above the item (near z 150)
-        g.fill(gx, gy, gx + 16, gy + 16, 0xB08B8B8B);
-        g.pose().popPose();
+        VanillaFrame.ghost(g, stack, leftPos + sx, topPos + sy);
     }
 
     /** 0.1.11.141: drawn after the pixel canvas (textures such as fluids, which the canvas would cover); (cx, cy) as in drawFigure. */

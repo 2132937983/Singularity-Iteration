@@ -92,6 +92,9 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
             Component.translatable(K + "thermal", compact(v(45)), FusionBlanket.EFFICIENCY_PERCENT, compact(v(4))).withStyle(net.minecraft.ChatFormatting.GRAY),
             Component.translatable(K + "multiplication", String.format(Locale.ROOT, "%.1f", v(46) / 100.0), String.format(Locale.ROOT, "%.2f", v(47) / 100.0))
                 .withStyle(net.minecraft.ChatFormatting.GRAY),
+            // 0.1.11.136: the fuel cycle
+            Component.translatable(K + "fuel_cycle", String.format(Locale.ROOT, "%.2f", v(50) / 100.0), Math.round(FusionPlasma.BURN_FRACTION * 100),
+                String.format(Locale.ROOT, "%.2f", v(51) / 100.0)).withStyle(net.minecraft.ChatFormatting.GRAY),
             Component.translatable(K + "tbr", String.format(Locale.ROOT, "%.2f", v(48) / 100.0))
                 .withStyle(v(48) >= 100 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.GRAY),
             Component.translatable(K + "q_eng", String.format(Locale.ROOT, "%.1f", v(49) / 100.0)).withStyle(net.minecraft.ChatFormatting.GRAY));

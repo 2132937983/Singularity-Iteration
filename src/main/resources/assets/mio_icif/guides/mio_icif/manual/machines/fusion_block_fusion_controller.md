@@ -62,7 +62,7 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
 
 1. Build the structure and connect LuV power to the console.
 2. Put deuterium fuel rods and tritium fuel rods into the fuel slots (or into a fuel injection port, see Automation below). A fresh rod gives 10,000 fuel units, and the empty fuel rod comes back.
-   - Deuterium fuel rods: a thermal centrifuge (heat 4,000 or more, 1,200 ticks) turns a hot water cell into an unstable hot water cell; in a canner in canning mode, put the unstable hot water cell in the left slot and an empty fuel rod in the middle slot.
+   - Deuterium fuel rods: a thermal centrifuge (heat 4,000 or more, 1,200 ticks) turns a hot water cell into a heavy water cell: the hot water goes in as steam, and the centrifuge separates the heavier HDO and D₂O molecules by their mass (a gas centrifuge sorts by the mass difference, which for water is as large as for uranium hexafluoride). In a canner in canning mode, put the heavy water cell in the left slot and an empty fuel rod in the middle slot: the canner electrolyses the heavy water and fills the deuterium gas into the rod.
    - A deuterium fuel rod also works in a nuclear reactor as a neutron source: each adjacent fuel rod takes one more pulse per cycle, for 5,000 cycles (half a tritium rod), with no decay heat; then the empty fuel rod is left.
 3. Fill the blanket (9 columns x 6 rows; column 1 faces the plasma) with components.
 4. Apply a redstone signal. The reactor goes through: magnet cooldown (30 s), solenoid charge, heating, ignition (over 10 keV, once the alpha heating covers the losses), burn (15 keV at 16 steps, about 170 million K).
@@ -95,13 +95,14 @@ The fuel injection port and the disruption mitigation port have slots of their o
   - From 90% of either the plasma may disrupt: about 2% a second at 100%, and 2% a second more for each 1% past it. So 16 steps are safe, 17 almost, 18 are a risk, and 19-20 disrupt within seconds. The screen says what caused a disruption.
 - Hover over the readouts on the right of the screen for the density, τE, the triple product (as a share of the Lawson criterion), the alpha heating against the losses, the outside heating, the confinement mode (with the ELM count in H-mode), and the Greenwald density and beta limit fractions (yellow from 90%, red from 100%).
 - The solenoid's flux carries the plasma for about 400 s (counted from the heating), then it must charge again. With two electron cyclotron heaters the plasma current is driven without it (1.25% of the fusion power each), and the burn is steady.
-- The plasma uses 1 unit of deuterium and 1 unit of tritium per tick for each 1/16 of the full fusion rate (16 of each at full power). When the fuel runs out, the plasma ends gently.
+- **Fuel cycle**: the pellet injectors put in 1 unit of deuterium and 1 of tritium per tick for each 1/16 of the full fusion rate (16 of each at full power). Only **3%** of it fuses in one pass (the burn fraction: ITER about 0.3-1%, a power plant 1-3%); the exhaust port's cryopumps draw the rest off with the helium ash and the tritium plant returns it to the tanks. So the plasma uses only 0.48 units of each a tick at full power, and a fresh rod (10,000 units) lasts about 17 minutes. Without an exhaust port nothing comes back: it uses all it injects (and the helium ash disrupts it within 60 s).
+- When the fuel runs out, the plasma ends gently.
 - Once it makes power, the console keeps 40 ticks of magnet upkeep from its own output.
 
 ## Blanket
 
 - The fusion neutrons weaken column by column: at full power each slot of columns 1, 2 and 3 gets 2, 1 and 1 neutrons per cycle, and the columns after that get none.
-- Fuel rods count them as extra pulses, so they make more heat and more power (the nuclear reactor's own rules). Lithium cells breed 40 per neutron and become tritium fuel rods at 10,000; about 5 lithium cells in column 1 keep the tritium self-sufficient.
+- Fuel rods count them as extra pulses, so they make more heat and more power (the nuclear reactor's own rules). Lithium cells breed 1 unit of tritium per fusion neutron (lithium-6 + n → T + ⁴He) and become tritium fuel rods at 10,000. With 5 lithium cells in column 1 the tritium breeding ratio is about 1.04 (self-sufficient), with 6 about 1.25. Lithium cells next to fuel rods also breed from the fission neutrons. (Near-depleted isotope rods still gain 40 per fusion neutron.)
 - This is a **fusion-fission hybrid** blanket: it only makes heat, and the console's steam cycle turns **35%** of it into electricity (like a pressurised-water reactor). The heat has four parts:
   - the alpha particles' heat on the first wall and divertor: a quarter of the neutron power;
   - the neutrons' own energy: the neutron power x 1;

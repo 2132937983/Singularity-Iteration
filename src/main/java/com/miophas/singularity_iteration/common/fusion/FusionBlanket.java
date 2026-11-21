@@ -40,7 +40,14 @@ public final class FusionBlanket {
     public static final int COLUMNS = 9, ROWS = 6, SLOTS = COLUMNS * ROWS;
     public static final int PEAK_NEUTRONS = 2;
     public static final double ATTENUATION = 0.6;
+    /** Breeding progress per fusion neutron for a near-depleted isotope rod. */
     public static final int BREED_PER_NEUTRON = 40;
+    /**
+     * 0.1.11.136 (F4): tritium units a lithium cell breeds per fusion neutron (was 40, as the isotope rods). At full power the
+     * blanket gets 24 neutrons a cycle and the plasma burns 9.6 units of tritium (3% of what it injects, see
+     * {@link FusionPlasma#BURN_FRACTION}): five lithium cells in the first column (10 neutrons) breed 1.04 times that.
+     */
+    public static final int LITHIUM_BREED_PER_NEUTRON = 1;
     /** 0.1.11.135: lithium-6 + n releases 4.8 MeV on top of the neutron's 14.1 (it was 0.2). */
     public static final double LITHIUM_GAIN = 4.8 / 14.1;
     /** 0.1.11.135: the alpha heat on the first wall and divertor, per unit of neutron power (20 / 80). */
@@ -117,16 +124,22 @@ public final class FusionBlanket {
         double f = Math.min(1.0, Math.max(0, (double) neutronPower / FULL_NEUTRONS));
         int[] ext = neutrons(f);
         // the share of the neutrons the lithium cells take (before they turn into tritium this cycle)
-        long lithium = 0, total = 0, bred = 0;
+        long lithium = 0, total = 0;
         for (int i = 0; i < SLOTS; i++) {
             total += ext[i];
             if (parts[i] != null && parts[i].profile().kind() == Kind.LITHIUM && parts[i].stored() < parts[i].profile().capacity()) {
                 lithium += ext[i];
-                if (neutronPower > 0) bred += (long) ext[i] * BREED_PER_NEUTRON;   // 0.1.11.135: tritium units this cycle
             }
         }
-        ReactorCycle.Result r = ReactorCycle.step(parts, COLUMNS, Math.max(0, hull), neutronPower > 0, ext, BREED_PER_NEUTRON);
+        ReactorCycle.Result r = ReactorCycle.step(parts, COLUMNS, Math.max(0, hull), neutronPower > 0, ext, BREED_PER_NEUTRON, LITHIUM_BREED_PER_NEUTRON);
         Part[] next = r.parts();
+        // 0.1.11.136: the tritium bred this cycle: the lithium cells' progress (a cell that completed counts up to its capacity)
+        long bred = 0;
+        for (int i = 0; i < SLOTS; i++) {
+            if (parts[i] == null || parts[i].profile().kind() != Kind.LITHIUM) continue;
+            long before = parts[i].stored(), after = next[i] != null && next[i].profile().kind() == Kind.LITHIUM ? next[i].stored() : parts[i].profile().capacity();
+            bred += Math.max(0, after - before);
+        }
         boolean[] depleted = r.depletedFuel();
         ItemStack[] out = new ItemStack[SLOTS];
         for (int i = 0; i < SLOTS; i++) out[i] = ReactorInventory.write(grid[i], parts[i], next[i], depleted[i]);

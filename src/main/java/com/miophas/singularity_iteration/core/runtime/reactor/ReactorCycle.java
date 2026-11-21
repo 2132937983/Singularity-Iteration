@@ -123,9 +123,15 @@ public final class ReactorCycle {
      * while {@code enabled}: the blanket is subcritical and fissions only while the plasma burns. Not a fluid or steam cycle.
      */
     public static Result step(Part[] input,int columns,long heat,boolean enabled,int[] external,int externalBreed){
-        if(input.length!=54||columns<3||columns>9||heat<0||external==null||external.length!=54||externalBreed<0)throw new IllegalArgumentException("Invalid reactor state");
+        return step(input,columns,heat,enabled,external,externalBreed,externalBreed);
+    }
+    /** 0.1.11.136: as above, with the lithium cells' breeding per fusion neutron apart from the isotope rods'. */
+    public static Result step(Part[] input,int columns,long heat,boolean enabled,int[] external,int externalBreed,int lithiumBreed){
+        if(input.length!=54||columns<3||columns>9||heat<0||external==null||external.length!=54||externalBreed<0||lithiumBreed<0)throw new IllegalArgumentException("Invalid reactor state");
         for(int e:external)if(e<0||e>MAX_EXTERNAL)throw new IllegalArgumentException("Invalid external neutrons");
-        return new Work(input,columns,heat,external.clone(),externalBreed).run(enabled,false,-1);
+        Work w=new Work(input,columns,heat,external.clone(),externalBreed);
+        w.lithiumBreed=lithiumBreed;
+        return w.run(enabled,false,-1);
     }
     public static int selfPulses(int cells){return switch(cells){case 1->1;case 2->2;case 4->3;default->throw new IllegalArgumentException("Invalid cell count");};}
     public static int fuelHeat(int cells,int pulses){if(pulses<0||pulses>7)throw new IllegalArgumentException("Invalid pulse count");return Math.multiplyExact(2*cells,Math.multiplyExact(pulses,pulses+1));}
@@ -138,10 +144,10 @@ public final class ReactorCycle {
     private static final class Work {
         final Part[] parts;final int columns;final boolean[] depleted=new boolean[54];
         /** 0.1.11.92: outside (fusion) neutrons per slot, and the breeding progress each gives a breeder. */
-        final int[] ext;final int extBreed;
+        final int[] ext;final int extBreed;int lithiumBreed;
         long hull,max=BASE_MAX_HEAT,emitted,generated,steamHeat;
         Work(Part[] input,int columns,long heat){this(input,columns,heat,new int[54],0);}
-        Work(Part[] input,int columns,long heat,int[] ext,int extBreed){this.parts=input.clone();this.columns=columns;this.hull=heat;this.ext=ext;this.extBreed=extBreed;}
+        Work(Part[] input,int columns,long heat,int[] ext,int extBreed){this.parts=input.clone();this.columns=columns;this.hull=heat;this.ext=ext;this.extBreed=extBreed;this.lithiumBreed=extBreed;}
         boolean active(int i){return i>=0&&i<54&&i%9<columns;}
         int[] adjacent(int slot){int[] a=new int[4];int count=0;
             for(int next:new int[]{slot-1,slot+1,slot-9,slot+9})
@@ -240,7 +246,8 @@ public final class ReactorCycle {
                     case LITHIUM, ISOTOPE -> {
                         // 0.1.11.92: fusion neutrons breed directly (the fission neighbours' neutrons breed in the FUEL case)
                         if(ext[i]>0&&breeding(p)){
-                            parts[i]=p.withStored((int)Math.min(profile.capacity(),(long)p.stored()+(long)ext[i]*extBreed));
+                            int per=profile.kind()==Kind.LITHIUM?lithiumBreed:extBreed;   // 0.1.11.136
+                            parts[i]=p.withStored((int)Math.min(profile.capacity(),(long)p.stored()+(long)ext[i]*per));
                             if(profile.kind()==Kind.LITHIUM&&profile.hullCooling()>0){
                                 long h=(long)ext[i]*profile.hullCooling();generated+=h;hull=Math.addExact(hull,h);
                             }

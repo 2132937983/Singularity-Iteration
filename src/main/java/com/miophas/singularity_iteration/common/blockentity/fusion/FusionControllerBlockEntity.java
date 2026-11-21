@@ -551,7 +551,9 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             // 0.1.11.135: the plant: heat (EU/t), energy multiplication, fissions per neutron, tritium breeding ratio, engineering Q
             // (all x100)
             thermal, Math.round(multiplication * 100), Math.round(fissionsPerNeutron * 100), Math.round(tbr * 100),
-            lastUsed > 0 ? Math.round(output * 100.0 / lastUsed) : 0};
+            lastUsed > 0 ? Math.round(output * 100.0 / lastUsed) : 0,
+            // 0.1.11.136: the fuel cycle: units of each injected and used a tick (x100)
+            Math.round(plasma.injected() * 100), Math.round(plasma.injected() * (exhausts > 0 ? FusionPlasma.BURN_FRACTION : 1) * 100)};
     }
 
     /**

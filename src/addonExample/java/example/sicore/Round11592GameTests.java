@@ -101,12 +101,15 @@ public final class Round11592GameTests {
         if (!state(p).equals("BURNING")) wrong.add("not burning after ignition: " + state(p));
         double kev = ((Number) call(p, "kev")).doubleValue();
         if (Math.abs(kev - 15.0) > 0.2) wrong.add("burns at " + kev + " keV, expected about 15");
+        // 0.1.11.136: 3% of the 16 units injected a tick burn; the exhaust returns the rest
+        long used = 0;
+        for (int tick = 0; tick < 1_000; tick++) used += lng(call(call(p, "tick", run(16, 4, 0, energy, d, t, true)), "fuelUsed"));
+        if (Math.abs(used - 480) > 30) wrong.add("fuel " + used + " in 1,000 ticks at 16 steps, expected about 480");
         Object r = call(p, "tick", run(16, 4, 0, energy, d, t, true));
         // 0.1.11.134: ELMs shake the burn by a few percent
         if (Math.abs(lng(call(r, "fusionPower")) - 9_800_000L) > 400_000L) wrong.add("fusion power " + call(r, "fusionPower") + " at 16 steps");
         if (lng(call(r, "heating")) != 0 || !Double.isInfinite(((Number) call(p, "q")).doubleValue())) wrong.add("an ignited plasma still heated: " + call(r, "heating"));
         if (Math.abs(lng(call(r, "neutronPower")) - 7_840_000L) > 320_000L) wrong.add("neutron power " + call(r, "neutronPower"));
-        if (Math.abs(lng(call(r, "fuelUsed")) - 16) > 1) wrong.add("fuel " + call(r, "fuelUsed") + " a tick at 16 steps");
         h.assertTrue(wrong.isEmpty(), "plasma: " + wrong);
         h.succeed();
     }
@@ -213,17 +216,19 @@ public final class Round11592GameTests {
 
     @GameTest(template = "empty", batch = "round11592_fusion_model", timeoutTicks = 20)
     public static void lithiumBreedsMoreTritiumThanThePlasmaBurns(GameTestHelper h) {
-        // five lithium cells in the first column: each breeds 2 neutrons x 40 a cycle, a tritium cell (10,000) in 125 cycles
+        // five lithium cells in the first column: 0.1.11.136: each breeds 2 neutrons x 1 a cycle, a tritium cell (10,000) in
+        // 5,000 cycles; the plasma burns 3% of the 16 units it injects a tick
         ItemStack[] grid = blanket("L", "L", "L", "L", "L", "");
         long full = num(BLANKET, "FULL_NEUTRONS");
         int cycles = 0;
-        while (cycles < 200 && !grid[0].is(item("normal/item_tritium_cell"))) {
+        while (cycles < 6_000 && !grid[0].is(item("normal/item_tritium_cell"))) {
             grid = (ItemStack[]) call(cycle(grid, 0, full), "stacks");
             cycles++;
         }
         h.assertTrue(grid[0].is(item("normal/item_tritium_cell")), "no tritium after " + cycles + " cycles: " + grid[0]);
         double bred = 5.0 * num(CONTROLLER, "FUEL_PER_CELL") / (cycles * num(CONTROLLER, "CYCLE_TICKS"));
-        h.assertTrue(bred > num(PLASMA, "REFERENCE_FEED"), "five lithium cells breed " + bred + " units a tick, the plasma burns " + num(PLASMA, "REFERENCE_FEED"));
+        double burned = num(PLASMA, "REFERENCE_FEED") * 0.03;
+        h.assertTrue(bred > burned && bred < 1.2 * burned, "five lithium cells breed " + bred + " units a tick, the plasma burns " + burned);
         h.succeed();
     }
 

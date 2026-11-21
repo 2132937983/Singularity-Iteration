@@ -25,7 +25,10 @@ import net.minecraft.nbt.CompoundTag;
  *       n T τE stays short of about 3e21 keV s/m³); they burn driven, with the heating on and a finite Q. An ignited plasma
  *       that cools below {@link #REIGNITE_KEV} keV (a lower feed step) is heated again; one that falls below
  *       {@link #COLLAPSE_KEV} keV with no heating ends.</li>
- *   <li>Fuel: one unit of deuterium and one of tritium per tick for each 1/16 of the full fusion rate.</li>
+ *   <li>Fuel: the pellet injectors put in one unit of deuterium and one of tritium per tick for each 1/16 of the full fusion
+ *       rate. 0.1.11.136 (F4): only {@link #BURN_FRACTION} of it fuses in a pass; the exhaust port's cryopumps draw the rest
+ *       off with the helium ash and the tritium plant returns it to the tanks, so the fuel used is 3% of the fuel injected
+ *       (0.48 units of each a tick at full power). Without an exhaust port nothing comes back.</li>
  *   <li>0.1.11.134 (F2), the operating limits:
  *     <ul>
  *       <li>L-mode and H-mode: the confinement above is H-mode's. The plasma enters H-mode when the power through its edge
@@ -90,6 +93,8 @@ public final class FusionPlasma {
     /** The Lawson triple product for ignition (keV s/m³). */
     public static final double LAWSON = 3.0e21;
     public static final double SECONDS_PER_TICK = 0.05;
+    /** 0.1.11.136: the share of the injected fuel that fuses before the exhaust draws it off (ITER about 0.3-1%, DEMO 1-3%). */
+    public static final double BURN_FRACTION = 0.03;
     // ---------------------------------------------------------------- 0.1.11.134: the operating limits
     /** Field on axis (T), minor radius (m), plasma current (MA), plasma surface (m²): ITER's. */
     public static final double FIELD = 5.3, MINOR_RADIUS = 2.0, PLASMA_CURRENT = 15.0, SURFACE = 683.0;
@@ -217,7 +222,7 @@ public final class FusionPlasma {
     }
 
     private State state = State.OFF;
-    private double kev, density, fuelCarry, lastTau;
+    private double kev, density, fuelCarry, lastTau, lastInjected;
     private int cooled, burnTicks, ash, timer;
     private long charged, lastHeating, lastFusion, lastAlpha, lastLoss;
     private boolean hMode;
@@ -244,6 +249,8 @@ public final class FusionPlasma {
     public double density() { return density; }
     /** 0.1.11.133: the energy confinement time of the last tick (s). */
     public double tauE() { return lastTau; }
+    /** 0.1.11.136: the fuel the injectors put in last tick (units of each), and what of it was used (burned, or lost without exhaust). */
+    public double injected() { return lastInjected; }
     /** 0.1.11.133: the Lawson triple product n T τE of the last tick (keV s/m³). */
     public double tripleProduct() { return density * kev * lastTau; }
     /** 0.1.11.133: the alpha heating and the losses (conduction and bremsstrahlung) of the last tick, in EU/t. */
@@ -274,6 +281,7 @@ public final class FusionPlasma {
         long used = 0;
         lastHeating = 0;
         lastFusion = 0;
+        lastInjected = 0;
         lastAlpha = 0;
         lastLoss = 0;
         Event event = Event.NONE;
@@ -388,7 +396,9 @@ public final class FusionPlasma {
                     event = Event.IGNITION;
                 }
                 // fuel: one unit of each per tick for each 1/16 of the full fusion rate
-                fuelCarry += (double) REFERENCE_FEED * fusion / FULL_FUSION;
+                // 0.1.11.136: the exhaust returns all but the burned share to the tanks
+                lastInjected = (double) REFERENCE_FEED * fusion / FULL_FUSION;
+                fuelCarry += lastInjected * (in.exhaust() ? BURN_FRACTION : 1);
                 long fuel = (long) Math.floor(fuelCarry);
                 fuelCarry -= fuel;
                 fuel = Math.min(fuel, Math.min(in.deuterium(), in.tritium()));
@@ -430,6 +440,7 @@ public final class FusionPlasma {
         density = 0;
         fuelCarry = 0;
         lastTau = 0;
+        lastInjected = 0;
         charged = 0;
         burnTicks = 0;
         ash = 0;

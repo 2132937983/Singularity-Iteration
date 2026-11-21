@@ -527,7 +527,11 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
             Double.isInfinite(q) ? -1 : Math.round(q * 100), formed ? 1 : 0, powerPorts, heaters, cyclotron, fuelPorts, exhausts, cryos,
             mitigations, status().ordinal(), wrongAt == null ? 0 : wrongAt.getX(), wrongAt == null ? 0 : wrongAt.getY(),
             wrongAt == null ? 0 : wrongAt.getZ(), expected == null ? -1 : expected.ordinal(), plasma.timer(), Math.round(fissionEu),
-            Math.round(lithiumShare * 1000), lastHeating, lastUsed};
+            Math.round(lithiumShare * 1000), lastHeating, lastUsed,
+            // 0.1.11.133: the plasma's power balance: density (10^17 m^-3), confinement time (ms), triple product (10^18 keV s/m^3),
+            // alpha heating and losses (EU/t)
+            Math.round(plasma.density() / 1.0e17), Math.round(plasma.tauE() * 1000), Math.round(plasma.tripleProduct() / 1.0e18),
+            plasma.lastAlpha(), plasma.lastLoss()};
     }
 
     /**

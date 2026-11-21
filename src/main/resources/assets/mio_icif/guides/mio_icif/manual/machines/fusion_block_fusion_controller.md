@@ -38,12 +38,12 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
 | Item | Value |
 |---|---|
 | Output | no cap; 41,440,000 EU/t with the example blanket |
-| Fusion power | 612,500 EU/t per feed step, 9,800,000 EU/t at 16 steps |
+| Fusion power | grows with the square of the feed step: 9,800,000 EU/t at 16 steps, a quarter of that at 8 |
 | Input voltage tier | LuV (32,768 EU), any face |
 | Input storage | 20,000,000 EU |
 | Magnet upkeep | 392,000 EU/t |
 | Start-up (central solenoid) | 300,000,000 EU, 30 s at the fastest |
-| Heating | 245,000 EU/t per heating port, at most a tenth of the fusion power |
+| Heating | 245,000 EU/t per heating port, on until ignition |
 
 ## Structure
 
@@ -65,8 +65,8 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
    - Deuterium fuel rods: a thermal centrifuge (heat 4,000 or more, 1,200 ticks) turns a hot water cell into an unstable hot water cell; in a canner in canning mode, put the unstable hot water cell in the left slot and an empty fuel rod in the middle slot.
    - A deuterium fuel rod also works in a nuclear reactor as a neutron source: each adjacent fuel rod takes one more pulse per cycle, for 5,000 cycles (half a tritium rod), with no decay heat; then the empty fuel rod is left.
 3. Fill the blanket (9 columns x 6 rows; column 1 faces the plasma) with components.
-4. Apply a redstone signal. The reactor goes through: magnet cooldown (30 s), solenoid charge, heating, ignition (14 keV, about 160 million K), burn (about 15 keV).
-5. Set the feed (1-16) with the screen's buttons. After ignition no heating is needed. The output leaves through the power output ports.
+4. Apply a redstone signal. The reactor goes through: magnet cooldown (30 s), solenoid charge, heating, ignition (over 10 keV, once the alpha heating covers the losses), burn (15 keV at 16 steps, about 170 million K).
+5. Set the feed (1-16) with the screen's buttons. After ignition the heating switches off by itself. The output leaves through the power output ports.
 
 ## Automation
 
@@ -80,9 +80,16 @@ The fuel injection port and the disruption mitigation port have slots of their o
 
 ## Plasma
 
-- Before ignition the heating ports heat the plasma (Q = 10). From 14 keV the alpha particles keep it burning, and Q is infinite.
-- The solenoid's flux carries a burn of about 400 s, then it must charge again. With two electron cyclotron heaters the plasma current is driven without it (1.25% of the fusion power each), and the burn is steady.
-- The plasma uses 1 unit of deuterium and 1 unit of tritium per feed step and tick. When the fuel runs out, the plasma ends gently.
+- The plasma is a zero-dimensional power balance of a reference machine the size of ITER (830 m³):
+  - the feed step sets the electron density: step k aims at k/16 × 10²⁰ m⁻³, reached in about a second;
+  - fusion power = (n/2)² × ⟨σv⟩ × 17.6 MeV × volume, with the Bosch-Hale fit of ⟨σv⟩, so it grows with the square of the density, and about with the square of the temperature at 10-20 keV;
+  - losses = conduction (the energy confinement time τE follows ITER's IPB98 scaling in the density and the heating power, about 2 s in the reference burn) + bremsstrahlung.
+- **Ignition**: once the plasma is over 10 keV and the alpha heating alone covers the losses, the heating ports switch off and Q is infinite. If an ignited plasma cools below 8 keV (a lower feed step, say), the heating comes back on.
+- **The Lawson criterion**: at too low a density n·T·τE stays short of about 3 × 10²¹ keV·s/m³ and the plasma cannot ignite. At 8 steps and below it can only burn **driven**: the heating stays on and Q is finite (about 0.5-13 with one heater).
+- **How many heaters**: ignition takes 9 steps or more. One heater ignites only 9 to 13 steps; for more, ignite low and then raise the feed (as real machines raise the density step by step). Two or more heaters ignite 16 steps directly, four in about 4 seconds.
+- Hover over the readouts on the right of the screen for the density, τE, the triple product (as a share of the Lawson criterion), the alpha heating against the losses, and the outside heating.
+- The solenoid's flux carries the plasma for about 400 s (counted from the heating), then it must charge again. With two electron cyclotron heaters the plasma current is driven without it (1.25% of the fusion power each), and the burn is steady.
+- The plasma uses 1 unit of deuterium and 1 unit of tritium per tick for each 1/16 of the full fusion rate (16 of each at full power). When the fuel runs out, the plasma ends gently.
 - Once it makes power, the console keeps 40 ticks of magnet upkeep from its own output.
 
 ## Blanket

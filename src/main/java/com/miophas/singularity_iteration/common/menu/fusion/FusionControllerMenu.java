@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * Buttons: 0 feed -1, 1 feed +1, 2 feed -4, 3 feed +4.
  */
 public class FusionControllerMenu extends AbstractContainerMenu {
-    public static final int VALUES = 35;
+    public static final int VALUES = 40;   // 0.1.11.133: + density, confinement time, triple product, alpha, losses
     public static final int GRID_X = 8, GRID_Y = 18, FUEL_Y = 134, INV_X = 69, INV_Y = 172, HOTBAR_Y = 230;
     public static final int[] FUEL_X = {8, 26, 62, 80, 116};
     private static final int MACHINE = FusionControllerBlockEntity.SLOTS;

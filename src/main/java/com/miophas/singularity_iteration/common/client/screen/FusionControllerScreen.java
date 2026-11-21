@@ -64,6 +64,24 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
+        // 0.1.11.133: the plasma's power balance over the readouts
+        int rx = mouseX - leftPos - INFO_X, ry = mouseY - topPos - INFO_Y;
+        if (rx >= 0 && ry >= 0 && rx < INFO_W && ry < INFO_H - 16 && v(0) >= 3 && v(0) <= 4) g.renderComponentTooltip(font, balance(), mouseX, mouseY);
+    }
+
+    /** 0.1.11.133: density, confinement time, triple product against the Lawson criterion, alpha heating against the losses. */
+    private java.util.List<Component> balance() {
+        String K = "gui.mio_icif.fusion.balance.";
+        double n = v(35) / 1000.0, tau = v(36) / 1000.0, triple = v(37) / 1000.0;
+        int lawson = (int) Math.round(triple * 1.0e21 / FusionPlasma.LAWSON * 100);
+        return java.util.List.of(
+            Component.translatable(K + "title"),
+            Component.translatable(K + "density", String.format(Locale.ROOT, "%.2f", n)).withStyle(net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "tau", String.format(Locale.ROOT, "%.2f", tau)).withStyle(net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "triple", String.format(Locale.ROOT, "%.2f", triple), lawson)
+                .withStyle(lawson >= 100 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "alpha", compact(v(38)), compact(v(39))).withStyle(net.minecraft.ChatFormatting.GRAY),
+            Component.translatable(K + "heating", compact(v(33))).withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 
     @Override
@@ -97,7 +115,8 @@ public class FusionControllerScreen extends AbstractContainerScreen<FusionContro
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SiGuiTheme.TEXT, false);
         int line = 0, tx = INFO_X + 4, ty = INFO_Y + 4, tw = INFO_W - 8;
         int state = (int) Math.max(0, Math.min(STATES.length - 1, v(0)));
-        Component stateText = Component.translatable("gui.mio_icif.fusion.state." + STATES[state]);
+        // 0.1.11.133: a plasma that fuses without being ignited burns driven by the heating ports
+        Component stateText = Component.translatable("gui.mio_icif.fusion.state." + (state == 3 && v(3) > 0 ? "driven" : STATES[state]));
         Component progress = switch (state) {
             case 1 -> Component.translatable("gui.mio_icif.fusion.progress.cooling", v(12) * 100 / FusionPlasma.COOLDOWN_TICKS);
             case 2 -> Component.translatable("gui.mio_icif.fusion.progress.charging", v(13) * 100 / FusionPlasma.STARTUP_ENERGY);

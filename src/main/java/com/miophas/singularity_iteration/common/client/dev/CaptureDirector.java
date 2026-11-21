@@ -2619,6 +2619,10 @@ public final class CaptureDirector {
         until(2400, () -> ref.get() != null && ref.get().output() >= com.miophas.singularity_iteration.common.fusion.FusionPlasma.FULL_POWER);
         client(40, () -> log.accept("8_full_power"));
         shot(1, "fusion/8_gui_full_power");
+        // 0.1.11.133: the plasma's power balance over the readouts
+        client(1, () -> hoverGui = new int[]{176 + 40, 16 + 30});
+        shot(5, "fusion/8b_gui_balance");
+        client(1, () -> hoverGui = new int[]{-4000, 4000});
         // outside, running
         // without a screen the virtual mouse would turn the camera when the game grabs the mouse again: park it
         server(1, ServerPlayer::closeContainer);

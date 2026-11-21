@@ -48,7 +48,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      * 0.1.11.141 (calm layout, docs/gui_processing_machines.md): the flat figure window, the muted third level of text, the
      * rows of the headline (twice the vanilla font), its right-hand text and the readout lines.
      */
-    public static final int CALM_FIG = 0xFFB3B7BA, MUTED = 0x80868A, CALM_HEAD_Y = 100, CALM_SIDE_Y = 104, CALM_LINE_Y = 122,
+    public static final int MUTED = 0x80868A, CALM_HEAD_Y = 100, CALM_SIDE_Y = 104, CALM_LINE_Y = 122,
         CALM_LINE_H = 12, CALM_LINES = 3, ICON = 11;
 
     private long lastNanos;
@@ -112,6 +112,23 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      */
     protected boolean calm() { return false; }
 
+    /** 0.1.11.142: whether a machine slot is drawn (a slot the current mode does not use can hide, frame and all). */
+    protected boolean slotShown(Slot slot) { return true; }
+
+    /**
+     * 0.1.11.142: a ghost of {@code stack} in an empty slot, as the vanilla armour and smithing slots show what goes there:
+     * the item under a wash of the slot's grey. (sx, sy) is the slot's item position (GUI-relative).
+     */
+    protected void ghost(GuiGraphics g, net.minecraft.world.item.ItemStack stack, int sx, int sy) {
+        if (stack.isEmpty()) return;
+        int gx = leftPos + sx, gy = topPos + sy;
+        g.renderFakeItem(stack, gx, gy);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 200);   // above the item (near z 150)
+        g.fill(gx, gy, gx + 16, gy + 16, 0xB08B8B8B);
+        g.pose().popPose();
+    }
+
     /** 0.1.11.141: drawn after the pixel canvas (textures such as fluids, which the canvas would cover); (cx, cy) as in drawFigure. */
     protected void drawOverFigure(GuiGraphics g, float cx, float cy) { }
 
@@ -160,6 +177,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         }
         for (Slot s : menu.slots) {
             if (s.x < 0 || s.x > W) continue;   // docked upgrade slots are drawn by the dock
+            if (!slotShown(s)) continue;
             VanillaFrame.slot(g, x + s.x - 1, y + s.y - 1);
         }
         if (furnaceBlock()) {
@@ -213,9 +231,10 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
 
     /** 0.1.11.141: the calm layout (see {@link #calm}). */
     private void renderCalm(GuiGraphics g, int x, int y, float dt, int mouseX, int mouseY) {
-        g.fill(x + FIG_WIN_X, y + FIG_WIN_Y, x + FIG_WIN_X + FIG_WIN_W, y + FIG_WIN_Y + FIG_WIN_H, CALM_FIG);
-        FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X, y + FIG_WIN_Y,
-            FIG_WIN_W, FIG_WIN_H, x + FIG_X, y + FIG_Y, figureScale(), CALM_FIG).flat());
+        // 0.1.11.142: the figure window sunk into the panel like the slots (the vanilla look; the flat window read as a hole)
+        VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
+        FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X + 1, y + FIG_WIN_Y + 1,
+            FIG_WIN_W - 2, FIG_WIN_H - 2, x + FIG_X, y + FIG_Y, figureScale(), VanillaFrame.SLOT).flat());
         try {
             drawFigure(g, x + FIG_X, y + FIG_Y, dt);
         } finally {
@@ -268,8 +287,8 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     protected void iconButton(GuiGraphics g, int index, String[] icon, boolean on, int id, int mouseX, int mouseY, List<Component> tooltip) {
         int bx = FIG_WIN_X + FIG_WIN_W - 2 - (index + 1) * (ICON + 1) + 1, by = FIG_WIN_Y + 2;
         boolean hover = inside(mouseX - leftPos, mouseY - topPos, bx, by, ICON, ICON);
-        if (hover || on) g.fill(leftPos + bx, topPos + by, leftPos + bx + ICON, topPos + by + ICON, on ? 0xFF6B7176 : 0x40FFFFFF);
-        int ix = leftPos + bx + 2, iy = topPos + by + 2, ink = on ? 0xFFFFFFFF : 0xFF4A5054;
+        if (hover || on) g.fill(leftPos + bx, topPos + by, leftPos + bx + ICON, topPos + by + ICON, on ? 0xFF6B7176 : 0x30FFFFFF);
+        int ix = leftPos + bx + 2, iy = topPos + by + 2, ink = on ? 0xFFFFFFFF : 0xFF3C4245;
         for (int j = 0; j < icon.length; j++)
             for (int i = 0; i < icon[j].length(); i++) if (icon[j].charAt(i) == '#') g.fill(ix + i, iy + j, ix + i + 1, iy + j + 1, ink);
         panelButtons.add(new PanelButton(bx, by, ICON, ICON, id, tooltip));

@@ -35,9 +35,10 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
     private int mode() { return Math.max(0, Math.min(3, menu.getMode())); }
 
-    // 0.1.11.141: the calm layout. Flat parts in two greys on the flat window; the tanks are drawn after the pixel canvas
-    // (drawOverFigure) so they show the fluid's own texture again (0.1.11.118 had to use a flat colour under the canvas).
-    private static final int FRAME = 0xFF8E959A, INNER = 0xFFA9AFB3, IDLE_PIPE = 0xFF9DA3A7;
+    // 0.1.11.141: the calm layout. Flat parts in two light greys (0.1.11.142: on the sunk slot-grey window); the tanks are
+    // drawn after the pixel canvas (drawOverFigure) so they show the fluid's own texture again (0.1.11.118 had to use a flat
+    // colour under the canvas).
+    private static final int FRAME = 0xFFC9CED0, INNER = 0xFFE6E9E7, IDLE_PIPE = 0xFFADB3B5;
 
     @Override
     protected boolean calm() { return true; }
@@ -144,16 +145,81 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
         return List.of(Component.translatable(K + "tip.canner.1"), Component.translatable(K + "tip.canner.2"));
     }
 
-    // the material slot is not used for "cell to tank" (as before)
+    // the material slot is used only for canning and mixing (0.1.11.142: hidden, frame and all, in both cell modes)
+    private boolean materialUsed() { int m = mode(); return m == 0 || m == 3; }
+
+    private boolean hiddenSlot(Slot slot) { return slot.index == CannerElcMenu.MATERIAL_SLOT && !materialUsed() && !slot.hasItem(); }
+
+    @Override
+    protected boolean slotShown(Slot slot) { return !hiddenSlot(slot); }
+
     @Override
     protected void renderSlot(GuiGraphics g, Slot slot) {
-        if (slot.index == CannerElcMenu.MATERIAL_SLOT && menu.getMode() == 1) return;
+        if (hiddenSlot(slot)) return;
         super.renderSlot(g, slot);
     }
 
     @Override
     protected void renderSlotHighlight(GuiGraphics g, Slot slot, int mouseX, int mouseY, float partialTick) {
-        if (slot.index == CannerElcMenu.MATERIAL_SLOT && menu.getMode() == 1) return;
+        if (hiddenSlot(slot)) return;
         super.renderSlotHighlight(g, slot, mouseX, mouseY, partialTick);
+    }
+
+    // ---- 0.1.11.142: what goes in each slot (the empty slots were all alike) ----
+
+    private static net.minecraft.world.item.ItemStack stack(String id) {
+        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(id));
+        return new net.minecraft.world.item.ItemStack(item);
+    }
+
+    /** The ghost item of an empty slot in the current mode (empty for none). */
+    private net.minecraft.world.item.ItemStack ghostFor(int index) {
+        int m = mode();
+        return switch (index) {
+            case CannerElcMenu.INPUT_SLOT -> stack(switch (m) {
+                case 0 -> "mio_icif:normal/item_tin_empty_can";
+                case 1 -> "mio_icif:cell/item_cell_water";
+                default -> "mio_icif:cell/item_cell_empty";
+            });
+            case CannerElcMenu.MATERIAL_SLOT -> m == 0 ? stack("minecraft:bread") : net.minecraft.world.item.ItemStack.EMPTY;
+            case CannerElcMenu.BATTERY_SLOT -> stack("mio_icif:normal/item_chargebat_lev0");
+            default -> net.minecraft.world.item.ItemStack.EMPTY;
+        };
+    }
+
+    /** The hover text of an empty slot in the current mode, or null. */
+    private Component slotRole(int index) {
+        String k = "gui.mio_icif.canner.slot.";
+        int m = mode();
+        return switch (index) {
+            case CannerElcMenu.INPUT_SLOT -> Component.translatable(k + switch (m) {
+                case 0 -> "can";
+                case 1 -> "full_cell";
+                case 2 -> "empty_cell";
+                default -> "mix_container";
+            });
+            case CannerElcMenu.MATERIAL_SLOT -> materialUsed() ? Component.translatable(k + (m == 0 ? "food" : "additive")) : null;
+            case CannerElcMenu.BATTERY_SLOT -> Component.translatable(k + "battery");
+            default -> null;
+        };
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        super.renderBg(g, partialTick, mouseX, mouseY);
+        for (int index : new int[]{CannerElcMenu.INPUT_SLOT, CannerElcMenu.MATERIAL_SLOT, CannerElcMenu.BATTERY_SLOT}) {
+            Slot slot = menu.getSlot(index);
+            if (!slot.hasItem() && slotShown(slot)) ghost(g, ghostFor(index), slot.x, slot.y);
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
+        Slot slot = hoveredSlot;
+        if (slot != null && !slot.hasItem() && slot.index <= CannerElcMenu.BATTERY_SLOT && menu.getCarried().isEmpty()) {
+            Component role = slotRole(slot.index);
+            if (role != null) g.renderTooltip(font, role, mouseX, mouseY);
+        }
     }
 }

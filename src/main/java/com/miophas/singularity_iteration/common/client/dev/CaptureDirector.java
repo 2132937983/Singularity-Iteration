@@ -4939,6 +4939,41 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "quantum" (-Dsi.capture.scene=quantum), 0.1.11.131: the quantum generator screen while it generates (a third
+     * full), then with a full storage (core dim, coils dark, the pairs only annihilate).
+     */
+    private static void sceneQuantum() {
+        BlockPos gen = new BlockPos(0, 140, 12);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setBlock(gen, block("generator/block_quantum_generator").defaultBlockState(), 3);
+            if (level.getBlockEntity(gen) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_QuantumGenerator q)
+                q.getEnergyStorageInternal().setStored(33_000_000L);
+            sp.setGameMode(GameType.CREATIVE);
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, 141, 16.5, 180, 10);
+        });
+        server(5, sp -> openAt(sp, gen));
+        server(60, sp -> {});
+        shot(1, "quantum/1_generating");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(gen) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_QuantumGenerator q)
+                q.getEnergyStorageInternal().setStored(q.getEnergyStorageInternal().getCapacity());
+        });
+        server(60, sp -> {});
+        shot(1, "quantum/2_full");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "quantum".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneQuantum();
+        }
+    }
+
     /** Sets the dimension's wind field (strength 0..30, bearing). */
     private static void windField(net.minecraft.server.level.ServerLevel level, int strength, int bearing) {
         Object sim = com.miophas.singularity_iteration.core.runtime.world.WindSim.get(level);

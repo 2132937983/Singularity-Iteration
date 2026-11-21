@@ -1,9 +1,8 @@
 package example.sicore;
 
+import com.google.gson.JsonParser;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
@@ -27,7 +26,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class Round11589GameTests {
     private Round11589GameTests() {}
 
-    static final String[] BLOCKS = {"controller", "central_solenoid", "toroidal_coil", "poloidal_coil", "vacuum_vessel", "blanket", "divertor", "cryostat",
+    static final String[] BLOCKS = {"controller", "central_solenoid", "toroidal_coil", "poloidal_coil", "vacuum_vessel", "viewport", "blanket", "divertor", "cryostat",
         "nbi_port", "ecrh_port", "fuel_port", "exhaust_port", "cryo_port", "power_port", "mitigation_port"};
     static final List<String> FACING = List.of("controller", "toroidal_coil", "nbi_port", "ecrh_port", "fuel_port", "exhaust_port", "cryo_port", "power_port", "mitigation_port");
 
@@ -47,7 +46,6 @@ public final class Round11589GameTests {
         String[] langs = {"en_us", "zh_cn", "ja_jp"};
         String[] lang = new String[langs.length];
         for (int i = 0; i < langs.length; i++) lang[i] = Round33GameTests.resource("/assets/mio_icif/lang/" + langs[i] + ".json");
-        Pattern texture = Pattern.compile("\"mio_icif:(block/fusion/[a-z_]+)\"");
         for (String name : BLOCKS) {
             String path = "fusion/block_fusion_" + name;
             var id = ResourceLocation.fromNamespaceAndPath("mio_icif", path);
@@ -60,11 +58,15 @@ public final class Round11589GameTests {
             if (Round33GameTests.resource("/assets/mio_icif/models/item/" + path + ".json") == null) wrong.add(path + ": no item model");
             String model = Round33GameTests.resource("/assets/mio_icif/models/block/" + path + ".json");
             if (model == null) { wrong.add(path + ": no block model"); continue; }
-            Matcher m = texture.matcher(model);
             int textures = 0;
-            while (m.find()) {
+            var bindings = JsonParser.parseString(model).getAsJsonObject().getAsJsonObject("textures");
+            if (bindings == null) { wrong.add(path + ": no texture bindings"); continue; }
+            for (var binding : bindings.entrySet()) {
+                String value = binding.getValue().getAsString();
+                if (!value.startsWith("mio_icif:block/fusion/")) continue;
+                String texture = ResourceLocation.parse(value).getPath();
                 textures++;
-                if (!exists("assets/mio_icif/textures/" + m.group(1) + ".png")) wrong.add(path + ": missing texture " + m.group(1));
+                if (!exists("assets/mio_icif/textures/" + texture + ".png")) wrong.add(path + ": missing texture " + texture);
             }
             if (textures == 0) wrong.add(path + ": the model names no fusion texture");
             BlockState state = block.defaultBlockState();

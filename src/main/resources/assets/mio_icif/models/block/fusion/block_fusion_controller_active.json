@@ -1,8 +1,7 @@
 {
-  "parent": "minecraft:block/orientable",
+  "parent": "mio_icif:block/fusion/block_fusion_controller",
   "textures": {
-    "top": "mio_icif:block/fusion/cryostat",
-    "side": "mio_icif:block/fusion/cryostat",
-    "front": "mio_icif:block/fusion/controller_front_active"
+    "screen": "mio_icif:block/fusion/component/screen_on",
+    "light": "mio_icif:block/fusion/component/light_on"
   }
 }

@@ -37,13 +37,19 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      * the energy bolt between the input and the battery, the progress arrow from the inputs to the outputs.
      */
     public static final int FIG_WIN_X = 82, FIG_WIN_Y = 17, FIG_WIN_W = 160, FIG_WIN_H = 78,
-        READ_WIN_X = 8, READ_WIN_Y = 97, READ_WIN_W = 234, READ_WIN_H = 56, BOLT_X = 14, BOLT_Y = 38, ARROW_X = 33, ARROW_Y = 37;
+        READ_WIN_X = 8, READ_WIN_Y = 97, READ_WIN_W = 234, READ_WIN_H = 56, BOLT_X = 13, BOLT_Y = 39, ARROW_X = 32, ARROW_Y = 37;   // 0.1.11.141: the arrow centred between input (ends 27) and output (60), the bolt's centre of mass on the slot column
     /**
      * 0.1.11.120: the readouts in the vanilla font (one font pixel a GUI pixel): the headline row (headline, its bar, the
      * status on the right), then up to four lines; the buttons stack in a column on the right of the lines.
      */
     public static final int HEAD_Y = 101, LINE_Y = 112, LINE_H = 10, BUTTON_W = 76, BUTTON_H = 12, TEXT = 0x404040;
     protected static final String K = "gui.mio_icif.process.";
+    /**
+     * 0.1.11.141 (calm layout, docs/gui_processing_machines.md): the flat figure window, the muted third level of text, the
+     * rows of the headline (twice the vanilla font), its right-hand text and the readout lines.
+     */
+    public static final int CALM_FIG = 0xFFB3B7BA, MUTED = 0x80868A, CALM_HEAD_Y = 100, CALM_SIDE_Y = 104, CALM_LINE_Y = 122,
+        CALM_LINE_H = 12, CALM_LINES = 3, ICON = 11;
 
     private long lastNanos;
 
@@ -98,6 +104,42 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     /** 0.1.11.118: whether the furnace block (energy bolt, progress arrow) is drawn on the left. */
     protected boolean furnaceBlock() { return true; }
 
+    /**
+     * 0.1.11.141: the calm layout (the premium-feel review): a flat figure window and flat figure parts, no readout window,
+     * the headline twice the font size with the progress or the stop reason beside it, at most three lines under it (the
+     * first in the body colour, the rest muted), small icon buttons in the figure window, the title on the left and no lamp
+     * or upgrade hint. Machines move to it one by one.
+     */
+    protected boolean calm() { return false; }
+
+    /** 0.1.11.141: drawn after the pixel canvas (textures such as fluids, which the canvas would cover); (cx, cy) as in drawFigure. */
+    protected void drawOverFigure(GuiGraphics g, float cx, float cy) { }
+
+    /** 0.1.11.141: a figure coordinate {@code c + d} on the screen (the canvas scales the figure about its centre). */
+    protected final int figPx(float c, float d) { return Math.round(c + d * figureScale()); }
+
+    /** 0.1.11.141: the text on the right of a calm headline: the progress while running, else the status. */
+    protected Component calmSide() {
+        int code = status();
+        if (code == ProcessStatus.RUNNING) {
+            int max = menu.getMaxProgress();
+            return Component.literal((max > 0 ? Math.round(100F * menu.getProgress() / max) : 0) + "%");
+        }
+        return Component.translatable(K + "status." + ProcessStatus.KEYS[Math.max(0, Math.min(ProcessStatus.KEYS.length - 1, code))]);
+    }
+
+    @Override
+    protected boolean showUpgradeHint() { return !calm() && super.showUpgradeHint(); }   // the empty upgrade slots say the same
+
+    @Override
+    protected int statusLampColor() { return calm() ? 0 : super.statusLampColor(); }
+
+    @Override
+    protected void drawTitle(GuiGraphics g) {
+        if (!calm()) { super.drawTitle(g); return; }
+        g.drawString(font, fit(title, W - 16), 8, titleLabelY, VanillaFrame.TITLE, false);   // left, as in the vanilla containers
+    }
+
     /** Optional extra drawing in the readout column (bars, buttons), below the readouts at {@code y}. */
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) { }
 
@@ -112,8 +154,10 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         int x = leftPos, y = topPos;
         // 0.1.11.118: the vanilla container look (docs/gui_processing_machines.md)
         VanillaFrame.panel(g, x, y, W, H);
-        VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
-        VanillaFrame.inset(g, x + READ_WIN_X, y + READ_WIN_Y, READ_WIN_W, READ_WIN_H, PAPER);
+        if (!calm()) {
+            VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
+            VanillaFrame.inset(g, x + READ_WIN_X, y + READ_WIN_Y, READ_WIN_W, READ_WIN_H, PAPER);
+        }
         for (Slot s : menu.slots) {
             if (s.x < 0 || s.x > W) continue;   // docked upgrade slots are drawn by the dock
             VanillaFrame.slot(g, x + s.x - 1, y + s.y - 1);
@@ -125,6 +169,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         }
         panelButtons.clear();
         float dt = frameSeconds();
+        if (calm()) { renderCalm(g, x, y, dt, mouseX, mouseY); return; }
         // 0.1.11.118: the figure as pixel art, one cell a GUI pixel, inside its window
         FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X + 1, y + FIG_WIN_Y + 1,
             FIG_WIN_W - 2, FIG_WIN_H - 2, x + FIG_X, y + FIG_Y, figureScale()));
@@ -149,7 +194,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         float hb = headlineBar();
         if (hb >= 0 && stX - headEnd > 24) {
             int bx = headEnd + 6, bw = stX - 6 - bx;
-            furnaceBar(g, bx, y + HEAD_Y + 1, bw, 7, hb);
+            furnaceBar(g, bx, y + HEAD_Y, bw, 7, hb);   // 0.1.11.141: on the capitals' rows (was a row low)
             float mark = headlineBarMarker();
             if (mark >= 0) {
                 int mx = bx + 1 + Math.round((bw - 2) * Math.min(1, mark));
@@ -164,6 +209,70 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
             ty += LINE_H;
         }
         drawExtras(g, right - BUTTON_W, y + LINE_Y - 1, mouseX, mouseY);
+    }
+
+    /** 0.1.11.141: the calm layout (see {@link #calm}). */
+    private void renderCalm(GuiGraphics g, int x, int y, float dt, int mouseX, int mouseY) {
+        g.fill(x + FIG_WIN_X, y + FIG_WIN_Y, x + FIG_WIN_X + FIG_WIN_W, y + FIG_WIN_Y + FIG_WIN_H, CALM_FIG);
+        FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X, y + FIG_WIN_Y,
+            FIG_WIN_W, FIG_WIN_H, x + FIG_X, y + FIG_Y, figureScale(), CALM_FIG).flat());
+        try {
+            drawFigure(g, x + FIG_X, y + FIG_Y, dt);
+        } finally {
+            FcsDraw.endPixels(g);
+        }
+        drawOverFigure(g, x + FIG_X, y + FIG_Y);
+
+        int left = x + 8, right = x + W - 8;
+        int code = status();
+        Component side = calmSide();
+        int sideColour = code == ProcessStatus.RUNNING ? INK : ProcessStatus.isFault(code) ? RED : DIM;
+        side = fit(side, W / 2);
+        int sideX = right - font.width(side);
+        Component head = fit(headline(), (sideX - left - 8) / 2);
+        g.pose().pushPose();
+        g.pose().translate(left, y + CALM_HEAD_Y, 0);
+        g.pose().scale(2F, 2F, 1F);
+        g.drawString(font, head, 0, 0, headlineColour(), false);
+        g.pose().popPose();
+        g.drawString(font, side, sideX, y + CALM_SIDE_Y, sideColour, false);
+        float hb = headlineBar();
+        int headEnd = left + 2 * font.width(head);
+        if (hb >= 0 && sideX - headEnd > 24) {
+            int bx = headEnd + 6, bw = sideX - 6 - bx;
+            VanillaFrame.flatBar(g, bx, y + CALM_SIDE_Y, bw, hb);
+            float mark = headlineBarMarker();
+            if (mark >= 0) {
+                int mx = bx + Math.round((bw - 1) * Math.min(1, mark));
+                g.fill(mx, y + CALM_SIDE_Y - 1, mx + 1, y + CALM_SIDE_Y + 8, 0xFF000000 | RED);
+            }
+        }
+        int ty = y + CALM_LINE_Y, n = 0;
+        for (Component c : readouts()) {
+            if (n == CALM_LINES) break;
+            g.drawString(font, fit(c, W - 16), left, ty, n == 0 ? TEXT : MUTED, false);
+            ty += CALM_LINE_H;
+            n++;
+        }
+        drawExtras(g, right, y + CALM_LINE_Y, mouseX, mouseY);
+    }
+
+    /**
+     * 0.1.11.141: a small flat icon button in the top right corner of the figure window (index 0 rightmost) that sends menu
+     * button {@code id}; lighter under the mouse, dark when on. {@code icon}: 7 rows of 7 ('#' drawn), so every icon has
+     * the same size (font glyphs such as the arrows come out in different sizes). Call it from {@link #drawExtras} every frame.
+     */
+    public static final String[] ICON_CYCLE = {"..###.#", ".#...##", "#...###", "#......", "#.....#", ".#...#.", "..###.."},
+        ICON_SWAP = {".....#.", "#######", ".....#.", ".......", ".#.....", "#######", ".#....."};
+
+    protected void iconButton(GuiGraphics g, int index, String[] icon, boolean on, int id, int mouseX, int mouseY, List<Component> tooltip) {
+        int bx = FIG_WIN_X + FIG_WIN_W - 2 - (index + 1) * (ICON + 1) + 1, by = FIG_WIN_Y + 2;
+        boolean hover = inside(mouseX - leftPos, mouseY - topPos, bx, by, ICON, ICON);
+        if (hover || on) g.fill(leftPos + bx, topPos + by, leftPos + bx + ICON, topPos + by + ICON, on ? 0xFF6B7176 : 0x40FFFFFF);
+        int ix = leftPos + bx + 2, iy = topPos + by + 2, ink = on ? 0xFFFFFFFF : 0xFF4A5054;
+        for (int j = 0; j < icon.length; j++)
+            for (int i = 0; i < icon[j].length(); i++) if (icon[j].charAt(i) == '#') g.fill(ix + i, iy + j, ix + i + 1, iy + j + 1, ink);
+        panelButtons.add(new PanelButton(bx, by, ICON, ICON, id, tooltip));
     }
 
     /** {@code c} cut to {@code maxW} pixels with an ellipsis. */

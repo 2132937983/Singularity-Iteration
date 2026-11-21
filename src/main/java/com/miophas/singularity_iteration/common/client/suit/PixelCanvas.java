@@ -20,6 +20,7 @@ public final class PixelCanvas {
     private int depth;
     private short current;
     private final int ground;
+    private boolean edges = true;
 
     public PixelCanvas(int x0, int y0, int w, int h, float cx, float cy, float scale) {
         this(x0, y0, w, h, cx, cy, scale, 0xFF8B8B8B);
@@ -31,6 +32,12 @@ public final class PixelCanvas {
         this.x0 = x0; this.y0 = y0; this.w = w; this.h = h; this.cx = cx; this.cy = cy; this.scale = scale;
         this.rgb = new int[w * h];
         this.part = new short[w * h];
+    }
+
+    /** 0.1.11.141: no shaded edges (the calm screens: flat parts on a flat window). */
+    public PixelCanvas flat() {
+        edges = false;
+        return this;
     }
 
     /** Pixel-space x / y of a figure coordinate. */
@@ -141,7 +148,7 @@ public final class PixelCanvas {
         int[] out = rgb.clone();
         for (int k = 0; k < n; k++) {
             short p = part[k];
-            if (p == 0 || !interior[p]) continue;
+            if (!edges || p == 0 || !interior[p]) continue;
             int i = k % w, j = k / w;
             boolean darkEdge = behind(p, i + 1, j) || behind(p, i, j + 1);
             boolean lightEdge = behind(p, i - 1, j) || behind(p, i, j - 1);

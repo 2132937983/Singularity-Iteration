@@ -199,7 +199,7 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
         int[] bar = VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
             Component.literal(e + " / " + cap + " EU"));
         int mark = (int) (bar[0] + bar[1] * mio_icif_Thermal_Generator.REOPEN);
-        if (bar[1] > 0) g.fill(mark, sy + 1, mark + 1, sy + 11, 0xFF2A5D8A);
+        if (bar[1] > 0) g.fill(mark, sy + 1, mark + 1, sy + 10, 0xFF2A5D8A);
     }
 
     @Override

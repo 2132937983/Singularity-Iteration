@@ -176,7 +176,7 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
     @Override
     protected void drawStrip(GuiGraphics g, int x, int y) {
         double share = Math.min(1.0, energy() / (double) capacity());
-        VanillaFrame.bolt(g, leftPos + 14, topPos + 38, share);
+        VanillaFrame.bolt(g, leftPos + 13, topPos + 39, share);   // 0.1.11.141: as the processing machines
         bar(g, x, y, Component.translatable(K + "stored"), share, Component.literal(Math.round(share * 100) + "%"));
     }
 

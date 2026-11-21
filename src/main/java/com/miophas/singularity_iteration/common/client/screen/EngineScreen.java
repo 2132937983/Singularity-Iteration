@@ -170,7 +170,7 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
             Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
         for (double mark : new double[]{EngineGovernor.START_BELOW, EngineGovernor.STOP_AT}) {
             int m = (int) (bar[0] + bar[1] * mark);
-            if (bar[1] > 0) g.fill(m, sy + 1, m + 1, sy + 11, BLUE);
+            if (bar[1] > 0) g.fill(m, sy + 1, m + 1, sy + 10, BLUE);
         }
     }
 

@@ -2569,6 +2569,58 @@ public final class CaptureDirector {
      * Scene "fusion_fx", 0.1.11.139: the plasma through the demonstration's east viewports: the breakdown, the plasma growing,
      * the burn, then a disruption (a toroidal field coil block broken) and its collapse; and the viewports from outside.
      */
+    /**
+     * Scene "fusion_ctm", 0.1.11.140: the connected model (ConnectedModel): 3 x 3 walls of the vacuum vessel, the viewport, the
+     * blanket, the toroidal and the poloidal field coil side by side (with a lone block before each), an L of vessel walls and a
+     * 2 x 2 x 2 vessel block for the corners; then the tokamak.
+     */
+    private static void sceneFusionCtm() {
+        String[] names = {"vacuum_vessel", "viewport", "blanket", "toroidal_coil", "poloidal_coil"};
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            for (int i = 0; i < names.length; i++) {
+                var block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "fusion/block_fusion_" + names[i]));
+                int x0 = -40 + i * 5;
+                for (int dx = 0; dx < 3; dx++)
+                    for (int dy = 0; dy < 3; dy++) level.setBlock(new BlockPos(x0 + dx, -60 + dy, -30), block.defaultBlockState(), 3);
+                level.setBlock(new BlockPos(x0 + 1, -60, -26), block.defaultBlockState(), 3);   // a lone one in front
+            }
+            var vessel = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "fusion/block_fusion_vacuum_vessel"));
+            for (int k = 0; k < 4; k++) { level.setBlock(new BlockPos(-14 + k, -60, -30), vessel.defaultBlockState(), 3); level.setBlock(new BlockPos(-14, -60, -30 + k), vessel.defaultBlockState(), 3); }
+            for (int dx = 0; dx < 2; dx++) for (int dy = 0; dy < 2; dy++) for (int dz = 0; dz < 2; dz++)
+                level.setBlock(new BlockPos(-8 + dx, -60 + dy, -30 + dz), vessel.defaultBlockState(), 3);
+            look(sp, -29, -58.5, -21, 180, 12);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(60, "fusion_ctm/1_walls");
+        server(1, sp -> look(sp, -37.5, -58.5, -25.5, 180, 10));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(30, "fusion_ctm/2_vessel_viewport_close");
+        server(1, sp -> look(sp, -26.5, -58.5, -25.5, 180, 10));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(30, "fusion_ctm/3_coils_close");
+        server(1, sp -> look(sp, -9, -57, -24, 200, 30));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(30, "fusion_ctm/4_corners");
+        server(1, sp -> {
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.placeStructure(sp.serverLevel(), new BlockPos(30, -55, 10));
+            look(sp, 44.5, -45, 28.5, 130, 16);
+        });
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(80, "fusion_ctm/5_tokamak");
+        server(1, sp -> look(sp, 33.0, -53, 9, 120, 8));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(30, "fusion_ctm/6_tokamak_close");
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
     private static void sceneFusionFx() {
         BlockPos c = new BlockPos(30, -55, 10);
         var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
@@ -4437,6 +4489,13 @@ public final class CaptureDirector {
         if (OUT != null && "fusion_coils".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneFusionCoils();
+        }
+    }
+
+    static {
+        if (OUT != null && "fusion_ctm".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneFusionCtm();
         }
     }
 

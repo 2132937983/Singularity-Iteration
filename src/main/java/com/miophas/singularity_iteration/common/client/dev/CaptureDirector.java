@@ -2671,8 +2671,10 @@ public final class CaptureDirector {
         client(40, () -> log.accept("8_full_power"));
         shot(1, "fusion/8_gui_full_power");
         // 0.1.11.133: the plasma's power balance over the readouts
-        client(1, () -> hoverGui = new int[]{176 + 40, 16 + 30});
+        client(1, () -> hoverGui = new int[]{176 + 40, 95 + 20});   // 0.1.11.138: the readout window
         shot(5, "fusion/8b_gui_balance");
+        client(1, () -> hoverGui = new int[]{176 + 120, 18 + 36});   // the right-hand plasma
+        shot(5, "fusion/8c_gui_figure_tip");
         client(1, () -> hoverGui = new int[]{-4000, 4000});
         // outside, running
         // without a screen the virtual mouse would turn the camera when the game grabs the mouse again: park it

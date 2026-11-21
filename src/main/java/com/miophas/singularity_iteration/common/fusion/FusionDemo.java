@@ -50,7 +50,18 @@ public final class FusionDemo {
         }
         for (FusionStructure.Cell c : s.cells())
             if (c.part() == FusionStructure.Part.PLASMA) level.setBlock(controller.offset(c.x(), c.y(), c.z()), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        // 0.1.11.139: a band of diagnostic viewports on the east and south sides (blanket module and vessel wall in line)
+        BlockPos centre = s.centre(controller, Direction.EAST);
+        for (int[] v : VIEWPORTS) level.setBlock(centre.offset(v[0], v[1], v[2]), block("fusion/block_fusion_viewport").defaultBlockState(), Block.UPDATE_ALL);
     }
+
+    /**
+     * 0.1.11.139: the demonstration's viewports, from the torus's centre (as laid out, facing east): at the outer midplane,
+     * east (x 9 blanket, 10 vessel) and south (z 9, 10), each four wide.
+     */
+    public static final int[][] VIEWPORTS = {
+        {9, 0, -2}, {10, 0, -2}, {9, 0, -1}, {10, 0, -1}, {9, 0, 1}, {10, 0, 1}, {9, 0, 2}, {10, 0, 2},
+        {-2, 0, 9}, {-2, 0, 10}, {-1, 0, 9}, {-1, 0, 10}, {1, 0, 9}, {1, 0, 10}, {2, 0, 9}, {2, 0, 10}};
 
     /** The lowest layer of the structure, relative to the controller (the ground it stands on is one below). */
     private static int bottom() {
@@ -70,10 +81,9 @@ public final class FusionDemo {
                 items.setStackInSlot(row * FusionBlanket.COLUMNS + col, new ItemStack(BLANKET[row].charAt(col) == 'p' ? rod : vent));
         items.setStackInSlot(FusionControllerBlockEntity.SLOT_DEUTERIUM, new ItemStack(mio_icif_normal.DEUTERIUM_CELL.get(), 64));
         items.setStackInSlot(FusionControllerBlockEntity.SLOT_TRITIUM, new ItemStack(mio_icif_normal.TRITIUM_CELL.get(), 64));
-        // 0.1.11.94: 60k coolant cells for the disruption mitigation (it took ice before)
-        items.setStackInSlot(FusionControllerBlockEntity.SLOT_MITIGATION,
-            new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_coolant_six")), 4));
-        c.setFeed(FusionPlasma.MAX_FEED);
+        // 0.1.11.137: frozen neon pellets for the disruption mitigation (60k coolant cells until 0.1.11.136, ice before)
+        items.setStackInSlot(FusionControllerBlockEntity.SLOT_MITIGATION, new ItemStack(mio_icif_normal.FROZEN_NEON_PELLET.get(), 16));
+        c.setFeed(FusionPlasma.REFERENCE_FEED);   // 0.1.11.134: the feed goes on past it, into the limits
 
         // the lever on top of the controller
         BlockPos lever = controller.above();

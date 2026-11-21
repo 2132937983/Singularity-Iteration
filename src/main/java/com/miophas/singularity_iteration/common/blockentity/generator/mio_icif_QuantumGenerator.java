@@ -42,6 +42,8 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
     private int production;
     private int tier;
     private boolean active = true;   // 0.1.11.11: on (nothing could ever switch it on, so it never made any energy)
+    /** 0.1.11.131: EU made in the last tick (0 while the storage is full), for the screen. */
+    private long lastGenerated;
 
     public mio_icif_QuantumGenerator(BlockPos pos, BlockState state) {
         this(pos, state, null);
@@ -112,11 +114,13 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
         }
 
         // 如果激活且未满，则发电
+        blockEntity.lastGenerated = 0;
         if (blockEntity.active) {
             long energyToGenerate = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, blockEntity.production),   // 0.1.8.4
                 blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount());
             if (energyToGenerate > 0) {
                 blockEntity.apiGenerateEnergy(energyToGenerate, false);
+                blockEntity.lastGenerated = energyToGenerate;
             }
         }
 
@@ -204,6 +208,11 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
     public void setActive(boolean active) {
         this.active = active;
         setChanged();
+    }
+
+    /** 0.1.11.131: EU made in the last tick (0 while the storage is full). */
+    public long getLastGenerated() {
+        return lastGenerated;
     }
 
     /**

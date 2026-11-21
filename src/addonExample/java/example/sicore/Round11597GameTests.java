@@ -165,7 +165,7 @@ public final class Round11597GameTests {
             if (items.getStackInSlot(mitSlot).getCount() != 1 || !items.getStackInSlot(mitSlot).is(item(C60))) wrong.add("the mitigation slot holds " + items.getStackInSlot(mitSlot));
             if (count(cool, C60) != 1) wrong.add(count(cool, C60) + " coolant cells left in the mitigation port, not 1");
             // after a mitigated disruption the next cell moves in
-            call(c, "disrupt", true, 15.0);
+            call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
             call(c, "servePorts");
             if (items.getStackInSlot(mitSlot).getCount() != 1 || count(cool, C60) != 0) wrong.add("the next coolant cell did not move in after a disruption");
             int[] fuelValues = (int[]) call(h.getLevel().getBlockEntity(fuelAt), "screenValues");

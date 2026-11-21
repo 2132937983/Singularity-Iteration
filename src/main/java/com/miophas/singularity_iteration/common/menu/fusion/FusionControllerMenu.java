@@ -22,8 +22,10 @@ import org.jetbrains.annotations.Nullable;
  * Buttons: 0 feed -1, 1 feed +1, 2 feed -4, 3 feed +4.
  */
 public class FusionControllerMenu extends AbstractContainerMenu {
-    public static final int VALUES = 35;
-    public static final int GRID_X = 8, GRID_Y = 18, FUEL_Y = 134, INV_X = 69, INV_Y = 172, HOTBAR_Y = 230;
+    public static final int VALUES = 52;   // 0.1.11.136: + fuel injected and used;   // 0.1.11.135: + heat, multiplication, fissions per neutron, TBR, engineering Q;   // 0.1.11.134: + Greenwald, beta, H-mode, disruption cause, ELMs;   // 0.1.11.133: + density, confinement time, triple product, alpha, losses
+    /** 0.1.11.138 (fusion overhaul F6): the vanilla-frame console, 344 x 252 (was 300 x 256). */
+    public static final int GUI_WIDTH = 344, GUI_HEIGHT = 252;
+    public static final int GRID_X = 8, GRID_Y = 18, FUEL_Y = 131, INV_X = 91, INV_Y = 170, HOTBAR_Y = 228;
     public static final int[] FUEL_X = {8, 26, 62, 80, 116};
     private static final int MACHINE = FusionControllerBlockEntity.SLOTS;
 

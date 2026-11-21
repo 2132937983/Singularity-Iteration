@@ -247,7 +247,9 @@ public final class FusionStructure {
                     ok = isPort(s) || s.is(mio_icif_blocks.FUSION_VACUUM_VESSEL.get());
                     if (ok && isPort(s)) ports.add(at.immutable());
                 }
-                default -> ok = s.is(block(c.part));
+                // 0.1.11.139: a diagnostic viewport stands in for a blanket module or a vacuum vessel wall
+                default -> ok = s.is(block(c.part))
+                    || (c.part == Part.BLANKET || c.part == Part.VACUUM_VESSEL) && s.is(mio_icif_blocks.FUSION_VIEWPORT.get());
             }
             if (!ok) return new Check(false, at.immutable(), c.part, ports, centre);
         }

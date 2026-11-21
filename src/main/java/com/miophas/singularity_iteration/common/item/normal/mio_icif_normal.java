@@ -183,6 +183,11 @@ public class mio_icif_normal {
             com.miophas.singularity_iteration.common.registry.mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
             com.miophas.singularity_iteration.common.item.component.ReactorComponentData.full(
                 com.miophas.singularity_iteration.common.reactor.ReactorInventory.DEUTERIUM_LIFE))));
+    /**
+     * 0.1.11.137 (fusion overhaul F5): a frozen neon pellet for the fusion reactor's disruption mitigation (shattered pellet
+     * injection): it shatters into the plasma just before a disruption and radiates its heat evenly onto the whole wall.
+     */
+    public static final DeferredItem<Item> FROZEN_NEON_PELLET = ITEMS.register("normal/item_frozen_neon_pellet", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> URAN_ENRICHED_CELL = ITEMS.register("normal/item_uran_enriched_cell", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> WEED = ITEMS.register("normal/item_weed", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> WEEDEX = ITEMS.register("normal/item_weedex", () -> new MatronHerbicideItem(new Item.Properties()));

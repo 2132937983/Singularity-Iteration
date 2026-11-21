@@ -502,6 +502,10 @@
       "required": false
     },
     {
+      "id": "mio_icif:fusion/block_fusion_viewport",
+      "required": false
+    },
+    {
       "id": "mio_icif:fusion/block_fusion_blanket",
       "required": false
     },

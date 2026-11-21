@@ -157,11 +157,11 @@ public final class Round11598GameTests {
         long full = num(BLANKET, "FULL_NEUTRONS"), reference = num(PLASMA, "FULL_POWER"), limit = num(PLASMA, "OUTPUT_LIMIT");
         if (reference != 39_200_000L) wrong.add("the reference output is " + reference);
         if (num(PLASMA, "MAGNET_UPKEEP") != 392_000L) wrong.add("the magnet upkeep changed: " + num(PLASMA, "MAGNET_UPKEEP"));
-        // a blanket whose rods give 20,000 fission EU/t: 7.84M neutron power + 14,000 x 20,000 = 287,840,000 EU/t
+        // a blanket whose rods give 20,000 fission EU/t (0.1.11.135: heat x 35%): (9.8M + 45,250 x 20,000) x 35% = 320,180,000 EU/t
         long strong = lng(call(Round33GameTests.common(BLANKET), "output", full, 0.0, 20_000.0));
-        if (strong != full + 14_000L * 20_000L) wrong.add("a strong blanket gives " + strong + ", expected " + (full + 280_000_000L));
+        if (strong != (full * 125 / 100 + 45_250L * 20_000L) * 35 / 100) wrong.add("a strong blanket gives " + strong + ", expected 320,180,000");
         // one power port carries it in UEV packets, and holds a tick of the grid's top voltage
-        if (lng(call(Round33GameTests.common(PORT), "tierFor", strong)) != 10) wrong.add("287.84M EU/t on one port is not UEV");
+        if (lng(call(Round33GameTests.common(PORT), "tierFor", strong)) != 10) wrong.add(strong + " EU/t on one port is not UEV");
         if (num(PORT, "CAPACITY") < limit) wrong.add("a power port stores only " + num(PORT, "CAPACITY") + " EU");
         // the controller's output store keeps one tick of whatever the output is
         BlockPos at = new BlockPos(2, 2, 2);

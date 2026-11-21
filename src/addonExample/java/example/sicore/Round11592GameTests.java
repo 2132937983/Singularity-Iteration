@@ -101,11 +101,15 @@ public final class Round11592GameTests {
         if (!state(p).equals("BURNING")) wrong.add("not burning after ignition: " + state(p));
         double kev = ((Number) call(p, "kev")).doubleValue();
         if (Math.abs(kev - 15.0) > 0.2) wrong.add("burns at " + kev + " keV, expected about 15");
+        // 0.1.11.136: 3% of the 16 units injected a tick burn; the exhaust returns the rest
+        long used = 0;
+        for (int tick = 0; tick < 1_000; tick++) used += lng(call(call(p, "tick", run(16, 4, 0, energy, d, t, true)), "fuelUsed"));
+        if (Math.abs(used - 480) > 30) wrong.add("fuel " + used + " in 1,000 ticks at 16 steps, expected about 480");
         Object r = call(p, "tick", run(16, 4, 0, energy, d, t, true));
-        if (lng(call(r, "fusionPower")) != 9_800_000L) wrong.add("fusion power " + call(r, "fusionPower") + " at 16 steps");
+        // 0.1.11.134: ELMs shake the burn by a few percent
+        if (Math.abs(lng(call(r, "fusionPower")) - 9_800_000L) > 400_000L) wrong.add("fusion power " + call(r, "fusionPower") + " at 16 steps");
         if (lng(call(r, "heating")) != 0 || !Double.isInfinite(((Number) call(p, "q")).doubleValue())) wrong.add("an ignited plasma still heated: " + call(r, "heating"));
-        if (lng(call(r, "neutronPower")) != 7_840_000L) wrong.add("neutron power " + call(r, "neutronPower"));
-        if (lng(call(r, "fuelUsed")) != 16) wrong.add("fuel " + call(r, "fuelUsed") + " a tick at 16 steps");
+        if (Math.abs(lng(call(r, "neutronPower")) - 7_840_000L) > 320_000L) wrong.add("neutron power " + call(r, "neutronPower"));
         h.assertTrue(wrong.isEmpty(), "plasma: " + wrong);
         h.succeed();
     }
@@ -196,10 +200,11 @@ public final class Round11592GameTests {
         if (lng(call(cls(BLANKET), "output", full, 1.0, 1e12)) != limit) wrong.add("the output is not bounded by the grid's top voltage");
         if (limit != Integer.MAX_VALUE) wrong.add("the output limit is " + limit + ", not the grid's top voltage");
         // weaker blankets give less
-        long lithium = lng(call(cycle(blanket("L", "L", "L", "L", "L", "L"), 0, full), "output"));
-        if (lithium >= cap || lithium <= full) wrong.add("a lithium blanket gives " + lithium);
+        // 0.1.11.135: the blanket makes heat; the steam cycle turns 35% of it into electricity
         long empty = lng(call(cycle(blanket("", "", "", "", "", ""), 0, full), "output"));
-        if (empty != full) wrong.add("an empty blanket gives " + empty + ", expected the neutron power " + full);
+        if (empty != full * 125 / 100 * 35 / 100) wrong.add("an empty blanket gives " + empty + ", expected 35% of the alpha and neutron heat");
+        long lithium = lng(call(cycle(blanket("L", "L", "L", "L", "L", "L"), 0, full), "output"));
+        if (lithium >= cap || lithium <= empty) wrong.add("a lithium blanket gives " + lithium);
         long uranium = lng(call(cycle(blanket("UV", "VU", "UV", "VU", "UV", "VU"), 0, full), "output"));
         if (uranium >= cap) wrong.add("a few uranium rods already reach the cap: " + uranium);
         // no plasma: no output, the rods rest (subcritical)
@@ -211,17 +216,19 @@ public final class Round11592GameTests {
 
     @GameTest(template = "empty", batch = "round11592_fusion_model", timeoutTicks = 20)
     public static void lithiumBreedsMoreTritiumThanThePlasmaBurns(GameTestHelper h) {
-        // five lithium cells in the first column: each breeds 2 neutrons x 40 a cycle, a tritium cell (10,000) in 125 cycles
+        // five lithium cells in the first column: 0.1.11.136: each breeds 2 neutrons x 1 a cycle, a tritium cell (10,000) in
+        // 5,000 cycles; the plasma burns 3% of the 16 units it injects a tick
         ItemStack[] grid = blanket("L", "L", "L", "L", "L", "");
         long full = num(BLANKET, "FULL_NEUTRONS");
         int cycles = 0;
-        while (cycles < 200 && !grid[0].is(item("normal/item_tritium_cell"))) {
+        while (cycles < 6_000 && !grid[0].is(item("normal/item_tritium_cell"))) {
             grid = (ItemStack[]) call(cycle(grid, 0, full), "stacks");
             cycles++;
         }
         h.assertTrue(grid[0].is(item("normal/item_tritium_cell")), "no tritium after " + cycles + " cycles: " + grid[0]);
         double bred = 5.0 * num(CONTROLLER, "FUEL_PER_CELL") / (cycles * num(CONTROLLER, "CYCLE_TICKS"));
-        h.assertTrue(bred > num(PLASMA, "MAX_FEED"), "five lithium cells breed " + bred + " units a tick, the plasma burns " + num(PLASMA, "MAX_FEED"));
+        double burned = num(PLASMA, "REFERENCE_FEED") * 0.03;
+        h.assertTrue(bred > burned && bred < 1.2 * burned, "five lithium cells breed " + bred + " units a tick, the plasma burns " + burned);
         h.succeed();
     }
 
@@ -315,13 +322,13 @@ public final class Round11592GameTests {
         items.setStackInSlot(0, new ItemStack(item("reactor/item_reactor_iridium_oc_vent")));
         items.setStackInSlot(9, new ItemStack(item("reactor/item_reactor_iridium_oc_vent")));
         items.setStackInSlot(slot, new ItemStack(item("reactor/item_reactor_coolant_six"), 2));
-        call(c, "disrupt", true, 15.0);
+        call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
         List<String> wrong = new ArrayList<>();
         if (items.getStackInSlot(0).isEmpty() || items.getStackInSlot(9).isEmpty()) wrong.add("the coolant did not spare the first column");
         if (items.getStackInSlot(slot).getCount() != 1) wrong.add("the mitigation did not use exactly one coolant cell");
         items.setStackInSlot(slot, ItemStack.EMPTY);
         items.setStackInSlot(1, new ItemStack(item("reactor/item_reactor_iridium_oc_vent")));
-        call(c, "disrupt", true, 15.0);
+        call(c, "disrupt", true, 5.984e8);   // 0.1.11.137: the reference plasma's thermal energy (J), was 15 keV
         if (!items.getStackInSlot(0).isEmpty() || !items.getStackInSlot(9).isEmpty()) wrong.add("without coolant the first column survived");
         if (items.getStackInSlot(1).isEmpty()) wrong.add("the second column was destroyed too");
         h.assertTrue(wrong.isEmpty(), "disruption: " + wrong);

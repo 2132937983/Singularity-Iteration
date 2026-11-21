@@ -1,7 +1,22 @@
 {
-  "parent": "minecraft:block/cube_column",
+  "parent": "block/block",
   "textures": {
-    "end": "mio_icif:block/fusion/central_solenoid_end",
-    "side": "mio_icif:block/fusion/central_solenoid_side"
-  }
+    "coil": "mio_icif:block/fusion/component/coil",
+    "dark_metal": "mio_icif:block/fusion/component/dark_metal",
+    "end": "mio_icif:block/fusion/component/solenoid_end",
+    "particle": "#coil"
+  },
+  "elements": [
+    {"name":"base_shoe","from":[0,0,0],"to":[16,2,16],"faces":{"north":{"uv":[0,14,16,16],"texture":"#coil","cullface":"north"},"south":{"uv":[0,14,16,16],"texture":"#coil","cullface":"south"},"west":{"uv":[0,14,16,16],"texture":"#coil","cullface":"west"},"east":{"uv":[0,14,16,16],"texture":"#coil","cullface":"east"},"up":{"uv":[0,0,16,16],"texture":"#coil"},"down":{"uv":[0,0,16,16],"texture":"#coil","cullface":"down"}}},
+    {"name":"winding_1","from":[1,2,1],"to":[15,4,15],"faces":{"north":{"uv":[1,12,15,14],"texture":"#dark_metal"},"south":{"uv":[1,12,15,14],"texture":"#dark_metal"},"west":{"uv":[1,12,15,14],"texture":"#dark_metal"},"east":{"uv":[1,12,15,14],"texture":"#dark_metal"}}},
+    {"name":"collar_1","from":[0,4,0],"to":[16,7,16],"faces":{"north":{"uv":[0,9,16,12],"texture":"#coil","cullface":"north"},"south":{"uv":[0,9,16,12],"texture":"#coil","cullface":"south"},"west":{"uv":[0,9,16,12],"texture":"#coil","cullface":"west"},"east":{"uv":[0,9,16,12],"texture":"#coil","cullface":"east"},"up":{"uv":[0,0,16,16],"texture":"#coil"},"down":{"uv":[0,0,16,16],"texture":"#coil"}}},
+    {"name":"winding_2","from":[1,7,1],"to":[15,9,15],"faces":{"north":{"uv":[1,7,15,9],"texture":"#dark_metal"},"south":{"uv":[1,7,15,9],"texture":"#dark_metal"},"west":{"uv":[1,7,15,9],"texture":"#dark_metal"},"east":{"uv":[1,7,15,9],"texture":"#dark_metal"}}},
+    {"name":"collar_2","from":[0,9,0],"to":[16,12,16],"faces":{"north":{"uv":[0,4,16,7],"texture":"#coil","cullface":"north"},"south":{"uv":[0,4,16,7],"texture":"#coil","cullface":"south"},"west":{"uv":[0,4,16,7],"texture":"#coil","cullface":"west"},"east":{"uv":[0,4,16,7],"texture":"#coil","cullface":"east"},"up":{"uv":[0,0,16,16],"texture":"#coil"},"down":{"uv":[0,0,16,16],"texture":"#coil"}}},
+    {"name":"winding_3","from":[1,12,1],"to":[15,14,15],"faces":{"north":{"uv":[1,2,15,4],"texture":"#dark_metal"},"south":{"uv":[1,2,15,4],"texture":"#dark_metal"},"west":{"uv":[1,2,15,4],"texture":"#dark_metal"},"east":{"uv":[1,2,15,4],"texture":"#dark_metal"}}},
+    {"name":"end_plate","from":[0,14,0],"to":[16,15,16],"faces":{"north":{"uv":[0,1,16,2],"texture":"#coil","cullface":"north"},"south":{"uv":[0,1,16,2],"texture":"#coil","cullface":"south"},"west":{"uv":[0,1,16,2],"texture":"#coil","cullface":"west"},"east":{"uv":[0,1,16,2],"texture":"#coil","cullface":"east"},"up":{"uv":[0,0,16,16],"texture":"#end"},"down":{"uv":[0,0,16,16],"texture":"#coil"}}},
+    {"name":"clamp_west","from":[0,15,0],"to":[3,16,16],"faces":{"north":{"uv":[13,0,16,1],"texture":"#coil","cullface":"north"},"south":{"uv":[0,0,3,1],"texture":"#coil","cullface":"south"},"west":{"uv":[0,0,16,1],"texture":"#coil","cullface":"west"},"east":{"uv":[0,0,16,1],"texture":"#coil"},"up":{"uv":[0,0,3,16],"texture":"#coil","cullface":"up"}}},
+    {"name":"clamp_east","from":[13,15,0],"to":[16,16,16],"faces":{"north":{"uv":[0,0,3,1],"texture":"#coil","cullface":"north"},"south":{"uv":[13,0,16,1],"texture":"#coil","cullface":"south"},"west":{"uv":[0,0,16,1],"texture":"#coil"},"east":{"uv":[0,0,16,1],"texture":"#coil","cullface":"east"},"up":{"uv":[13,0,16,16],"texture":"#coil","cullface":"up"}}},
+    {"name":"clamp_north","from":[3,15,0],"to":[13,16,3],"faces":{"north":{"uv":[3,0,13,1],"texture":"#coil","cullface":"north"},"south":{"uv":[3,0,13,1],"texture":"#coil"},"up":{"uv":[3,0,13,3],"texture":"#coil","cullface":"up"}}},
+    {"name":"clamp_south","from":[3,15,13],"to":[13,16,16],"faces":{"north":{"uv":[3,0,13,1],"texture":"#coil"},"south":{"uv":[3,0,13,1],"texture":"#coil","cullface":"south"},"up":{"uv":[3,13,13,16],"texture":"#coil","cullface":"up"}}}
+  ]
 }

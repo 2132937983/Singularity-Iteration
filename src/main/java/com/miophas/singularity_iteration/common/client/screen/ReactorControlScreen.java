@@ -26,12 +26,15 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
     private static final int GX = NuclearReactorGeneratorMenu.REACTOR_SLOTS_X, GY = NuclearReactorGeneratorMenu.REACTOR_SLOTS_Y;
     private static final int PX = 184, RX = 14, RY = 134, RW = 162, RH = 26, LINE_Y = 166;
     // buttons: {x, y, w, h, event}
+    // 0.1.11.147 (calm layout): the lamps in a column above, then SCRAM, the trip setpoint, reset and the feed, each row
+    // wide enough for the vanilla font
     private static final int[][] BUTTONS = {
-        {PX + 2, 74, 104, 18, 10},     // SCRAM
-        {PX + 2, 96, 14, 11, 12}, {PX + 92, 96, 14, 11, 13},      // setpoint - +
-        {PX + 2, 111, 104, 11, 11},    // reset
-        {PX + 40, 128, 14, 11, 0}, {PX + 56, 128, 14, 11, 1}, {PX + 72, 128, 20, 11, 2},   // feed - + 1x
+        {PX + 2, 94, 104, 18, 10},     // SCRAM
+        {PX + 2, 116, 11, 11, 12}, {PX + 95, 116, 11, 11, 13},      // setpoint - +
+        {PX + 2, 131, 104, 12, 11},    // reset
+        {PX + 60, 147, 11, 11, 0}, {PX + 73, 147, 11, 11, 1}, {PX + 86, 147, 20, 11, 2},   // feed - + 1x
     };
+    private static final int HEAD_Y = 162, LINE1_Y = 178, LINE2_Y = 188;   // the last line clear of the inventory (y 200)
     private static final String[] BUTTON_TEXT = {"SCRAM", "−", "+", null, "−", "+", "1x"};
 
     /** 0.1.11.76: the config card controls, left of the player inventory (the card slot is at the menu's CARD_SLOT_X/Y). */
@@ -96,29 +99,28 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
             {"lamp.rising", v(16) > 0, 0xFFD9A32B},
             {"lamp.columns", menu.getAvailableColumns() >= 9, 0xFF2F6E4F},
             {"lamp.output", v(4) > 0, 0xFF2F6E4F}};
-        for (int i = 0; i < lamps.length; i++) {
-            int lx = x + PX + (i % 2) * 55, ly = y + 20 + (i / 2) * 17;
+        for (int i = 0; i < lamps.length; i++) {   // 0.1.11.147: a lamp and its name, one a row
+            int lx = x + PX + 2, ly = y + 20 + i * 12;
             boolean on = (boolean) lamps[i][1];
-            g.fill(lx - 1, ly - 1, lx + 52, ly + 14, SiGuiTheme.OUTLINE);
-            g.fill(lx, ly, lx + 51, ly + 13, on ? (int) lamps[i][2] : 0xFFC9CED1);
-            Component c = Component.translatable(K + lamps[i][0]);
-            PumpCrossSection.text(g, c, lx + 25.5F - AsciiHud.width(c, u) / 2, ly + 6.5F - 4 * u, on ? 0xFFFFFF : 0x5B6867, u);
+            VanillaFrame.inset(g, lx, ly, 9, 9, on ? (int) lamps[i][2] : VanillaFrame.PANEL);
+            g.drawString(font, Component.translatable(K + lamps[i][0]), lx + 13, ly + 1, on ? 0x1C2524 : 0x5B6867, false);
         }
         for (int i = 0; i < BUTTONS.length; i++) {
             int[] b = BUTTONS[i];
             int bx = x + b[0], by = y + b[1];
             boolean hover = mouseX >= bx && mouseX < bx + b[2] && mouseY >= by && mouseY < by + b[3];
-            int fill = b[4] == 10 ? (hover ? 0xFFD9463A : 0xFFC0392B) : hover ? 0xFFF4F6F8 : 0xFFD9DDE1;
-            g.fill(bx - 1, by - 1, bx + b[2] + 1, by + b[3] + 1, SiGuiTheme.OUTLINE);
-            g.fill(bx, by, bx + b[2], by + b[3], fill);
+            boolean scram = b[4] == 10;
+            g.fill(bx, by, bx + b[2], by + b[3], scram ? 0xFF7A2A22 : VanillaFrame.SHADOW);
+            g.fill(bx, by, bx + b[2] - 1, by + b[3] - 1, scram ? 0xFFE07A6E : VanillaFrame.LIGHT);
+            g.fill(bx + 1, by + 1, bx + b[2] - 1, by + b[3] - 1, scram ? (hover ? 0xFFD9463A : 0xFFC0392B) : hover ? 0xFFD8D8E8 : 0xFFB8B8B8);
             Component c = BUTTON_TEXT[i] != null ? Component.literal(BUTTON_TEXT[i]) : Component.translatable(K + "reset");
-            PumpCrossSection.text(g, c, bx + b[2] / 2F - AsciiHud.width(c, u) / 2, by + b[3] / 2F - 4 * u, b[4] == 10 ? 0xFFFFFF : 0x2A2E33, u);
+            g.drawString(font, c, bx + (b[2] - font.width(c) + 1) / 2, by + (b[3] - 8) / 2 + 1, scram ? 0xFFFFFF : 0x404040, false);
         }
         int sp = v(12);
         Component spText = sp >= mio_icif_nuclear_reactor_generator.MAX_SETPOINT ? Component.translatable(K + "setpoint_off")
             : Component.translatable(K + "setpoint", sp + "%");
-        PumpCrossSection.text(g, spText, x + PX + 54 - AsciiHud.width(spText, u) / 2, y + 98, 0x1C2524, u);
-        PumpCrossSection.text(g, Component.translatable(K + "feed", menu.getFeedRate()), x + PX + 2, y + 130, 0x1C2524, u);
+        g.drawString(font, spText, x + PX + 54 - font.width(spText) / 2, y + 118, 0x1C2524, false);
+        g.drawString(font, Component.translatable(K + "feed", menu.getFeedRate()), x + PX + 2, y + 149, 0x1C2524, false);
     }
 
     private void drawRecord(GuiGraphics g, int x, int y, float u) {
@@ -144,35 +146,54 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
             }
             px = nx; py = hy; qx = nx; qy = ey;
         }
-        PumpCrossSection.text(g, Component.translatable(K + "record"), x + PX + 2, y + RY + 16, 0x5B6867, u);
+        // 0.1.11.147: the record's name is in its tooltip (the feed row took its place)
     }
 
+    /**
+     * 0.1.11.147: the output twice the font size under the record, the state beside it (a config card's result for a few
+     * seconds after its button); then the hull and the last cycle's balance. A state too long for the row goes down
+     * as the first line.
+     */
     private void drawLines(GuiGraphics g, int x, int y, float u) {
         int heat = v(2), max = v(3), sp = v(12);
         double share = hullShare();
-        WindRoseView.line(g, Component.translatable(K + "line_hull", f("%,d", heat), f("%,d", max), Math.round(share * 100) + "%", f("%,d", v(4)), menu.getFeedRate()),
-            x + RX, y + LINE_Y, 0x1C2524, 278);
+        Component side;
+        int sideColour;
+        Component cardStatus = card.status();
+        String key = mio_icif_nuclear_reactor_generator.statusKey(v(11));
+        if (cardStatus != null) { side = cardStatus; sideColour = card.statusBad() ? 0xC0392B : 0x2F6E4F; }
+        else if (key != null) { side = Component.translatable(key); sideColour = 0xC0392B; }
+        else { side = Component.translatable(K + (v(4) > 0 ? "running" : "no_output")); sideColour = v(4) > 0 ? 0x2F6E4F : 0x5B6867; }
+        int left = x + RX - 1, right = x + 292;
+        Component head = Component.literal(f("%,d EU/t", v(4)));
+        VanillaFrame.bigText(g, head, left, y + HEAD_Y, 0x1C2524);
+        boolean below = 2 * font.width(head) + 8 + font.width(side) > right - left;
+        if (!below) g.drawString(font, side, right - font.width(side), y + HEAD_Y + 4, sideColour, false);
+        Component hull = Component.translatable(K + "line_hull", f("%,d", heat), f("%,d", max), Math.round(share * 100) + "%", f("%,d", v(4)), menu.getFeedRate());
         long delta = v(16);
         long target = sp < mio_icif_nuclear_reactor_generator.MAX_SETPOINT ? (long) max * sp / 100 : max;
         Component eta = delta > 0 ? Component.translatable(K + "eta", Math.max(0, (target - heat) / delta)) : Component.translatable(K + "eta_none");
-        WindRoseView.line(g, Component.translatable(K + "line_balance", f("%,d", v(14)), f("%,d", v(15)), (delta >= 0 ? "+" : "") + f("%,d", delta)).append(" · ").append(eta),
-            x + RX, y + LINE_Y + 9 * u, 0x5B6867, 278);
-        // 0.1.11.76: for a few seconds after a config card button, its result takes the status line
-        Component cardStatus = card.status();
-        if (cardStatus != null) {
-            WindRoseView.line(g, cardStatus, x + RX, y + LINE_Y + 18 * u, card.statusBad() ? 0xC0392B : 0x2F6E4F, 278);
-            return;
-        }
-        String key = mio_icif_nuclear_reactor_generator.statusKey(v(11));
-        Component state = key != null ? Component.translatable(key) : Component.translatable(K + (v(4) > 0 ? "running" : "no_output"));
+        net.minecraft.network.chat.MutableComponent balance = Component.translatable(K + "line_balance", f("%,d", v(14)), f("%,d", v(15)),
+            (delta >= 0 ? "+" : "") + f("%,d", delta)).append(" \u00B7 ").append(eta);
         if (v(17) >= 0 && v(20) > 0)
-            state = state.copy().append(" · ").append(Component.translatable(K + "hottest", v(17) / 9 + 1, v(17) % 9 + 1, Math.round(v(20) / 10.0) + "%"));
-        WindRoseView.line(g, state, x + RX, y + LINE_Y + 18 * u, key != null ? 0xC0392B : 0x2F6E4F, 278);
+            balance.append(" \u00B7 ").append(Component.translatable(K + "hottest", v(17) / 9 + 1, v(17) % 9 + 1, Math.round(v(20) / 10.0) + "%"));
+        if (below) {
+            g.drawString(font, fit(side, right - left), left, y + LINE1_Y, sideColour, false);
+            g.drawString(font, fit(hull, right - left), left, y + LINE2_Y, ReadoutPanel.TEXT, false);
+        } else {
+            g.drawString(font, fit(hull, right - left), left, y + LINE1_Y, ReadoutPanel.TEXT, false);
+            g.drawString(font, fit(balance, right - left), left, y + LINE2_Y, ReadoutPanel.MUTED, false);
+        }
+    }
+
+    private Component fit(Component c, int maxW) {
+        if (font.width(c) <= maxW) return c;
+        return Component.literal(font.plainSubstrByWidth(c.getString(), Math.max(0, maxW - font.width("\u2026"))) + "\u2026");
     }
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(this.font, this.title, 8, 6, 0x2A2E33, false);
+        g.drawString(this.font, this.title, 8, 6, VanillaFrame.TITLE, false);
         // 0.1.11.76: the card section's label, centred over the card slot
         Component label = Component.translatable("gui.mio_icif.reactor_card.label");
         int cx = NuclearReactorGeneratorMenu.CARD_SLOT_X + 8, w = Math.min(56, this.font.width(label));
@@ -195,10 +216,10 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= PX && rx < PX + 108 && ry >= 20 && ry < 140 && hoveredSlot == null)
+        if (rx >= PX && rx < PX + 108 && ry >= 20 && ry < 160 && hoveredSlot == null)
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip_scram1"), Component.translatable(K + "tip_scram2"),
                 Component.translatable(K + "tip_scram3")), mouseX, mouseY);
-        else if (rx >= RX && rx < 292 && ry >= RY && ry < LINE_Y + 28)
+        else if (rx >= RX && rx < RX + RW && ry >= RY && ry < RY + RH)
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip_record1"), Component.translatable(K + "tip_record2")), mouseX, mouseY);
     }
 
@@ -217,4 +238,8 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
+
+    /** 0.1.11.147: the calm layout (no lamp or upgrade hint, window text in the vanilla font). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

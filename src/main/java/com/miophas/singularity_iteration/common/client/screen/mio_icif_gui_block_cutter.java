@@ -89,6 +89,19 @@ public class mio_icif_gui_block_cutter extends ProcessInstrumentScreen<BlockCutt
     @Override
     protected double energyFraction() { return menu.getEnergyPermille() / 1000.0; }
 
+    // 0.1.11.143: the blade slot shows a ghost blade and says what goes there
+    @Override
+    protected net.minecraft.world.item.ItemStack slotGhost(net.minecraft.world.inventory.Slot slot) {
+        return slot.index == com.miophas.singularity_iteration.common.menu.producer.BlockCutterMenu.BLADE_SLOT
+            ? itemOf("mio_icif:resource/item_iron_cut_blade") : super.slotGhost(slot);
+    }
+
+    @Override
+    protected Component slotHint(net.minecraft.world.inventory.Slot slot) {
+        return slot.index == com.miophas.singularity_iteration.common.menu.producer.BlockCutterMenu.BLADE_SLOT
+            ? Component.translatable(K + "slot.blade") : super.slotHint(slot);
+    }
+
     @Override
     protected List<Component> figureTooltip() {
         return List.of(Component.translatable(K + "tip.cutter.1"), Component.translatable(K + "tip.cutter.2"));

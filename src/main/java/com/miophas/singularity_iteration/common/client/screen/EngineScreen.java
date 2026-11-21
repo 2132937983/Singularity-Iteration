@@ -160,7 +160,8 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
             case EngineGovernor.LOW_LOAD -> { state = "state.low_load"; colour = 0xA0602A; }
             default -> { state = "state.running"; colour = GREEN; }
         }
-        WindRoseView.line(g, Component.translatable(K + state), tx, ty + 2 * lh, colour & 0xFFFFFF, w);
+        // 0.1.11.145: the output leads, the state beside it
+        ReadoutPanel.headline(Component.literal(f1(v(4) / 100.0) + " EU/t"), Component.translatable(K + state), colour & 0xFFFFFF);
     }
 
     private void strip(GuiGraphics g, int x, int sy) {
@@ -170,7 +171,7 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
             Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
         for (double mark : new double[]{EngineGovernor.START_BELOW, EngineGovernor.STOP_AT}) {
             int m = (int) (bar[0] + bar[1] * mark);
-            if (bar[1] > 0) g.fill(m, sy + 1, m + 1, sy + 11, BLUE);
+            if (bar[1] > 0) g.fill(m, sy + 1, m + 1, sy + 10, BLUE);
         }
     }
 
@@ -188,4 +189,8 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.6")), mouseX, mouseY);
         }
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

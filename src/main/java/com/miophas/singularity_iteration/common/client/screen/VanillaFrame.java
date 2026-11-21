@@ -63,9 +63,10 @@ public final class VanillaFrame {
         }
     }
 
+    // 0.1.11.141: an even slope (one pixel a row) above and below the cross bar; the old middle rows were out of step
     private static final String[] BOLT_ROWS = {
-        ".....####", "....####.", "...####..", "..####...", ".#######.", "#######..", "...####..",
-        "..####...", "..###....", ".###.....", ".##......", "##.......", "#........"};
+        ".....####", "....####.", "...####..", "..####...", ".####....", "#########", "....####.",
+        "...####..", "...###...", "..###....", "..##.....", ".##......", ".#......."};
 
     /** The energy bolt (9 x 13) at (x, y), filled yellow from the bottom by {@code fraction}. */
     public static void bolt(GuiGraphics g, int x, int y, double fraction) {
@@ -94,9 +95,59 @@ public final class VanillaFrame {
         g.drawString(font, right, x + w - rw, y + 2, TITLE, false);
         int bx = x + font.width(label) + 4, bw = x + w - rw - 4 - bx;
         if (bw < 6) return new int[]{bx, 0};
-        inset(g, bx, y + 2, bw, 8, SLOT);
-        int fill = (int) Math.round((bw - 2) * Math.max(0, Math.min(1, share)));
-        if (fill > 0) g.fill(bx + 1, y + 3, bx + 1 + fill, y + 9, LIGHT);
-        return new int[]{bx + 1, bw - 2};   // the fill's left edge and width (for marks)
+        flatBar(g, bx, y + 2, bw, share);
+        return new int[]{bx, bw};   // the fill's left edge and width (for marks)
+    }
+
+    /**
+     * 0.1.11.141: a flat bar beside a line of text: 7 pixels high, the rows of the font's capitals when {@code y} is the
+     * text's y (the old sunk bar was 8 high with a white lower edge that ran into the fill, so it sat lower than the text).
+     */
+    public static void flatBar(GuiGraphics g, int x, int y, int w, double share) {
+        g.fill(x, y, x + w, y + 7, SLOT);
+        int fill = (int) Math.round(w * Math.max(0, Math.min(1, share)));
+        if (fill > 0) g.fill(x, y, x + fill, y + 7, LIGHT);
+    }
+
+    /**
+     * 0.1.11.141: a fluid's still texture, tinted, tiled from the bottom over (x, y, w, h) (16 x 16 a tile, as in the
+     * slots), clipped to the rectangle. Call it outside a pixel canvas (the canvas is drawn later and would cover it).
+     */
+    public static void fluid(GuiGraphics g, int x, int y, int w, int h, net.neoforged.neoforge.fluids.FluidStack fluid) {
+        if (fluid.isEmpty() || w <= 0 || h <= 0) return;
+        var ext = net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid.getFluidType());
+        var sprite = net.minecraft.client.Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+            .apply(ext.getStillTexture(fluid));
+        int tint = ext.getTintColor(fluid);
+        float a = ((tint >>> 24) & 255) / 255F;
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(((tint >> 16) & 255) / 255F, ((tint >> 8) & 255) / 255F, (tint & 255) / 255F, a == 0 ? 1F : a);
+        g.enableScissor(x, y, x + w, y + h);
+        for (int ty = y + h - 16; ty > y - 16; ty -= 16)
+            for (int tx = x; tx < x + w; tx += 16) g.blit(tx, ty, 0, 16, 16, sprite);
+        g.disableScissor();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+    }
+
+    /**
+     * 0.1.11.142 (0.1.11.146 shared): a ghost of {@code stack} at the screen position (x, y) of an empty slot's item, as the
+     * vanilla armour and smithing slots show what goes there: the item under a wash of the slot's grey.
+     */
+    public static void ghost(GuiGraphics g, net.minecraft.world.item.ItemStack stack, int x, int y) {
+        if (stack.isEmpty()) return;
+        g.renderFakeItem(stack, x, y);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 200);   // above the item (near z 150)
+        g.fill(x, y, x + 16, y + 16, 0xB08B8B8B);
+        g.pose().popPose();
+    }
+
+    /** 0.1.11.146: text twice the vanilla font size (the main readout of the calm layout). */
+    public static void bigText(GuiGraphics g, net.minecraft.network.chat.Component c, int x, int y, int rgb) {
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0);
+        g.pose().scale(2F, 2F, 1F);
+        g.drawString(net.minecraft.client.Minecraft.getInstance().font, c, 0, 0, rgb, false);
+        g.pose().popPose();
     }
 }

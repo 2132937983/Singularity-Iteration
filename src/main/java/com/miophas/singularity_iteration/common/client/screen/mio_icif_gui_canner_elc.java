@@ -35,26 +35,32 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
     private int mode() { return Math.max(0, Math.min(3, menu.getMode())); }
 
-    private void tank(GuiGraphics g, int x, int y, FluidStack fluid, int capacity) {
-        FcsDraw.fill(g, x, y, x + 14, y + 52, SHELL);
-        FcsDraw.fill(g, x + 2, y + 2, x + 12, y + 50, CHAMBER);
-        // 0.1.11.118: a flat level in the fluid's colour (pixel art; the texture would sit under the canvas)
+    // 0.1.11.141: the calm layout. Flat parts in two light greys (0.1.11.142: on the sunk slot-grey window); the tanks are
+    // drawn after the pixel canvas (drawOverFigure) so they show the fluid's own texture again (0.1.11.118 had to use a flat
+    // colour under the canvas).
+    private static final int FRAME = 0xFFC9CED0, INNER = 0xFFE6E9E7, IDLE_PIPE = 0xFFADB3B5;
+
+    /** A tank at figure offset (dx, -30), 14 x 52 figure units: a frame, its chamber and the fluid's texture to its level. */
+    private void tank(GuiGraphics g, float cx, float cy, float dx, FluidStack fluid, int capacity) {
+        int x0 = figPx(cx, dx), y0 = figPx(cy, -30), x1 = figPx(cx, dx + 14), y1 = figPx(cy, 22);
+        g.fill(x0, y0, x1, y1, FRAME);
+        g.fill(x0 + 1, y0 + 1, x1 - 1, y1 - 1, INNER);
         if (!fluid.isEmpty() && capacity > 0) {
-            int lv = Math.round(48F * Math.min(1, fluid.getAmount() / (float) capacity));
-            if (lv > 0) FcsDraw.fill(g, x + 2, y + 50 - lv, x + 12, y + 50, fluidColour(fluid));
+            int room = y1 - y0 - 2, lv = Math.round(room * Math.min(1, fluid.getAmount() / (float) capacity));
+            if (lv == 0) lv = 1;   // a drop still shows
+            VanillaFrame.fluid(g, x0 + 1, y1 - 1 - lv, x1 - x0 - 2, lv, fluid);
         }
     }
 
-    /** The fluid's tint, or a fixed colour for those drawn by their texture alone (lava). */
-    private static int fluidColour(FluidStack fluid) {
-        if (fluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA)) return 0xFFD9641A;
-        int tint = net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid.getFluidType()).getTintColor(fluid);
-        return (tint & 0xFFFFFF) == 0xFFFFFF ? 0xFFB8C4CC : 0xFF000000 | tint;
+    @Override
+    protected void drawOverFigure(GuiGraphics g, float cx, float cy) {
+        tank(g, cx, cy, -46, menu.getInputFluid(), menu.getInputFluidCapacity());
+        tank(g, cx, cy, 32, menu.getOutputFluid(), menu.getOutputFluidCapacity());
     }
 
     /** A pipe from (x1, y1) to (x2, y2), with dots moving along it while it works. */
     private void pipe(GuiGraphics g, float x1, float y1, float x2, float y2, boolean active) {
-        FcsDraw.line(g, x1, y1, x2, y2, 2.4F, active ? STEEL : STEEL_LIGHT);
+        FcsDraw.line(g, x1, y1, x2, y2, 2.4F, active ? STEEL : IDLE_PIPE);
         if (active && running()) for (int k = 0; k < 3; k++) {
             float f = (flow + k / 3F) % 1;
             FcsDraw.disc(g, x1 + (x2 - x1) * f, y1 + (y2 - y1) * f, 1.4F, 0xFF000000 | BLUE);
@@ -65,8 +71,7 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
         if (running()) flow = (flow + dt * 1.2F) % 1;
         int m = mode();
-        tank(g, (int) cx - 46, (int) cy - 30, menu.getInputFluid(), menu.getInputFluidCapacity());
-        tank(g, (int) cx + 32, (int) cy - 30, menu.getOutputFluid(), menu.getOutputFluidCapacity());
+        // the tanks: drawOverFigure
         // the filler head over the can
         FcsDraw.fill(g, (int) cx - 8, (int) cy - 24, (int) cx + 8, (int) cy - 16, STEEL);
         FcsDraw.fill(g, (int) cx - 2, (int) cy - 16, (int) cx + 2, (int) cy - 8, STEEL);
@@ -74,14 +79,14 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
         pipe(g, cx - 32, cy - 26, cx - 8, cy - 20, m == 2 || m == 3);   // left tank -> filler
         pipe(g, cx + 8, cy - 20, cx + 32, cy - 26, m == 1 || m == 3);   // filler -> right tank
         if (m == 0) {   // the hopper of the food or fuel
-            FcsDraw.quad(g, cx - 10, cy - 40, cx + 10, cy - 40, cx + 4, cy - 26, cx - 4, cy - 26, SHELL);
+            FcsDraw.quad(g, cx - 10, cy - 40, cx + 10, cy - 40, cx + 4, cy - 26, cx - 4, cy - 26, FRAME);
             if (menu.getSlot(CannerElcMenu.MATERIAL_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 6, (int) cy - 37, (int) cx + 6, (int) cy - 32, FormingFigure.WORK);
             if (running()) FcsDraw.disc(g, cx, cy - 26 + flow * 18, 1.6F, FormingFigure.WORK);
         }
         // the can (or cell), filled with the progress (emptied in "cell to tank")
         int x0 = (int) cx - 9, x1 = (int) cx + 9, y0 = (int) cy - 6, y1 = (int) cy + 26;
-        FcsDraw.fill(g, x0, y0, x1, y1, STEEL_LIGHT);
-        FcsDraw.fill(g, x0 + 2, y0 + 2, x1 - 2, y1 - 2, CHAMBER);
+        FcsDraw.fill(g, x0, y0, x1, y1, FRAME);
+        FcsDraw.fill(g, x0 + 2, y0 + 2, x1 - 2, y1 - 2, INNER);
         int max = menu.getMaxProgress();
         float p = max > 0 && running() ? (float) menu.getProgress() / max : 0;
         float level = m == 1 ? 1 - p : p;
@@ -96,7 +101,7 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     }
 
     @Override
-    protected int headlineColour() { return running() ? INK : DIM; }
+    protected int headlineColour() { return INK; }   // 0.1.11.141: the mode always leads; the state is beside it
 
     private static Component tankLine(String key, FluidStack fluid, int amount, int capacity) {
         Component name = fluid.isEmpty() ? Component.literal("") : fluid.getHoverName();
@@ -105,9 +110,13 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
 
     @Override
     protected List<Component> readouts() {
+        // 0.1.11.141: a tank's line only when it holds something or the mode works it (an empty idle tank says nothing)
         List<Component> lines = new ArrayList<>();
-        lines.add(tankLine("tank_in", menu.getInputFluid(), menu.getInputFluidAmount(), menu.getInputFluidCapacity()));
-        lines.add(tankLine("tank_out", menu.getOutputFluid(), menu.getOutputFluidAmount(), menu.getOutputFluidCapacity()));
+        int m = mode();
+        if (!menu.getInputFluid().isEmpty() || m == 2 || m == 3)
+            lines.add(tankLine("tank_in", menu.getInputFluid(), menu.getInputFluidAmount(), menu.getInputFluidCapacity()));
+        if (!menu.getOutputFluid().isEmpty() || m == 1 || m == 3)
+            lines.add(tankLine("tank_out", menu.getOutputFluid(), menu.getOutputFluidAmount(), menu.getOutputFluidCapacity()));
         int max = menu.getMaxProgress();
         lines.add(Component.translatable(K + "energy_line", (long) menu.getPower() * max, menu.getPower(), max));
         return lines;
@@ -121,31 +130,67 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        int by = y - topPos;   // 0.1.11.120: the button column
-        menuButton(g, x - leftPos, by, BUTTON_W, BUTTON_H, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
-            List.of(Component.translatable(K + "tip.switch_mode")));
-        menuButton(g, x - leftPos, by + BUTTON_H + 1, BUTTON_W, BUTTON_H, Component.translatable(K + "swap"), false, 1, mouseX, mouseY,
-            List.of(Component.translatable("gui.mio_icif.canner.swap_fluids")));
+        // 0.1.11.141: two icons in the figure window's corner (the names move to the tooltips)
+        iconButton(g, 1, ICON_CYCLE, false, 0, mouseX, mouseY,
+            List.of(Component.translatable(K + "switch_mode"), Component.translatable(K + "tip.switch_mode").withStyle(net.minecraft.ChatFormatting.GRAY)));
+        iconButton(g, 0, ICON_SWAP, false, 1, mouseX, mouseY,
+            List.of(Component.translatable(K + "swap"), Component.translatable("gui.mio_icif.canner.swap_fluids").withStyle(net.minecraft.ChatFormatting.GRAY)));
     }
-
-    @Override
-    protected int buttonCount() { return 2; }
 
     @Override
     protected List<Component> figureTooltip() {
         return List.of(Component.translatable(K + "tip.canner.1"), Component.translatable(K + "tip.canner.2"));
     }
 
-    // the material slot is not used for "cell to tank" (as before)
+    // the material slot is used only for canning and mixing (0.1.11.142: hidden, frame and all, in both cell modes)
+    private boolean materialUsed() { int m = mode(); return m == 0 || m == 3; }
+
+    private boolean hiddenSlot(Slot slot) { return slot.index == CannerElcMenu.MATERIAL_SLOT && !materialUsed() && !slot.hasItem(); }
+
+    @Override
+    protected boolean slotShown(Slot slot) { return !hiddenSlot(slot); }
+
     @Override
     protected void renderSlot(GuiGraphics g, Slot slot) {
-        if (slot.index == CannerElcMenu.MATERIAL_SLOT && menu.getMode() == 1) return;
+        if (hiddenSlot(slot)) return;
         super.renderSlot(g, slot);
     }
 
     @Override
     protected void renderSlotHighlight(GuiGraphics g, Slot slot, int mouseX, int mouseY, float partialTick) {
-        if (slot.index == CannerElcMenu.MATERIAL_SLOT && menu.getMode() == 1) return;
+        if (hiddenSlot(slot)) return;
         super.renderSlotHighlight(g, slot, mouseX, mouseY, partialTick);
+    }
+
+    // ---- 0.1.11.142: what goes in each slot (the empty slots were all alike); the battery is the base class's ----
+
+    @Override
+    protected net.minecraft.world.item.ItemStack slotGhost(Slot slot) {
+        int m = mode();
+        return switch (slot.index) {
+            case CannerElcMenu.INPUT_SLOT -> itemOf(switch (m) {
+                case 0 -> "mio_icif:normal/item_tin_empty_can";
+                case 1 -> "mio_icif:cell/item_cell_water";
+                default -> "mio_icif:cell/item_cell_empty";
+            });
+            case CannerElcMenu.MATERIAL_SLOT -> m == 0 ? itemOf("minecraft:bread") : net.minecraft.world.item.ItemStack.EMPTY;
+            default -> super.slotGhost(slot);
+        };
+    }
+
+    @Override
+    protected Component slotHint(Slot slot) {
+        String k = "gui.mio_icif.canner.slot.";
+        int m = mode();
+        return switch (slot.index) {
+            case CannerElcMenu.INPUT_SLOT -> Component.translatable(k + switch (m) {
+                case 0 -> "can";
+                case 1 -> "full_cell";
+                case 2 -> "empty_cell";
+                default -> "mix_container";
+            });
+            case CannerElcMenu.MATERIAL_SLOT -> materialUsed() ? Component.translatable(k + (m == 0 ? "food" : "additive")) : null;
+            default -> super.slotHint(slot);
+        };
     }
 }

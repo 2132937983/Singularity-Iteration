@@ -159,24 +159,30 @@ public class FusionControllerScreen extends mio_icif_screen<FusionControllerMenu
         Component head = Component.translatable(K + "state." + (state == 3 && v(3) > 0 ? "driven" : STATES[state]));
         if (!progress.getString().isEmpty()) head = head.copy().append(" ").append(progress);
         if (plasma) head = head.copy().append(" · ").append(Component.translatable(K + (v(42) == 1 ? "mode.h" : "mode.l")));
-        ReadoutPanel.add(0, head, state >= 5 ? 0xA32D2D : 0x404040);
+        // 0.1.11.146: the net output leads (twice the font size); beside it the state, or what is wrong when something is;
+        // under it the plasma, the power balance, and the limits while burning (the fuel otherwise)
+        Component side = head;
+        int sideColour = state >= 5 ? 0xA32D2D : plasma ? 0x2F6E4F : 0x5F5E5A;
+        int status = (int) Math.max(0, Math.min(STATUS.length - 1, v(25)));
+        if (status == 1 && v(29) >= 0) {
+            int part = (int) Math.min(PARTS.length - 1, v(29));
+            side = Component.translatable(K + "unformed_at", v(26), v(27), v(28), Component.translatable(K + "part." + PARTS[part]));
+            sideColour = 0xA32D2D;
+        } else if (status != 0) {
+            side = Component.translatable(K + "status." + STATUS[status]);
+            sideColour = 0xA32D2D;
+        }
+        ReadoutPanel.headline(Component.literal(brief(v(4)) + " EU/t"), side, sideColour);
         double kev = v(1) / 100.0;
         long q = v(16);
         ReadoutPanel.add(1, plasma ? Component.translatable(K + "line_temp", String.format(Locale.ROOT, "%.1f", kev), String.format(Locale.ROOT, "%.2f", kev * 0.116),
             q < 0 ? "∞" : String.format(Locale.ROOT, "%.1f", q / 100.0)) : Component.translatable(K + "line_temp_none"), 0x404040);
-        ReadoutPanel.add(2, Component.translatable(K + "line_power", brief(v(3)), brief(v(4))), v(4) >= FusionPlasma.FULL_POWER ? 0x2F6E4F : 0x404040);
-        ReadoutPanel.add(3, Component.translatable(K + "line_fuel", compact(v(8)), compact(v(9)), String.format(Locale.ROOT, "%.2f", v(51) / 100.0)), 0x5F5E5A);
-        int status = (int) Math.max(0, Math.min(STATUS.length - 1, v(25)));
-        if (status == 1 && v(29) >= 0) {
-            int part = (int) Math.min(PARTS.length - 1, v(29));
-            ReadoutPanel.add(4, Component.translatable(K + "unformed_at", v(26), v(27), v(28), Component.translatable(K + "part." + PARTS[part])), 0xA32D2D);
-        } else if (status != 0) {
-            ReadoutPanel.add(4, Component.translatable(K + "status." + STATUS[status]), 0xA32D2D);
-        } else if (plasma) {
+        ReadoutPanel.add(2, Component.translatable(K + "line_power", brief(v(3)), brief(v(4))), 0x404040);
+        if (plasma) {
             long worst = Math.max(v(40), v(41));
-            ReadoutPanel.add(4, Component.translatable(K + "balance.limits", v(40) / 10, v(41) / 10), worst >= 1000 ? 0xA32D2D : worst >= 900 ? 0xBA7517 : 0x5F5E5A);
+            ReadoutPanel.add(3, Component.translatable(K + "balance.limits", v(40) / 10, v(41) / 10), worst >= 1000 ? 0xA32D2D : worst >= 900 ? 0xBA7517 : 0x5F5E5A);
         } else {
-            ReadoutPanel.add(4, Component.translatable(K + "status.ok"), 0x2F6E4F);
+            ReadoutPanel.add(3, Component.translatable(K + "line_fuel", compact(v(8)), compact(v(9)), String.format(Locale.ROOT, "%.2f", v(51) / 100.0)), 0x5F5E5A);
         }
     }
 
@@ -390,4 +396,8 @@ public class FusionControllerScreen extends mio_icif_screen<FusionControllerMenu
             Component.translatable(B + "tbr", String.format(Locale.ROOT, "%.2f", v(48) / 100.0)).withStyle(v(48) >= 100 ? ChatFormatting.GREEN : ChatFormatting.GRAY),
             Component.translatable(B + "q_eng", String.format(Locale.ROOT, "%.1f", v(49) / 100.0)).withStyle(ChatFormatting.GRAY));
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

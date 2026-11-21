@@ -69,7 +69,7 @@ public class MagnetogramScreen extends MimicScreen<GeomagneticGeneratorMenu> {
         else if (site * 6 < 1) state = "state.weak";
         else if (storm) { state = "state.storm"; colour = 0xC0392B; }
         else { state = "state.quiet"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(f("%,d EU/t", v(3))), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

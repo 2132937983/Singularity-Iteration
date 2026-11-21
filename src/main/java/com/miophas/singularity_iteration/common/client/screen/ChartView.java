@@ -23,7 +23,7 @@ final class ChartView {
         for (Ref r : refs) {
             float ry = (float) (y + h - h * Math.min(1, r.value() / max));
             WindRoseView.dashed(g, x, ry, x + w, ry, r.argb());
-            PumpCrossSection.text(g, r.label(), x + w - com.miophas.singularity_iteration.common.client.suit.AsciiHud.width(r.label(), u) - 1, ry - 8 * u, r.argb() & 0xFFFFFF, u);
+            PumpCrossSection.text(g, r.label(), x + w - PumpCrossSection.width(r.label(), u) - 1, ry - 8 * u, r.argb() & 0xFFFFFF, u);
         }
         float px = 0, py = 0;
         for (int i = 0; i < Recorder.SAMPLES; i++) {

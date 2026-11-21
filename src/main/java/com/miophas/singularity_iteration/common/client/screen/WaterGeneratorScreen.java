@@ -59,7 +59,7 @@ public class WaterGeneratorScreen extends MimicScreen<WaterGeneratorMenu> {
         else if (eu > 0) { state = "state.running"; colour = 0x2F6E4F; }
         else if (!front) state = "state.not_in_water";
         else state = "state.still";
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(eu + " EU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

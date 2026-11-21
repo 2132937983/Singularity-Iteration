@@ -240,11 +240,21 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     private boolean hasUpgradeHint() {
         return this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu machine
-                && machine.hasUpgradeHint() && showUpgradeHint();
+                && machine.hasUpgradeHint() && showUpgradeHint() && !calmChrome();
     }
+
+    /**
+     * 0.1.11.144: the calm chrome of the premium-feel layout (docs/gui_processing_machines.md): the title on the left as in
+     * the vanilla containers, no status lamp and no upgrade hint (the empty upgrade slots' tooltip says the same).
+     */
+    protected boolean calmChrome() { return false; }
 
     /** Draws the GUI title in the theme text colour, scaled down if it would overflow. */
     protected void drawTitle(GuiGraphics guiGraphics) {
+        if (calmChrome()) {
+            drawFitted(guiGraphics, this.font, this.title, 8, this.titleLabelY, this.imageWidth - 16, VanillaFrame.TITLE, false);
+            return;
+        }
         float[] l = titleLayout();
         if (l[1] >= 1F) {
             guiGraphics.drawString(this.font, this.title, (int) l[0], this.titleLabelY, titleColor(), false);
@@ -588,7 +598,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
      * background and before slots/labels, so subclass layouts are untouched.
      */
     private void renderStatusLamp(GuiGraphics guiGraphics) {
-        int color = statusLampColor();
+        int color = calmChrome() ? 0 : statusLampColor();
         if (color == 0) return;
         float[] l = titleLayout();
         int lx = leftPos + (int) l[0] - 8;
@@ -626,7 +636,12 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        WindRoseView.vanillaText = calmChrome();   // 0.1.11.145: window text in the vanilla font on the calm screens
+        try {
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
+        } finally {
+            WindRoseView.vanillaText = false;
+        }
         renderUpgradeHint(guiGraphics, mouseX, mouseY);
         // 子类可以通过重写 renderCustomTooltips 来添加自定义悬浮提示
         renderCustomTooltips(guiGraphics, mouseX, mouseY);
@@ -647,7 +662,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     private void renderUpgradeHint(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (!(this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu machine)
-                || !machine.hasUpgradeHint() || !showUpgradeHint()) return;
+                || !machine.hasUpgradeHint() || !showUpgradeHint() || calmChrome()) return;
 
         final int hintX = leftPos + 5;
         final int hintY = topPos + 5;

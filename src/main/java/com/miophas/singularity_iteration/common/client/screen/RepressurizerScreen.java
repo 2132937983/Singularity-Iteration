@@ -43,7 +43,8 @@ public class RepressurizerScreen extends MimicScreen<SteamRepressurizerMenu> {
         Component inName = in.isEmpty() ? Component.translatable(K + "no_steam") : in.getFluid().getFluidType().getDescription();
         line(g, x, y, 0, Component.translatable(K + "repress_in", inName, f("%,d", menu.getInputAmount()), f("%,d", menu.getInputCapacity())), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "repress_rule"), WindRoseView.DIM);
-        line(g, x, y, 2, Component.translatable(K + "repress_out", f("%,d", menu.getOutputAmount()), f("%,d", menu.getOutputCapacity())), 0x2F6E4F);
+        // 0.1.11.145: the steam made leads (the line said the same)
+        ReadoutPanel.headline(Component.literal(f("%,d mB", menu.getOutputAmount())), Component.literal(f("/ %,d mB", menu.getOutputCapacity())), 0x5B6867);
     }
 
     @Override

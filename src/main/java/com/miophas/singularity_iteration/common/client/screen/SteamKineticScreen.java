@@ -52,7 +52,7 @@ public class SteamKineticScreen extends MimicScreen<SteamKineticGeneratorMenu> {
             PlantMimic.vent(g, x + 140, y + 36, 18, v(8) != 0, time);
             PumpCrossSection.text(g, Component.translatable(K + "to_air"), x + 148, y + 46, WindRoseView.DIM, u);
         }
-        PlantMimic.label(g, Component.literal(f("%,d KU/t", v(4))), x + 118, y + 36, 0x2A5D8A);
+        PlantMimic.label(g, Component.literal(f("%,d KU/t", v(4))), x + 148, y + 21, 0x2A5D8A);   // 0.1.11.145: room for the vanilla font
 
         Component fluid = hasSteam ? BuiltInRegistries.FLUID.byId(v(15)).getFluidType().getDescription() : Component.translatable(K + "no_steam");
         line(g, x, y, 0, Component.translatable(K + "kinetic_inlet", fluid, f("%,d", v(9)), f("%,d", v(10)), f("%.2f", v(11) / 100.0)), WindRoseView.INK);
@@ -62,7 +62,7 @@ public class SteamKineticScreen extends MimicScreen<SteamKineticGeneratorMenu> {
         String state = v(1) == 0 ? "state.no_turbine" : v(2) != 0 ? "state.waterlogged" : v(8) != 0 ? "state.venting"
             : v(7) != 0 ? "state.throttled" : v(3) != 0 ? "state.running" : "state.idle";
         int colour = v(3) != 0 && v(2) == 0 && v(8) == 0 ? 0x2F6E4F : 0xA0602A;
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(f("%,d KU/t", v(4))), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

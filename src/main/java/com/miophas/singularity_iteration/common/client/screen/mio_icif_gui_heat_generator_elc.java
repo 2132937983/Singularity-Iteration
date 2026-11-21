@@ -62,43 +62,48 @@ public class mio_icif_gui_heat_generator_elc extends mio_icif_screen<com.miophas
         this.imageHeight = GUI_HEIGHT;
     }
 
+    /** 0.1.11.146: the calm layout (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
+
+    /**
+     * 0.1.11.146: drawn in code in the vanilla look instead of the old texture: the panel and sunk slots, the energy bolt
+     * over the battery, the heat output twice the font size under the coils with the most the coils give beside it (or
+     * what to do when there are none). Empty slots show what goes in them.
+     */
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        // 绘制背景
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        HeatGeneratorElcMenu menu = this.getMenu();
-        if (menu != null) {
-            // 绘制电能标志（根据能量从下往上填充）
-            drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());
-
-            // 绘制热能标志（根据热能多少从上往下填充）
-            int heat = menu.getHeat();
-            int maxHeat = menu.getMaxHeat();
-            if (heat > 0 && maxHeat > 0) {
-                int heatHeight = (heat * HEAT_ICON_HEIGHT) / maxHeat;
-                if (heatHeight > 0) {
-                    int drawY = y + HEAT_ICON_Y + HEAT_ICON_HEIGHT - heatHeight;
-                    int textureY = HEAT_ICON_TEXTURE_Y + HEAT_ICON_HEIGHT - heatHeight;
-                    guiGraphics.blit(ATLAS_TEXTURE, x + HEAT_ICON_X, drawY, 0, (float) HEAT_ICON_TEXTURE_X, (float) textureY, HEAT_ICON_WIDTH, heatHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
-                }
-            }
-
-            // 空线圈槽给出直接可见的操作提示；有线圈时显示实际发热能力。
-            if (menu.getCoilCount() == 0) {
-                Component insertCoil = Component.translatable("gui.mio_icif.heat_generator_elc.insert_coil");
-                guiGraphics.drawString(this.font, insertCoil, x + HEAT_TEXT_X, y + HEAT_TEXT_Y, 0xffe6a23c);
-            } else {
-                // 对齐 IC2 GuiElectricHeatGenerator：显示“最近一次实际传输 / 上限（线圈数 × 10）”
-                int transmitHeat = menu.getTransmitHeat();
-                int maxHeatEmit = menu.getMaxHeatEmittedPerTick();
-                String heatText = transmitHeat + " HU/" + Component.translatable("gui.mio_icif.max").getString() + " " + maxHeatEmit + " HU";
-                guiGraphics.drawString(this.font, heatText, x + HEAT_TEXT_X, y + HEAT_TEXT_Y, HEAT_TEXT_COLOR);
-            }
+        int x = leftPos, y = topPos;
+        VanillaFrame.panel(guiGraphics, x, y, imageWidth, imageHeight);
+        for (var slot : menu.slots) {
+            if (slot.x < 0 || slot.x > imageWidth) continue;
+            VanillaFrame.slot(guiGraphics, x + slot.x - 1, y + slot.y - 1);
         }
+        HeatGeneratorElcMenu menu = this.getMenu();
+        long max = Math.max(1, Integer.toUnsignedLong(menu.getMaxEnergy()));
+        VanillaFrame.bolt(guiGraphics, x + BOLT_X, y + BOLT_Y, Integer.toUnsignedLong(menu.getEnergy()) / (double) max);
+        VanillaFrame.bigText(guiGraphics, Component.literal(menu.getTransmitHeat() + " HU/t"), x + COIL_START_X, y + HEAD_Y, 0x1C2524);
+        // the most the coils give beside it when there is room; with no coils the ghost coils and their tooltip say what to do
+        if (menu.getCoilCount() > 0) {
+            Component side = Component.translatable("gui.mio_icif.max").append(" " + menu.getMaxHeatEmittedPerTick() + " HU/t");
+            int headEnd = x + COIL_START_X + 2 * this.font.width(menu.getTransmitHeat() + " HU/t");
+            int sx = x + imageWidth - 8 - this.font.width(side);
+            if (sx > headEnd + 4) guiGraphics.drawString(this.font, side, sx, y + HEAD_Y + 4, ReadoutPanel.MUTED, false);
+        }
+        boolean noCoils = menu.getCoilCount() == 0;
+        for (var slot : menu.slots) {
+            if (slot.hasItem() || slot.x < 0 || slot.y > 80) continue;
+            if (slot.index == HeatGeneratorElcMenu.BATTERY_SLOT)
+                VanillaFrame.ghost(guiGraphics, item("mio_icif:normal/item_chargebat_lev0"), x + slot.x, y + slot.y);
+            else if (noCoils) VanillaFrame.ghost(guiGraphics, item("mio_icif:resource/item_coil"), x + slot.x, y + slot.y);
+        }
+    }
+
+    /** The bolt centred over the battery slot's column (outer edge 7..25), its centre of mass on the column. */
+    private static final int BOLT_X = 11, BOLT_Y = 45, HEAD_Y = 66;
+
+    private static net.minecraft.world.item.ItemStack item(String id) {
+        return new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(id)));
     }
 
     @Override
@@ -120,20 +125,13 @@ public class mio_icif_gui_heat_generator_elc extends mio_icif_screen<com.miophas
         }
 
         // 检查鼠标是否在电能标志区域
-        if (mouseX >= x + ENERGY_ICON_X && mouseX <= x + ENERGY_ICON_X + LIGHTNING_WIDTH &&
-                mouseY >= y + ENERGY_ICON_Y && mouseY <= y + ENERGY_ICON_Y + LIGHTNING_HEIGHT) {
+        if (mouseX >= x + BOLT_X - 1 && mouseX <= x + BOLT_X + 10 && mouseY >= y + BOLT_Y - 1 && mouseY <= y + BOLT_Y + 14) {
             guiGraphics.renderTooltip(this.font,
                     Component.literal("Energy: " + menu.getEnergy() + "/" + menu.getMaxEnergy() + " EU"),
                     mouseX - x, mouseY - y);
         }
 
-        // 检查鼠标是否在热能标志区域
-        if (mouseX >= x + HEAT_ICON_X && mouseX <= x + HEAT_ICON_X + HEAT_ICON_WIDTH &&
-                mouseY >= y + HEAT_ICON_Y && mouseY <= y + HEAT_ICON_Y + HEAT_ICON_HEIGHT) {
-            guiGraphics.renderTooltip(this.font,
-                    Component.literal("Heat: " + menu.getHeat() + "/" + menu.getMaxHeat() + " HU"),
-                    mouseX - x, mouseY - y);
-        }
+        // 0.1.11.146: the heat buffer's icon is gone (the output says it); its tooltip with it
     }
 
     // 0.1.11.3: no containerTick override. It copied the client block entity's values (never ticked on the client and

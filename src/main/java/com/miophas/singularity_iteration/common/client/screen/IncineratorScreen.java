@@ -28,14 +28,14 @@ public class IncineratorScreen<M extends MimicGeneratorMenu> extends MimicScreen
     @Override
     protected void drawWindow(GuiGraphics g, int x, int y, double time) {
         float u = WindRoseView.u();
-        ChartView.draw(g, x + 4, y + 4, 140, 52, i -> v(IncineratorValues.CHART + i), 1100, 0xFFD9531E, new int[]{0xFFF0913A, 0xFF8D8F92},
+        ChartView.draw(g, x + 4, y + 4, 120, 52, i -> v(IncineratorValues.CHART + i), 1100, 0xFFD9531E, new int[]{0xFFF0913A, 0xFF8D8F92},
             new ChartView.Ref(IncineratorPhysics.DESIGN, 0xFF2F6E4F, Component.literal("850")),
             new ChartView.Ref(IncineratorPhysics.IGNITION, 0xFFC0392B, Component.literal("300")));
         int chamber = v(4);
-        PumpCrossSection.text(g, Component.literal(chamber + " °C"), x + 150, y + 6, PlantMimic.colour(chamber * 0.45) & 0xFFFFFF, u);
-        PumpCrossSection.text(g, Component.translatable(K + "eff", Math.round(v(5) / 10.0) + "%"), x + 150, y + 18, 0x1C2524, u);
-        PumpCrossSection.text(g, Component.literal(v(7) + " EU/t"), x + 150, y + 30, 0x2F6E4F, u);
-        PumpCrossSection.text(g, Component.translatable(K + "ash_short", v(6)), x + 150, y + 42, v(6) >= IncineratorPhysics.ASH_CAPACITY - 1 ? 0xC0392B : 0x5B6867, u);
+        PumpCrossSection.text(g, Component.literal(chamber + " °C"), x + 130, y + 6, PlantMimic.colour(chamber * 0.45) & 0xFFFFFF, u);
+        PumpCrossSection.text(g, Component.translatable(K + "eff", Math.round(v(5) / 10.0) + "%"), x + 130, y + 18, 0x1C2524, u);
+        PumpCrossSection.text(g, Component.literal(v(7) + " EU/t"), x + 130, y + 30, 0x2F6E4F, u);
+        PumpCrossSection.text(g, Component.translatable(K + "ash_short", v(6)), x + 130, y + 42, v(6) >= IncineratorPhysics.ASH_CAPACITY - 1 ? 0xC0392B : 0x5B6867, u);
 
         line(g, x, y, 0, Component.translatable(K + "line_chamber", chamber, Math.round(v(5) / 10.0) + "%"), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "line_fuel", f("%,d", v(2)), v(9), v(8)), WindRoseView.DIM);
@@ -46,7 +46,7 @@ public class IncineratorScreen<M extends MimicGeneratorMenu> extends MimicScreen
         else if (chamber < IncineratorPhysics.IGNITION) state = "state.igniting";
         else if (chamber < IncineratorPhysics.DESIGN) state = "state.warming";
         else { state = "state.running"; colour = 0x2F6E4F; }
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(v(7) + " EU/t"), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

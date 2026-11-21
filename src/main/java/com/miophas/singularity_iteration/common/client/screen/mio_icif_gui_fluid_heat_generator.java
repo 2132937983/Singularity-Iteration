@@ -52,43 +52,45 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
         this.imageHeight = GUI_HEIGHT;
     }
 
+    /** 0.1.11.146: the calm layout (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
+
+    /**
+     * 0.1.11.146: drawn in code in the vanilla look instead of the old texture: the panel and sunk slots, the fuel tank as a
+     * sunk window with the fluid's own texture, the heat output twice the font size with the most it can give under it,
+     * and a flat bar for the millibucket burning now. Empty slots show what goes in them.
+     */
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        // 绘制背景
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        FluidHeatGeneratorMenu menu = this.getMenu();
-        if (menu != null) {
-            // 绘制标准流体槽（背景+流体+刻度）
-            int fuelAmount = menu.getFuelAmount();
-            int fuelCapacity = menu.getFuelCapacity();
-            // 0.1.10.19: the fuel actually in the tank (it was always drawn as biogas)
-            drawFluidTank(guiGraphics, x + FUEL_TANK_X, y + FUEL_TANK_Y,
-                menu.getFuelFluid(), fuelAmount, fuelCapacity);
-
-            // 绘制火焰标志（根据燃烧进度从上往下消失）
-            int burnProgress = menu.getBurnProgress();
-            // burnProgress: 0-100, 0表示刚开始燃烧(完整显示), 100表示燃烧结束(完全消失)
-            // 从上往下消失，进度越小，从顶部显示的部分越多
-            if (burnProgress < 100) {
-                int visibleHeight = ((100 - burnProgress) * FLAME_ICON_HEIGHT) / 100;
-                if (visibleHeight > 0) {
-                    // 从顶部开始消失，所以绘制的起始Y坐标要向下偏移
-                    int drawY = y + FLAME_ICON_Y + (FLAME_ICON_HEIGHT - visibleHeight);
-                    // 绘制剩余可见的部分（从下往上显示）
-                    guiGraphics.blit(ATLAS_TEXTURE, x + FLAME_ICON_X, drawY, 0, (float) 152, (float) 227 + FLAME_ICON_HEIGHT - visibleHeight, FLAME_ICON_WIDTH, visibleHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
-                }
-            }
-
-            // 热量输出：对齐 IC2 GuiFluidHeatGenerator 的 Emit/MaxEmit，显示“最近一次实际输出 / 上限”。
-            // 不能用 isWorking 直接判 32/0：1 mB = 64 HU = 2 tick 输出，实时 credit 每隔一 tick 就归零，
-            // 读数会变成 0↔32 的方波；原版用的是粘滞的 transmitHeat，读数稳定。
-            String heatRateText = menu.getTransmitHeat() + "/" + menu.getMaxHeatOutput() + " HU/t";
-            guiGraphics.drawString(this.font, heatRateText, x + HEAT_RATE_TEXT_X, y + HEAT_RATE_TEXT_Y, TEXT_COLOR);
+        int x = leftPos, y = topPos;
+        VanillaFrame.panel(guiGraphics, x, y, imageWidth, imageHeight);
+        for (var slot : menu.slots) {
+            if (slot.x < 0 || slot.x > imageWidth) continue;
+            VanillaFrame.slot(guiGraphics, x + slot.x - 1, y + slot.y - 1);
         }
+        FluidHeatGeneratorMenu menu = this.getMenu();
+        VanillaFrame.inset(guiGraphics, x + FUEL_TANK_X, y + FUEL_TANK_Y, FLUID_TANK_BG_WIDTH, FLUID_TANK_BG_HEIGHT, VanillaFrame.SLOT);
+        int room = FLUID_TANK_BG_HEIGHT - 2, cap = Math.max(1, menu.getFuelCapacity());
+        int level = menu.getFuelAmount() <= 0 ? 0 : Math.max(1, Math.round(room * Math.min(1F, menu.getFuelAmount() / (float) cap)));
+        VanillaFrame.fluid(guiGraphics, x + FUEL_TANK_X + 1, y + FUEL_TANK_Y + 1 + room - level, FLUID_TANK_BG_WIDTH - 2, level, menu.getFuelFluid());
+        // the output: twice the font size; the most it gives under it (IC2's Emit / MaxEmit, the sticky transmitHeat)
+        VanillaFrame.bigText(guiGraphics, Component.literal(menu.getTransmitHeat() + " HU/t"), x + TEXT_X, y + 22, 0x1C2524);
+        guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.max").append(" " + menu.getMaxHeatOutput() + " HU/t"),
+            x + TEXT_X, y + 42, ReadoutPanel.MUTED, false);
+        // the millibucket burning now, left of the bar used up
+        int burn = menu.getBurnProgress();
+        VanillaFrame.flatBar(guiGraphics, x + TEXT_X, y + 56, imageWidth - 8 - TEXT_X, menu.getBurnTime() > 0 && burn < 100 ? (100 - burn) / 100.0 : 0);
+        if (!menu.getSlot(FluidHeatGeneratorMenu.FUEL_BUCKET_SLOT).hasItem())
+            VanillaFrame.ghost(guiGraphics, ghost("mio_icif:cell/item_cell_biogas"), x + 27, y + 21);
+        if (!menu.getSlot(FluidHeatGeneratorMenu.EMPTY_BUCKET_SLOT).hasItem())
+            VanillaFrame.ghost(guiGraphics, ghost("mio_icif:cell/item_cell_empty"), x + 27, y + 54);
+    }
+
+    private static final int TEXT_X = 98;
+
+    private static net.minecraft.world.item.ItemStack ghost(String id) {
+        return new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(ResourceLocation.parse(id)));
     }
 
     @Override

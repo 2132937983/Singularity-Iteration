@@ -76,11 +76,13 @@ public class mio_icif_gui_induction_elc extends ProcessInstrumentScreen<Inductio
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        int bx = x - leftPos, by = y - topPos;   // 0.1.11.120: the button column
-        menuButton(g, bx, by, BUTTON_W, BUTTON_H, Component.translatable(K + "heat_hold"), menu.isHeatHold(), InductionElcMenu.BUTTON_HEAT_HOLD,
-            mouseX, mouseY, List.of(Component.translatable(K + "tip.heat_hold.1"), Component.translatable(K + "tip.heat_hold.2")));
-        menuButton(g, bx, by + BUTTON_H + 1, BUTTON_W, BUTTON_H, Component.translatable(K + "collect_xp", f1(menu.getStoredXpTenths() / 10.0)), false,
-            InductionElcMenu.BUTTON_COLLECT_XP, mouseX, mouseY, List.of(Component.translatable(K + "tip.collect_xp")));
+        // 0.1.11.143: icons in the figure window's corner (heat hold shows pressed while on)
+        iconButton(g, 1, ICON_FLAME, menu.isHeatHold(), InductionElcMenu.BUTTON_HEAT_HOLD, mouseX, mouseY,
+            List.of(Component.translatable(K + "heat_hold"), Component.translatable(K + "tip.heat_hold.1").withStyle(net.minecraft.ChatFormatting.GRAY),
+                Component.translatable(K + "tip.heat_hold.2").withStyle(net.minecraft.ChatFormatting.GRAY)));
+        iconButton(g, 0, ICON_XP, false, InductionElcMenu.BUTTON_COLLECT_XP, mouseX, mouseY,
+            List.of(Component.translatable(K + "collect_xp", f1(menu.getStoredXpTenths() / 10.0)),
+                Component.translatable(K + "tip.collect_xp").withStyle(net.minecraft.ChatFormatting.GRAY)));
     }
 
     @Override

@@ -63,7 +63,9 @@ public class CondenserScreen extends MimicScreen<CondenserMenu> {
             100 + 100 * vents), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "condenser_out", f("%,d", menu.getDistilledAmount()), f("%,d", DISTILLED_CAPACITY), vents, 2 * vents),
             WindRoseView.DIM);
-        line(g, x, y, 2, Component.translatable(K + (menu.isWorking() ? "state.condensing" : "state.idle")), menu.isWorking() ? 0x2F6E4F : 0xA0602A);
+        // 0.1.11.145: the condensing rate is the main readout; the state beside it
+        ReadoutPanel.headline(Component.literal(f("%,d mB/t", menu.isWorking() ? 100 + 100 * vents : 0)),
+            Component.translatable(K + (menu.isWorking() ? "state.condensing" : "state.idle")), menu.isWorking() ? 0x2F6E4F : 0xA0602A);
     }
 
     @Override

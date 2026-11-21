@@ -26,7 +26,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<T> {
 
     private static final int WX = 34, WY = 15, WW = 207, WH = 62, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
-    private static final int CX = WX + 24, CY = WY + 6, CW = 176, CH = 44;
+    private static final int CX = WX + 28, CY = WY + 6, CW = 172, CH = 44;   // 0.1.11.145: room for the vanilla font
     private static final int AMBER = 0xFFD49A12, AMBER_FILL = 0x40D49A12, ENVELOPE = 0xFFB8A76A, BLUE = 0xFF2A5D8A,
         RED = 0xFFC0392B, GRID = 0xFFD9DED9;
     private static final String K = "gui.mio_icif.solar.";
@@ -120,14 +120,14 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
         String[] hours = {"06", "12", "18", "24", "06"};
         for (int k = 0; k < 5; k++) {
             Component c = Component.literal(hours[k]);
-            PumpCrossSection.text(g, c, px + CW * k / 4F - AsciiHud.width(c, u) / 2, py + CH + 1, WindRoseView.DIM, u);
+            PumpCrossSection.text(g, c, px + CW * k / 4F - PumpCrossSection.width(c, u) / 2, py + CH + 1, WindRoseView.DIM, u);
         }
-        for (int k : new int[]{0, 500, 1000}) {
+        for (int k : new int[]{500, 1000}) {   // 0.1.11.145: no "0" (it ran into the "06" under it)
             Component c = Component.literal(String.valueOf(k));
-            PumpCrossSection.text(g, c, px - 2 - AsciiHud.width(c, u), Yg(py, k) - 4 * u, WindRoseView.DIM, u);
+            PumpCrossSection.text(g, c, px - 2 - PumpCrossSection.width(c, u), Yg(py, k) - 4 * u, WindRoseView.DIM, u);
         }
         Component full = Component.translatable(K + "rated");
-        PumpCrossSection.text(g, full, px + CW - AsciiHud.width(full, u) - 1, py + 1, BLUE & 0xFFFFFF, u);
+        PumpCrossSection.text(g, full, px + CW - PumpCrossSection.width(full, u) - 1, py + 1, BLUE & 0xFFFFFF, u);
     }
 
     private static String clock(int dayTime) {
@@ -160,8 +160,10 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
         else if (full) { state = "state.full"; colour = WindRoseView.DIM; }
         else if (out >= rated - 0.01) { state = "state.clipped"; colour = 0x2F6E4F; }
         else { state = "state.run"; colour = 0x2F6E4F; }
-        WindRoseView.line(g, Component.translatable(K + "out_line", f1(out), f1(rated), String.format(Locale.ROOT, "%,d", Integer.toUnsignedLong(v(12))))
-            .append(" · ").append(Component.translatable(K + state)), tx, ty + 2 * lh, colour, w);
+        // 0.1.11.145: the output leads, the state beside it
+        ReadoutPanel.headline(Component.literal(f1(out) + " EU/t"), Component.translatable(K + state), colour);
+        WindRoseView.line(g, Component.translatable(K + "out_line", f1(out), f1(rated), String.format(Locale.ROOT, "%,d", Integer.toUnsignedLong(v(12)))),
+            tx, ty + 2 * lh, WindRoseView.DIM, w);
     }
 
     private static String f1(double v) { return String.format(Locale.ROOT, "%.1f", v); }
@@ -188,4 +190,8 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + route + "5"), Component.translatable(K + route + "6")), mouseX, mouseY);
         }
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

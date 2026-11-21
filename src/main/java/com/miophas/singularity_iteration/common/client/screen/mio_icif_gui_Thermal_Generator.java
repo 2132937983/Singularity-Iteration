@@ -139,7 +139,7 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
         Component lt = Component.literal("— ").append(Component.translatable(K + "legend_temp"));
         PumpCrossSection.text(g, lt, x, y, PEN_RED & 0xFFFFFF, u);
         PumpCrossSection.text(g, Component.literal("— ").append(Component.translatable(K + "legend_out")),
-            x + AsciiHud.width(lt, u) + 6, y, PEN_BLUE & 0xFFFFFF, u);
+            x + PumpCrossSection.width(lt, u) + 6, y, PEN_BLUE & 0xFFFFFF, u);
 
         // fuel queue: the lump burning, then the fuel slot (up to six shown, then +n)
         float qy = y + lh + 1;
@@ -177,7 +177,8 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
         else if (heat > 0.005) { state = Component.translatable(K + "state.cooling"); stateColour = WindRoseView.DIM; }
         else { state = Component.translatable(K + "state.cold"); stateColour = WindRoseView.DIM; }
         Component damper = Component.translatable(K + (banked ? "damper_closed" : "damper_open")).append(" · ").append(state);
-        WindRoseView.line(g, damper, x + 14, dy, stateColour, COL_W - 14);
+        // 0.1.11.145: the output leads, the damper and state beside it
+        ReadoutPanel.headline(Component.literal(String.format(Locale.ROOT, "%.1f EU/t", v(2) / 100.0)), damper, stateColour);
 
         // readings
         float ry = dy + lh + 3;
@@ -199,7 +200,7 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
         int[] bar = VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
             Component.literal(e + " / " + cap + " EU"));
         int mark = (int) (bar[0] + bar[1] * mio_icif_Thermal_Generator.REOPEN);
-        if (bar[1] > 0) g.fill(mark, sy + 1, mark + 1, sy + 11, 0xFF2A5D8A);
+        if (bar[1] > 0) g.fill(mark, sy + 1, mark + 1, sy + 10, 0xFF2A5D8A);
     }
 
     @Override
@@ -217,4 +218,8 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.damper2")), mouseX, mouseY);
         }
     }
+
+    /** 0.1.11.144: the calm chrome (title on the left, no lamp or upgrade hint). */
+    @Override
+    protected boolean calmChrome() { return true; }
 }

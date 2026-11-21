@@ -23,9 +23,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class mio_icif_gui_powder_advanced_elc extends ProcessInstrumentScreen<PowderAdvancedElcMenu> {
 
     private static final float CLASSIFIER_TURNS_PER_SECOND = 1.4F, ROLLER_ORBITS_PER_SECOND = 0.35F;
-    private static final int HOLD_W = BUTTON_W, HOLD_H = BUTTON_H;   // 0.1.11.120
     private float classifier, orbit;
-    private int holdX, holdY;
 
     public mio_icif_gui_powder_advanced_elc(PowderAdvancedElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -83,10 +81,10 @@ public class mio_icif_gui_powder_advanced_elc extends ProcessInstrumentScreen<Po
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        holdX = x - leftPos;
-        holdY = y - topPos;   // 0.1.11.120: the button column
-        boolean hover = inside(mouseX - leftPos, mouseY - topPos, holdX, holdY, HOLD_W, HOLD_H);
-        button(g, leftPos + holdX, topPos + holdY, HOLD_W, HOLD_H, Component.translatable(K + "hold"), menu.isHoldSpeedOn(), hover);
+        // 0.1.11.143: an icon in the figure window's corner, pressed while the speed is held
+        iconButton(g, 0, ICON_LOCK, menu.isHoldSpeedOn(), PowderAdvancedElcMenu.BUTTON_HOLD_SPEED, mouseX, mouseY,
+            List.of(Component.translatable(K + "hold"), Component.translatable(K + "tip.hold.1").withStyle(net.minecraft.ChatFormatting.GRAY),
+                Component.translatable(K + "tip.hold.2").withStyle(net.minecraft.ChatFormatting.GRAY)));
     }
 
     @Override
@@ -94,23 +92,6 @@ public class mio_icif_gui_powder_advanced_elc extends ProcessInstrumentScreen<Po
 
     @Override
     protected int buttonCount() { return 1; }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && inside(mouseX - leftPos, mouseY - topPos, holdX, holdY, HOLD_W, HOLD_H) && minecraft != null && minecraft.gameMode != null) {
-            minecraft.gameMode.handleInventoryButtonClick(menu.containerId, PowderAdvancedElcMenu.BUTTON_HOLD_SPEED);
-            minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        if (inside(mouseX - leftPos, mouseY - topPos, holdX, holdY, HOLD_W, HOLD_H))
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.hold.1"), Component.translatable(K + "tip.hold.2")), mouseX, mouseY);
-    }
 
     @Override
     protected List<Component> figureTooltip() {

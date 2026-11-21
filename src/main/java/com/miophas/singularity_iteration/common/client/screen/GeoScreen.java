@@ -32,14 +32,14 @@ public class GeoScreen extends MimicScreen<GeoGeneratorMenu> {
         boolean nether = v(10) != 0;
         int yLevel = v(9);
         // the borehole: Y 100 at the top, Y -64 at the bottom; the depth factor 1..2 across
-        float bx = x + 18, by = y + 4, bw = 60, bh = 52;
+        float bx = x + 24, by = y + 4, bw = 56, bh = 46;   // 0.1.11.145: room for the vanilla font
         FcsDraw.fill(g, (int) bx - 1, (int) by - 1, (int) (bx + bw) + 1, (int) (by + bh) + 1, 0xFFB8C0C2);
         FcsDraw.fill(g, (int) bx, (int) by, (int) (bx + bw), (int) (by + bh), 0xFFFBFCFC);
         for (int yy : new int[]{64, 0, -64}) {
             float ly = by + bh * (100 - yy) / 164F;
             FcsDraw.fill(g, (int) bx, (int) ly, (int) (bx + bw), (int) ly + 1, 0xFFEDEFEF);
             Component c = Component.literal(String.valueOf(yy));
-            PumpCrossSection.text(g, c, bx - 2 - com.miophas.singularity_iteration.common.client.suit.AsciiHud.width(c, u), ly - 4 * u, 0x5B6867, u);
+            PumpCrossSection.text(g, c, bx - 2 - PumpCrossSection.width(c, u), ly - 4 * u, 0x5B6867, u);
         }
         float px = 0, py = 0;
         for (int k = 0; k <= 41; k++) {
@@ -73,7 +73,7 @@ public class GeoScreen extends MimicScreen<GeoGeneratorMenu> {
         if (v(1) > 0 && v(0) >= v(1)) state = "state.full";
         else if (v(11) != 0 || world > 0) { state = "state.running"; colour = 0x2F6E4F; }
         else state = "state.no_lava";
-        line(g, x, y, 2, Component.translatable(K + state), colour);
+        ReadoutPanel.headline(Component.literal(f("%.1f EU/t", world + (v(11) != 0 ? 20 : 0))), Component.translatable(K + state), colour);   // 0.1.11.145: the output leads, the state beside it
     }
 
     @Override

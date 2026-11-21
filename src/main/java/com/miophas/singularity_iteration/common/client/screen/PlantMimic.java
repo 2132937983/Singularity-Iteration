@@ -73,7 +73,7 @@ final class PlantMimic {
         FcsDraw.disc(g, cx, cy, r, fill);
         FcsDraw.circle(g, cx, cy, r, 0.6F, OUTLINE);
         Component c = Component.literal(label);
-        PumpCrossSection.text(g, c, cx - AsciiHud.width(c, u) / 2, cy - 4 * u, 0x1C2524, u);
+        PumpCrossSection.text(g, c, cx - PumpCrossSection.width(c, u) / 2, cy - 4 * u, 0x1C2524, u);
     }
 
     /** A vent stack with steam puffs rising when it vents. */
@@ -96,7 +96,7 @@ final class PlantMimic {
 
     static void label(GuiGraphics g, Component c, float cx, float y, int rgb) {
         float u = WindRoseView.u();
-        PumpCrossSection.text(g, c, cx - AsciiHud.width(c, u) / 2, y, rgb, u);
+        PumpCrossSection.text(g, c, cx - PumpCrossSection.width(c, u) / 2, y, rgb, u);
     }
 
     static void shaft(GuiGraphics g, float x1, float y1, float x2, float y2) {
@@ -127,7 +127,7 @@ final class PlantMimic {
     static void stirling(GuiGraphics g, float x, float y, double hot, double cold, boolean water, double angle, float u) {
         box(g, x, y, 26, 11, colour(hot));
         Component t = Component.literal(Math.round(hot) + "°");
-        PumpCrossSection.text(g, t, x + 13 - AsciiHud.width(t, u) / 2, y + 5.5F - 4 * u, 0xFFFFFF, u);
+        PumpCrossSection.text(g, t, x + 13 - PumpCrossSection.width(t, u) / 2, y + 5.5F - 4 * u, 0xFFFFFF, u);
         box(g, x + 3, y + 13, 20, 24, BODY);
         float d = (float) (y + 15 + 7 * (1 + Math.sin(angle)) / 2), p = (float) (y + 25 + 7 * (1 + Math.sin(angle + Math.PI / 2)) / 2);
         FcsDraw.fill(g, (int) x + 5, (int) d, (int) x + 21, (int) d + 3, 0xFF9AA3A6);
@@ -135,7 +135,7 @@ final class PlantMimic {
         box(g, x, y + 39, 26, 10, water ? 0xFFCFE0EF : 0xFFE6E9EA);
         if (!water) for (int k = 0; k < 5; k++) FcsDraw.fill(g, (int) x + 3 + k * 5, (int) y + 40, (int) x + 4 + k * 5, (int) y + 49, 0xFF9AA3A6);
         Component c = Component.literal(Math.round(cold) + "°");
-        PumpCrossSection.text(g, c, x + 13 - AsciiHud.width(c, u) / 2, y + 44 - 4 * u, 0x1C2524, u);
+        PumpCrossSection.text(g, c, x + 13 - PumpCrossSection.width(c, u) / 2, y + 44 - 4 * u, 0x1C2524, u);
     }
 
     /** 0.1.11.17: a thermometer 0..{@code max} °C with a mark at {@code mark}. */

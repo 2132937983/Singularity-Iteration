@@ -66,7 +66,7 @@ public final class PumpCrossSection {
         if (!known || !any || d.fluid() == null) {
             Component msg = Component.translatable("gui.mio_icif.pump.view." + ((d.flags() & mio_icif_pump_elc.FLAG_SCANNING) != 0 ? "scanning"
                 : discharge ? "no_basin" : "no_body"));
-            text(g, msg, x + w / 2F - AsciiHud.width(msg, u) / 2, y + h / 2F - 4 * u, DIM, u);
+            text(g, msg, x + w / 2F - PumpCrossSection.width(msg, u) / 2, y + h / 2F - 4 * u, DIM, u);
             return;
         }
         // vertical range: the body, the pump (at 0) and the target, with a block of margin
@@ -243,8 +243,31 @@ public final class PumpCrossSection {
         FcsDraw.quad(g, x, y, x, y + h, x + w, y + h, x + w, y, argb);
     }
 
+    /**
+     * Window text. 0.1.11.145: in the vanilla font at a whole scale on whole GUI pixels (it was small Unifont on screen
+     * pixels), so the charts and diagrams read like the rest of the screen.
+     */
     static void text(GuiGraphics g, Component c, float x, float y, int rgb, float scale) {
-        float gs = (float) Minecraft.getInstance().getWindow().getGuiScale();
-        FcsDraw.text(g, AsciiHud.t(c), Math.round(x * gs) / gs, Math.round(y * gs) / gs, FcsDraw.argb(rgb, 1F), scale);
+        if (!WindRoseView.vanillaText) {   // the screens not yet on the calm layout: small Unifont on screen pixels
+            float gs = (float) Minecraft.getInstance().getWindow().getGuiScale();
+            FcsDraw.text(g, AsciiHud.t(c), Math.round(x * gs) / gs, Math.round(y * gs) / gs, FcsDraw.argb(rgb, 1F), scale);
+            return;
+        }
+        FcsDraw.text(g, c, Math.round(x), Math.round(y), FcsDraw.argb(rgb, 1F), whole(scale));
     }
+
+    static void text(GuiGraphics g, String s, float x, float y, int rgb, float scale) {
+        text(g, Component.literal(s), x, y, rgb, scale);
+    }
+
+    /** 0.1.11.145: the width of window text (the vanilla font at the whole scale {@link #text} uses). */
+    static float width(Component c, float scale) {
+        return WindRoseView.vanillaText ? Minecraft.getInstance().font.width(c) * whole(scale) : AsciiHud.width(c, scale);
+    }
+
+    static float width(String s, float scale) {
+        return WindRoseView.vanillaText ? Minecraft.getInstance().font.width(s) * whole(scale) : AsciiHud.width(s, scale);
+    }
+
+    private static float whole(float scale) { return Math.max(1, Math.round(scale)); }
 }

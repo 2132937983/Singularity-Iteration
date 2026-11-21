@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "TGT",
+    "GVG",
+    "TGT"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:resource/item_titanium_plate"
+    },
+    "G": {
+      "tag": "c:glass_blocks"
+    },
+    "V": {
+      "item": "mio_icif:fusion/block_fusion_vacuum_vessel"
+    }
+  },
+  "result": {
+    "id": "mio_icif:fusion/block_fusion_viewport",
+    "count": 2
+  }
+}

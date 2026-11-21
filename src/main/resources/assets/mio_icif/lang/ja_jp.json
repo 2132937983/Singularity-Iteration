@@ -4602,6 +4602,7 @@
   "block.mio_icif.fusion.block_fusion_poloidal_coil": "ポロイダル磁場コイル",
   "block.mio_icif.fusion.block_fusion_vacuum_vessel": "真空容器壁",
   "block.mio_icif.fusion.block_fusion_blanket": "ブランケットモジュール",
+  "block.mio_icif.fusion.block_fusion_viewport": "診断ビューポート",
   "block.mio_icif.fusion.block_fusion_divertor": "ダイバータ",
   "block.mio_icif.fusion.block_fusion_cryostat": "クライオスタット外装",
   "block.mio_icif.fusion.block_fusion_nbi_port": "中性粒子ビーム入射装置",

@@ -2565,6 +2565,67 @@ public final class CaptureDirector {
      * Scene "fusion_meltdown", 0.1.11.137: the demonstration tokamak burning, then its blanket overheated: the default
      * meltdown (the magnets' stored energy as an ordinary blast, a contaminated zone) from outside, before and after.
      */
+    /**
+     * Scene "fusion_fx", 0.1.11.139: the plasma through the demonstration's east viewports: the breakdown, the plasma growing,
+     * the burn, then a disruption (a toroidal field coil block broken) and its collapse; and the viewports from outside.
+     */
+    private static void sceneFusionFx() {
+        BlockPos c = new BlockPos(30, -55, 10);
+        var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
+        var lever = new java.util.concurrent.atomic.AtomicReference<BlockPos>();
+        java.util.function.Function<com.miophas.singularity_iteration.common.fusion.FusionPlasma.State, java.util.function.BooleanSupplier> reached =
+            st -> () -> ref.get() != null && ref.get().plasma().state() == st;
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(18000);   // night: the glow reads better
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            look(sp, 32.5, -55, 6.5, 90, 0);
+        });
+        server(20, sp -> {
+            var level = sp.serverLevel();
+            com.miophas.singularity_iteration.common.fusion.FusionDemo.placeStructure(level, c);
+            lever.set(com.miophas.singularity_iteration.common.fusion.FusionDemo.equip(level, c, false));
+            if (level.getBlockEntity(c) instanceof com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity f) ref.set(f);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        until(400, () -> ref.get() != null && ref.get().isFormed());
+        server(1, sp -> look(sp, 32.5, -55, 6.5, 90, 0));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(20, "fusion_fx/1_viewports_cold");
+        server(1, sp -> com.miophas.singularity_iteration.common.fusion.FusionDemo.lever(sp.serverLevel(), lever.get(), true));
+        until(2400, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.HEATING));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(4, "fusion_fx/2_breakdown");
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(36, "fusion_fx/3_growing");
+        until(1200, reached.apply(com.miophas.singularity_iteration.common.fusion.FusionPlasma.State.BURNING));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(200, "fusion_fx/4_burning");
+        server(1, sp -> look(sp, 44.5, -45, 28.5, 130, 16));
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(30, "fusion_fx/5_outside_night");
+        server(1, sp -> look(sp, 32.5, -55, 6.5, 90, 0));
+        // a toroidal field coil block broken: the structure goes, the plasma disrupts
+        server(20, sp -> {
+            var level = sp.serverLevel();
+            BlockPos centre = new BlockPos(18, -55, 6);
+            for (BlockPos p : BlockPos.betweenClosed(centre.offset(-13, -6, -13), centre.offset(13, 6, 13)))
+                if (level.getBlockState(p).is(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.FUSION_TOROIDAL_COIL.get()) && p.getX() < 10) {
+                    level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_ALL);
+                    break;
+                }
+        });
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(3, "fusion_fx/6_disruption_flare");
+        client(1, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(12, "fusion_fx/7_disruption_collapse");
+        client(60, () -> Minecraft.getInstance().stop());
+    }
+
     private static void sceneFusionMeltdown() {
         BlockPos c = new BlockPos(30, -55, 10);
         var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
@@ -4376,6 +4437,13 @@ public final class CaptureDirector {
         if (OUT != null && "fusion_coils".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneFusionCoils();
+        }
+    }
+
+    static {
+        if (OUT != null && "fusion_fx".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneFusionFx();
         }
     }
 

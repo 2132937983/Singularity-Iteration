@@ -598,6 +598,9 @@ public class Singularity_Iteration_Client {
 
     @SubscribeEvent
     static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        // 0.1.11.139: the fusion reactor's plasma, seen through the diagnostic viewports
+        event.registerBlockEntityRenderer(mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get(),
+            com.miophas.singularity_iteration.common.client.render.FusionPlasmaRenderer::new);
         // 0.1.8.0: resin collector fluid animation (tray level and stream)
         event.registerBlockEntityRenderer(mio_icif_block_entities.RESIN_COLLECTOR.get(),
             com.miophas.singularity_iteration.common.client.render.ResinCollectorRenderer::new);

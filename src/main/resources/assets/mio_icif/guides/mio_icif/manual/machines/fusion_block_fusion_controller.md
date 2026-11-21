@@ -56,6 +56,13 @@ This section explains the reactor's parts as a real tokamak works. The game's nu
 - Every block must be in place, and the plasma channel inside the ring must be air.
 - A port slot (a duct end; on the east side a column of three: disruption mitigation on top, cryogenic in the middle, exhaust below) takes any fusion port. Close the slots you do not use with a vacuum vessel wall.
 - To run, the reactor needs a cryogenic port, at least one heating port (neutral beam injector or electron cyclotron heater), an exhaust port and a power output port. Fuel injection and disruption mitigation ports are optional.
+- A **diagnostic viewport** may stand in for any blanket module or vacuum vessel wall without breaking the structure. Outside the plasma channel lies a layer of blanket, then a layer of vessel, so it takes two viewports in line (say a blanket module at the outer midplane and the vessel wall outside it) to see the plasma from outside. The demonstration has a band of four sight lines on the east and south sides.
+- Through a viewport:
+  - the channel glows dull red, orange or yellow-white with the temperature, its edge a little pink in H-mode;
+  - bright points run round the torus along the helical field lines, faster the hotter it is;
+  - at start-up a violet breakdown ring appears first, and the plasma fills the channel in about 2 seconds;
+  - at each ELM the edge flashes white and the exhaust port puffs flame; while it burns the exhaust port smokes now and then;
+  - a disruption flares, throws sparks and is gone within 1.5 seconds; a gentle end fades out in 1 second.
 - The whole structure turns with the console. The screen names the first wrong block and its position.
 
 ## Procedure

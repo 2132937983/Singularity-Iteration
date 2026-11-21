@@ -4602,6 +4602,7 @@
   "block.mio_icif.fusion.block_fusion_poloidal_coil": "极向场线圈",
   "block.mio_icif.fusion.block_fusion_vacuum_vessel": "真空室壁",
   "block.mio_icif.fusion.block_fusion_blanket": "包层模块",
+  "block.mio_icif.fusion.block_fusion_viewport": "诊断观察窗",
   "block.mio_icif.fusion.block_fusion_divertor": "偏滤器",
   "block.mio_icif.fusion.block_fusion_cryostat": "低温恒温器外壳",
   "block.mio_icif.fusion.block_fusion_nbi_port": "中性束注入器",

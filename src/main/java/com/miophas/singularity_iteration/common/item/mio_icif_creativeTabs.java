@@ -1186,6 +1186,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.FUSION_POLOIDAL_COIL.get());
                 output.accept(mio_icif_blocks.FUSION_VACUUM_VESSEL.get());
                 output.accept(mio_icif_blocks.FUSION_BLANKET.get());
+                output.accept(mio_icif_blocks.FUSION_VIEWPORT.get());   // 0.1.11.139
                 output.accept(mio_icif_blocks.FUSION_DIVERTOR.get());
                 output.accept(mio_icif_blocks.FUSION_CRYOSTAT.get());
                 output.accept(mio_icif_blocks.FUSION_NBI_PORT.get());

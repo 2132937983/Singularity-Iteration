@@ -118,4 +118,30 @@ public class mio_icif_block_fusion_part extends Block {
             return (l, p, s, be) -> { if (be instanceof FusionPowerPortBlockEntity port) FusionPowerPortBlockEntity.tick(l, p, s, port); };
         }
     }
+
+    /**
+     * 0.1.11.139 (fusion overhaul F7): the diagnostic viewport, a window of fused silica in a steel frame. It stands in for a
+     * blanket module or a vacuum vessel wall (a pair in line makes a sight line into the plasma channel); it lets light through
+     * and does not hide its neighbours of the same kind.
+     */
+    public static class Viewport extends mio_icif_block_fusion_part {
+        public Viewport(Properties properties) {
+            super(properties);
+        }
+
+        @Override
+        protected boolean skipRendering(BlockState state, BlockState adjacent, Direction side) {
+            return adjacent.is(this) || super.skipRendering(state, adjacent, side);
+        }
+
+        @Override
+        protected float getShadeBrightness(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+            return 1.0F;
+        }
+
+        @Override
+        protected boolean propagatesSkylightDown(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+            return true;
+        }
+    }
 }

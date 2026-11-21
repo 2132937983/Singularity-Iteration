@@ -4602,6 +4602,7 @@
   "block.mio_icif.fusion.block_fusion_poloidal_coil": "Poloidal Field Coil",
   "block.mio_icif.fusion.block_fusion_vacuum_vessel": "Vacuum Vessel Wall",
   "block.mio_icif.fusion.block_fusion_blanket": "Blanket Module",
+  "block.mio_icif.fusion.block_fusion_viewport": "Diagnostic Viewport",
   "block.mio_icif.fusion.block_fusion_divertor": "Divertor",
   "block.mio_icif.fusion.block_fusion_cryostat": "Cryostat Casing",
   "block.mio_icif.fusion.block_fusion_nbi_port": "Neutral Beam Injector",

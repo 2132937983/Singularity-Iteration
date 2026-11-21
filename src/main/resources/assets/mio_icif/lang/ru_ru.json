@@ -4602,6 +4602,7 @@
   "block.mio_icif.fusion.block_fusion_poloidal_coil": "Катушка полоидального поля",
   "block.mio_icif.fusion.block_fusion_vacuum_vessel": "Стенка вакуумной камеры",
   "block.mio_icif.fusion.block_fusion_blanket": "Модуль бланкета",
+  "block.mio_icif.fusion.block_fusion_viewport": "Диагностическое окно",
   "block.mio_icif.fusion.block_fusion_divertor": "Дивертор",
   "block.mio_icif.fusion.block_fusion_cryostat": "Оболочка криостата",
   "block.mio_icif.fusion.block_fusion_nbi_port": "Инжектор нейтральных пучков",

@@ -358,6 +358,7 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
         boolean active = c.plasma.hasPlasma();
         if (state.hasProperty(mio_icif_block_fusion_controller.ACTIVE) && state.getValue(mio_icif_block_fusion_controller.ACTIVE) != active)
             level.setBlock(pos, state.setValue(mio_icif_block_fusion_controller.ACTIVE, active), Block.UPDATE_CLIENTS);
+        c.syncFx(level, pos, state);
         TickMarks.saved(c);
     }
 
@@ -595,6 +596,72 @@ public class FusionControllerBlockEntity extends AbstractEnergyBlockEntity imple
 
     public IItemHandler getItems() { return items; }
     public FusionPlasma plasma() { return plasma; }
+
+    // ------------------------------------------------------------------ 0.1.11.139: what the client draws (FusionPlasmaRenderer)
+
+    /** The plasma as the client sees it: state ordinal, temperature (keV), H-mode, ELMs so far, the last disruption's cause. */
+    public record Fx(int state, float kev, boolean hMode, int elms, int cause) {
+        public static final Fx NONE = new Fx(0, 0, false, 0, 0);
+        public boolean plasma() { return state == FusionPlasma.State.HEATING.ordinal() || state == FusionPlasma.State.BURNING.ordinal(); }
+    }
+
+    private Fx fx = Fx.NONE;
+    private long fxSentAt;
+
+    /** The client's view of the plasma (on the server: what was last sent). */
+    public Fx fx() { return fx; }
+
+    private Fx currentFx() {
+        return new Fx(plasma.state().ordinal(), (float) (Math.round(plasma.kev() * 4) / 4.0), plasma.hMode(), plasma.elms(), plasma.cause().ordinal());
+    }
+
+    /** Sends the plasma's state when it changes (the temperature at most twice a second). */
+    private void syncFx(Level level, BlockPos pos, BlockState state) {
+        Fx now = currentFx();
+        if (now.equals(fx)) return;
+        boolean event = now.state() != fx.state() || now.elms() != fx.elms() || now.hMode() != fx.hMode();
+        if (!event && level.getGameTime() - fxSentAt < 10) return;
+        fx = now;
+        fxSentAt = level.getGameTime();
+        level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
+    }
+
+    private static CompoundTag fxTag(Fx f) {
+        CompoundTag t = new CompoundTag();
+        t.putInt("State", f.state());
+        t.putFloat("Kev", f.kev());
+        t.putBoolean("H", f.hMode());
+        t.putInt("Elms", f.elms());
+        t.putInt("Cause", f.cause());
+        return t;
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.put("Fx", fxTag(level != null && !level.isClientSide ? currentFx() : fx));
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.handleUpdateTag(tag, registries);
+        if (tag.contains("Fx")) {
+            CompoundTag t = tag.getCompound("Fx");
+            fx = new Fx(t.getInt("State"), t.getFloat("Kev"), t.getBoolean("H"), t.getInt("Elms"), t.getInt("Cause"));
+        }
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection connection, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet,
+                             HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);   // only what the update tag carries (not a full load)
+    }
     public boolean isFormed() { return formed; }
     public long output() { return output; }
     public long hull() { return hull; }

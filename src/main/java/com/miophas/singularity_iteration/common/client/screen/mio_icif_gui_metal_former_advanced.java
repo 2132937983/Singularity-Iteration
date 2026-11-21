@@ -60,9 +60,9 @@ public class mio_icif_gui_metal_former_advanced extends ProcessInstrumentScreen<
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        int by = y - topPos;   // 0.1.11.120: the button column
-        menuButton(g, x - leftPos, by, BUTTON_W, BUTTON_H, Component.translatable(K + "switch_mode"), false, 0, mouseX, mouseY,
-            List.of(Component.translatable(K + "tip.switch_mode")));
+        // 0.1.11.143: an icon in the figure window's corner
+        iconButton(g, 0, ICON_CYCLE, false, 0, mouseX, mouseY,
+            List.of(Component.translatable(K + "switch_mode"), Component.translatable(K + "tip.switch_mode").withStyle(net.minecraft.ChatFormatting.GRAY)));
     }
 
     @Override

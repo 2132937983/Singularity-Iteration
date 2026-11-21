@@ -2333,7 +2333,6 @@
   "gui.mio_icif.canner.slot.mix_container": "ここに：混合する液体の容器",
   "gui.mio_icif.canner.slot.food": "ここに：食料か燃料",
   "gui.mio_icif.canner.slot.additive": "ここに：添加剤",
-  "gui.mio_icif.canner.slot.battery": "ここに：電池（機械に給電）",
   "gui.mio_icif.canner.slot.unused": "このモードでは使いません",
   "gui.mio_icif.checker.input_energy_display": "入力: %s EU/t",
   "gui.mio_icif.checker.no_input": "入力なし",
@@ -5980,5 +5979,9 @@
   "gui.mio_icif.process.tip.recycler.2": "産出は累積：一個ごとに収率を加え、1 になると一個出る。ランダムはない。",
   "gui.mio_icif.process.tip.canner.1": "モードにより缶詰め、セルを右タンクへ空ける、左タンクからセルを満たす、左タンクの液体を混ぜて右タンクへ送る。",
   "gui.mio_icif.process.tip.canner.2": "左が入力タンク、右が出力タンク（各 8,000 mB）。「交換」で入れ替える。",
+  "gui.mio_icif.process.slot.battery": "ここに：電池（機械に給電）",
+  "gui.mio_icif.process.slot.blade": "ここに：切断ブレード",
+  "gui.mio_icif.process.slot.water": "ここに：水バケツか水セル（タンクに給水）",
+  "gui.mio_icif.process.slot.empty_bucket": "空になったバケツとセルはここから取り出します",
   "mio_icif.subtitle.suit.em_hum": "電磁推進：うなり"
 }

@@ -80,9 +80,10 @@ public class mio_icif_gui_furnace_elc extends ProcessInstrumentScreen<FurnaceElc
 
     @Override
     protected void drawExtras(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
-        int bx = x - leftPos, by = y - topPos;   // 0.1.11.120: the button column
-        menuButton(g, bx, by, BUTTON_W, BUTTON_H, Component.translatable(K + "collect_xp", f1(menu.getStoredXpTenths() / 10.0)), false,
-            FurnaceElcMenu.BUTTON_COLLECT_XP, mouseX, mouseY, List.of(Component.translatable(K + "tip.collect_xp")));
+        // 0.1.11.143: an icon in the figure window's corner; the stored experience is in its tooltip
+        iconButton(g, 0, ICON_XP, false, FurnaceElcMenu.BUTTON_COLLECT_XP, mouseX, mouseY,
+            List.of(Component.translatable(K + "collect_xp", f1(menu.getStoredXpTenths() / 10.0)),
+                Component.translatable(K + "tip.collect_xp").withStyle(net.minecraft.ChatFormatting.GRAY)));
     }
 
     @Override

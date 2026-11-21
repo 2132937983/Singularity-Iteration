@@ -108,9 +108,26 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      * 0.1.11.141: the calm layout (the premium-feel review): a flat figure window and flat figure parts, no readout window,
      * the headline twice the font size with the progress or the stop reason beside it, at most three lines under it (the
      * first in the body colour, the rest muted), small icon buttons in the figure window, the title on the left and no lamp
-     * or upgrade hint. Machines move to it one by one.
+     * or upgrade hint. 0.1.11.143: every processing machine uses it (the old layout stays behind this switch).
      */
-    protected boolean calm() { return false; }
+    protected boolean calm() { return true; }
+
+    /** 0.1.11.143: the battery slot of the furnace block (lower left). */
+    protected static boolean batterySlot(Slot slot) { return slot.x == 10 && slot.y == 56; }
+
+    protected static net.minecraft.world.item.ItemStack itemOf(String id) {
+        return new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(id)));
+    }
+
+    /** 0.1.11.143: the ghost item of an empty machine slot (what goes there), or empty; by default the battery slot's. */
+    protected net.minecraft.world.item.ItemStack slotGhost(Slot slot) {
+        return batterySlot(slot) ? itemOf("mio_icif:normal/item_chargebat_lev0") : net.minecraft.world.item.ItemStack.EMPTY;
+    }
+
+    /** 0.1.11.143: the hover text of an empty machine slot, or null; by default the battery slot's. */
+    protected Component slotHint(Slot slot) {
+        return batterySlot(slot) ? Component.translatable(K + "slot.battery") : null;
+    }
 
     /** 0.1.11.142: whether a machine slot is drawn (a slot the current mode does not use can hide, frame and all). */
     protected boolean slotShown(Slot slot) { return true; }
@@ -246,15 +263,19 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         int code = status();
         Component side = calmSide();
         int sideColour = code == ProcessStatus.RUNNING ? INK : ProcessStatus.isFault(code) ? RED : DIM;
-        side = fit(side, W / 2);
-        int sideX = right - font.width(side);
-        Component head = fit(headline(), (sideX - left - 8) / 2);
+        // the headline is the main figure and is never cut for the side text: when both do not fit on the row, the side
+        // text goes down as the first line (in its colour) and the headline gets the whole row
+        Component head = headline();
+        boolean sideBelow = 2 * font.width(head) + 8 + font.width(side) > right - left;
+        if (sideBelow) head = fit(head, (right - left) / 2);
+        else side = fit(side, W / 2);
+        int sideX = sideBelow ? right : right - font.width(side);
         g.pose().pushPose();
         g.pose().translate(left, y + CALM_HEAD_Y, 0);
         g.pose().scale(2F, 2F, 1F);
         g.drawString(font, head, 0, 0, headlineColour(), false);
         g.pose().popPose();
-        g.drawString(font, side, sideX, y + CALM_SIDE_Y, sideColour, false);
+        if (!sideBelow) g.drawString(font, side, sideX, y + CALM_SIDE_Y, sideColour, false);
         float hb = headlineBar();
         int headEnd = left + 2 * font.width(head);
         if (hb >= 0 && sideX - headEnd > 24) {
@@ -267,13 +288,20 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
             }
         }
         int ty = y + CALM_LINE_Y, n = 0;
-        for (Component c : readouts()) {
+        java.util.List<Component> lines = new java.util.ArrayList<>(readouts());
+        if (sideBelow) lines.add(0, side);
+        for (Component c : lines) {
             if (n == CALM_LINES) break;
-            g.drawString(font, fit(c, W - 16), left, ty, n == 0 ? TEXT : MUTED, false);
+            int colour = sideBelow && n == 0 ? sideColour : n == (sideBelow ? 1 : 0) ? TEXT : MUTED;
+            g.drawString(font, fit(c, W - 16), left, ty, colour, false);
             ty += CALM_LINE_H;
             n++;
         }
         drawExtras(g, right, y + CALM_LINE_Y, mouseX, mouseY);
+        for (Slot s : menu.slots) {   // 0.1.11.143: ghosts in the empty machine slots
+            if (s.x < 0 || s.x > W || s.y > FIG_WIN_Y + FIG_WIN_H || s.hasItem() || !slotShown(s)) continue;
+            ghost(g, slotGhost(s), s.x, s.y);
+        }
     }
 
     /**
@@ -281,6 +309,9 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      * button {@code id}; lighter under the mouse, dark when on. {@code icon}: 7 rows of 7 ('#' drawn), so every icon has
      * the same size (font glyphs such as the arrows come out in different sizes). Call it from {@link #drawExtras} every frame.
      */
+    public static final String[] ICON_XP = {"..###..", ".#...#.", "#..#..#", "#.###.#", "#..#..#", ".#...#.", "..###.."},
+        ICON_FLAME = {"..#....", "..##...", ".###.#.", ".######", "###.###", "##...##", ".#####."},
+        ICON_LOCK = {"..###..", ".#...#.", ".#...#.", "#######", "###.###", "###.###", "#######"};
     public static final String[] ICON_CYCLE = {"..###.#", ".#...##", "#...###", "#......", "#.....#", ".#...#.", "..###.."},
         ICON_SWAP = {".....#.", "#######", ".....#.", ".......", ".#.....", "#######", ".#....."};
 
@@ -386,6 +417,11 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
+        Slot hs = hoveredSlot;   // 0.1.11.143: what goes in an empty machine slot
+        if (calm() && hs != null && !hs.hasItem() && hs.y <= FIG_WIN_Y + FIG_WIN_H && hs.x >= 0 && hs.x <= W && menu.getCarried().isEmpty()) {
+            Component hint = slotHint(hs);
+            if (hint != null) { g.renderTooltip(font, hint, mouseX, mouseY); return; }
+        }
         for (PanelButton b : panelButtons) {
             if (!b.tooltip.isEmpty() && inside(rx, ry, b.x, b.y, b.w, b.h)) {
                 g.renderComponentTooltip(this.font, b.tooltip, mouseX, mouseY);

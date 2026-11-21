@@ -90,6 +90,21 @@ public class mio_icif_gui_washer_elc extends ProcessInstrumentScreen<WasherElcMe
     @Override
     protected int status() { return menu.getStatus(); }
 
+    // 0.1.11.143: the bucket slots say what goes in and what comes out
+    @Override
+    protected net.minecraft.world.item.ItemStack slotGhost(net.minecraft.world.inventory.Slot slot) {
+        if (slot.index == WasherElcMenu.WATER_BUCKET_SLOT) return itemOf("minecraft:water_bucket");
+        if (slot.index == WasherElcMenu.EMPTY_BUCKET_SLOT) return itemOf("minecraft:bucket");
+        return super.slotGhost(slot);
+    }
+
+    @Override
+    protected Component slotHint(net.minecraft.world.inventory.Slot slot) {
+        if (slot.index == WasherElcMenu.WATER_BUCKET_SLOT) return Component.translatable(K + "slot.water");
+        if (slot.index == WasherElcMenu.EMPTY_BUCKET_SLOT) return Component.translatable(K + "slot.empty_bucket");
+        return super.slotHint(slot);
+    }
+
     @Override
     protected List<Component> figureTooltip() {
         return List.of(Component.translatable(K + "tip.washer.1"), Component.translatable(K + "tip.washer.2"));

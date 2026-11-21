@@ -1264,7 +1264,6 @@
   "gui.mio_icif.canner.slot.mix_container": "Сюда: ёмкость для смешивания",
   "gui.mio_icif.canner.slot.food": "Сюда: еда или топливо",
   "gui.mio_icif.canner.slot.additive": "Сюда: добавка",
-  "gui.mio_icif.canner.slot.battery": "Сюда: батарея для питания машины",
   "gui.mio_icif.canner.slot.unused": "В этом режиме не используется",
   "gui.mio_icif.canner.clear_input_tank": "Очистить входной резервуар",
   "gui.mio_icif.canner.clear_output_tank": "Очистить выходной резервуар",
@@ -5980,5 +5979,9 @@
   "gui.mio_icif.process.tip.recycler.2": "Выход накапливается: каждый предмет добавляет долю, целая единица даёт продукт. Без случайности.",
   "gui.mio_icif.process.tip.canner.1": "По режиму: консервирует, сливает ячейку в правый бак, наполняет ячейку из левого или смешивает левый бак в правый.",
   "gui.mio_icif.process.tip.canner.2": "Слева входной бак, справа выходной, по 8 000 mB; «Обмен» меняет их местами.",
+  "gui.mio_icif.process.slot.battery": "Сюда: батарея для питания машины",
+  "gui.mio_icif.process.slot.blade": "Сюда: режущий диск",
+  "gui.mio_icif.process.slot.water": "Сюда: ведро или капсула воды для бака",
+  "gui.mio_icif.process.slot.empty_bucket": "Сюда выходят опустевшие вёдра и капсулы",
   "mio_icif.subtitle.suit.em_hum": "Электромагнитный привод гудит"
 }

@@ -40,9 +40,6 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     // colour under the canvas).
     private static final int FRAME = 0xFFC9CED0, INNER = 0xFFE6E9E7, IDLE_PIPE = 0xFFADB3B5;
 
-    @Override
-    protected boolean calm() { return true; }
-
     /** A tank at figure offset (dx, -30), 14 x 52 figure units: a frame, its chamber and the fluid's texture to its level. */
     private void tank(GuiGraphics g, float cx, float cy, float dx, FluidStack fluid, int capacity) {
         int x0 = figPx(cx, dx), y0 = figPx(cy, -30), x1 = figPx(cx, dx + 14), y1 = figPx(cy, 22);
@@ -165,33 +162,27 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
         super.renderSlotHighlight(g, slot, mouseX, mouseY, partialTick);
     }
 
-    // ---- 0.1.11.142: what goes in each slot (the empty slots were all alike) ----
+    // ---- 0.1.11.142: what goes in each slot (the empty slots were all alike); the battery is the base class's ----
 
-    private static net.minecraft.world.item.ItemStack stack(String id) {
-        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(id));
-        return new net.minecraft.world.item.ItemStack(item);
-    }
-
-    /** The ghost item of an empty slot in the current mode (empty for none). */
-    private net.minecraft.world.item.ItemStack ghostFor(int index) {
+    @Override
+    protected net.minecraft.world.item.ItemStack slotGhost(Slot slot) {
         int m = mode();
-        return switch (index) {
-            case CannerElcMenu.INPUT_SLOT -> stack(switch (m) {
+        return switch (slot.index) {
+            case CannerElcMenu.INPUT_SLOT -> itemOf(switch (m) {
                 case 0 -> "mio_icif:normal/item_tin_empty_can";
                 case 1 -> "mio_icif:cell/item_cell_water";
                 default -> "mio_icif:cell/item_cell_empty";
             });
-            case CannerElcMenu.MATERIAL_SLOT -> m == 0 ? stack("minecraft:bread") : net.minecraft.world.item.ItemStack.EMPTY;
-            case CannerElcMenu.BATTERY_SLOT -> stack("mio_icif:normal/item_chargebat_lev0");
-            default -> net.minecraft.world.item.ItemStack.EMPTY;
+            case CannerElcMenu.MATERIAL_SLOT -> m == 0 ? itemOf("minecraft:bread") : net.minecraft.world.item.ItemStack.EMPTY;
+            default -> super.slotGhost(slot);
         };
     }
 
-    /** The hover text of an empty slot in the current mode, or null. */
-    private Component slotRole(int index) {
+    @Override
+    protected Component slotHint(Slot slot) {
         String k = "gui.mio_icif.canner.slot.";
         int m = mode();
-        return switch (index) {
+        return switch (slot.index) {
             case CannerElcMenu.INPUT_SLOT -> Component.translatable(k + switch (m) {
                 case 0 -> "can";
                 case 1 -> "full_cell";
@@ -199,27 +190,7 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
                 default -> "mix_container";
             });
             case CannerElcMenu.MATERIAL_SLOT -> materialUsed() ? Component.translatable(k + (m == 0 ? "food" : "additive")) : null;
-            case CannerElcMenu.BATTERY_SLOT -> Component.translatable(k + "battery");
-            default -> null;
+            default -> super.slotHint(slot);
         };
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        super.renderBg(g, partialTick, mouseX, mouseY);
-        for (int index : new int[]{CannerElcMenu.INPUT_SLOT, CannerElcMenu.MATERIAL_SLOT, CannerElcMenu.BATTERY_SLOT}) {
-            Slot slot = menu.getSlot(index);
-            if (!slot.hasItem() && slotShown(slot)) ghost(g, ghostFor(index), slot.x, slot.y);
-        }
-    }
-
-    @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        Slot slot = hoveredSlot;
-        if (slot != null && !slot.hasItem() && slot.index <= CannerElcMenu.BATTERY_SLOT && menu.getCarried().isEmpty()) {
-            Component role = slotRole(slot.index);
-            if (role != null) g.renderTooltip(font, role, mouseX, mouseY);
-        }
     }
 }

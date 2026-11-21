@@ -1242,7 +1242,6 @@
   "gui.mio_icif.canner.slot.mix_container": "放这里：要混合的液体容器",
   "gui.mio_icif.canner.slot.food": "放这里：食物或燃料",
   "gui.mio_icif.canner.slot.additive": "放这里：添加剂",
-  "gui.mio_icif.canner.slot.battery": "放这里：电池，给机器供电",
   "gui.mio_icif.canner.slot.unused": "本模式不用",
   "gui.mio_icif.canner.clear_input_tank": "清空输入液体槽",
   "gui.mio_icif.canner.clear_output_tank": "清空输出液体槽",
@@ -5980,5 +5979,9 @@
   "gui.mio_icif.process.tip.recycler.2": "产出按比例累计：每件加上产出率，满 1 出一个，没有随机。",
   "gui.mio_icif.process.tip.canner.1": "按模式装罐、把单元倒进右罐、从左罐灌装单元，或把左罐的液体混合后送进右罐。",
   "gui.mio_icif.process.tip.canner.2": "左边是进液罐，右边是出液罐，各 8,000 mB；「交换液体」把两罐对调。",
+  "gui.mio_icif.process.slot.battery": "放这里：电池，给机器供电",
+  "gui.mio_icif.process.slot.blade": "放这里：切割刀片",
+  "gui.mio_icif.process.slot.water": "放这里：水桶或水单元，给水箱加水",
+  "gui.mio_icif.process.slot.empty_bucket": "倒空的桶和单元从这里取出",
   "mio_icif.subtitle.suit.em_hum": "电磁推进：嗡鸣"
 }

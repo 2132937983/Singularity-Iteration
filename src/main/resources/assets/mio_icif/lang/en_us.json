@@ -1212,7 +1212,6 @@
   "gui.mio_icif.canner.slot.mix_container": "Put here: the fluid container to mix into",
   "gui.mio_icif.canner.slot.food": "Put here: food or fuel",
   "gui.mio_icif.canner.slot.additive": "Put here: the additive",
-  "gui.mio_icif.canner.slot.battery": "Put here: a battery to power the machine",
   "gui.mio_icif.canner.slot.unused": "Not used in this mode",
   "gui.mio_icif.canner.clear_input_tank": "Clear Input Tank",
   "gui.mio_icif.canner.clear_output_tank": "Clear Output Tank",
@@ -5980,5 +5979,9 @@
   "gui.mio_icif.process.tip.recycler.2": "The yield is counted: each item adds its share, and a whole one makes a product. No chance involved.",
   "gui.mio_icif.process.tip.canner.1": "By mode it cans, empties a cell into the right tank, fills a cell from the left tank, or mixes the left tank into the right one.",
   "gui.mio_icif.process.tip.canner.2": "The left tank takes in, the right one gives out, 8,000 mB each; Swap exchanges them.",
+  "gui.mio_icif.process.slot.battery": "Put here: a battery to power the machine",
+  "gui.mio_icif.process.slot.blade": "Put here: a cutting blade",
+  "gui.mio_icif.process.slot.water": "Put here: a water bucket or cell to fill the tank",
+  "gui.mio_icif.process.slot.empty_bucket": "Emptied buckets and cells come out here",
   "mio_icif.subtitle.suit.em_hum": "Electromagnetic drive hums"
 }

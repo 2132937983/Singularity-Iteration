@@ -23,6 +23,8 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -213,6 +215,22 @@ public final class SolarFootprint {
 
     // ---- placing into a panel's cells -------------------------------------------------------------------------------
 
+    /**
+     * 0.1.11.156: a player's block is refused before it is placed, on the client and the server alike, so the client does
+     * not show it for a moment and take it from the hand (0.1.11.154 only undid the placement on the server: the block
+     * flashed and the stack stayed one short on the client). The block's own use (a chest beside a panel) still works.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (!(event.getItemStack().getItem() instanceof net.minecraft.world.item.BlockItem item)) return;
+        BlockPos at = new BlockPlaceContext(event.getEntity(), event.getHand(), event.getItemStack(), event.getHitVec()).getClickedPos();
+        if (allows(takenAt(event.getLevel(), at), item.getBlock().defaultBlockState())) return;
+        event.setUseItem(TriState.FALSE);
+        if (event.getLevel().isClientSide())
+            event.getEntity().displayClientMessage(Component.translatable("message.mio_icif.solar.cell_taken"), true);
+    }
+
+    /** The placement event: blocks placed some other way (the blueprint builder, the pump, other mods). */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onPlace(BlockEvent.EntityPlaceEvent event) {
         if (event.getLevel().isClientSide()) return;
@@ -224,6 +242,11 @@ public final class SolarFootprint {
             if (!allows(takenAt(event.getLevel(), at), state) || isPanel(state) && !fits(event.getLevel(), at, state, null)) {
                 event.setCanceled(true);
                 if (event.getEntity() instanceof Player player) player.displayClientMessage(Component.translatable("message.mio_icif.solar.cell_taken"), true);
+                // the stack is given back on the server; the client took it already, so send it the inventory again
+                if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+                    player.inventoryMenu.sendAllDataToRemote();
+                    player.containerMenu.sendAllDataToRemote();
+                }
                 return;
             }
         }

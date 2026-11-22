@@ -53,7 +53,9 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     /** 0.1.11.101: after the record, the profile for the screen: full-output level W/m², flags (1 direct light only, 2 held cell), cooling x1000. */
     public static final int DATA_PROFILE = 16 + SAMPLES / 2;
     /** 0.1.11.102: flag 4 marks a photon resonance panel (route B); then the night sky factor x1000. */
-    public static final int DATA_COUNT = DATA_PROFILE + 4;
+    /** 0.1.11.154: then the grid: panels in it, its stored EU and its capacity (each a long as high and low int). */
+    public static final int DATA_GRID = DATA_PROFILE + 4;
+    public static final int DATA_COUNT = DATA_GRID + 5;
 
     protected final int dayPower, corePower, chargeSlots;
     /** 0.1.11.100: how this panel uses the sky (light, weather, temperature, night, packets). */
@@ -76,6 +78,14 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     private double sumG, sumOut;
     private int sumCount;
     private double today;
+    /** 0.1.11.154: the grid this panel is in (server; rebuilt when it is invalid). */
+    SolarGrid grid;
+    /** 0.1.11.154: EU a tick the panel sends alone; in a grid, this for every panel (the packet count likewise). */
+    private final long baseExtract;
+    /** 0.1.11.155: the panel's own capacity; in a grid its storage takes the grid's (the sum of its panels'). */
+    private final long baseCapacity;
+    /** 0.1.11.155: for the grid: what the panel held after the last balance and what it made since (EU). */
+    double gridAfter, gridMade;
 
     public mio_icif_solar_generator(BlockPos pos, BlockState state) {
         this(pos, state, null);
@@ -117,6 +127,8 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         this.chargeSlots = Math.max(1, Math.min(slots, chargeSlots));
         this.clampBasicBuffer = clampBasicBuffer;
         this.profile = java.util.Objects.requireNonNull(profile, "solar profile");
+        this.baseExtract = maxExtract;
+        this.baseCapacity = capacity;
         setAsPowerSource(maxExtract);
     }
 
@@ -196,6 +208,12 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_solar_generator be) {
         if (level.isClientSide()) return;
+        // 0.1.11.154: grid-tie, the group's storage spread over its panels once a tick
+        if (be.grid == null || !be.grid.valid()) SolarGrid.build(be);
+        be.grid.balance(level.getGameTime());
+        // the output allowance a tick follows the packets: the packet size times the grid's packets
+        long extract = be.baseExtract / Math.max(1, be.profile.packets()) * be.getPacketCount();
+        if (be.energyStorage.getMaxExtract() != extract) be.energyStorage.setMaxExtract(extract);
         boolean wasGenerating = be.isGenerating;
         be.chargeItems();
         be.ejectHiddenSlots();
@@ -206,11 +224,18 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
             be.sense(level);
             be.refreshIn = REFRESH - 1;
         }
-        if (network && be.clampBasicBuffer && be.output > 0
+        boolean pooled = be.grid.size() > 1;
+        // the basic panel's 2 EU buffer; in a grid it holds the grid's pool (0.1.11.155)
+        if (network && be.clampBasicBuffer && !pooled && be.output > 0
                 && be.energyStorage.scexExactAmount().compareTo(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(2)) > 0)
             be.energyStorage.setEnergy(2);
-        boolean full = be.energyStorage.getAmount() >= be.energyStorage.getCapacity();
+        // 0.1.11.155: a panel in a grid stops when the grid is full
+        boolean full = pooled ? be.grid.full() : be.energyStorage.getAmount() >= be.energyStorage.getCapacity();
         double made = be.output > 0 && !full ? be.produce(be.output) : 0;
+        if (made > 0) {
+            be.gridMade += made;
+            if (pooled) be.grid.produced(made);
+        }
         be.isGenerating = made > 0;
         be.record(level.getDayTime(), made);
         if (wasGenerating != be.isGenerating) {
@@ -330,9 +355,71 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     public int getDayPower() { return dayPower; }
     public SolarProfile getProfile() { return profile; }
 
-    /** 0.1.11.100: a profile may send several packets of its tier a tick (the network reads this). */
+    /**
+     * 0.1.11.100: a profile may send several packets of its tier a tick (the network reads this). 0.1.11.154: a panel in a
+     * grid sends the packets of the whole grid (at most {@link com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy#MAX_PACKETS_PER_ROUND}).
+     */
     @Override
-    public int getPacketCount() { return profile.packets(); }
+    public int getPacketCount() {
+        SolarGrid g = grid;
+        return g == null ? profile.packets() : g.packets(profile.packets(), com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy.MAX_PACKETS_PER_ROUND);
+    }
+
+    /** 0.1.11.154: the storage the grid spreads energy over. */
+    com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage gridStorage() { return energyStorage; }
+
+    /** 0.1.11.155: the panel's own capacity (alone). */
+    long baseCapacity() { return baseCapacity; }
+
+    /** 0.1.11.155: joins a grid: the storage takes {@code capacity} (the grid's, or its own alone); nothing drawn yet. */
+    void joinGrid(long capacity) {
+        if (energyStorage.getCapacity() != capacity) energyStorage.setCapacity(capacity);
+        gridAfter = energyStorage.scexNetworkControlled() ? energyStorage.scexExactAmount().toDouble() : energyStorage.getAmount();
+        gridMade = 0;
+    }
+
+    /** 0.1.11.154: the panels of this panel's grid (1 alone). */
+    public int getGridSize() { SolarGrid g = grid; return g != null && g.valid() ? g.size() : 1; }
+    public @Nullable SolarGrid getGrid() { return grid; }
+
+    // ---- grid-tie lifecycle (0.1.11.154) -----------------------------------------------------------------------------
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) regrid(getBlockState());
+    }
+
+    @Override
+    public void setRemoved() {
+        if (grid != null) grid.invalidate();
+        super.setRemoved();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void setBlockState(BlockState state) {
+        BlockState old = getBlockState();
+        super.setBlockState(state);
+        if (level == null || level.isClientSide || old.getBlock() == state.getBlock() && facing(old) == facing(state)) return;
+        regrid(old);
+        regrid(state);
+    }
+
+    private static Direction facing(BlockState state) {
+        return state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)
+            ? state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING) : Direction.NORTH;
+    }
+
+    /** This panel's grid and those of the neighbours it ties to in {@code state} are looked for again on their next tick. */
+    private void regrid(BlockState state) {
+        if (grid != null) grid.invalidate();
+        grid = null;
+        for (Direction side : com.miophas.singularity_iteration.common.block.generator.SolarFootprint.gridSides(state)) {
+            BlockPos next = worldPosition.relative(side);
+            if (level.isLoaded(next) && level.getBlockEntity(next) instanceof mio_icif_solar_generator other && other.grid != null) other.grid.invalidate();
+        }
+    }
     public int getCorePower() { return corePower; }
     public int getChargeSlots() { return chargeSlots; }
     public double getIrradiance() { return irradiance; }
@@ -374,6 +461,11 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
                         | (com.miophas.singularity_iteration.common.energy.SolarRoutes.photonResonance(profile) ? 4 : 0);
                     case DATA_PROFILE + 2 -> (int) Math.round(com.miophas.singularity_iteration.common.energy.SolarRoutes.cooling(profile) * 1000);
                     case DATA_PROFILE + 3 -> (int) Math.round(nightSky * 1000);
+                    case DATA_GRID -> getGridSize();
+                    case DATA_GRID + 1, DATA_GRID + 2 -> { SolarGrid g = grid;
+                        yield half(g != null && g.valid() && g.size() > 1 ? g.stored() : energyStorage.getAmount(), i == DATA_GRID + 1); }
+                    case DATA_GRID + 3, DATA_GRID + 4 -> { SolarGrid g = grid;
+                        yield half(g != null && g.valid() && g.size() > 1 ? g.capacity() : energyStorage.getCapacity(), i == DATA_GRID + 3); }
                     default -> {
                         int k = (i - 16) * 2;
                         if (k < 0 || k + 1 >= SAMPLES) yield 0;
@@ -383,6 +475,9 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
             }
         };
     }
+
+    /** The high or low 32 bits of a long, for the menu data. */
+    private static int half(long v, boolean high) { return high ? (int) (v >>> 32) : (int) v; }
 
     // ---- save ----------------------------------------------------------------------------------------------------------
 

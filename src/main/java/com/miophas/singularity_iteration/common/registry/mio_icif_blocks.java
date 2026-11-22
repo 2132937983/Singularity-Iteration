@@ -294,32 +294,32 @@ public static final DeferredBlock<mio_icif_Block_Geo_Generator> GEO_GENERATOR =
 
     // 注册太阳能发电机方块
     public static final DeferredBlock<mio_icif_Block_Solar_Generator> SOLAR_GENERATOR =
-        registerBlock("generator/block_solar_generator", () -> new mio_icif_Block_Solar_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_solar_generator", () -> new mio_icif_Block_Solar_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     // 注册高级太阳能发电机方块
     public static final DeferredBlock<mio_icif_Block_AdvancedSolarPanel> ADVANCED_SOLAR_PANEL =
-        registerBlock("generator/block_advanced_solar_panel", () -> new mio_icif_Block_AdvancedSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_advanced_solar_panel", () -> new mio_icif_Block_AdvancedSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     // 注册混合太阳能发电机方块
     public static final DeferredBlock<mio_icif_Block_HybridSolarPanel> HYBRID_SOLAR_PANEL =
-        registerBlock("generator/block_hybrid_solar_panel", () -> new mio_icif_Block_HybridSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_hybrid_solar_panel", () -> new mio_icif_Block_HybridSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     // 注册终极混合太阳能发电机方块
     public static final DeferredBlock<mio_icif_Block_UltimateHybridSolarPanel> ULTIMATE_HYBRID_SOLAR_PANEL =
-        registerBlock("generator/block_ultimate_hybrid_solar_panel", () -> new mio_icif_Block_UltimateHybridSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_ultimate_hybrid_solar_panel", () -> new mio_icif_Block_UltimateHybridSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     // 注册量子太阳能发电机方块
     public static final DeferredBlock<mio_icif_Block_QuantumSolarPanel> QUANTUM_SOLAR_PANEL =
-        registerBlock("generator/block_quantum_solar_panel", () -> new mio_icif_Block_QuantumSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_quantum_solar_panel", () -> new mio_icif_Block_QuantumSolarPanel(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final DeferredBlock<mio_icif_Block_MetsAdvancedSolarGenerator> METS_ADVANCED_SOLAR_GENERATOR =
-        registerBlock("generator/block_mets_advanced_solar_generator", () -> new mio_icif_Block_MetsAdvancedSolarGenerator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_mets_advanced_solar_generator", () -> new mio_icif_Block_MetsAdvancedSolarGenerator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final DeferredBlock<mio_icif_Block_PhotonResonanceSolarGenerator> PHOTON_RESONANCE_SOLAR_GENERATOR =
-        registerBlock("generator/block_photon_resonance_solar_generator", () -> new mio_icif_Block_PhotonResonanceSolarGenerator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_photon_resonance_solar_generator", () -> new mio_icif_Block_PhotonResonanceSolarGenerator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final DeferredBlock<mio_icif_Block_UltimatePhotonResonanceSolarGenerator> ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR =
-        registerBlock("generator/block_ultimate_photon_resonance_solar_generator", () -> new mio_icif_Block_UltimatePhotonResonanceSolarGenerator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_ultimate_photon_resonance_solar_generator", () -> new mio_icif_Block_UltimatePhotonResonanceSolarGenerator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     // 注册量子发电机方块
     public static final DeferredBlock<mio_icif_Block_QuantumGenerator> QUANTUM_GENERATOR =

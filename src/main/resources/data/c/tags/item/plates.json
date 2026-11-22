@@ -92,6 +92,10 @@
     {
       "id": "#c:plates/refined_iron",
       "required": false
+    },
+    {
+      "id": "#c:plates/silver",
+      "required": false
     }
   ]
 }

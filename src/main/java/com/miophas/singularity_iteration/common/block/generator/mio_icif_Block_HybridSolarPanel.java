@@ -53,9 +53,10 @@ public class mio_icif_Block_HybridSolarPanel extends mio_icif_entity_block {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState()
+        // 0.1.11.154: not where the cells its model reaches into are taken (SolarFootprint)
+        return SolarFootprint.place(context, this.defaultBlockState()
             .setValue(FACING, context.getHorizontalDirection().getOpposite())
-            .setValue(ACTIVE, false);
+            .setValue(ACTIVE, false));
     }
 
     @Nullable

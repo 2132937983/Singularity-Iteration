@@ -30,7 +30,7 @@ public class mio_icif_block_wire_fuse extends mio_icif_block_wire_breaker {
         instance.group(propertiesCodec()).apply(instance, mio_icif_block_wire_fuse::new));
 
     public mio_icif_block_wire_fuse(Properties properties) {
-        super(properties);
+        super(properties, 3, 3);   // 0.1.11.152: as its model: 6 px throughout (was a 4 px box)
     }
 
     @Override

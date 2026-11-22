@@ -134,6 +134,9 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> IRIDIUM_DUST_SMALL = ITEMS.register("resource/item_iridium_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILICONDIOXIDE_DUST = ITEMS.register("resource/item_silicondioxide_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILVER_CASING = ITEMS.register("resource/item_silver_casing", () -> new Item(new Item.Properties()));
+    // 0.1.11.153: the silver plate and dense silver plate (the casing had no recipe until then: it is made from the plate)
+    public static final DeferredItem<Item> SILVER_PLATE = ITEMS.register("resource/item_silver_plate", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> SILVER_DENSEPLATE = ITEMS.register("resource/item_silver_denseplate", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILVER_DUST = ITEMS.register("resource/item_silver_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILVER_DUST_SMALL = ITEMS.register("resource/item_silver_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILVER_INGOT = ITEMS.register("resource/item_silver_ingot", () -> new Item(new Item.Properties()));

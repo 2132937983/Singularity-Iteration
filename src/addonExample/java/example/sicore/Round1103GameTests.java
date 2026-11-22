@@ -79,7 +79,8 @@ public final class Round1103GameTests {
         {"cable/block_glass_cable", 3}, {"cable/block_superconducting_cable", 3},   // 0.1.11.29: 6 px core and shell
         {"cable/block_tin_cable_1", 3}, {"cable/block_cable", 3}, {"cable/block_gold_cable_1", 3}, {"cable/block_iron_cable_1", 3},
         {"cable/block_gold_cable_2", 4}, {"cable/block_iron_cable_2", 4}, {"cable/block_iron_cable_3", 5},
-        {"block_eu_detector_cable", 2}, {"block_eu_splitter_cable", 2}};   // insulated IV, drawn 4 px
+        // 0.1.11.152: the special cables as their models: an 8 px core (6 px arms, Round111152GameTests); the fuse 6 px
+        {"block_eu_detector_cable", 4}, {"block_eu_splitter_cable", 4}, {"block_eu_breaker_cable", 4}, {"block_eu_fuse_cable", 3}};
 
     @GameTest(batch = "round1103_cable", template = "empty", timeoutTicks = 20)
     public static void cableOutlineFollowsTheModel(GameTestHelper h) {
@@ -88,7 +89,7 @@ public final class Round1103GameTests {
             Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "wiring/" + c[0]));
             h.assertTrue(block != Blocks.AIR, "missing cable " + c[0]);
             int r = (Integer) c[1];
-            h.assertTrue((Integer) Round33GameTests.call(block, "getShapeRadius") == r, c[0] + " radius " + Round33GameTests.call(block, "getShapeRadius") + " != model " + r);
+            h.assertTrue((Integer) Round33GameTests.call(block, "getCoreRadius") == r, c[0] + " core radius " + Round33GameTests.call(block, "getCoreRadius") + " != model " + r);
             h.setBlock(pos, block);
             h.setBlock(next, Blocks.AIR);
             AABB core = h.getLevel().getBlockState(h.absolutePos(pos)).getShape(h.getLevel(), h.absolutePos(pos)).bounds();

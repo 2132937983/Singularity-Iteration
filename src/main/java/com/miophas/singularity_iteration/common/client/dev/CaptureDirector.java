@@ -2711,6 +2711,70 @@ public final class CaptureDirector {
         client(40, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "solar_models", 0.1.11.154: the eight solar panels with SCXSYGL's models, fronts to the camera, three cells apart;
+     * behind them a grid of four advanced panels (left to right) with one cable to an MFSU, and a grid of four METS panels
+     * (front to back) with cables under their wings. From the front, from the side, at an angle, the grids, and the screen of a
+     * panel in a grid (the shared storage).
+     */
+    private static void sceneSolarModels() {
+        String[] panels = {"block_solar_generator", "block_advanced_solar_panel", "block_hybrid_solar_panel", "block_ultimate_hybrid_solar_panel",
+            "block_quantum_solar_panel", "block_mets_advanced_solar_generator", "block_photon_resonance_solar_generator",
+            "block_ultimate_photon_resonance_solar_generator"};
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        until(600, () -> Minecraft.getInstance().player != null && Minecraft.getInstance().getSingleplayerServer() != null);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            java.util.function.Function<String, net.minecraft.world.level.block.Block> block = path ->
+                net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", path));
+            var facing = net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING;
+            var south = net.minecraft.core.Direction.SOUTH;
+            for (int i = 0; i < panels.length; i++)
+                level.setBlock(new BlockPos(3 * i, -60, -20), block.apply("generator/" + panels[i]).defaultBlockState().setValue(facing, south), 3);
+            // the advanced grid: left to right, one cable to an MFSU
+            for (int i = 0; i < 4; i++)
+                level.setBlock(new BlockPos(i, -60, -27), block.apply("generator/block_advanced_solar_panel").defaultBlockState().setValue(facing, south), 3);
+            level.setBlock(new BlockPos(4, -60, -27), block.apply("wiring/cable/block_glass_cable").defaultBlockState(), 3);
+            level.setBlock(new BlockPos(5, -60, -27), block.apply("wiring/block_mfsu").defaultBlockState(), 3);
+            // the METS grid: front to back, cables under the wings on one side
+            for (int i = 0; i < 4; i++) {
+                level.setBlock(new BlockPos(12, -60, -30 + i), block.apply("generator/block_mets_advanced_solar_generator").defaultBlockState().setValue(facing, south), 3);
+                level.setBlock(new BlockPos(13, -60, -30 + i), block.apply("wiring/cable/block_glass_cable").defaultBlockState(), 3);
+            }
+            look(sp, 10.5, -57.5, -11.5, 180, 14);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        client(60, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "solar_models/1_front");
+        server(1, sp -> look(sp, -6.5, -58.0, -19.5, 270, 12));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "solar_models/2_side");
+        server(1, sp -> look(sp, 4.5, -57.0, -14.5, 210, 22));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "solar_models/3_angle_left");
+        server(1, sp -> look(sp, 18.5, -57.0, -14.5, 150, 22));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "solar_models/4_angle_right");
+        server(1, sp -> look(sp, 7.5, -56.5, -21.0, 160, 30));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "solar_models/5_grids");
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            BlockPos at = new BlockPos(1, -60, -27);
+            look(sp, 1.5, -60, -24.5, 180, 20);
+            var hit = new net.minecraft.world.phys.BlockHitResult(at.getCenter(), net.minecraft.core.Direction.SOUTH, at, false);
+            level.getBlockState(at).useWithoutItem(level, sp, hit);
+        });
+        client(30, () -> { CaptureDirector.hoverGui = null; Minecraft.getInstance().options.hideGui = false; });
+        shot(1, "solar_models/6_grid_screen");
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
     private static void sceneFusionFx() {
         BlockPos c = new BlockPos(30, -55, 10);
         var ref = new java.util.concurrent.atomic.AtomicReference<com.miophas.singularity_iteration.common.blockentity.fusion.FusionControllerBlockEntity>();
@@ -4593,6 +4657,13 @@ public final class CaptureDirector {
         if (OUT != null && "slot_silhouettes".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneSlotSilhouettes();
+        }
+    }
+
+    static {
+        if (OUT != null && "solar_models".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSolarModels();
         }
     }
 

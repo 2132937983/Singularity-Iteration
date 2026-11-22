@@ -38,7 +38,12 @@ public class mio_icif_block_wire_breaker extends mio_icif_block_wire {
         instance.group(propertiesCodec()).apply(instance, mio_icif_block_wire_breaker::new));
 
     public mio_icif_block_wire_breaker(Properties properties) {
-        super(properties, CableTier.IV, 1, 2);
+        this(properties, 3, 4);   // 0.1.11.152: as its model: 6 px arms, an 8 px core (was a 4 px box)
+    }
+
+    /** 0.1.11.152: the half widths (pixels) of the arms and the core, as the model draws them (the fuse: 6 px throughout). */
+    protected mio_icif_block_wire_breaker(Properties properties, int armRadius, int coreRadius) {
+        super(properties, CableTier.IV, 1, armRadius, coreRadius);
         this.registerDefaultState(this.defaultBlockState().setValue(ACTIVE, true));
     }
 

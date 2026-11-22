@@ -27,7 +27,7 @@ public class mio_icif_block_wire_detector extends mio_icif_block_wire {
         instance.group(propertiesCodec()).apply(instance, mio_icif_block_wire_detector::new));
 
     public mio_icif_block_wire_detector(Properties properties) {
-        super(properties, CableTier.IV, 1, 2);   // 0.1.10.3: insulated, but the model is 4 px thick (outline radius 2)
+        super(properties, CableTier.IV, 1, 3, 4);   // 0.1.11.152: as its model: 6 px arms, an 8 px core (was a 4 px box)
         this.registerDefaultState(this.defaultBlockState().setValue(ACTIVE, false));
     }
 

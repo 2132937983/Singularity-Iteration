@@ -2487,6 +2487,17 @@ public class mio_icif_capacities {
         // 0.1.10.38: the reactor chamber is a fluid port of its reactor (coolant in), like the steam reactor chamber
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.REACTOR_CHAMBER_ENTITY_TYPE.get(),
             (blockEntity, direction) -> blockEntity.getFluidHandlerCapability(direction));
+        // 0.1.11.152: pipes and hoppers reach the reactor's 54 component slots through its chambers and (a fluid reactor) its access
+        // hatches, as in IC2: with six chambers, or inside the 5x5x5 vessel, the reactor itself has no free face. The reactor's own
+        // automation handler (supported components, one a slot, nothing while it cannot operate)
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.REACTOR_CHAMBER_ENTITY_TYPE.get(), (chamber, direction) -> {
+            var reactor = chamber.getConnectedReactor();
+            return reactor == null ? null : reactor.getItemHandlerCapability(direction);
+        });
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.REACTOR_ACCESS_HATCH_ENTITY_TYPE.get(), (hatch, direction) -> {
+            var reactor = hatch.getConnectedReactor();
+            return reactor == null ? null : reactor.getItemHandlerCapability(direction);
+        });
 
         // Register capabilities for Reactor Chamber (核反应仓)
         // 核反应仓本身没有存储，只是转发到连接的核反应堆

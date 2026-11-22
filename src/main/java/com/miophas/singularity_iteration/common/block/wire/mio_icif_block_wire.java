@@ -158,6 +158,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     static {
         for (int r = 2; r <= 6; r++) SHAPES_BY_RADIUS[r] = r == 2 ? CONNECTION_SHAPES : createConnectionShapes(r);
     }
+    /** 0.1.11.152: shapes with a core wider than the arms (the EU detector, splitter and breaker cables), by arm * 8 + core. */
+    private static final java.util.Map<Integer, VoxelShape[]> SHAPES_BY_ARM_AND_CORE = new java.util.concurrent.ConcurrentHashMap<>();
     
     // 电缆等级
     protected final CableTier cableTier;
@@ -166,6 +168,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     private final int insulationLayers;
     /** 0.1.10.3: half width of the cable in pixels, as its model draws it (see SHAPES_BY_RADIUS). */
     private final int shapeRadius;
+    /** 0.1.11.152: half width of the core in pixels (its arms' half width unless the model draws a wider core). */
+    private final int coreRadius;
     private static final java.util.Map<CableTier, java.util.Map<Integer, mio_icif_block_wire>> LAYERS = new java.util.HashMap<>();
     
     /**
@@ -206,11 +210,21 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
      * 2..6): the detector and splitter cables are insulated but drawn bare-thin.
      */
     protected mio_icif_block_wire(Properties properties, CableTier cableTier, int layers, int shapeRadius) {
+        this(properties, cableTier, layers, shapeRadius, shapeRadius);
+    }
+
+    /**
+     * 0.1.11.152: a cable whose model draws a core wider than its arms ({@code coreRadius} > {@code shapeRadius}, half widths in
+     * pixels): the EU detector, splitter and breaker cables (an 8 px core, 6 px arms). Outline, collision and the wrench's core
+     * all follow it.
+     */
+    protected mio_icif_block_wire(Properties properties, CableTier cableTier, int layers, int shapeRadius, int coreRadius) {
         super(properties);
         this.cableTier = cableTier;
         this.insulated = layers > 0;
         this.insulationLayers = layers;
         this.shapeRadius = Math.clamp(shapeRadius, 2, 6);
+        this.coreRadius = Math.clamp(Math.max(coreRadius, this.shapeRadius), 2, 7);
         // 0.1.11.29: only plain cables take part in "one layer more / less": the special cables (IV, 1 layer) took the
         // place of insulated glass fibre, so rubber on glass fibre made a splitter cable
         if (getClass() == mio_icif_block_wire.class)
@@ -242,6 +256,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     public int getInsulationLayers() { return insulationLayers; }
     /** 0.1.10.3: half width of the cable in pixels (2 bare, +1 per insulation layer). */
     public int getShapeRadius() { return shapeRadius; }
+    /** 0.1.11.152: half width of the core in pixels (as {@link #getShapeRadius} unless the model's core is wider). */
+    public int getCoreRadius() { return coreRadius; }
 
     public mio_icif_block_wire getBareCounterpart() {
         if (!insulated || getClass() != mio_icif_block_wire.class) return null;   // 0.1.11.29: the special cables have none
@@ -332,16 +348,23 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         if (state.getValue(WEST)) connectionMask |= WEST_SHAPE_BIT;
         if (state.getValue(UP)) connectionMask |= UP_SHAPE_BIT;
         if (state.getValue(DOWN)) connectionMask |= DOWN_SHAPE_BIT;
+        if (coreRadius != shapeRadius)
+            return SHAPES_BY_ARM_AND_CORE.computeIfAbsent(shapeRadius * 8 + coreRadius, k -> createConnectionShapes(shapeRadius, coreRadius))[connectionMask];
         return SHAPES_BY_RADIUS[shapeRadius][connectionMask];
     }
 
     /** All 64 connection shapes of a cable {@code r} pixels in half width (core plus arms to the block faces). */
     private static VoxelShape[] createConnectionShapes(int r) {
-        double lo = 8 - r, hi = 8 + r;
-        VoxelShape center = Block.box(lo, lo, lo, hi, hi, hi);
-        VoxelShape north = Block.box(lo, lo, 0, hi, hi, lo), south = Block.box(lo, lo, hi, hi, hi, 16);
-        VoxelShape east = Block.box(hi, lo, lo, 16, hi, hi), west = Block.box(0, lo, lo, lo, hi, hi);
-        VoxelShape up = Block.box(lo, hi, lo, hi, 16, hi), down = Block.box(lo, 0, lo, hi, lo, hi);
+        return createConnectionShapes(r, r);
+    }
+
+    /** 0.1.11.152: arms of half width {@code r} from the block's faces to a core of half width {@code c} (c >= r). */
+    private static VoxelShape[] createConnectionShapes(int r, int c) {
+        double lo = 8 - r, hi = 8 + r, clo = 8 - c, chi = 8 + c;
+        VoxelShape center = Block.box(clo, clo, clo, chi, chi, chi);
+        VoxelShape north = Block.box(lo, lo, 0, hi, hi, clo), south = Block.box(lo, lo, chi, hi, hi, 16);
+        VoxelShape east = Block.box(chi, lo, lo, 16, hi, hi), west = Block.box(0, lo, lo, clo, hi, hi);
+        VoxelShape up = Block.box(lo, chi, lo, hi, 16, hi), down = Block.box(lo, 0, lo, hi, clo, hi);
         VoxelShape[] shapes = new VoxelShape[1 << 6];
         for (int connectionMask = 0; connectionMask < shapes.length; connectionMask++) {
             VoxelShape shape = center;
@@ -1007,6 +1030,6 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
 
     /** Half width of the core in blocks for a cable state (bare size for any other block). */
     private static double coreHalf(BlockState state) {
-        return (state.getBlock() instanceof mio_icif_block_wire wire ? wire.shapeRadius : 2) / 16.0;
+        return (state.getBlock() instanceof mio_icif_block_wire wire ? wire.coreRadius : 2) / 16.0;   // 0.1.11.152: the core's
     }
 }

@@ -56,6 +56,10 @@
     {
       "id": "#c:dense_plates/refined_iron",
       "required": false
+    },
+    {
+      "id": "#c:dense_plates/silver",
+      "required": false
     }
   ]
 }

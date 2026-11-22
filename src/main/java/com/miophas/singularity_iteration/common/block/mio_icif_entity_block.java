@@ -72,7 +72,12 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock implements c
         "wiring/block_batbox_charger", "wiring/block_cesu_charger", "wiring/block_mfe_charger",
         "wiring/block_mfsu_charger", "wiring/block_lesu_charger", "wiring/block_eesu_charger",
         "wiring/block_energy_terminal", "wiring/block_eu_detector_cable", "wiring/block_eu_splitter_cable",
-        "producer/block_laser_defense_tower", "producer/block_sky_patrol_laser_tower");
+        "producer/block_laser_defense_tower", "producer/block_sky_patrol_laser_tower",
+        // 0.1.11.154: the solar panels' models (SCXSYGL) reach into the cells around them
+        "generator/block_solar_generator", "generator/block_advanced_solar_panel", "generator/block_hybrid_solar_panel",
+        "generator/block_ultimate_hybrid_solar_panel", "generator/block_quantum_solar_panel",
+        "generator/block_mets_advanced_solar_generator", "generator/block_photon_resonance_solar_generator",
+        "generator/block_ultimate_photon_resonance_solar_generator");
     private Boolean machineModel;
 
     protected boolean usesMachineModel() {

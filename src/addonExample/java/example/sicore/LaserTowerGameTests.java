@@ -178,13 +178,23 @@ public final class LaserTowerGameTests {
         inv.insertItem(2, item("upgrade/transformer_upgrade", 1), false);
         List<Husk> targets = zombies(h, 7);
         long start = tower.getEnergyStorageInternal().getAmount();
+        // 0.1.11.155: judged on the first volley, kept when it is seen, and on the tower's own hits (its stats). The check used
+        // the spend at each later tick (a first look that failed never recovered and the report gave the last volleys' spend)
+        // and counted every hurt husk: the radiation zones the nuclear tests leave in the test world hurt some when the test
+        // lands in one.
+        long[] first = {0, 0, 0};   // EU spent, the tower's hits, tick
         h.succeedWhen(() -> {
             long spent = start - tower.getEnergyStorageInternal().getAmount();
-            h.assertTrue(spent > 0, "Tower has not fired yet");
-            if (spent != 5 * 3_200L) h.fail("Two overclockers must cost ceil(1250*1.6^2)=3200 EU per target, spent " + spent);
+            if (first[0] == 0 && spent > 0) {
+                first[0] = spent;
+                first[1] = tower.saveWithoutMetadata(h.getLevel().registryAccess()).getCompound("TowerStats").getLong("Hits");
+                first[2] = h.getTick();
+            }
+            h.assertTrue(first[0] > 0, "Tower has not fired yet");
+            if (first[0] != 5 * 3_200L) h.fail("Two overclockers must cost ceil(1250*1.6^2)=3200 EU per target, the first volley seen (tick " + first[2] + ", " + first[1] + " hits) spent " + first[0]);
             if (tower.getEffectiveCableTier().getTier() != baseTier + 1) h.fail("Transformer upgrade must raise the input tier: " + baseTier + " -> " + tower.getEffectiveCableTier().getTier());
             if (tower.getEffectiveMaxReceive() <= baseReceive) h.fail("Transformer upgrade must raise the accepted packet size");
-            h.assertTrue(hurt(targets) == 5, "Overclocked tower still hits 5 per volley");
+            h.assertTrue(first[1] == 5, "Overclocked tower still hits 5 per volley (the first volley seen hit " + first[1] + ")");
             CompoundTag saved = tower.saveWithoutMetadata(h.getLevel().registryAccess());
             h.assertTrue(saved.toString().contains("overclocker_upgrade"), "Upgrades must persist with the tower");
         });

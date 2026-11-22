@@ -462,6 +462,8 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_resources.SILVER_INGOT.get());
                 output.accept(mio_icif_resources.SILVER_DUST.get());
                 output.accept(mio_icif_resources.SILVER_DUST_SMALL.get());
+                output.accept(mio_icif_resources.SILVER_PLATE.get());          // 0.1.11.153
+                output.accept(mio_icif_resources.SILVER_DENSEPLATE.get());
                 output.accept(mio_icif_resources.SILVER_CASING.get());
                 output.accept(mio_icif_resources.SILVER_ORE_CRUSHED.get());
                 output.accept(mio_icif_resources.SILVER_ORE_CRUSHED_PURIFIED.get());

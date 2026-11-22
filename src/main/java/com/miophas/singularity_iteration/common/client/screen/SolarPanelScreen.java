@@ -152,7 +152,10 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
         if (resonance()) env.append(" · ").append(Component.translatable(K + "night_sky", f2(v(mio_icif_solar_generator.DATA_PROFILE + 3) / 1000.0)));
         WindRoseView.line(g, env.append(" · ").append(Component.translatable(K + shade)), tx, ty + lh, WindRoseView.DIM, w);
         double out = v(2) / 100.0, rated = v(3) / 100.0;
-        boolean full = v(10) >= v(11) && v(11) > 0;
+        // 0.1.11.155: a panel in a grid is full when the grid is
+        boolean full = v(mio_icif_solar_generator.DATA_GRID) > 1
+            ? wide(mio_icif_solar_generator.DATA_GRID + 1) >= wide(mio_icif_solar_generator.DATA_GRID + 3) && wide(mio_icif_solar_generator.DATA_GRID + 3) > 0
+            : v(10) >= v(11) && v(11) > 0;
         String state; int colour;
         if (v(15) != 0) { state = resonance() ? "state.sky" : "state.core"; colour = 0x2A5D8A; }
         else if (out <= 0 && v(13) <= 0) { state = "state.night"; colour = WindRoseView.DIM; }
@@ -172,9 +175,29 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
 
     private void strip(GuiGraphics g, int x, int sy) {
         // 0.1.11.121: vanilla font, furnace-style bar
+        int panels = v(mio_icif_solar_generator.DATA_GRID);
+        if (panels > 1) {   // 0.1.11.154: a grid shows the storage it shares
+            long e = wide(mio_icif_solar_generator.DATA_GRID + 1), cap = Math.max(1, wide(mio_icif_solar_generator.DATA_GRID + 3));
+            VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored_grid", panels), Math.min(1.0, e / (double) cap),
+                Component.literal(compact(e) + " / " + compact(cap) + " EU"));
+            return;
+        }
         long e = Integer.toUnsignedLong(v(10)), cap = Math.max(1, Integer.toUnsignedLong(v(11)));
         VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
             Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
+    }
+
+    /** A long sent as its high and low int. */
+    private long wide(int i) { return ((long) v(i) << 32) | Integer.toUnsignedLong(v(i + 1)); }
+
+    /** EU in full below ten million, else in k, M or G with three figures. */
+    private static String compact(long v) {
+        if (v < 10_000_000L) return String.format(Locale.ROOT, "%,d", v);
+        String[] units = {"k", "M", "G", "T", "P"};
+        double d = v;
+        int u = -1;
+        while (d >= 1000 && u < units.length - 1) { d /= 1000; u++; }
+        return String.format(Locale.ROOT, d >= 100 ? "%.0f%s" : d >= 10 ? "%.1f%s" : "%.2f%s", d, units[u]);
     }
 
     @Override

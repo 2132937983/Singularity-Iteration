@@ -16,7 +16,7 @@ public class mio_icif_resources {
     // 材料
     
     public static final DeferredItem<Item> ADVIRON_CASING = ITEMS.register("resource/item_adviron_casing", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> ADVIRON_CUTBLADE = ITEMS.register("resource/item_adviron_cutblade", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> ADVIRON_CUTBLADE = ITEMS.register("resource/item_adviron_cutblade", () -> new Item(new Item.Properties().durability(256)));   // 0.1.11.179: the middle blade (hardness 5), wears in the block cutter
     public static final DeferredItem<Item> ADVIRON_DENSEPLATE = ITEMS.register("resource/item_adviron_denseplate", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> ADVIRON_INGOT = ITEMS.register("resource/item_adviron_ingot", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> ADVIRON_PLATE = ITEMS.register("resource/item_adviron_plate", () -> new Item(new Item.Properties()));

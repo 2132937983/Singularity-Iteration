@@ -366,10 +366,13 @@ public class FusionControllerScreen extends mio_icif_screen<FusionControllerMenu
         List<Component> lines = null;
         String key = part(rx - DX, ry - DY);
         if (key != null) {
-            lines = new ArrayList<>();
-            lines.add(Component.translatable(K + "tip." + key + ".title"));
-            lines.add(Component.translatable(K + "tip." + key).withStyle(ChatFormatting.GRAY));
-            if (key.equals("cryostat")) lines.add(Component.translatable(K + "ports", v(18), v(19), v(23), v(22), v(21), v(24)).withStyle(ChatFormatting.DARK_GRAY));
+            // EXPLAIN_TIP_HIDDEN (0.1.11.182): the parts' names and how-it-works texts are hidden for now; the cryostat keeps its port count
+            // lines = new ArrayList<>();
+            // lines.add(Component.translatable(K + "tip." + key + ".title"));
+            // lines.add(Component.translatable(K + "tip." + key).withStyle(ChatFormatting.GRAY));
+            // if (key.equals("cryostat")) lines.add(Component.translatable(K + "ports", v(18), v(19), v(23), v(22), v(21), v(24)).withStyle(ChatFormatting.DARK_GRAY));
+            if (key.equals("cryostat")) lines = List.of(Component.translatable(K + "tip.cryostat.title"),
+                Component.translatable(K + "ports", v(18), v(19), v(23), v(22), v(21), v(24)).withStyle(ChatFormatting.DARK_GRAY));
         } else if (rx >= DX - 1 && ry >= RY && rx < DX + DW + 1 && ry < RY + RH && (v(0) == 3 || v(0) == 4)) {
             lines = balance();
         } else if (rx >= HEAT_X && rx < HEAT_X + 4 && ry >= FusionControllerMenu.GRID_Y - 1 && ry < FusionControllerMenu.GRID_Y + FusionBlanket.ROWS * 18) {

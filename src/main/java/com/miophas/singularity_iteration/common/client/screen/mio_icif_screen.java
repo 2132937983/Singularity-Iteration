@@ -543,11 +543,12 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         if (!hasDock()) return;
         int[] b = dockBounds();
         int x = b[0], y = b[1], w = b[2], h = b[3];
-        // slim tab hugging the panel: outline, bevel, light face, cyan index stripe on the outer edge
-        g.fill(x, y, x + w + 2, y + h, SiGuiTheme.OUTLINE);
-        g.fill(x + 1, y + 1, x + w + 1, y + h - 1, SiGuiTheme.BEVEL_HI);
-        g.fillGradient(x + 2, y + 2, x + w + 1, y + h - 1, SiGuiTheme.PANEL_TOP, SiGuiTheme.PANEL_BOTTOM);
-        g.fill(x + 1, y + 3, x + 2, y + h - 3, 0xFF5FD3F5);
+        // slim tab hugging the panel (0.1.11.183: the vanilla panel's outline, white upper-left and dark lower bevel)
+        g.fill(x, y, x + w + 2, y + h, VanillaFrame.OUTLINE);
+        g.fill(x + 1, y + 1, x + w + 1, y + h - 1, VanillaFrame.PANEL);
+        g.fill(x + 1, y + 1, x + w + 1, y + 3, VanillaFrame.LIGHT);
+        g.fill(x + 1, y + 1, x + 3, y + h - 3, VanillaFrame.LIGHT);
+        g.fill(x + 3, y + h - 3, x + w + 1, y + h - 1, VanillaFrame.SHADOW);
         int slots = dockSlots();
         for (int i = 0; i < slots; i++) {
             SiGuiTheme.slot(g, leftPos + com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu.DOCK_SLOT_X - 1,
@@ -559,10 +560,10 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         for (int i = 0; i < dockButtons.size(); i++) {
             int by = dockButtonY(i);
             boolean hov = i == hovered;
-            g.fill(bx, by, bx + DOCK_BUTTON, by + DOCK_BUTTON, SiGuiTheme.OUTLINE);
-            g.fillGradient(bx + 1, by + 1, bx + DOCK_BUTTON - 1, by + DOCK_BUTTON - 1,
-                hov ? 0xFFF3F8FC : 0xFFE6E9EC, hov ? 0xFFC9DCEE : 0xFFC4C8CD);
-            if (hov) g.renderOutline(bx, by, DOCK_BUTTON, DOCK_BUTTON, SiGuiTheme.ACCENT);
+            // 0.1.11.183: a vanilla-like raised key, lighter under the mouse
+            g.fill(bx, by, bx + DOCK_BUTTON, by + DOCK_BUTTON, VanillaFrame.SHADOW);
+            g.fill(bx, by, bx + DOCK_BUTTON - 1, by + DOCK_BUTTON - 1, VanillaFrame.LIGHT);
+            g.fill(bx + 1, by + 1, bx + DOCK_BUTTON - 1, by + DOCK_BUTTON - 1, hov ? 0xFFD8D8E8 : 0xFFB8B8B8);
             dockButtons.get(i).icon().draw(g, bx + 1, by + 1, hov);
         }
         renderOverclock(g, mouseX, mouseY);

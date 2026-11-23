@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " M ",
+    "CHC"
+  ],
+  "key": {
+    "M": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:item_electric_wireless_manager"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "H": {
+      "item": "mio_icif:wiring/block_tesu_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:normal/item_tesu_connector",
+    "count": 1
+  }
+}

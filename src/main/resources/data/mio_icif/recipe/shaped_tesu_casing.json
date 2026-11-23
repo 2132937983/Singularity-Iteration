@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "TPT",
+    "PHP",
+    "TPT"
+  ],
+  "key": {
+    "T": {
+      "tag": "c:plates/titanium"
+    },
+    "P": {
+      "tag": "c:plates/alloy"
+    },
+    "H": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_tesu_casing",
+    "count": 8
+  }
+}

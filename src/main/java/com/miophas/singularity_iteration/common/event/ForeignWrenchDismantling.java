@@ -42,7 +42,8 @@ public final class ForeignWrenchDismantling {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
         BlockState state = level.getBlockState(pos);
-        if (!state.is(mio_icif_tags.MACHINE)) return;
+        // 0.1.11.171: machines, casings and ports as every SI wrench sees them
+        if (!com.miophas.singularity_iteration.common.item.tools.WrenchRules.dismantlable(state)) return;
 
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);

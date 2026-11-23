@@ -15,11 +15,15 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
- * 装罐机界面. 0.1.11.116 (processing overhaul M9): the instrument screen (docs/gui_processing_machines.md). The figure has the
- * input tank on the left, the output tank on the right and the can or cell in the middle under its filler; the pipes
- * that work in the current mode carry moving dots: canning fills the can from the hopper, "cell to tank" empties the
- * cell into the right tank, "tank to cell" fills it from the left one, and mixing runs the left tank through the mixer
- * into the right one. The headline is the mode; the buttons switch the mode and swap the tanks.
+ * 装罐机界面. 0.1.11.116 (processing overhaul M9): the instrument screen (docs/gui_processing_machines.md). The headline is
+ * the mode; the buttons switch the mode and swap the tanks.
+ *
+ * <p>0.1.11.175: the first merged screen. The figure window took the panel's right two thirds for a bare drawing while the
+ * slots that matter stood small in the corner; now the machine is drawn on the panel with its slots in it, in pixel art:
+ * the input tank on the left and the output tank on the right as full-height gauges, the hopper with the material slot on
+ * top, the filler head over the can slot, the progress arrow to the output slot, the energy bolt over the battery slot at
+ * the far left. The pipes the mode works carry water (with running light while it runs): "tank to cell" and mixing from
+ * the left tank into the filler, "cell to tank" and mixing from the filler into the right tank.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -35,65 +39,66 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
     private boolean running() { return menu.getStatus() == ProcessStatus.RUNNING; }
     private int mode() { return Math.max(0, Math.min(3, menu.getMode())); }
 
-    // 0.1.11.141: the calm layout. Flat parts in two light greys (0.1.11.142: on the sunk slot-grey window); the tanks are
-    // drawn after the pixel canvas (drawOverFigure) so they show the fluid's own texture again (0.1.11.118 had to use a flat
-    // colour under the canvas).
-    private static final int FRAME = 0xFFC9CED0, INNER = 0xFFE6E9E7, IDLE_PIPE = 0xFFADB3B5;
+    // ---- 0.1.11.175: the merged layout (panel coordinates; the slots are CannerElcMenu's) ----
+    // 0.1.11.180: 176 wide (the tanks narrower, the machine between them closer)
+    private static final int TANK_IN_X = 34, TANK_OUT_X = 152, TANK_Y = 20, TANK_W = 12, TANK_H = 70;
+    private static final int PIPE_Y = 26, FILL_Y = 44, ELBOW_X = 62;
+    // 0.1.11.176: the bolt stands right on the battery slot (no gap), as in every merged screen
+    private static final int MERGED_BOLT_X = com.miophas.singularity_iteration.common.menu.MergedSlots.BOLT_X,
+        MERGED_BOLT_Y = com.miophas.singularity_iteration.common.menu.MergedSlots.BOLT_Y, MERGED_ARROW_X = 100, MERGED_ARROW_Y = 56;
 
-    /** A tank at figure offset (dx, -30), 14 x 52 figure units: a frame, its chamber and the fluid's texture to its level. */
-    private void tank(GuiGraphics g, float cx, float cy, float dx, FluidStack fluid, int capacity) {
-        int x0 = figPx(cx, dx), y0 = figPx(cy, -30), x1 = figPx(cx, dx + 14), y1 = figPx(cy, 22);
-        g.fill(x0, y0, x1, y1, FRAME);
-        g.fill(x0 + 1, y0 + 1, x1 - 1, y1 - 1, INNER);
-        if (!fluid.isEmpty() && capacity > 0) {
-            int room = y1 - y0 - 2, lv = Math.round(room * Math.min(1, fluid.getAmount() / (float) capacity));
-            if (lv == 0) lv = 1;   // a drop still shows
-            VanillaFrame.fluid(g, x0 + 1, y1 - 1 - lv, x1 - x0 - 2, lv, fluid);
-        }
-    }
-
-    @Override
-    protected void drawOverFigure(GuiGraphics g, float cx, float cy) {
-        tank(g, cx, cy, -46, menu.getInputFluid(), menu.getInputFluidCapacity());
-        tank(g, cx, cy, 32, menu.getOutputFluid(), menu.getOutputFluidCapacity());
-    }
-
-    /** A pipe from (x1, y1) to (x2, y2), with dots moving along it while it works. */
-    private void pipe(GuiGraphics g, float x1, float y1, float x2, float y2, boolean active) {
-        FcsDraw.line(g, x1, y1, x2, y2, 2.4F, active ? STEEL : IDLE_PIPE);
-        if (active && running()) for (int k = 0; k < 3; k++) {
-            float f = (flow + k / 3F) % 1;
-            FcsDraw.disc(g, x1 + (x2 - x1) * f, y1 + (y2 - y1) * f, 1.4F, 0xFF000000 | BLUE);
-        }
-    }
+    @Override protected boolean merged() { return true; }
+    @Override protected int boltX() { return MERGED_BOLT_X; }
+    @Override protected int boltY() { return MERGED_BOLT_Y; }
+    @Override protected int arrowX() { return MERGED_ARROW_X; }
+    @Override protected int arrowY() { return MERGED_ARROW_Y; }
+    /** The mode and swap buttons; 0.1.11.180: side by side right of the hopper (the output tank stands at the right edge). */
+    @Override protected int iconButtonX(int index) { return 106 + (1 - index) * 13; }
+    @Override protected int iconButtonY(int index) { return 19; }
 
     @Override
-    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) {
-        if (running()) flow = (flow + dt * 1.2F) % 1;
+    protected void drawMerged(GuiGraphics g, int x, int y, float dt) {
+        boolean run = running();
+        if (run) flow = (flow + dt * 1.2F) % 1;
+        float moving = run ? flow : -1;
         int m = mode();
-        // the tanks: drawOverFigure
-        // the filler head over the can
-        FcsDraw.fill(g, (int) cx - 8, (int) cy - 24, (int) cx + 8, (int) cy - 16, STEEL);
-        FcsDraw.fill(g, (int) cx - 2, (int) cy - 16, (int) cx + 2, (int) cy - 8, STEEL);
-        // the pipes of the mode
-        pipe(g, cx - 32, cy - 26, cx - 8, cy - 20, m == 2 || m == 3);   // left tank -> filler
-        pipe(g, cx + 8, cy - 20, cx + 32, cy - 26, m == 1 || m == 3);   // filler -> right tank
-        if (m == 0) {   // the hopper of the food or fuel
-            FcsDraw.quad(g, cx - 10, cy - 40, cx + 10, cy - 40, cx + 4, cy - 26, cx - 4, cy - 26, FRAME);
-            if (menu.getSlot(CannerElcMenu.MATERIAL_SLOT).hasItem()) FcsDraw.fill(g, (int) cx - 6, (int) cy - 37, (int) cx + 6, (int) cy - 32, FormingFigure.WORK);
-            if (running()) FcsDraw.disc(g, cx, cy - 26 + flow * 18, 1.6F, FormingFigure.WORK);
-        }
-        // the can (or cell), filled with the progress (emptied in "cell to tank")
-        int x0 = (int) cx - 9, x1 = (int) cx + 9, y0 = (int) cy - 6, y1 = (int) cy + 26;
-        FcsDraw.fill(g, x0, y0, x1, y1, FRAME);
-        FcsDraw.fill(g, x0 + 2, y0 + 2, x1 - 2, y1 - 2, INNER);
+        boolean fromLeft = m == 2 || m == 3, toRight = m == 1 || m == 3;
+        // the tanks at the two ends
+        MachineArt.tank(g, x + TANK_IN_X, y + TANK_Y, TANK_W, TANK_H, menu.getInputFluid(), menu.getInputFluidCapacity());
+        MachineArt.tank(g, x + TANK_OUT_X, y + TANK_Y, TANK_W, TANK_H, menu.getOutputFluid(), menu.getOutputFluidCapacity());
+        // the pipes: input tank -> filler head (over and down), filler head -> output tank (over the output slot)
+        int inEnd = TANK_IN_X + TANK_W + 2, outStart = TANK_OUT_X - 2, mx = CannerElcMenu.MATERIAL_X, cy = CannerElcMenu.CAN_Y;
+        MachineArt.pipeH(g, x + inEnd, x + ELBOW_X + 2, y + PIPE_Y, fromLeft, moving);
+        MachineArt.pipeV(g, x + ELBOW_X, y + PIPE_Y - 2, y + FILL_Y + 2, fromLeft, moving);
+        MachineArt.pipeH(g, x + ELBOW_X - 2, x + mx - 8, y + FILL_Y, fromLeft, moving);
+        MachineArt.pipeH(g, x + mx + 24, x + outStart, y + FILL_Y, toRight, moving);
+        // the hopper round the material slot (shut in the cell modes, which use no material)
+        MachineArt.steel(g, x + mx - 6, y + CannerElcMenu.MATERIAL_Y - 3, 28, 22);
+        if (m == 1 || m == 2) VanillaFrame.inset(g, x + mx - 1, y + CannerElcMenu.MATERIAL_Y - 1, 18, 18, MachineArt.STEEL_DARK);
+        // the filler head, its nozzle over the can, the stand under it
+        MachineArt.steel(g, x + mx - 8, y + FILL_Y - 5, 32, 10);
+        g.fill(x + mx + 5, y + FILL_Y + 5, x + mx + 11, y + cy - 1, MachineArt.STEEL_DARK);
+        g.fill(x + mx + 6, y + FILL_Y + 5, x + mx + 10, y + cy - 1, run ? MachineArt.WATER : MachineArt.STEEL);
+        MachineArt.steel(g, x + mx - 6, y + cy + 18, 28, 5);
+        // the energy bolt over the battery slot, the progress arrow to the output slot
+        VanillaFrame.bolt(g, x + MERGED_BOLT_X, y + MERGED_BOLT_Y, energyFraction());
         int max = menu.getMaxProgress();
-        float p = max > 0 && running() ? (float) menu.getProgress() / max : 0;
-        float level = m == 1 ? 1 - p : p;
-        int h = Math.round((y1 - y0 - 4) * level);
-        if (h > 0) FcsDraw.fill(g, x0 + 2, y1 - 2 - h, x1 - 2, y1 - 2, m == 0 ? FormingFigure.WORK : 0xFF000000 | BLUE);
-        FcsDraw.fill(g, x0 - 4, y1, x1 + 4, y1 + 3, STEEL);   // the stand
+        VanillaFrame.arrow(g, x + MERGED_ARROW_X, y + MERGED_ARROW_Y, max > 0 ? (double) menu.getProgress() / max : 0);
     }
+
+    /** The tanks tell their fluid and amount. */
+    @Override
+    protected List<Component> mergedTooltip(int rx, int ry) {
+        if (inside(rx, ry, TANK_IN_X - 2, TANK_Y - 2, TANK_W + 4, TANK_H + 4))
+            return List.of(tankLine("tank_in", menu.getInputFluid(), menu.getInputFluidAmount(), menu.getInputFluidCapacity()));
+        if (inside(rx, ry, TANK_OUT_X - 2, TANK_Y - 2, TANK_W + 4, TANK_H + 4))
+            return List.of(tankLine("tank_out", menu.getOutputFluid(), menu.getOutputFluidAmount(), menu.getOutputFluidCapacity()));
+        return null;
+    }
+
+    /** The merged screen draws no figure window (see {@link #drawMerged}). */
+    @Override
+    protected void drawFigure(GuiGraphics g, float cx, float cy, float dt) { }
 
     @Override
     protected Component headline() {
@@ -179,6 +184,8 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
                 default -> "mio_icif:cell/item_cell_empty";
             });
             case CannerElcMenu.MATERIAL_SLOT -> m == 0 ? itemOf("minecraft:bread") : net.minecraft.world.item.ItemStack.EMPTY;
+            // 0.1.11.175: the battery moved off the furnace block's place, where the base screen looks for it
+            case CannerElcMenu.BATTERY_SLOT -> itemOf("mio_icif:normal/item_chargebat_lev0");
             default -> super.slotGhost(slot);
         };
     }
@@ -195,6 +202,7 @@ public class mio_icif_gui_canner_elc extends ProcessInstrumentScreen<CannerElcMe
                 default -> "mix_container";
             });
             case CannerElcMenu.MATERIAL_SLOT -> materialUsed() ? Component.translatable(k + (m == 0 ? "food" : "additive")) : null;
+            case CannerElcMenu.BATTERY_SLOT -> Component.translatable(K + "slot.battery");   // 0.1.11.175: see slotGhost
             default -> super.slotHint(slot);
         };
     }

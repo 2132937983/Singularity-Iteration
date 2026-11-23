@@ -505,6 +505,27 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
         .comment("Distance in blocks in which the Blueprint Builder finds Replicators.")
         .translation("mio_icif.configuration.builder_replicator_range")
         .defineInRange("replicatorRange", 16, 4, 64);
+    // 0.1.11.182: blueprints uploaded from the players' own computers (the builder's Upload button, as Create's Schematic Table)
+    public static final ModConfigSpec.BooleanValue BUILDER_UPLOADS = BUILDER_BUILDER
+        .comment("Players may upload blueprints (.nbt, .litematic) from their own computer's schematics folder to the server with",
+                 "the Blueprint Builder's Upload button, as Create's Schematic Table does. They are kept in schematics/uploads/<UUID>/.")
+        .translation("mio_icif.configuration.builder_uploads")
+        .define("uploads", true);
+    public static final ModConfigSpec.IntValue BUILDER_UPLOAD_MAX_KB = BUILDER_BUILDER
+        .comment("Largest blueprint file a player may upload, in KB (the compressed file).")
+        .translation("mio_icif.configuration.builder_upload_max_kb")
+        .defineInRange("uploadMaxKB", 2048, 16, 16384);
+    public static final ModConfigSpec.IntValue BUILDER_UPLOAD_FILES = BUILDER_BUILDER
+        .comment("Uploaded blueprints kept per player; the oldest go first.")
+        .translation("mio_icif.configuration.builder_upload_files")
+        .defineInRange("uploadFilesPerPlayer", 32, 1, 1024);
+    // 0.1.11.189: the drones take a block in the way out (as mined with a pickaxe) and put the blueprint's block there
+    public static final ModConfigSpec.BooleanValue BUILDER_CLEAR_OBSTRUCTIONS = BUILDER_BUILDER
+        .comment("The Blueprint Builder's drones take out a block that stands where the blueprint has another one (its drops go to",
+                 "the nearest Armory Material Interface) and build the blueprint's block. Blocks with a block entity (machines,",
+                 "chests) and unbreakable blocks are never taken out; claim and protection mods are asked first.")
+        .translation("mio_icif.configuration.builder_clear_obstructions")
+        .define("clearObstructions", true);
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder BUILDER_POP = BUILDER.pop();
 

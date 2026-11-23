@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/wiring/block_tesu_controller"
+    },
+    "facing=east": {
+      "model": "mio_icif:block/wiring/block_tesu_controller",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mio_icif:block/wiring/block_tesu_controller",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mio_icif:block/wiring/block_tesu_controller",
+      "y": 270
+    }
+  }
+}

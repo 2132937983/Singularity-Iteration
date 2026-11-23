@@ -16,6 +16,13 @@ import org.jetbrains.annotations.Nullable;
     public static final int OUTPUT_SLOT = 1;
     public static final int MATERIAL_SLOT = 2;
     public static final int BATTERY_SLOT = 3;
+    /**
+     * 0.1.11.175: the slots sit in the machine's drawing (the merged screen, mio_icif_gui_canner_elc): the material in the
+     * hopper on top, the can or cell under the filler, the output after the arrow, the battery under the energy bolt on the
+     * left (they were the furnace block's: input 10,18, material 30,18, output 61,37, battery 10,56).
+     */
+    public static final int MATERIAL_X = 80, MATERIAL_Y = 20, CAN_X = 80, CAN_Y = 54, OUTPUT_X = 126, OUTPUT_Y = 55,   // 0.1.11.180: 176 wide
+        BATTERY_X = 11, BATTERY_Y = 74;
     public static final int UPGRADE_SLOT_START = 4;
     public static final int SLOT_COUNT = 10;
     private final Level recipeLevel;
@@ -34,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 10, 18) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, CAN_X, CAN_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return !isBattery(stack) && !isUpgrade(stack)
@@ -45,13 +52,13 @@ import org.jetbrains.annotations.Nullable;
                 return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 61, 37) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, MATERIAL_SLOT, 30, 18) {
+        this.addSlot(new SlotItemHandler(itemHandler, MATERIAL_SLOT, MATERIAL_X, MATERIAL_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 ItemStack inputCan = itemHandler.getStackInSlot(INPUT_SLOT);
@@ -62,7 +69,7 @@ import org.jetbrains.annotations.Nullable;
                 return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, BATTERY_X, BATTERY_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
@@ -76,7 +83,7 @@ import org.jetbrains.annotations.Nullable;
 
     // ---- 0.1.11.116: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240, INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;   // 0.1.11.180: the vanilla width
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

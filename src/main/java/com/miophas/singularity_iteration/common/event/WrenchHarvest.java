@@ -35,9 +35,10 @@ public final class WrenchHarvest {
         return !stack.isEmpty() && (stack.getItem() instanceof IWrenchItem || stack.is(Tags.Items.TOOLS_WRENCH));
     }
 
-    /** An SI machine or cable (the common {@code c:machine} / {@code c:cable} tags hold other mods' blocks too). */
+    /** An SI block of {@code mio_icif:wrenchable} (the common {@code c:} tags hold other mods' blocks too, so the namespace is checked). */
     public static boolean wrenchable(BlockState state) {
-        return (state.is(mio_icif_tags.MACHINE) || state.is(mio_icif_tags.CABLE))
+        // 0.1.11.172: mio_icif:wrenchable, the one tag every wrench reads (WrenchRules): machines, cables, pipes, casings, ports
+        return com.miophas.singularity_iteration.common.item.tools.WrenchRules.dismantlable(state)
             && BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace().equals(Singularity_Iteration.MOD_ID);
     }
 

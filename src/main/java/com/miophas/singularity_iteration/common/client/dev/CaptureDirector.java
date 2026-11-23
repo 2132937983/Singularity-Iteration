@@ -1860,6 +1860,151 @@ public final class CaptureDirector {
         }
     }
 
+    // ------------------------------------------------------------------ 0.1.11.184 the Blueprint Builder's block hologram
+
+    static {
+        if (OUT != null && "ghost".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneGhost();
+        }
+    }
+
+    private static BlockPos ghostBase = BlockPos.ZERO;
+
+    /** A structure file of the given blocks (relative positions) in the server's schematics folder. */
+    private static void ghostFile(String name, java.util.Map<BlockPos, BlockState> blocks) {
+        java.util.List<BlockState> palette = new java.util.ArrayList<>();
+        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+        int sx = 1, sy = 1, sz = 1;
+        for (var e : blocks.entrySet()) {
+            int i = palette.indexOf(e.getValue());
+            if (i < 0) { i = palette.size(); palette.add(e.getValue()); }
+            var b = new net.minecraft.nbt.CompoundTag();
+            b.putInt("state", i);
+            var pos = new net.minecraft.nbt.ListTag();
+            pos.add(net.minecraft.nbt.IntTag.valueOf(e.getKey().getX()));
+            pos.add(net.minecraft.nbt.IntTag.valueOf(e.getKey().getY()));
+            pos.add(net.minecraft.nbt.IntTag.valueOf(e.getKey().getZ()));
+            b.put("pos", pos);
+            list.add(b);
+            sx = Math.max(sx, e.getKey().getX() + 1); sy = Math.max(sy, e.getKey().getY() + 1); sz = Math.max(sz, e.getKey().getZ() + 1);
+        }
+        var root = new net.minecraft.nbt.CompoundTag();
+        var pal = new net.minecraft.nbt.ListTag();
+        for (BlockState st : palette) pal.add(net.minecraft.nbt.NbtUtils.writeBlockState(st));
+        root.put("palette", pal);
+        root.put("blocks", list);
+        var size = new net.minecraft.nbt.ListTag();
+        size.add(net.minecraft.nbt.IntTag.valueOf(sx)); size.add(net.minecraft.nbt.IntTag.valueOf(sy)); size.add(net.minecraft.nbt.IntTag.valueOf(sz));
+        root.put("size", size);
+        try {
+            var dir = com.miophas.singularity_iteration.common.builder.BlueprintReader.folder();
+            java.nio.file.Files.createDirectories(dir);
+            net.minecraft.nbt.NbtIo.writeCompressed(root, dir.resolve(name));
+        } catch (java.io.IOException e) {
+            note("ghost file " + name + ": " + e);
+        }
+    }
+
+    /** Loads the schematics file {@code name} into the builder at {@code at} (steps from the first file: load the files in their order). */
+    private static void ghostLoad(ServerPlayer sp, BlockPos at, String name) {
+        if (!(sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.builder.BlueprintBuilderBlockEntity b)) return;
+        b.action(sp, com.miophas.singularity_iteration.common.builder.BlueprintBuilderBlockEntity.A_STOP, 0);
+        int index = b.files().indexOf(name);
+        for (int k = 0; k < index; k++) b.action(sp, com.miophas.singularity_iteration.common.builder.BlueprintBuilderBlockEntity.A_FILE_NEXT, 0);
+        b.action(sp, com.miophas.singularity_iteration.common.builder.BlueprintBuilderBlockEntity.A_LOAD, 0);
+        note("ghost load " + name + " (index " + index + ", " + b.total() + " blocks)");
+    }
+
+    private static final java.util.List<Integer> GHOST_FPS = new java.util.ArrayList<>();
+
+    /** Records the frame rate each second for {@code seconds}, then notes the mean as {@code label}. */
+    private static void ghostFps(String label, int seconds) {
+        client(5, () -> GHOST_FPS.clear());   // a lambda: the scene is queued before the field is set
+        for (int k = 0; k < seconds; k++) client(20, () -> GHOST_FPS.add(Minecraft.getInstance().getFps()));
+        client(1, () -> note("ghost fps " + label + ": " + GHOST_FPS + " mean "
+            + GHOST_FPS.stream().mapToInt(Integer::intValue).average().orElse(0)));
+    }
+
+    /**
+     * Scene "ghost" (-Dsi.capture.scene=ghost), 0.1.11.184: a builder with a small house (part of it already built: only the
+     * rest shows as ghosts), in the block, layer and frame views; then a 64 x 24 x 64 block (about 98,000 blocks) with the
+     * frame rate in the block view against the frame view.
+     */
+    private static void sceneGhost() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            ghostBase = new BlockPos(sp.getBlockX() + 3, -60, sp.getBlockZ() + 3);
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            java.util.Map<BlockPos, BlockState> house = new java.util.LinkedHashMap<>();
+            for (int x = 0; x < 9; x++) for (int z = 0; z < 7; z++) house.put(new BlockPos(x, 0, z), net.minecraft.world.level.block.Blocks.STONE_BRICKS.defaultBlockState());
+            for (int y = 1; y <= 4; y++) for (int x = 0; x < 9; x++) for (int z = 0; z < 7; z++) {
+                boolean wall = x == 0 || x == 8 || z == 0 || z == 6;
+                if (!wall) continue;
+                boolean corner = (x == 0 || x == 8) && (z == 0 || z == 6);
+                BlockState st = corner ? net.minecraft.world.level.block.Blocks.OAK_LOG.defaultBlockState()
+                    : y == 2 && (x == 2 || x == 6) ? net.minecraft.world.level.block.Blocks.GLASS_PANE.defaultBlockState()
+                    : net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState();
+                if (z == 0 && x == 4 && y <= 2) continue;   // the doorway
+                house.put(new BlockPos(x, y, z), st);
+            }
+            for (int x = 0; x < 9; x++) for (int z = 0; z < 7; z++) house.put(new BlockPos(x, 5, z), net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS.defaultBlockState());
+            for (int x = 1; x < 8; x++) for (int z = 1; z < 6; z++) house.put(new BlockPos(x, 6, z), net.minecraft.world.level.block.Blocks.SPRUCE_SLAB.defaultBlockState());
+            house.put(new BlockPos(2, 1, 3), net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState());
+            house.put(new BlockPos(6, 1, 3), net.minecraft.world.level.block.Blocks.FURNACE.defaultBlockState());
+            ghostFile("si_ghost_1_house.nbt", house);
+            java.util.Map<BlockPos, BlockState> big = new java.util.LinkedHashMap<>();
+            BlockState[] layers = {net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), net.minecraft.world.level.block.Blocks.ANDESITE.defaultBlockState(),
+                net.minecraft.world.level.block.Blocks.GRANITE.defaultBlockState(), net.minecraft.world.level.block.Blocks.OAK_LEAVES.defaultBlockState()};
+            for (int y = 0; y < 24; y++) for (int x = 0; x < 64; x++) for (int z = 0; z < 64; z++)
+                if ((x + z + y) % 7 != 0) big.put(new BlockPos(x, y, z), layers[(y / 3) % layers.length]);
+            ghostFile("si_ghost_2_big.nbt", big);
+            for (int x = -2; x <= 70; x++) for (int z = -2; z <= 70; z++) level.setBlock(ghostBase.offset(x, -1, z), net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState(), 2);
+            place(level, ghostBase, "producer/block_blueprint_builder", Direction.NORTH);
+        });
+        server(5, sp -> {
+            if (sp.serverLevel().getBlockEntity(ghostBase) instanceof com.miophas.singularity_iteration.common.builder.BlueprintBuilderBlockEntity b)
+                b.action(sp, com.miophas.singularity_iteration.common.builder.BlueprintBuilderBlockEntity.A_REFRESH, 0);
+        });
+        server(5, sp -> {
+            ghostLoad(sp, ghostBase, "si_ghost_1_house.nbt");
+            // part of it built already: the floor and the first ring of the walls (only the rest shows)
+            var level = sp.serverLevel();
+            for (int x = 0; x < 9; x++) for (int z = 0; z < 7; z++) level.setBlock(ghostBase.offset(1 + x, 0, 1 + z), net.minecraft.world.level.block.Blocks.STONE_BRICKS.defaultBlockState(), 3);
+            look(sp, ghostBase.getX() - 5.5, ghostBase.getY() + 7.5, ghostBase.getZ() - 6.5, -40, 28);
+        });
+        client(1, () -> com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.mode = com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.BLOCKS);
+        shot(80, "ghost_house_blocks");
+        client(1, () -> com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.mode = com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.LAYER);
+        shot(40, "ghost_house_layer");
+        client(1, () -> com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.mode = com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.FRAME);
+        shot(20, "ghost_house_frame");
+        // the large blueprint: the frame rate with the blocks shown and with the frame only
+        client(1, () -> {   // no frame cap, no vsync: the frame rate shows the cost
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.framerateLimit().set(260);
+            mc.options.enableVsync().set(false);
+            mc.getWindow().updateVsync(false);
+        });
+        server(5, sp -> {
+            ghostLoad(sp, ghostBase, "si_ghost_2_big.nbt");
+            look(sp, ghostBase.getX() - 18.5, ghostBase.getY() + 34.5, ghostBase.getZ() - 18.5, -45, 35);
+        });
+        client(1, () -> com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.mode = com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.FRAME);
+        ghostFps("big frame", 6);
+        client(1, () -> com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.mode = com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.BLOCKS);
+        ghostFps("big blocks (baking)", 3);
+        ghostFps("big blocks", 6);
+        shot(5, "ghost_big_blocks");
+        client(1, () -> com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.mode = com.miophas.singularity_iteration.common.client.builder.BuilderGhosts.LAYER);
+        ghostFps("big layer", 4);
+        shot(5, "ghost_big_layer");
+        client(20, () -> Minecraft.getInstance().stop());
+    }
+
     // ------------------------------------------------------------------ 0.1.10.15 player feedback review
 
     static {
@@ -2772,6 +2917,73 @@ public final class CaptureDirector {
         });
         client(30, () -> { CaptureDirector.hoverGui = null; Minecraft.getInstance().options.hideGui = false; });
         shot(1, "solar_models/6_grid_screen");
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
+     * Scene "tesu_preview", 0.1.11.157: the TESU (太级储电罐) structure from data/mio_icif/multiblock/tesu.json, built with the
+     * placeholder blocks of the sample world (machine hull, reinforced glass, redstone blocks as cells, the GESU core and modules,
+     * a lightning rod), and a cutaway with the front-right quarter removed; from the front, at an angle and from above.
+     */
+    private static void sceneTesuPreview() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        until(600, () -> Minecraft.getInstance().player != null && Minecraft.getInstance().getSingleplayerServer() != null);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setWeatherParameters(6000, 0, false, false);
+            sp.getAbilities().mayfly = true;
+            sp.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            java.util.function.Function<String, net.minecraft.world.level.block.state.BlockState> block = id ->
+                net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.parse(id)).defaultBlockState();
+            try (var in = CaptureDirector.class.getResourceAsStream("/data/mio_icif/multiblock/tesu.json")) {
+                var layout = com.google.gson.JsonParser.parseString(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                BlockPos full = new BlockPos(0, -60, -30), cut = new BlockPos(12, -60, -30);
+                for (var e : layout.getAsJsonArray("blocks")) {
+                    var b = e.getAsJsonArray();
+                    int x = b.get(0).getAsInt(), y = b.get(1).getAsInt(), z = b.get(2).getAsInt();
+                    String role = b.get(3).getAsString();
+                    // 0.1.11.157: the real TESU blocks (the sample world still has placeholders)
+                    var state = switch (role) {
+                        case "casing" -> block.apply("mio_icif:wiring/block_tesu_casing");
+                        case "glass" -> block.apply("mio_icif:build/block_alloy_glass");
+                        case "cell" -> block.apply("mio_icif:wiring/block_tesu_cell");
+                        case "controller" -> block.apply("mio_icif:wiring/block_tesu_controller")
+                            .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, net.minecraft.core.Direction.SOUTH);
+                        case "port" -> block.apply(z == 0 || z == 4 ? "mio_icif:wiring/block_tesu_output" : "mio_icif:wiring/block_tesu_input");
+                        default -> throw new IllegalStateException("unknown TESU role " + role);   // 0.1.11.166: no electrode
+                    };
+                    // the front (local z = 0) faces south, towards the camera
+                    level.setBlock(full.offset(6 - x, y, 6 - z), state, 3);
+                    if (!(x >= 3 && z <= 3)) level.setBlock(cut.offset(6 - x, y, 6 - z), state, 3);
+                }
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+            look(sp, 9.5, -56, -6.5, 180, 12);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        client(60, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "tesu_preview/1_front");
+        server(1, sp -> look(sp, -6.5, -52, -10.5, 220, 22));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "tesu_preview/2_angle");
+        server(1, sp -> look(sp, 22.5, -52, -14.5, 130, 25));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "tesu_preview/3_cutaway");
+        server(1, sp -> look(sp, 3.5, -38, -21.5, 180, 65));
+        client(30, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
+        shot(1, "tesu_preview/4_above");
+        // the controller's screen once the structure has formed (it checks every second)
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            BlockPos at = new BlockPos(3, -59, -24);   // the controller: local (3, 1, 0) turned to face south
+            look(sp, 3.5, -60, -21.5, 180, 15);
+            level.getBlockState(at).useWithoutItem(level, sp, new net.minecraft.world.phys.BlockHitResult(at.getCenter(), net.minecraft.core.Direction.SOUTH, at, false));
+        });
+        client(30, () -> { CaptureDirector.hoverGui = null; Minecraft.getInstance().options.hideGui = false; });
+        shot(1, "tesu_preview/5_screen");
         client(40, () -> Minecraft.getInstance().stop());
     }
 
@@ -4657,6 +4869,13 @@ public final class CaptureDirector {
         if (OUT != null && "slot_silhouettes".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             sceneSlotSilhouettes();
+        }
+    }
+
+    static {
+        if (OUT != null && "tesu_preview".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneTesuPreview();
         }
     }
 

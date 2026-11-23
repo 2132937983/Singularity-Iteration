@@ -49,6 +49,10 @@ public static final DeferredItem<mio_icif_upgrade> FLUID_EJECTOR_UPGRADE = UPGRA
     public static final DeferredItem<mio_icif_upgrade> THERMAL_RETENTION_UPGRADE = UPGRADES.register("upgrade/thermal_retention_upgrade",
         () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.THERMAL_RETENTION));
 
+    // 0.1.11.158: TESU wireless upgrade (filled every tick inside a TESU wireless field)
+    public static final DeferredItem<mio_icif_upgrade> WIRELESS_UPGRADE = UPGRADES.register("upgrade/wireless_upgrade",
+        () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.WIRELESS));
+
     public static void register(IEventBus eventBus) {
         UPGRADES.register(eventBus);
     }

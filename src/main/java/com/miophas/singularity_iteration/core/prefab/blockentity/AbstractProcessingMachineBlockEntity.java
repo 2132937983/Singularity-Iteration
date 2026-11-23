@@ -147,6 +147,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     private final int[] outputSlotIndices;
 
     protected IMachineUpgradeStats upgradeStats = MachineUpgradeStats.empty();
+    /** 0.1.11.158: wireless upgrades in the upgrade slots (see {@link #chargeWirelessly()}). */
+    protected int wirelessUpgrades;
     // Upgrade slots change infrequently; rebuild the immutable snapshot only after a slot mutation.
     private boolean upgradeStatsDirty = true;
 
@@ -479,6 +481,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         if (blockEntity.asleep) {
             if (blockEntity.stillAsleep(level)) {
                 com.miophas.singularity_iteration.core.runtime.processing.MachineSleep.noteSkipped();
+                blockEntity.chargeWirelessly();
                 blockEntity.handleAutomationUpgrades();
                 return;
             }
@@ -494,6 +497,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
         // Refresh the upgrade statistics and apply their effects.
         blockEntity.recalculateUpgradeStats();
+        blockEntity.chargeWirelessly();
 
         // Run the energy transfer logic of the parent class
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
@@ -906,6 +910,19 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
+     * 0.1.11.158: the wireless upgrade. Inside a wireless field (a TESU's wireless output port or a relay linked to it, see
+     * {@link com.miophas.singularity_iteration.core.api.energy.WirelessEnergySources}) the machine's storage is filled every tick,
+     * whatever its voltage, as far as the source has energy.
+     */
+    protected void chargeWirelessly() {
+        if (wirelessUpgrades <= 0 || !(level instanceof net.minecraft.server.level.ServerLevel server)) return;
+        long room = energyStorage.getCapacity() - energyStorage.getAmount();
+        if (room <= 0) return;
+        long got = com.miophas.singularity_iteration.core.api.energy.WirelessEnergySources.draw(server, worldPosition, room);
+        if (got > 0) energyStorage.generateEnergyInternal(got, false);
+    }
+
+    /**
      * Updates the upgrade statistics.
      * Overclocker upgrade: more progress per tick and more EU use. The voltage tier does not change.
      */
@@ -914,6 +931,13 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         int upgradeStart = slotLayout.getStart(SlotType.UPGRADE);
         int upgradeCount = slotLayout.getCount(SlotType.UPGRADE);
         this.upgradeStats = throttled(MachineUpgradeStats.fromInventory(itemHandler, upgradeStart, upgradeCount));
+        int wireless = 0;
+        var itemApi = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
+        for (int i = upgradeStart; i < upgradeStart + upgradeCount && i < itemHandler.getSlots(); i++) {
+            var stack = itemHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && "wireless".equals(itemApi.getUpgradeType(stack))) wireless += stack.getCount();
+        }
+        this.wirelessUpgrades = wireless;
         updateProcessingParameters();
         long newCapacity = getProcessingCapacity();
         IEnergyTileAccess api = getEnergyAPI();

@@ -91,7 +91,8 @@ for grade, material in (("bronze", "bronze"), ("steel", "adviron")):
         "type": "minecraft:block", "pools": [{"rolls": 1, "entries": drops,
         "conditions": [{"condition": "minecraft:survives_explosion"}]}]})
 
-tag_path = RES / "data/c/tags/block/wrench_can_damaged.json"
+# 0.1.11.172: the wrenches read only mio_icif:wrenchable (c:wrench_can_damaged is gone)
+tag_path = RES / "data/mio_icif/tags/block/wrenchable.json"
 tag = json.loads(tag_path.read_text(encoding="utf-8"))
 for grade in ("bronze", "steel"):
     value = f"mio_icif:pipe/fluid_pipe_{grade}"

@@ -4,6 +4,7 @@ import com.miophas.singularity_iteration.common.blockentity.huentity.hugenerator
 import com.miophas.singularity_iteration.common.energy.Recorder;
 import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu;
+import com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -29,7 +30,8 @@ public class RTHeatGeneratorMenu extends MimicGeneratorMenu {
     @Override
     protected void addMachineSlots() {
         for (int i = 0; i < SLOT_COUNT; i++)
-            this.addSlot(new SlotItemHandler(itemHandler, i, 10 + (i % 2) * 18, 20 + (i / 2) * 22) {
+            this.addSlot(new SlotItemHandler(itemHandler, i, RTGeneratorMenu.PELLET_X + (i % 3) * RTGeneratorMenu.PELLET_DX,
+                RTGeneratorMenu.PELLET_Y + (i / 3) * RTGeneratorMenu.PELLET_DY) {   // 0.1.11.181: as the RTG's
                 @Override public boolean mayPlace(ItemStack stack) { return stack.is(mio_icif_resources.RTG_PELLET.get()); }
             });
     }

@@ -21,6 +21,8 @@ public class GeoGeneratorMenu extends MimicGeneratorMenu {
     public static final int EMPTY_BUCKET_SLOT = 1;
     public static final int BATTERY_SLOT = 2;
     public static final int SLOT_COUNT = 3;
+    /** 0.1.11.181: lava in over the filler, the empty bucket under it, the battery at the end of the output cable. */
+    public static final int CONTAINER_X = 10, CONTAINER_IN_Y = 17, CONTAINER_OUT_Y = 47, BATTERY_X = 150, BATTERY_Y = 57;
     public static final int DATA_COUNT = 12;
 
     public GeoGeneratorMenu(int containerId, Inventory playerInventory) { this(containerId, playerInventory, null); }
@@ -31,7 +33,7 @@ public class GeoGeneratorMenu extends MimicGeneratorMenu {
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, LAVA_BUCKET_SLOT, 10, 22) {
+        this.addSlot(new SlotItemHandler(itemHandler, LAVA_BUCKET_SLOT, CONTAINER_X, CONTAINER_IN_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 if (!isValidFuel(stack) || !itemHandler.isItemValid(LAVA_BUCKET_SLOT, stack)) return false;
@@ -40,11 +42,11 @@ public class GeoGeneratorMenu extends MimicGeneratorMenu {
                 return capacity > 0 && amount < capacity;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_BUCKET_SLOT, 10, 50) {
+        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_BUCKET_SLOT, CONTAINER_X, CONTAINER_OUT_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        addBatterySlot(BATTERY_SLOT, 10, 82);
+        addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
     }
 
     public int getLavaAmount() { return value(2); }

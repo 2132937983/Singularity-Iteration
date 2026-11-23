@@ -358,6 +358,9 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
         progress = 0;
         if (!operation.get().commit()) { progress = completed; stopWork(); return; }
         finishWork();
+        // 0.1.11.174: goes on at once when it can, as the compressor does: it stood still for a tick after each operation
+        // (the screen read "not enough power" then, and the advanced metal former seemed to switch off once per item)
+        if (canWork()) isWorking = true;
         setChanged();
     }
 

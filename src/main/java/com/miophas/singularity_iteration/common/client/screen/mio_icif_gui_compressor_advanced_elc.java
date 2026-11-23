@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_compressor_advanced_elc;
@@ -47,6 +48,36 @@ public class mio_icif_gui_compressor_advanced_elc extends ProcessInstrumentScree
         int need = bottom - Math.round((bottom - top - 2) * required());
         FcsDraw.fill(g, bx0 - 1, need, bx1 + 1, need + 1, 0xFF000000 | RED);
         FcsDraw.fill(g, (int) cx + 26, (int) cy + 30, bx0, (int) cy + 32, STEEL);   // the line to the press
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Press's); 0.1.11.180: 176 wide ----
+    // The press as the compressor's, fed from the accumulator bottle on the left: its oil stands at the stored pressure,
+    // the red line at the pressure the next stroke needs.
+    private static final int BOTTLE_X = 34, BOTTLE_Y = 24, BOTTLE_W = 10, BOTTLE_H = 62;
+
+    @Override protected int arrowX() { return 122; }
+    @Override protected int arrowY() { return MergedSlots.Press.OUT_Y + 1; }
+    @Override protected int[] machineBody() { return new int[]{52, 17, 72, 78}; }
+
+    @Override
+    protected List<Component> mergedTooltip(int rx, int ry) {
+        if (inside(rx, ry, BOTTLE_X - 2, BOTTLE_Y - 2, BOTTLE_W + 4, BOTTLE_H + 4))
+            // EXPLAIN_TIP_HIDDEN (0.1.11.182): only the pressure; the accumulator's how-it-works lines are hidden for now
+            // return List.of(Component.translatable(K + "accumulator", f1(menu.getPressureMpa())), Component.translatable(K + "tip.accumulator.1"),
+            //     Component.translatable(K + "tip.accumulator.2"));
+            return List.of(Component.translatable(K + "accumulator", f1(menu.getPressureMpa())));
+        return super.mergedTooltip(rx, ry);
+    }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        MachineArt.cable(g, 28, 82, 32, 82);
+        MachineArt.gauge(g, BOTTLE_X, BOTTLE_Y, BOTTLE_W, BOTTLE_H, pressure(), MachineArt.AMBER);
+        int need = BOTTLE_Y + BOTTLE_H - 1 - Math.round((BOTTLE_H - 2) * required());
+        FcsDraw.fill(g, BOTTLE_X - 1, need, BOTTLE_X + BOTTLE_W + 1, need + 1, MachineArt.RED);
+        MachineArt.pipeV(g, BOTTLE_X + BOTTLE_W / 2, 18, BOTTLE_Y - 2, false, -1);
+        MachineArt.pipeH(g, BOTTLE_X + BOTTLE_W / 2 - 2, 78, 20, false, -1);
+        mio_icif_gui_compressor_elc.pressFrame(g, running() ? mio_icif_gui_compressor_elc.stroke((float) progress()) : 0, running());
     }
 
     @Override

@@ -23,7 +23,7 @@ public final class IncineratorValues {
 
     public static final int CHART = 10, DATA_COUNT = CHART + Recorder.SAMPLES;
     public static final int XP_CHART = 7, XP_DATA_COUNT = XP_CHART + Recorder.SAMPLES;
-    public static final int ASH_X = 10, ASH_Y = 82;
+    public static final int ASH_X = 26, ASH_Y = 56;   // 0.1.11.181: the ash drawer under the grate (IncineratorScreen)
 
     public static int[] of(mio_icif_drop_generator g) {
         int[] v = new int[DATA_COUNT];

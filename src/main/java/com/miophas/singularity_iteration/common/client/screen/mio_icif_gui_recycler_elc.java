@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.menu.producer.RecyclerElcMenu;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
@@ -56,6 +57,40 @@ public class mio_icif_gui_recycler_elc extends ProcessInstrumentScreen<RecyclerE
         FcsDraw.fill(g, bx0, by0, bx1, by1, SHELL);
         int h = Math.round((by1 - by0 - 3) * Math.min(1, menu.getCarryPermille() / 1000F));
         if (h > 0) FcsDraw.fill(g, bx0 + 2, by1 - 2 - h, bx1 - 2, by1 - 2, SCRAP);
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Shredder's); 0.1.11.180: 176 wide ----
+    // The shredder: the input in the hopper on top, the two cutter shafts turning against each other behind the window,
+    // the motor on the left wired to the battery, the shreds falling into the bin (filled to the carry towards the next
+    // scrap), the arrow to the tray.
+    @Override protected int arrowX() { return 118; }
+    @Override protected int arrowY() { return MergedSlots.Shredder.OUT_Y + 1; }
+    @Override protected int[] machineBody() { return new int[]{30, 40, 84, 54}; }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        float tau = 2 * (float) Math.PI;
+        boolean run = running();
+        if (run) { angle = (angle + dt * 2.5F * tau) % tau; fall = (fall + dt * 1.6F) % 1; }
+        MachineArt.cable(g, 28, 82, 39, 82, 39, 68);
+        MachineArt.motor(g, 30, 46, 20, 24);
+        MachineArt.iron(g, 50, 40, 64, 32);                                           // the cutter housing
+        FcsDraw.fill(g, 54, 44, 110, 68, MachineArt.WINDOW);
+        for (int side = -1; side <= 1; side += 2) {
+            float rx = 82 + side * 13, a = side * angle;
+            FcsDraw.disc(g, rx, 56, 8, MachineArt.STEEL_LIGHT);
+            for (int k = 0; k < 6; k++) blade(g, rx, 56, a + k * tau / 6, 7, 11, 2, 0.6F, MachineArt.STEEL_LIGHT);
+            FcsDraw.disc(g, rx, 56, 3, MachineArt.STEEL);
+        }
+        MachineArt.hopper(g, MergedSlots.Shredder.IN_X, MergedSlots.Shredder.IN_Y, 40);
+        MachineArt.sunk(g, 54, 74, 56, 20, MachineArt.GLASS);                         // the bin
+        int h = Math.round(17 * Math.min(1, menu.getCarryPermille() / 1000F));
+        if (h > 0) FcsDraw.fill(g, 55, 93 - h, 109, 93, SCRAP);
+        if (run) for (int k = 0; k < 4; k++) {
+            float f = (fall + k * 0.25F) % 1;
+            FcsDraw.disc(g, 76 + k * 4, 70 + f * 12, 1.3F, MachineArt.WORK);
+        }
+        MachineArt.tray(g, MergedSlots.Shredder.OUT_X, MergedSlots.Shredder.OUT_Y);
     }
 
     @Override

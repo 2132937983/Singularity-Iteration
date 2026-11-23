@@ -416,7 +416,8 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
         if (heatStorage < requiredHeat()) return hasEnoughEnergy()
             ? com.miophas.singularity_iteration.common.processing.ProcessStatus.HEATING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
         if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
-        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
 

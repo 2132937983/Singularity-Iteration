@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.menu.producer;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_induction_elc;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
@@ -29,25 +30,25 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_1, 10, 18) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_1, MergedSlots.Induction.IN_A_X, MergedSlots.Induction.IN_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_1, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 30, 18) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, MergedSlots.Induction.IN_B_X, MergedSlots.Induction.IN_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_2, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, MergedSlots.BATTERY_X, MergedSlots.BATTERY_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 61, 27) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, MergedSlots.Induction.OUT_X, MergedSlots.Induction.OUT_A_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -59,7 +60,7 @@ import org.jetbrains.annotations.Nullable;
                 collectXp(player);   // taking smelted items pours the banked XP straight into the XP bar
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 61, 47) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, MergedSlots.Induction.OUT_X, MergedSlots.Induction.OUT_B_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -93,7 +94,7 @@ import org.jetbrains.annotations.Nullable;
 
     // ---- 0.1.11.113: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240, INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;   // 0.1.11.180: the vanilla width
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

@@ -214,7 +214,8 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         if (itemHandler.getStackInSlot(INPUT_SLOT).isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_INPUT;
         if (!hasOutputSpace()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
         if (isWorking) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
-        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     @Override
@@ -248,6 +249,9 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         yieldCarry = carry;
         yieldProduct = key;
         finishWork();
+        // 0.1.11.174: goes on at once when it can, as the compressor does: it stood still for a tick after each operation
+        // (the screen read "not enough power" then, and the advanced metal former seemed to switch off once per item)
+        if (canWork()) isWorking = true;
         setChanged();
     }
 

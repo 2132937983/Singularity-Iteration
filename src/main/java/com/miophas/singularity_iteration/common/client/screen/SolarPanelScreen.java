@@ -20,13 +20,19 @@ import net.neoforged.api.distmarker.OnlyIn;
  * level; a concentrator (route A) shows its direct-light share and cooling instead of the clouds, and its own tips.
  * 0.1.11.102: a photon resonance panel (route B) shows the night sky factor, "night sky" for its night output, and its own tips. Under it the time, irradiance and clear sky; clouds, cell
  * temperature and shade; output, today's energy and the state. Under the window the stored energy.
+ *
+ * <p>0.1.11.181: the vanilla 176 wide, merged (docs/gui_processing_machines.md, "合并布局"): the panel drawn on the left (its
+ * cells catch the light by the irradiance) on its post, the charge slots under it (one, or four in a square), the record on
+ * paper beside it (114 wide for the day; it was 172; its scale inside the paper).
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<T> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 62, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
-    private static final int CX = WX + 28, CY = WY + 6, CW = 172, CH = 44;   // 0.1.11.145: room for the vanilla font
+    private static final int STRIP_Y = 145, READ_Y = 80, READ_H = 62;   // 0.1.11.121: the readouts under the drawing
+    private static final int CX = 52, CY = 18, CW = 114, CH = 44;   // 0.1.11.181: the record on the right of the drawing
+    private static final int PANEL_X = 8, PANEL_Y = 17, PANEL_W = 38, PANEL_H = 18;
+    private List<Component> cutLines = List.of();
     private static final int AMBER = 0xFFD49A12, AMBER_FILL = 0x40D49A12, ENVELOPE = 0xFFB8A76A, BLUE = 0xFF2A5D8A,
         RED = 0xFFC0392B, GRID = 0xFFD9DED9;
     private static final String K = "gui.mio_icif.solar.";
@@ -50,18 +56,40 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
         VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
-        int slots = menu.slots.size() - 36;
-        for (int i = 0; i < slots; i++) VanillaFrame.slot(g, x + SolarPanelMenu.SLOT_X - 1, y + SolarPanelMenu.SLOT_Y - 1 + i * SolarPanelMenu.SLOT_STEP);
-        for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            VanillaFrame.slot(g, x + SolarPanelMenu.INVENTORY_X - 1 + c * 18, y + SolarPanelMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) VanillaFrame.slot(g, x + SolarPanelMenu.INVENTORY_X - 1 + c * 18, y + SolarPanelMenu.HOTBAR_Y - 1);
-
-        VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
+        module(g, x, y, PlantMimic.time(partialTick));
+        for (var slot : menu.slots) {   // 0.1.11.181: the charge slots under the panel, then the inventory
+            if (slot.x < 0 || slot.x > imageWidth) continue;
+            VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
+        }
+        MachineArt.sunk(g, x + CX - 1, y + CY - 1, CW + 2, CH + 2, WindRoseView.PAPER);
         chart(g, x + CX, y + CY);
         ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the readout window, vanilla font
-        readings(g, x + WX + 4, y + WY + 61);
-        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 62);
+        readings(g, x + 12, y + READ_Y);
+        cutLines = ReadoutPanel.end(g, x + 7, y + READ_Y, W_READ, READ_H);
         strip(g, x, y + STRIP_Y);
+    }
+
+    private static final int W_READ = 162;
+
+    /**
+     * 0.1.11.181: the panel on its post: the cells in a steel frame, brighter with the irradiance on them, a glint running
+     * across while it makes power; the cable down the post to the charge slots.
+     */
+    private void module(GuiGraphics g, int x, int y, double time) {
+        double light = Math.max(0, Math.min(1, v(0) / 1000.0));
+        int slots = menu.slots.size() - 36, bottom = slots == 1 ? 49 : 39;
+        MachineArt.steel(g, x + 25, y + PANEL_Y + PANEL_H, 4, bottom - PANEL_Y - PANEL_H);
+        MachineArt.steel(g, x + PANEL_X, y + PANEL_Y, PANEL_W, PANEL_H);
+        int cell = resonance() ? 0xFF2B2F55 : concentrator() ? 0xFF3A3326 : 0xFF1E2F5A;
+        MachineArt.sunk(g, x + PANEL_X + 2, y + PANEL_Y + 2, PANEL_W - 4, PANEL_H - 4, cell);
+        int line = 0xFF000000 | (int) (0x3A + 0x40 * light) << 16 | (int) (0x5A + 0x40 * light) << 8 | (int) (0x9A + 0x40 * light);
+        for (int k = 1; k < 6; k++) g.fill(x + PANEL_X + 2 + k * 6, y + PANEL_Y + 3, x + PANEL_X + 3 + k * 6, y + PANEL_Y + PANEL_H - 3, line);
+        g.fill(x + PANEL_X + 3, y + PANEL_Y + PANEL_H / 2, x + PANEL_X + PANEL_W - 3, y + PANEL_Y + PANEL_H / 2 + 1, line);
+        if (v(2) > 0) {
+            int gx = (int) Math.floorMod((long) Math.floor(time / 2), (long) (PANEL_W - 8));
+            g.fill(x + PANEL_X + 3 + gx, y + PANEL_Y + 3, x + PANEL_X + 5 + gx, y + PANEL_Y + PANEL_H - 3, 0x60FFFFFF);
+        }
+        MachineArt.euCable(g, v(2) > 0, time, x + 27, y + PANEL_Y + PANEL_H + 1, x + 27, y + bottom - 1);
     }
 
     // ---- the record ---------------------------------------------------------------------------------------------------
@@ -124,7 +152,7 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
         }
         for (int k : new int[]{500, 1000}) {   // 0.1.11.145: no "0" (it ran into the "06" under it)
             Component c = Component.literal(String.valueOf(k));
-            PumpCrossSection.text(g, c, px - 2 - PumpCrossSection.width(c, u), Yg(py, k) - 4 * u, WindRoseView.DIM, u);
+            PumpCrossSection.text(g, c, px + 2, Yg(py, k) + 1, WindRoseView.DIM, u);   // 0.1.11.183: inside the paper
         }
         Component full = Component.translatable(K + "rated");
         PumpCrossSection.text(g, full, px + CW - PumpCrossSection.width(full, u) - 1, py + 1, BLUE & 0xFFFFFF, u);
@@ -136,7 +164,7 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
     }
 
     private void readings(GuiGraphics g, float tx, float ty) {
-        float u = WindRoseView.u(), lh = 9 * u + 1, w = WW - 8;
+        float u = WindRoseView.u(), lh = 9 * u + 1, w = 154;
         WindRoseView.line(g, Component.translatable(K + "sun_line", clock(v(9)), v(0), v(1)), tx, ty, WindRoseView.INK, w);
         String shade = switch (v(8)) {
             case mio_icif_solar_generator.OPEN -> "shade.open";
@@ -178,13 +206,13 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
         int panels = v(mio_icif_solar_generator.DATA_GRID);
         if (panels > 1) {   // 0.1.11.154: a grid shows the storage it shares
             long e = wide(mio_icif_solar_generator.DATA_GRID + 1), cap = Math.max(1, wide(mio_icif_solar_generator.DATA_GRID + 3));
-            VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored_grid", panels), Math.min(1.0, e / (double) cap),
+            VanillaFrame.labelledBar(g, x + 8, sy, 160, Component.translatable(K + "stored_grid", panels), Math.min(1.0, e / (double) cap),
                 Component.literal(compact(e) + " / " + compact(cap) + " EU"));
             return;
         }
         long e = Integer.toUnsignedLong(v(10)), cap = Math.max(1, Integer.toUnsignedLong(v(11)));
-        VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
-            Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
+        VanillaFrame.labelledBar(g, x + 8, sy, 160, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+            Component.literal(compact(e) + " / " + compact(cap) + " EU"));
     }
 
     /** A long sent as its high and low int. */
@@ -204,13 +232,16 @@ public class SolarPanelScreen<T extends SolarPanelMenu> extends mio_icif_screen<
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= WX && rx < WX + WW && ry >= WY && ry < WY + 58) {
-            String route = concentrator() ? "tip.a." : resonance() ? "tip.b." : "tip.";
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.1"), Component.translatable(K + "tip.2"),
-                Component.translatable(K + "tip.3", clipLevel()), Component.translatable(K + route + "4")), mouseX, mouseY);
-        } else if (rx >= WX && rx < WX + WW && ry >= WY + 58 && ry < WY + WH) {
-            String route = concentrator() ? "tip.a." : resonance() ? "tip.b." : "tip.";
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + route + "5"), Component.translatable(K + route + "6")), mouseX, mouseY);
+        if (hoveredSlot != null) return;   // 0.1.11.181: a slot shows its own tooltip only
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the chart's and the panel's how-it-works texts are hidden for now
+        // String route = concentrator() ? "tip.a." : resonance() ? "tip.b." : "tip.";
+        if (rx >= CX - 1 && rx < CX + CW + 2 && ry >= CY - 4 && ry < CY + CH + 10) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.1"), Component.translatable(K + "tip.2"),
+            //     Component.translatable(K + "tip.3", clipLevel()), Component.translatable(K + route + "4")), mouseX, mouseY);
+        } else if (rx >= PANEL_X && rx < PANEL_X + PANEL_W && ry >= PANEL_Y && ry < PANEL_Y + PANEL_H) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + route + "5"), Component.translatable(K + route + "6")), mouseX, mouseY);
+        } else if (!cutLines.isEmpty() && rx >= 8 && rx < 168 && ry >= READ_Y && ry < READ_Y + READ_H) {
+            g.renderComponentTooltip(this.font, cutLines, mouseX, mouseY);
         }
     }
 

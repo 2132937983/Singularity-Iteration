@@ -28,10 +28,11 @@ import org.jetbrains.annotations.Nullable;
               playerInventory, itemHandler, data, mio_icif_Thermal_Generator.DATA_COUNT, blockEntity);
     }
 
-    /** 0.1.11.10: 248 x 204 with the chart recorder; fuel and battery slots on the left. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
-    public static final int SLOT_X = 10, FUEL_Y = 30, BATTERY_Y = 76;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    /** 0.1.11.10: 248 x 204 with the chart recorder; fuel and battery slots on the left. 0.1.11.181: 176 wide, the fuel slot
+     *  in the furnace's feed door, the battery under the furnace. */
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 244;
+    public static final int FUEL_X = 15, FUEL_Y = 33, BATTERY_X = 15, BATTERY_Y = 88;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     /** Synced value {@code i} (see the block entity's getContainerData). */
     public int value(int i) { return data.get(i); }
@@ -51,8 +52,8 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        addFuelSlot(FUEL_SLOT, SLOT_X, FUEL_Y);
-        addBatterySlot(BATTERY_SLOT, SLOT_X, BATTERY_Y);
+        addFuelSlot(FUEL_SLOT, FUEL_X, FUEL_Y);
+        addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
     }
 
     @Override

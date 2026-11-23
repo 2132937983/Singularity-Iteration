@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "mio_icif:block/wiring/block_tesu_controller_front",
+    "side": "mio_icif:block/wiring/block_tesu_casing",
+    "top": "mio_icif:block/wiring/block_tesu_casing"
+  }
+}

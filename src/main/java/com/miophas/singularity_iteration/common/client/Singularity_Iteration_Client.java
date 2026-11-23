@@ -659,6 +659,11 @@ public class Singularity_Iteration_Client {
             mio_icif_block_entities.WIRELESS_POWER_TRANSMISSION_NODE.get(),
             com.miophas.singularity_iteration.common.client.render.WirelessTransmissionNodeRenderer::new
         );
+        // 0.1.11.159: a powered TESU relay draws the same particle stream from the node it is linked to
+        event.registerBlockEntityRenderer(
+            mio_icif_block_entities.TESU_RELAY.get(),
+            com.miophas.singularity_iteration.common.client.render.TesuRelayRenderer::new
+        );
         Singularity_Iteration.LOGGER.debug("Wireless transmission node renderer registered");
 
         // 注册基础/高级采矿机工作范围边界渲染器

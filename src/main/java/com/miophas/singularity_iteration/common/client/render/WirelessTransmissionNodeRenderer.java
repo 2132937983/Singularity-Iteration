@@ -32,15 +32,31 @@ public class WirelessTransmissionNodeRenderer implements BlockEntityRenderer<mio
 
         BlockPos targetPos = blockEntity.getTargetPosition();
         if (targetPos == null) return;
+        renderStream(blockEntity.getLevel(), blockEntity.getBlockPos(), blockEntity.getBlockPos(), targetPos, partialTick, poseStack, bufferSource);
+    }
 
-        BlockPos sourcePos = blockEntity.getBlockPos();
-        double sourceX = sourcePos.getX() + 0.5;
-        double sourceY = sourcePos.getY() + 0.5;
-        double sourceZ = sourcePos.getZ() + 0.5;
+    /**
+     * 0.1.11.158: the stream of particles from {@code from} to {@code to}, drawn by the block entity at {@code origin} (its pose
+     * stands at that block); the TESU relays draw theirs with it (TesuRelayRenderer).
+     */
+    public static void renderStream(@org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level, BlockPos origin, BlockPos from,
+                                    BlockPos to, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource) {
+        renderStream(level, origin, net.minecraft.world.phys.Vec3.atCenterOf(from), net.minecraft.world.phys.Vec3.atCenterOf(to),
+            partialTick, poseStack, bufferSource);
+    }
 
-        double targetX = targetPos.getX() + 0.5;
-        double targetY = targetPos.getY() + 0.5;
-        double targetZ = targetPos.getZ() + 0.5;
+    /** 0.1.11.167: the stream between two points (the TESU relay pylons send and take it at their emitters, near their tops). */
+    public static void renderStream(@org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level, BlockPos origin,
+                                    net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 to, float partialTick,
+                                    PoseStack poseStack, MultiBufferSource bufferSource) {
+        BlockPos sourcePos = origin;
+        double sourceX = from.x;
+        double sourceY = from.y;
+        double sourceZ = from.z;
+
+        double targetX = to.x;
+        double targetY = to.y;
+        double targetZ = to.z;
 
         double dx = targetX - sourceX;
         double dy = targetY - sourceY;
@@ -50,8 +66,8 @@ public class WirelessTransmissionNodeRenderer implements BlockEntityRenderer<mio
 
         // 0.1.11.22: game time, not a counter bumped on each frame (the beam ran faster at a higher frame rate); three
         // steps a tick keeps the speed it had at 60 frames a second
-        float tickCounter = blockEntity.getLevel() == null ? 0
-            : (float) ((blockEntity.getLevel().getGameTime() % 72000L) + partialTick) * 3.0f;
+        float tickCounter = level == null ? 0
+            : (float) ((level.getGameTime() % 72000L) + partialTick) * 3.0f;
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.debugQuads());
 
@@ -80,7 +96,7 @@ public class WirelessTransmissionNodeRenderer implements BlockEntityRenderer<mio
      * debugQuads 的顶点格式是 POSITION_COLOR，只写位置与颜色；
      * 额外调用 setUv/setLight/setNormal 与格式不符（同样的写法可参考 mio_icif_MinerRangeRenderer）。
      */
-    private void renderParticleQuad(PoseStack poseStack, VertexConsumer consumer,
+    private static void renderParticleQuad(PoseStack poseStack, VertexConsumer consumer,
                                     float cx, float cy, float cz, float size, float alpha) {
         PoseStack.Pose pose = poseStack.last();
         Matrix4f matrix = pose.pose();

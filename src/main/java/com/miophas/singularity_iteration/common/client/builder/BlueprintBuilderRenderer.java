@@ -22,7 +22,8 @@ import org.joml.Matrix4f;
 
 /**
  * Blueprint Builder renderer (0.1.8.0): the builder drones on their flight legs (with cargo and
- * placement beam) and the work area as a translucent hologram box with a block grid.
+ * placement beam) and the work area as a translucent hologram box with a block grid. 0.1.11.184: with the area shown it
+ * also asks for the blocks still to place ({@link BuilderGhosts} draws them).
  */
 @OnlyIn(Dist.CLIENT)
 public class BlueprintBuilderRenderer implements BlockEntityRenderer<BlueprintBuilderBlockEntity> {
@@ -34,7 +35,12 @@ public class BlueprintBuilderRenderer implements BlockEntityRenderer<BlueprintBu
         BlockPos origin = be.getBlockPos();
         double time = be.getLevel().getGameTime() + partialTick;
         AABB bounds = be.bounds();
-        if (bounds != null && (be.preview() || be.running())) hologram(pose, buffers, bounds.move(-origin.getX(), -origin.getY(), -origin.getZ()), (float) time);
+        if (bounds != null && (be.preview() || be.running())) {
+            AABB box = bounds.move(-origin.getX(), -origin.getY(), -origin.getZ());
+            int[] d = BuilderAdjust.delta(origin, be.planOffset());   // 0.1.11.185: ahead of the plan while the player moves the blueprint
+            hologram(pose, buffers, d == null ? box : box.move(d[0], d[1], d[2]), (float) time);
+        }
+        if (be.preview() && BuilderGhosts.mode != BuilderGhosts.FRAME) BuilderGhosts.want(be);   // 0.1.11.184: the blocks still to place
         BuilderDroneView.render(be, pose, buffers, origin, time, partialTick);
     }
 
@@ -100,11 +106,11 @@ public class BlueprintBuilderRenderer implements BlockEntityRenderer<BlueprintBu
     }
 
     @Override public boolean shouldRenderOffScreen(BlueprintBuilderBlockEntity be) { return true; }
-    @Override public int getViewDistance() { return 128; }
+    @Override public int getViewDistance() { return 512; }   // 0.1.11.186: a plan may be very large (was 128)
 
     @Override
     public AABB getRenderBoundingBox(BlueprintBuilderBlockEntity be) {
-        return new AABB(be.getBlockPos()).inflate(BlueprintBuilderBlockEntity.RANGE + 2);
+        return AABB.INFINITE;   // 0.1.11.186: the box and the drones go as far as the plan (no range any more)
     }
 
     /** Item stack for a synced cargo id (cached per id). */

@@ -49,10 +49,7 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
 
     public static final int WRENCH_DURABILITY = 120;
 
-    public static final TagKey<Block> WRENCH_CAN_DAMAGED = TagKey.create(
-        Registries.BLOCK,
-        ResourceLocation.fromNamespaceAndPath("c", "wrench_can_damaged")
-    );
+    // 0.1.11.172: c:wrench_can_damaged is gone; what a wrench takes apart is mio_icif:wrenchable (WrenchRules.dismantlable)
 
     public mio_icif_wrench(Properties properties) {
         super(properties.durability(WRENCH_DURABILITY));
@@ -105,7 +102,8 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
         boolean isPipe = state.getBlock() instanceof mio_icif_block_pipe_water
                       || state.getBlock() instanceof mio_icif_block_pipe_water_extract
                       || state.getBlock() instanceof mio_icif_block_pipe_item;
-        boolean isMachine = state.is(mio_icif_tags.MACHINE);
+        // 0.1.11.171: machines, casings and ports, as every SI wrench sees them (WrenchRules)
+        boolean isMachine = WrenchRules.dismantlable(state);
         
         if (!isWire && !isPipe && !isMachine) {
             return;
@@ -134,7 +132,7 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
 
         if (isWire || isPipe) {
             if (player.isShiftKeyDown()) {
-                boolean canBeDismantled = state.is(WRENCH_CAN_DAMAGED);
+                boolean canBeDismantled = WrenchRules.dismantlable(state);
                 if (canBeDismantled) {
                     dismantleBlock(level, pos, state, player, stack, hand);
                     return;
@@ -157,26 +155,14 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
             return;
         }
 
-        Direction currentFacing = getCurrentFacing(state);
-
-        // 如果方块没有正面属性（如核反应仓），直接扳手右键即可拆除
-        if (currentFacing == null) {
-            dismantleBlock(level, pos, state, player, stack, hand);
-            return;
+        // 0.1.11.171: the rules every SI wrench shares (WrenchRules): no facing (such as the reactor chamber or a casing) or a
+        // click on the front dismantles; sneaking turns the block away from the click; another face turns it toward the click
+        switch (WrenchRules.action(state, clickedFace, player.isShiftKeyDown(), true)) {
+            case DISMANTLE -> dismantleBlock(level, pos, state, player, stack, hand);
+            case ROTATE -> rotateBlock(level, pos, state, player, stack, clickedFace);
+            case ROTATE_OPPOSITE -> rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite());
+            case NONE -> { }
         }
-
-        // 有正面属性的方块
-        if (player.isShiftKeyDown()) {
-            rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite());
-            return;
-        }
-
-        if (currentFacing == clickedFace) {
-            dismantleBlock(level, pos, state, player, stack, hand);
-            return;
-        }
-
-        rotateBlock(level, pos, state, player, stack, clickedFace);
     }
 
     private void handleWireInteraction(Level level, BlockPos pos, BlockState state,
@@ -355,16 +341,6 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
             return null;
         }
 
-        return null;
-    }
-
-    private Direction getCurrentFacing(BlockState state) {
-        if (state.hasProperty(BlockStateProperties.FACING)) {
-            return state.getValue(BlockStateProperties.FACING);
-        }
-        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            return state.getValue(BlockStateProperties.HORIZONTAL_FACING);
-        }
         return null;
     }
 

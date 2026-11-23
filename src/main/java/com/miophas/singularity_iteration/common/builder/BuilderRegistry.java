@@ -46,10 +46,20 @@ public final class BuilderRegistry {
     public static final DeferredItem<BlockItem> MATERIAL_INTERFACE_ITEM = ITEMS.register("producer/block_material_interface",
         () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(MATERIAL_INTERFACE.get(), new Item.Properties()));
 
+    /** 0.1.11.187: every material in any amount, for creative play (no recipe, as the Infinite Generator). */
+    public static final DeferredBlock<InfiniteMaterialInterfaceBlock> INFINITE_MATERIAL_INTERFACE = BLOCKS.register("producer/block_infinite_material_interface",
+        () -> new InfiniteMaterialInterfaceBlock(Block.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(3.0F, 12.0F)
+            .sound(net.minecraft.world.level.block.SoundType.METAL).requiresCorrectToolForDrops()));
+    public static final DeferredItem<BlockItem> INFINITE_MATERIAL_INTERFACE_ITEM = ITEMS.register("producer/block_infinite_material_interface",
+        () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(INFINITE_MATERIAL_INTERFACE.get(), new Item.Properties().rarity(Rarity.EPIC)));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlueprintBuilderBlockEntity>> BUILDER_ENTITY =
         BLOCK_ENTITIES.register("blueprint_builder", () -> BlockEntityType.Builder.of(BlueprintBuilderBlockEntity::new, BUILDER.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MaterialInterfaceBlockEntity>> MATERIAL_INTERFACE_ENTITY =
         BLOCK_ENTITIES.register("material_interface", () -> BlockEntityType.Builder.of(MaterialInterfaceBlockEntity::new, MATERIAL_INTERFACE.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<InfiniteMaterialInterfaceBlockEntity>> INFINITE_MATERIAL_INTERFACE_ENTITY =
+        BLOCK_ENTITIES.register("infinite_material_interface",
+            () -> BlockEntityType.Builder.of(InfiniteMaterialInterfaceBlockEntity::new, INFINITE_MATERIAL_INTERFACE.get()).build(null));
 
     public static final DeferredHolder<MenuType<?>, MenuType<BlueprintBuilderMenu>> BUILDER_MENU = MENUS.register("blueprint_builder",
         () -> new MenuType<>((IContainerFactory<BlueprintBuilderMenu>) BlueprintBuilderMenu::new, FeatureFlags.VANILLA_SET));

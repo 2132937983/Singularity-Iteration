@@ -24,23 +24,28 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * the pump / discharge and waterlogged switches as icons in its corner; under it the main readout (buckets in the pool
  * or room in the basin, twice the font size) with the state beside it, then the fluid, flow and lift, and the time
  * left; the keep-level and target-height steppers sit in the slot row beside the battery and container slots.
+ *
+ * <p>0.1.11.181: the vanilla 176 x 240, merged (docs/gui_processing_machines.md, "合并布局"): the cross-section across the top
+ * (160 wide, was 210) with its two icons in the corner; under it the pump's own row: the battery with the bolt on it, the
+ * tank, its pipe down to the filler with the empty container on one side and the filled one on the other, the keep-level
+ * and target-height setters on the right (their names in the tooltips); then the readouts.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
 
-    private static final int TANK_X = 8, TANK_Y = 16, TANK_W = 16, TANK_H = 56;
-    private static final int VIEW_X = 31, VIEW_Y = 16, VIEW_W = 210, VIEW_H = 56;
-    private static final int BOLT_X = 12, BOLT_Y = 92, HEAD_Y = 77, LINE1_Y = 98, LINE2_Y = 108;
-    private static final int STEP_Y = PumpElcMenu.SLOT_ROW_Y + 2, STEP = 11;
+    private static final int TANK_X = 36, TANK_Y = 79, TANK_W = 14, TANK_H = 30;
+    private static final int VIEW_X = 8, VIEW_Y = 16, VIEW_W = 160, VIEW_H = 56;
+    private static final int BOLT_X = 13, BOLT_Y = 78, HEAD_Y = 114, LINE1_Y = 133, LINE2_Y = 143;
+    private static final int STEP_X = 112, KEEP_Y = 80, TARGET_Y = 97, STEP = 11, FILLER_X = 75, FILLER_Y = 88;
     private static final String K = "gui.mio_icif.pump.";
     private static final String[] ICON_DROP = {"...#...", "..###..", ".#####.", "#######", "#######", ".#####.", "..###.."};
 
     /** Clickable controls: x, y, w, h, button id (-2 / -3: keep level down / up; 8 / 9: target height down / up). */
     private static final int[][] CONTROLS = {
         {VIEW_X + VIEW_W - 26, VIEW_Y + 2, 11, 11, 0}, {VIEW_X + VIEW_W - 13, VIEW_Y + 2, 11, 11, 1},
-        {29, STEP_Y, STEP, STEP, -2}, {85, STEP_Y, STEP, STEP, -3},
-        {152, STEP_Y, STEP, STEP, 8}, {208, STEP_Y, STEP, STEP, 9},
+        {STEP_X, KEEP_Y, STEP, STEP, -2}, {168 - STEP, KEEP_Y, STEP, STEP, -3},
+        {STEP_X, TARGET_Y, STEP, STEP, 8}, {168 - STEP, TARGET_Y, STEP, STEP, 9},
     };
 
     private final PumpCrossSection view = new PumpCrossSection();
@@ -67,14 +72,13 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
             if (slot.x < 0 || slot.x > imageWidth) continue;   // docked upgrade slots are drawn by the dock
             VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
         }
-        g.drawString(font, "\u203A", x + 120, y + PumpElcMenu.SLOT_ROW_Y + 4, ReadoutPanel.MUTED, false);
-        // tank and the stored energy
-        VanillaFrame.inset(g, x + TANK_X - 1, y + TANK_Y - 1, TANK_W + 2, TANK_H + 2, VanillaFrame.SLOT);
+        // 0.1.11.181: the tank, its pipe down to the filler between the two container slots, the stored energy on the battery
         FluidStack tank = menu.getFluidStack();
-        if (!tank.isEmpty()) {
-            int lv = Math.max(1, Math.round(TANK_H * Math.min(1F, tank.getAmount() / (float) Math.max(1, menu.getFluidCapacity()))));
-            VanillaFrame.fluid(g, x + TANK_X, y + TANK_Y + TANK_H - lv, TANK_W, lv, tank);
-        }
+        MachineArt.tank(g, x + TANK_X, y + TANK_Y, TANK_W, TANK_H, tank, menu.getFluidCapacity());
+        int filler = (int) ((FILLER_X + 8));
+        MachineArt.pipe(g, x + TANK_X + TANK_W + 2, x + filler + 2, y + 82, tank.isEmpty() ? 0 : MachineArt.WATER, -1);
+        MachineArt.pipeDown(g, x + filler, y + 82, y + FILLER_Y, tank.isEmpty() ? 0 : MachineArt.WATER, -1);
+        MachineArt.filler(g, x + FILLER_X, y + FILLER_Y, PumpElcMenu.OUTPUT_X - 1 - FILLER_X);
         long e = Integer.toUnsignedLong(menu.getEnergy()), max = Math.max(1, Integer.toUnsignedLong(menu.getMaxEnergy()));
         VanillaFrame.bolt(g, x + BOLT_X, y + BOLT_Y, e / (double) max);
         // the cross-section
@@ -129,7 +133,7 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
             : infinite ? Component.translatable(K + "infinite")
             : Component.translatable(K + (capped ? "pool_capped" : "pool"), grouped(count));
         Component side = Component.translatable(K + stateKey);
-        int left = x + VIEW_X - 1, right = x + VIEW_X + VIEW_W + 1;
+        int left = x + VIEW_X - 1, right = x + VIEW_X + VIEW_W + 1;   // 0.1.11.181: x 7..169
         VanillaFrame.bigText(g, fit(head, (right - left - font.width(side) - 8) / 2), left, y + HEAD_Y, 0x1C2524);
         g.drawString(font, side, right - font.width(side), y + HEAD_Y + 4, stateColour, false);
         // the fluid, flow and lift; then the time left (or why there is none)
@@ -188,11 +192,12 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
                 default -> stepButton(g, bx, by, c[4] == -2 || c[4] == 8 ? "\u2212" : "+", active(c[4]), hover);
             }
         }
-        // the stepper values between their buttons
-        Component keep = Component.translatable(K + "keep.value", grouped(v(8)));
+        // the setter values between their buttons (0.1.11.181: the keep level as the bare number, its name in the tooltip)
+        Component keep = Component.literal(grouped(v(8)));
         Component target = Component.translatable(K + "target.value", (v(10) >= 0 ? "+" : "") + v(10));
-        g.drawString(font, keep, x + 29 + STEP + (85 - 29 - STEP - font.width(keep)) / 2, y + STEP_Y + 2, dis ? 0x9AA0A6 : 0x1C2524, false);
-        g.drawString(font, target, x + 152 + STEP + (208 - 152 - STEP - font.width(target)) / 2, y + STEP_Y + 2, dis ? 0x1C2524 : 0x9AA0A6, false);
+        int mid = STEP_X + STEP + (168 - STEP - STEP_X - STEP) / 2;
+        g.drawString(font, keep, x + mid - font.width(keep) / 2, y + KEEP_Y + 2, dis ? 0x9AA0A6 : 0x1C2524, false);
+        g.drawString(font, target, x + mid - font.width(target) / 2, y + TARGET_Y + 2, dis ? 0x1C2524 : 0x9AA0A6, false);
     }
 
     /** A small flat icon button (on: pressed in, white). */
@@ -236,7 +241,8 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
         super.render(g, mouseX, mouseY, partialTick);
         List<Component> tip = new ArrayList<>();
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= TANK_X && rx < TANK_X + TANK_W && ry >= TANK_Y && ry < TANK_Y + TANK_H) {
+        if (hoveredSlot != null) return;   // 0.1.11.181: a slot shows its own tooltip only
+        if (rx >= TANK_X - 2 && rx < TANK_X + TANK_W + 2 && ry >= TANK_Y - 2 && ry < TANK_Y + TANK_H + 2) {
             FluidStack f = menu.getFluidStack();
             tip.add(f.isEmpty() ? Component.translatable(K + "tip.tank_empty")
                 : Component.translatable(K + "tip.tank", f.getHoverName(), grouped(menu.getFluidAmount()), grouped(menu.getFluidCapacity())));
@@ -248,7 +254,8 @@ public class mio_icif_gui_pump_elc extends mio_icif_screen<PumpElcMenu> {
                 switch (c[4]) {
                     case 0 -> { tip.add(Component.translatable(K + (discharge() ? "mode.discharge" : "mode.pump"))); tip.add(Component.translatable(K + "tip.mode")); }
                     case 1 -> { tip.add(Component.translatable(K + (v(9) != 0 ? "waterlogged.on" : "waterlogged.off"))); tip.add(Component.translatable(K + "tip.waterlogged")); }
-                    case -2, -3 -> { tip.add(Component.translatable(K + "tip.keep")); tip.add(Component.translatable(K + "tip.keep_step")); }
+                    case -2, -3 -> { tip.add(Component.translatable(K + "keep.value", grouped(v(8)))); tip.add(Component.translatable(K + "tip.keep"));
+                        tip.add(Component.translatable(K + "tip.keep_step")); }
                     default -> tip.add(Component.translatable(K + "tip.target"));
                 }
             }

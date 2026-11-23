@@ -29,6 +29,27 @@ public final class BuiltinStructureBlueprints {
         heated("blast_furnace", block("producer/block_blast_furnace"), block("producer/block_blast_furnace_advanced"));
         heated("fermenter", block("producer/block_fermenter_elc"));
         fusionReactor();   // 0.1.11.92
+        tesu();            // 0.1.11.157
+    }
+
+    /**
+     * 0.1.11.157: the TESU (太级储电罐), from the same layout file its controller checks (data/mio_icif/multiblock/tesu.json):
+     * a 7 x 7 x 13 cylinder. A port slot takes a TESU input or output port, or casing; the inside round the cell column must
+     * stay air.
+     */
+    private static void tesu() {
+        StructureBlueprint.Builder plan = StructureBlueprint.builder(id("tesu"));
+        for (String[] rows : TesuStructure.get().layers()) plan.layer(rows);
+        register(plan
+            .key('K', block("wiring/block_tesu_controller").with("facing", "north"))
+            .key('C', KEY + "tesu.casing", block("wiring/block_tesu_casing"))
+            .key('G', KEY + "tesu.glass", block("build/block_alloy_glass"))
+            .key('E', KEY + "tesu.cell", block("wiring/block_tesu_cell"))
+            .key('P', KEY + "tesu.port", block("wiring/block_tesu_input"), block("wiring/block_tesu_output"),
+                block("wiring/block_tesu_wireless_port"), block("wiring/block_tesu_casing"))
+            .controller('K')
+            .note(KEY + "tesu.note.inside")
+            .note(KEY + "tesu.note.turn"));
     }
 
     /** Nuclear Reactor Generator with a Reactor Chamber on each face (chambers are optional: 3 + chambers columns). */

@@ -32,13 +32,12 @@ import org.jetbrains.annotations.Nullable;
     public static final int SLOT_COUNT = 7;
 
     /** 0.1.11.7: 248 x 222 screen with the cross-section view; machine slots in one row under the controls. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 222;
-    public static final int SLOT_ROW_Y = 119;
-    public static final int BATTERY_X = 9;
-    public static final int CONTAINER_INPUT_X = 99;
-    public static final int OUTPUT_X = 131;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240;   // 0.1.11.181: the vanilla width (was 248 x 222)
+    /** 0.1.11.181: the battery under its bolt; the empty container and the filled one either side of the filler fed by the tank. */
+    public static final int BATTERY_X = 10, BATTERY_Y = 92;
+    public static final int CONTAINER_INPUT_X = 56, OUTPUT_X = 92, CONTAINER_Y = 86;
     public static final int UPGRADE_START_X = 167;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 140, HOTBAR_Y = 198;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_MAX_PROGRESS = 1;
@@ -136,18 +135,18 @@ import org.jetbrains.annotations.Nullable;
     @Override
     protected void addMachineSlots() {
         // 电池槽 (152, 62)
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_BATTERY, BATTERY_X, SLOT_ROW_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_BATTERY, BATTERY_X, BATTERY_Y));
         
         // 4个升级槽 (152, 8) 开始，垂直排列
         for (int i = 0; i < SLOT_UPGRADE_COUNT; i++) {
-            addUpgradeSlot(itemHandler, SLOT_UPGRADE_START + i, UPGRADE_START_X + i * 18, SLOT_ROW_Y);
+            addUpgradeSlot(itemHandler, SLOT_UPGRADE_START + i, UPGRADE_START_X + i * 18, CONTAINER_Y);   // docked
         }
         
         // 空容器输入槽 (44, 35) - 顶部位置
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_CONTAINER_INPUT, CONTAINER_INPUT_X, SLOT_ROW_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_CONTAINER_INPUT, CONTAINER_INPUT_X, CONTAINER_Y));
         
         // 填充容器输出槽 (116, 35) - 侧面位置
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_OUTPUT, OUTPUT_X, SLOT_ROW_Y) {
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_OUTPUT, OUTPUT_X, CONTAINER_Y) {
             @Override
             public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 return false;

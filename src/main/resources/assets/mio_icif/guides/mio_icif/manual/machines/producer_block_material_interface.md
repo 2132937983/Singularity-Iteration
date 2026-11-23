@@ -26,6 +26,7 @@ It has 27 slots. It also reads the storages on its six sides.
 * The drones bring unused material back to the interface.
 * Hoppers and pipes can fill the 27 slots. RTS Building can link the interface as a storage.
 * The builder uses the interfaces within 16 blocks.
+* In creative play the [Infinite Armory Material Interface](producer_block_infinite_material_interface.md) supplies every material without end.
 
 ## Recipe
 

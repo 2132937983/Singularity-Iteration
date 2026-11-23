@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_centrifuge_elc;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.menu.producer.CentrifugeElcMenu;
@@ -46,6 +47,35 @@ public class mio_icif_gui_centrifuge_elc extends ProcessInstrumentScreen<Centrif
             blade(g, cx, cy, a, 17, 26, 4F, 4F, STEEL_LIGHT);
         }
         FcsDraw.disc(g, cx, cy, 6, STEEL);
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Centrifuge's); 0.1.11.180: 176 wide ----
+    // The centrifuge from the front: the input in the hopper on top, the rotor with its six buckets turning at the rotor
+    // speed inside the heater ring (dark when cold, red to pale yellow with the heat), the cable from the battery into the
+    // casing, the arrow to the rack of the three outputs.
+    private static final int ROTOR_X = 80, ROTOR_Y = 66;
+
+    @Override protected int arrowX() { return 118; }
+    @Override protected int arrowY() { return MergedSlots.Centrifuge.OUT_TOP_Y + MergedSlots.Centrifuge.OUT_STEP + 1; }
+    @Override protected int[] machineBody() { return new int[]{50, 38, 60, 57}; }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        float tau = 2 * (float) Math.PI;
+        angle = (angle + dt * speed() * TURNS_PER_SECOND * tau) % tau;
+        MachineArt.cable(g, 28, 82, 50, 82);
+        MachineArt.iron(g, 50, 38, 60, 57);                                           // the casing
+        double celsius = menu.getHeat() <= 0 ? 20 : 450 + 1100.0 * menu.getHeat() / Math.max(1, menu.getMaxHeat());
+        FcsDraw.circle(g, ROTOR_X, ROTOR_Y, 23, 3.5F, glow(celsius));                  // the heater ring
+        FcsDraw.disc(g, ROTOR_X, ROTOR_Y, 20, MachineArt.WINDOW);
+        for (int k = 0; k < 6; k++) {                                                 // the arms and the buckets
+            float a = angle + k * tau / 6;
+            blade(g, ROTOR_X, ROTOR_Y, a, 4, 12, 1, 1, MachineArt.STEEL);
+            blade(g, ROTOR_X, ROTOR_Y, a, 11, 17, 3, 3, MachineArt.STEEL_LIGHT);
+        }
+        FcsDraw.disc(g, ROTOR_X, ROTOR_Y, 4, MachineArt.STEEL);
+        MachineArt.hopper(g, MergedSlots.Centrifuge.IN_X, MergedSlots.Centrifuge.IN_Y, 38);
+        MachineArt.rack(g, MergedSlots.Centrifuge.OUT_X, MergedSlots.Centrifuge.OUT_TOP_Y, 3, MergedSlots.Centrifuge.OUT_STEP);
     }
 
     @Override

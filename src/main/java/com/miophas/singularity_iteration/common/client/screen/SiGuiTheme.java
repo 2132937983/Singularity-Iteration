@@ -8,21 +8,25 @@ import net.neoforged.api.distmarker.OnlyIn;
  * SI "clean modern IC2" GUI theme for code-drawn widgets (matte light grey, thin flat
  * outlines, light inset displays with dark text, one steel-blue accent). Colours match the GUI
  * textures (tools/assetgen si_gui.py) so drawn panels, wells and slots blend in.
+ *
+ * <p>0.1.11.183: the panel, outline, bevels and slots are the vanilla container's (as {@link VanillaFrame}, which the
+ * processing machines and generators use); the textures were recoloured to match (tools/gui_vanilla_111183.py). The wells
+ * are the light paper of the readout windows; the accent and status colours stay.
  */
 @OnlyIn(Dist.CLIENT)
 public final class SiGuiTheme {
     private SiGuiTheme() {}
 
-    public static final int OUTLINE = 0xFF585D63;
-    public static final int BEVEL_HI = 0xFFF8F9F9;
-    public static final int BEVEL_LO = 0xFFAAAEB3;
-    public static final int PANEL_TOP = 0xFFE0E2E3;
-    public static final int PANEL_BOTTOM = 0xFFD3D5D7;
-    public static final int SLOT_FILL = 0xFFA8ACB1;
-    public static final int SLOT_SHADOW = 0xFF7A7F85;
-    public static final int SLOT_HI = 0xFFF7F8F9;
-    public static final int SCREEN_BG = 0xFFEEF0F1;
-    public static final int SCREEN_GRID = 0xFFE4E6E8;
+    public static final int OUTLINE = VanillaFrame.OUTLINE;
+    public static final int BEVEL_HI = VanillaFrame.LIGHT;
+    public static final int BEVEL_LO = VanillaFrame.SHADOW;
+    public static final int PANEL_TOP = VanillaFrame.PANEL;
+    public static final int PANEL_BOTTOM = VanillaFrame.PANEL;
+    public static final int SLOT_FILL = VanillaFrame.SLOT;
+    public static final int SLOT_SHADOW = VanillaFrame.SLOT_DARK;
+    public static final int SLOT_HI = VanillaFrame.LIGHT;
+    public static final int SCREEN_BG = 0xFFF4F6F4;
+    public static final int SCREEN_GRID = 0xFFE2E6E2;
     public static final int ACCENT = 0xFF3A6EA5;
     public static final int ACCENT_DIM = 0xFF7EA0C6;
     public static final int TEXT = 0x303438;
@@ -35,21 +39,14 @@ public final class SiGuiTheme {
     public static final int BAR_TO = 0xFF3A6EA5;
     public static final int LED_OFF = 0xFF9AA0A6;
 
-    /** Flat window panel: thin outline, fine inner highlight/shadow. */
+    /** The window panel (0.1.11.183: the vanilla container's, {@link VanillaFrame#panel}). */
     public static void panel(GuiGraphics g, int x, int y, int w, int h) {
-        g.fill(x, y, x + w, y + h, OUTLINE);
-        g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, PANEL_TOP, PANEL_BOTTOM);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, BEVEL_HI);
-        g.fill(x + 1, y + 1, x + 2, y + h - 1, BEVEL_HI);
-        g.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, BEVEL_LO);
-        g.fill(x + w - 2, y + 1, x + w - 1, y + h - 1, BEVEL_LO);
+        VanillaFrame.panel(g, x, y, w, h);
     }
 
-    /** 18x18 inventory slot frame (item drawn at x + 1, y + 1). */
+    /** 18x18 inventory slot frame (item drawn at x + 1, y + 1; 0.1.11.183: the vanilla slot). */
     public static void slot(GuiGraphics g, int x, int y) {
-        g.fill(x, y, x + 18, y + 18, SLOT_HI);
-        g.fill(x, y, x + 17, y + 17, SLOT_SHADOW);
-        g.fill(x + 1, y + 1, x + 17, y + 17, SLOT_FILL);
+        VanillaFrame.slot(g, x, y);
     }
 
     /** Light inset display (dark text) with a faint grid. */
@@ -71,15 +68,15 @@ public final class SiGuiTheme {
 
     /** Small round status lamp (5x5) with a bezel; colour = GOOD/WARN/BAD/LED_OFF. */
     public static void led(GuiGraphics g, int x, int y, int color) {
-        g.fill(x + 1, y, x + 4, y + 5, 0xFF7A7F85);
-        g.fill(x, y + 1, x + 5, y + 4, 0xFF7A7F85);
+        g.fill(x + 1, y, x + 4, y + 5, SLOT_SHADOW);
+        g.fill(x, y + 1, x + 5, y + 4, SLOT_SHADOW);
         g.fill(x + 1, y + 1, x + 4, y + 4, color);
         g.fill(x + 1, y + 1, x + 2, y + 2, 0x80FFFFFF);
     }
 
     /** Engraved horizontal groove (shadow line + highlight line). */
     public static void groove(GuiGraphics g, int x, int y, int w) {
-        g.fill(x, y, x + w, y + 1, 0xFFB0B4B9);
-        g.fill(x, y + 1, x + w, y + 2, 0xFFF5F6F7);
+        g.fill(x, y, x + w, y + 1, VanillaFrame.SLOT);
+        g.fill(x, y + 1, x + w, y + 2, VanillaFrame.LIGHT);
     }
 }

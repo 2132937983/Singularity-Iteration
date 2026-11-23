@@ -172,6 +172,9 @@ public class mio_icif_capacities {
             mio_icif_block_entities.GESU_INPUT_IV.get(),
             mio_icif_block_entities.GESU_OUTPUT_IV.get(),
             mio_icif_block_entities.GESU_OUTPUT_LUV.get(),
+            mio_icif_block_entities.TESU_CONTROLLER.get(),
+            mio_icif_block_entities.TESU_INPUT.get(),
+            mio_icif_block_entities.TESU_OUTPUT.get(),
             mio_icif_block_entities.FURNACE_ELC_ENTITY_TYPE.get(),
             mio_icif_block_entities.POWDER_ELC_ENTITY_TYPE.get(),
             mio_icif_block_entities.POWDER_ADVANCED_ELC_ENTITY_TYPE.get(),
@@ -356,6 +359,10 @@ public class mio_icif_capacities {
 
         // Register EU energy storage capability for GESU Output Module LuV
         registerEnergyCapabilities(event, mio_icif_block_entities.GESU_OUTPUT_LUV.get());
+        // 0.1.11.157: TESU
+        registerEnergyCapabilities(event, mio_icif_block_entities.TESU_CONTROLLER.get());
+        registerEnergyCapabilities(event, mio_icif_block_entities.TESU_INPUT.get());
+        registerEnergyCapabilities(event, mio_icif_block_entities.TESU_OUTPUT.get());
         Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for GESU Output Module LuV");
 
         // Register EU energy storage capability for Oil Rig Core

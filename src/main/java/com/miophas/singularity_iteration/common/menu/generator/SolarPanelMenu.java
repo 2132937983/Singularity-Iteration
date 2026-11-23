@@ -13,13 +13,19 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 0.1.11.14: the menu of every solar panel (each panel type keeps its own menu type, a subclass of this one). 248 x 204:
  * the charge slots in a column on the left, the pyranometer record in the window, the player inventory below.
+ * 0.1.11.181: 176 wide; the charge slots sit under the panel drawn on the left (one, or four in a square), the inventory at
+ * (8, 162).
  */
 @SuppressWarnings("null")
 public class SolarPanelMenu extends mio_icif_generator_menu {
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
-    public static final int SLOT_X = 10, SLOT_Y = 18, SLOT_STEP = 18;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 244;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
+
+    /** 0.1.11.181: charge slot {@code i} of {@code count}: one under the middle of the panel, or four in a square under it. */
+    public static int slotX(int i, int count) { return count == 1 ? 19 : 10 + (i % 2) * 18; }
+
+    public static int slotY(int i, int count) { return count == 1 ? 50 : 40 + (i / 2) * 18; }
 
     private final ContainerLevelAccess access;
     public final @Nullable mio_icif_solar_generator blockEntity;
@@ -57,7 +63,7 @@ public class SolarPanelMenu extends mio_icif_generator_menu {
     protected void addMachineSlots() {
         // called from the super constructor: the slot count is the machine slot count given there
         int count = machineSlotCountForLayout();
-        for (int i = 0; i < count; i++) addBatterySlot(i, SLOT_X, SLOT_Y + i * SLOT_STEP);
+        for (int i = 0; i < count; i++) addBatterySlot(i, slotX(i, count), slotY(i, count));
     }
 
     /** The number of machine slots (the item handler of the menu has exactly that many). */

@@ -14,7 +14,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * 0.1.11.131: the quantum generator screen in the vanilla-frame generator layout: the player inventory at (44, 162) and
- * the hotbar at y 220 (248 x 244), the EU made in the last tick synced as a sixth value, the screen's texts in every
+ * the hotbar at y 220 (248 x 244; 0.1.11.181: 176 x 244, the inventory at x 8), the EU made in the last tick synced as a sixth value, the screen's texts in every
  * language; 0.1.11.130's background section in the three manuals. (Classes by name.)
  */
 @GameTestHolder(CoreExampleMod.ID)
@@ -34,8 +34,9 @@ public final class Round111131GameTests {
         AbstractContainerMenu menu = (AbstractContainerMenu) menuClass
             .getConstructor(int.class, Inventory.class, be.getClass()).newInstance(0, inv, be);
         h.assertTrue(menu.slots.size() == 36, "slots " + menu.slots.size());
-        h.assertTrue(menu.slots.get(0).x == 44 && menu.slots.get(0).y == 162, "inventory at " + menu.slots.get(0).x + ", " + menu.slots.get(0).y);
-        h.assertTrue(menu.slots.get(27).x == 44 && menu.slots.get(27).y == 220, "hotbar at " + menu.slots.get(27).x + ", " + menu.slots.get(27).y);
+        // 0.1.11.181: x 8 (the screen is the vanilla 176 wide; it was 248 with the inventory at x 44)
+        h.assertTrue(menu.slots.get(0).x == 8 && menu.slots.get(0).y == 162, "inventory at " + menu.slots.get(0).x + ", " + menu.slots.get(0).y);
+        h.assertTrue(menu.slots.get(27).x == 8 && menu.slots.get(27).y == 220, "hotbar at " + menu.slots.get(27).x + ", " + menu.slots.get(27).y);
         h.succeedWhen(() -> {
             long made = (long) Round33GameTests.call(be, "getLastGenerated");
             h.assertTrue(made > 0, "nothing made yet");

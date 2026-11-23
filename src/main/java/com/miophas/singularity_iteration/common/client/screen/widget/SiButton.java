@@ -8,7 +8,11 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-/** Button in the SI GUI theme: matte light key, steel-blue selected state, pressed shading. */
+/**
+ * Button in the SI GUI theme: matte light key, steel-blue selected state, pressed shading. 0.1.11.183: the vanilla-like
+ * raised key of the processing machines (white upper left, dark lower right, grey face, lighter on hover); a selected
+ * button is pressed in (sunk, dark, white text).
+ */
 @OnlyIn(Dist.CLIENT)
 public class SiButton extends Button {
     private boolean selected;
@@ -25,13 +29,14 @@ public class SiButton extends Button {
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         int x = getX(), y = getY(), w = width, h = height;
         boolean hot = active && isHoveredOrFocused() && !selected;
-        int top = selected ? 0xFF4A7EB5 : hot ? 0xFFFAFBFC : active ? 0xFFF0F1F2 : 0xFFE2E3E4;
-        int bottom = selected ? 0xFF3A6EA5 : hot ? 0xFFE0E6EE : active ? 0xFFD5D8DB : 0xFFDADCDE;
-        g.fill(x, y, x + w, y + h, selected ? 0xFF2F5A88 : 0xFF8A9096);
-        g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, top, bottom);
-        if (!selected && active) g.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, hot ? SiGuiTheme.ACCENT : 0xFFB8BCC1);
-        if (selected) g.fill(x + 1, y + 1, x + w - 1, y + 2, 0xFF2F5A88);
-        int color = !active && !selected ? 0xFFA0A4A8 : selected ? 0xFFFFFFFF : 0xFF2A2E33;
+        if (selected) {   // pressed in
+            com.miophas.singularity_iteration.common.client.screen.VanillaFrame.inset(g, x, y, w, h, 0xFF6B6B6B);
+        } else {
+            g.fill(x, y, x + w, y + h, com.miophas.singularity_iteration.common.client.screen.VanillaFrame.SHADOW);
+            g.fill(x, y, x + w - 1, y + h - 1, active ? com.miophas.singularity_iteration.common.client.screen.VanillaFrame.LIGHT : 0xFFD8D8D8);
+            g.fill(x + 1, y + 1, x + w - 1, y + h - 1, hot ? 0xFFD8D8E8 : active ? 0xFFB8B8B8 : 0xFFA8A8A8);
+        }
+        int color = !active && !selected ? 0xFF6E6E6E : selected ? 0xFFFFFFFF : 0xFF404040;
         var font = Minecraft.getInstance().font;
         int tw = font.width(getMessage());
         int ty = y + (h - 8) / 2 + (h >= 11 ? 1 : 0);

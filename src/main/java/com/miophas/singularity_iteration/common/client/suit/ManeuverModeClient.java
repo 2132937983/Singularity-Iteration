@@ -478,6 +478,12 @@ public final class ManeuverModeClient {
                     if (p.tickCount - vis.hardTick > 10) com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.landing(p, strength);
                 }
                 vis.wasFlying = false;
+                // 0.1.11.185: a gather (the ring closing on the flyer before the barrier) ends with the flight; it was only
+                // called off in flight, so a landing during it left the ring drawn at full strength for good
+                vis.gatherTick = Integer.MIN_VALUE;
+                vis.lastMach = 0;
+                vis.speed = 0;
+                vis.wasShock = false;
             }
             return;
         }
@@ -575,7 +581,7 @@ public final class ManeuverModeClient {
     /** 0.1.11.72 (W2): the strength of a flyer's gather, 0..1 (0: none). */
     public static float warpGather(Player p, float partial) {
         Visual vis = VISUALS.get(p.getId());
-        if (vis == null || vis.gatherTick == Integer.MIN_VALUE) return 0F;
+        if (vis == null || vis.gatherTick == Integer.MIN_VALUE || !inManeuver(p)) return 0F;   // 0.1.11.185: never out of flight
         return com.miophas.singularity_iteration.common.suit.WarpRules.gather(p.tickCount - vis.gatherTick + partial);
     }
 

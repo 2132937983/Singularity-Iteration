@@ -14,7 +14,7 @@ public class QuantumGeneratorMenu extends mio_icif_generator_menu {
 
     public static final int SLOT_COUNT = 0; // 量子发电机没有物品槽位
     /** 0.1.11.131: the vanilla-frame generator layout (docs/gui_processing_machines.md): 248 x 244, inventory at (44, 162). */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244, INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 244, INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
     /** Synced values: energy, capacity, on, rated EU/t, tier, EU made in the last tick. */
     public static final int DATA_COUNT = 6;
 

@@ -17,12 +17,17 @@ import net.neoforged.api.distmarker.OnlyIn;
 /**
  * Molecular Transformer screen. 0.1.11.6: 248 x 204 with an observation window ({@link MolecularObservationWindow})
  * in place of the progress arrow; input and output in a column on the left with the energy gauge between them.
+ *
+ * <p>0.1.11.181: the vanilla 176 wide, merged (docs/gui_processing_machines.md, "合并布局"): the transformer's chamber drawn
+ * on the vanilla panel with the observation window in its front (154 wide, was 207); the input port on its top at the left
+ * and the output port at the right, the energy gauge along the top between them.
  */
 @OnlyIn(Dist.CLIENT)
 public class mio_icif_gui_molecular_transformer extends mio_icif_screen<MolecularTransformerMenu> {
 
-    private static final int WINDOW_X = 34, WINDOW_Y = 15, WINDOW_W = 207, WINDOW_H = 95;
-    private static final int ENERGY_X = 13, ENERGY_Y = 50, ENERGY_W = 10, ENERGY_H = 28;
+    private static final int WINDOW_X = 11, WINDOW_Y = 37, WINDOW_W = 154, WINDOW_H = 74;
+    private static final int ENERGY_X = 36, ENERGY_Y = 20, ENERGY_W = 104, ENERGY_H = 9;
+    private static final int CHAMBER_X = 8, CHAMBER_Y = 34, CHAMBER_W = 160, CHAMBER_H = 80;
 
     private final MolecularObservationWindow window = new MolecularObservationWindow();
     private ItemStack lastInput = ItemStack.EMPTY;
@@ -40,20 +45,21 @@ public class mio_icif_gui_molecular_transformer extends mio_icif_screen<Molecula
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = this.leftPos, y = this.topPos;
-        SiGuiTheme.panel(g, x, y, this.imageWidth, this.imageHeight);
-        SiGuiTheme.slot(g, x + MolecularTransformerMenu.INPUT_X - 1, y + MolecularTransformerMenu.INPUT_Y - 1);
-        SiGuiTheme.slot(g, x + MolecularTransformerMenu.OUTPUT_X - 1, y + MolecularTransformerMenu.OUTPUT_Y - 1);
-        for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            SiGuiTheme.slot(g, x + MolecularTransformerMenu.INVENTORY_X - 1 + c * 18, y + MolecularTransformerMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + MolecularTransformerMenu.INVENTORY_X - 1 + c * 18, y + MolecularTransformerMenu.HOTBAR_Y - 1);
-
-        // vertical energy gauge between the two slots
+        // 0.1.11.181: the vanilla panel; the chamber with the window in its front, the two ports on its top, the gauge between
+        VanillaFrame.panel(g, x, y, this.imageWidth, this.imageHeight);
+        MachineArt.iron(g, x + CHAMBER_X, y + CHAMBER_Y, CHAMBER_W, CHAMBER_H);
+        for (int port : new int[]{MolecularTransformerMenu.INPUT_X, MolecularTransformerMenu.OUTPUT_X})
+            MachineArt.steel(g, x + port - 3, y + MolecularTransformerMenu.INPUT_Y - 3, 22, CHAMBER_Y - MolecularTransformerMenu.INPUT_Y + 4);
+        for (var slot : menu.slots) {
+            if (slot.x < 0 || slot.x > imageWidth) continue;
+            VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
+        }
         int ex = x + ENERGY_X, ey = y + ENERGY_Y;
-        g.fill(ex - 1, ey - 1, ex + ENERGY_W + 1, ey + ENERGY_H + 1, SiGuiTheme.SLOT_SHADOW);
-        g.fill(ex, ey, ex + ENERGY_W, ey + ENERGY_H, SiGuiTheme.SCREEN_BG);
+        MachineArt.sunk(g, ex, ey, ENERGY_W, ENERGY_H, MachineArt.GLASS);
         long energy = Integer.toUnsignedLong(menu.getEnergy()), max = Math.max(1, Integer.toUnsignedLong(menu.getMaxEnergy()));
-        int filled = (int) Math.round(ENERGY_H * Math.min(1.0, energy / (double) max));
-        if (filled > 0) g.fillGradient(ex, ey + ENERGY_H - filled, ex + ENERGY_W, ey + ENERGY_H, SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
+        int filled = (int) Math.round((ENERGY_W - 2) * Math.min(1.0, energy / (double) max));
+        if (filled > 0) g.fill(ex + 1, ey + 1, ex + 1 + filled, ey + ENERGY_H - 1, MachineArt.EU);
+        MachineArt.sunk(g, x + WINDOW_X - 1, y + WINDOW_Y - 1, WINDOW_W + 2, WINDOW_H + 2, MachineArt.WINDOW);
 
         window.render(g, x + WINDOW_X, y + WINDOW_Y, WINDOW_W, WINDOW_H, snapshot());
     }
@@ -90,7 +96,7 @@ public class mio_icif_gui_molecular_transformer extends mio_icif_screen<Molecula
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int ex = leftPos + ENERGY_X, ey = topPos + ENERGY_Y;
-        if (mouseX >= ex && mouseX < ex + ENERGY_W && mouseY >= ey && mouseY < ey + ENERGY_H) {
+        if (hoveredSlot == null && mouseX >= ex && mouseX < ex + ENERGY_W && mouseY >= ey && mouseY < ey + ENERGY_H) {
             g.renderComponentTooltip(this.font, List.of(
                 Component.translatable("gui.mio_icif.mt.tip.energy", Integer.toUnsignedLong(menu.getEnergy()), Integer.toUnsignedLong(menu.getMaxEnergy())),
                 Component.translatable("gui.mio_icif.mt.tip.draw", Integer.toUnsignedLong(menu.getEUPerTick()))), mouseX, mouseY);

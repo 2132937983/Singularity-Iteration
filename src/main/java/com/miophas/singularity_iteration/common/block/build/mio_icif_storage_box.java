@@ -113,7 +113,7 @@ public class mio_icif_storage_box extends BaseEntityBlock {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hitResult) {
         // 非扳手物品，打开 GUI
-        // 扳手拆除逻辑由扳手类统一处理（通过 c:machine 标签识别）
+        // 扳手拆除逻辑由扳手类统一处理（0.1.11.172: 通过 mio_icif:wrenchable 标签识别，见 WrenchRules）
         if (!level.isClientSide) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MenuProvider menuProvider) {

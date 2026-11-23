@@ -84,6 +84,12 @@ public class mio_icif_item_buffer_elc extends BlockEntity implements WorldlyCont
     private static final int[] LEFT_SLOTS = new int[LEFT_CONTENT_SLOTS];
     private static final int[] RIGHT_SLOTS = new int[RIGHT_CONTENT_SLOTS];
     private static final int[] ALL_CONTENT_SLOTS = new int[LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS];
+    /** What a side sees: the right half first (its own), then the left half (taken from once the right half is empty). */
+    private static final int[] SIDE_ORDER = new int[LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS];
+    static {
+        for (int i = 0; i < RIGHT_CONTENT_SLOTS; i++) SIDE_ORDER[i] = LEFT_CONTENT_SLOTS + i;
+        for (int i = 0; i < LEFT_CONTENT_SLOTS; i++) SIDE_ORDER[RIGHT_CONTENT_SLOTS + i] = i;
+    }
     static {
         for (int i = 0; i < LEFT_CONTENT_SLOTS; i++) {
             LEFT_SLOTS[i] = i;
@@ -191,6 +197,23 @@ public class mio_icif_item_buffer_elc extends BlockEntity implements WorldlyCont
         return itemHandler;
     }
 
+    /**
+     * 0.1.11.164: the comparator signal of the 48 content slots (the upgrade slots do not count), as a vanilla container
+     * gives it: 0 when empty, 1 with anything inside, 15 when every slot holds a full stack. Contents changing call
+     * {@link #setChanged}, which updates the comparators next to the block.
+     */
+    public int getComparatorSignal() {
+        float fill = 0;
+        boolean any = false;
+        for (int slot : ALL_CONTENT_SLOTS) {
+            ItemStack stack = itemHandler.getStackInSlot(slot);
+            if (stack.isEmpty()) continue;
+            fill += stack.getCount() / (float) Math.min(itemHandler.getSlotLimit(slot), stack.getMaxStackSize());
+            any = true;
+        }
+        return net.minecraft.util.Mth.floor(fill / ALL_CONTENT_SLOTS.length * 14.0F) + (any ? 1 : 0);
+    }
+
     @Override
     public int getContainerSize() {
         return SLOT_COUNT;
@@ -252,41 +275,46 @@ public class mio_icif_item_buffer_elc extends BlockEntity implements WorldlyCont
         setChanged();
     }
 
+    // 0.1.11.163: the faces follow IC2 (the right half prefers the four sides, the left half prefers no face):
+    //  - top and bottom reach all 48 content slots, in and out;
+    //  - a side puts items into the right half only, and takes from the right half, or from the left half once the right half
+    //    is empty.
+    // Before, the top and bottom reached the left half only and the sides the right half only, so the halves never met:
+    // items piped in from a side never came out of the bottom (a hopper under the buffer), nor items from the top out of a side.
+
+    private static boolean isContent(int slot) { return slot >= 0 && slot < LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS; }
+    private static boolean isRight(int slot) { return slot >= LEFT_CONTENT_SLOTS && slot < LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS; }
+
+    private boolean rightHalfEmpty() {
+        for (int slot : RIGHT_SLOTS) if (!itemHandler.getStackInSlot(slot).isEmpty()) return false;
+        return true;
+    }
+
+    /** Whether {@code face} (null: inside access) may put items into {@code slot}. */
+    private static boolean mayInsertThrough(int slot, @Nullable Direction face) {
+        if (!isContent(slot)) return false;
+        return face == null || !isSide(face) || isRight(slot);
+    }
+
+    /** Whether {@code face} (null: inside access) may take items out of {@code slot}. */
+    private boolean mayExtractThrough(int slot, @Nullable Direction face) {
+        if (!isContent(slot)) return false;
+        return face == null || !isSide(face) || isRight(slot) || rightHalfEmpty();
+    }
+
     @Override
     public int[] getSlotsForFace(Direction side) {
-        if (side == null) {
-            return ALL_CONTENT_SLOTS;
-        }
-        if (isSide(side)) {
-            // 水平面(SIDE): 仅右槽(24~47)可见，对应原版IC2 rightcontent(InvSide.SIDE)
-            return RIGHT_SLOTS;
-        }
-        // UP/DOWN(NOTSIDE): 仅左槽(0~23)可见，对应原版IC2 leftcontent(InvSide.NOTSIDE)
-        return LEFT_SLOTS;
+        return side != null && isSide(side) ? SIDE_ORDER : ALL_CONTENT_SLOTS;
     }
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction direction) {
-        if (slot < 0 || slot >= LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS) return false;
-        if (direction == null) return true;
-        if (isSide(direction)) {
-            // 水平面(SIDE): 仅右槽(24~47)可插入
-            return slot >= LEFT_CONTENT_SLOTS && slot < LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS;
-        }
-        // UP/DOWN(NOTSIDE): 仅左槽(0~23)可插入
-        return slot < LEFT_CONTENT_SLOTS;
+        return mayInsertThrough(slot, direction);
     }
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
-        if (slot < 0 || slot >= LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS) return false;
-        if (direction == null) return true;
-        if (isSide(direction)) {
-            // 水平面(SIDE): 仅右槽(24~47)可抽取
-            return slot >= LEFT_CONTENT_SLOTS && slot < LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS;
-        }
-        // UP/DOWN(NOTSIDE): 仅左槽(0~23)可抽取
-        return slot < LEFT_CONTENT_SLOTS;
+        return mayExtractThrough(slot, direction);
     }
 
     @Override
@@ -331,57 +359,56 @@ public class mio_icif_item_buffer_elc extends BlockEntity implements WorldlyCont
         return dir == Direction.NORTH || dir == Direction.SOUTH || dir == Direction.EAST || dir == Direction.WEST;
     }
 
+    /**
+     * What one face sees: all 48 content slots (a side lists the right half first), with the IC2 rules of
+     * {@link #mayInsertThrough} and {@link #mayExtractThrough}. The upgrade slots are never reachable from outside.
+     */
     private class BufferSidedItemHandler implements IItemHandler {
-        private final Direction side;
-        private final int[] accessibleSlots;
+        private final Direction face;
+        private final int[] slots;
 
-        BufferSidedItemHandler(Direction side) {
-            this.side = (side != null) ? side.getOpposite() : null;
-            if (this.side != null && isSide(this.side)) {
-                // 水平面(SIDE): 仅右槽(24~47)可见，对应原版IC2 rightcontent(InvSide.SIDE)
-                accessibleSlots = RIGHT_SLOTS;
-            } else if (this.side != null) {
-                // UP/DOWN(NOTSIDE): 仅左槽(0~23)可见，对应原版IC2 leftcontent(InvSide.NOTSIDE)
-                accessibleSlots = LEFT_SLOTS;
-            } else {
-                // null: 内部访问，左右两槽都可见
-                accessibleSlots = ALL_CONTENT_SLOTS;
-            }
+        BufferSidedItemHandler(Direction face) {
+            this.face = face;
+            this.slots = isSide(face) ? SIDE_ORDER : ALL_CONTENT_SLOTS;
         }
+
+        private int slot(int index) { return index >= 0 && index < slots.length ? slots[index] : -1; }
 
         @Override
         public int getSlots() {
-            return accessibleSlots.length;
+            return slots.length;
         }
 
         @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            if (slot < 0 || slot >= accessibleSlots.length) return ItemStack.EMPTY;
-            return itemHandler.getStackInSlot(accessibleSlots[slot]);
+        public @NotNull ItemStack getStackInSlot(int index) {
+            int slot = slot(index);
+            return slot < 0 ? ItemStack.EMPTY : itemHandler.getStackInSlot(slot);
         }
 
         @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            if (slot < 0 || slot >= accessibleSlots.length) return stack;
-            return itemHandler.insertItem(accessibleSlots[slot], stack, simulate);
+        public @NotNull ItemStack insertItem(int index, @NotNull ItemStack stack, boolean simulate) {
+            int slot = slot(index);
+            if (!mayInsertThrough(slot, face)) return stack;
+            return itemHandler.insertItem(slot, stack, simulate);
         }
 
         @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (slot < 0 || slot >= accessibleSlots.length) return ItemStack.EMPTY;
-            return itemHandler.extractItem(accessibleSlots[slot], amount, simulate);
+        public @NotNull ItemStack extractItem(int index, int amount, boolean simulate) {
+            int slot = slot(index);
+            if (!mayExtractThrough(slot, face)) return ItemStack.EMPTY;
+            return itemHandler.extractItem(slot, amount, simulate);
         }
 
         @Override
-        public int getSlotLimit(int slot) {
-            if (slot < 0 || slot >= accessibleSlots.length) return 0;
-            return itemHandler.getSlotLimit(accessibleSlots[slot]);
+        public int getSlotLimit(int index) {
+            int slot = slot(index);
+            return slot < 0 ? 0 : itemHandler.getSlotLimit(slot);
         }
 
         @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            if (slot < 0 || slot >= accessibleSlots.length) return false;
-            return itemHandler.isItemValid(accessibleSlots[slot], stack);
+        public boolean isItemValid(int index, @NotNull ItemStack stack) {
+            int slot = slot(index);
+            return mayInsertThrough(slot, face) && itemHandler.isItemValid(slot, stack);
         }
     }
 }

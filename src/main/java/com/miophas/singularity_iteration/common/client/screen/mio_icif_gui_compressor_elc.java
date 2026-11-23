@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 
 import com.miophas.singularity_iteration.common.menu.producer.CompressorElcMenu;
@@ -61,6 +62,39 @@ public class mio_icif_gui_compressor_elc extends ProcessInstrumentScreen<Compres
         float p = max > 0 ? (float) menu.getProgress() / max : 0;
         boolean loaded = !menu.getSlot(CompressorElcMenu.INPUT_SLOT).getItem().isEmpty();
         press(g, cx, cy, running() ? stroke(p) : 0, running(), loaded);
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Press's); 0.1.11.180: 176 wide ----
+    // The press with the charge's slot on its die between the columns: the platen comes down onto it with the stroke (its
+    // face lights while it works), the cylinder on the crown is fed from the pump on the left, which is wired to the battery.
+    @Override protected int arrowX() { return 122; }
+    @Override protected int arrowY() { return MergedSlots.Press.OUT_Y + 1; }
+    @Override protected int[] machineBody() { return new int[]{52, 17, 72, 78}; }
+
+    /** 0.1.11.178: the press frame, the platen at {@code travel} (0 up .. 1 on the charge's slot), the die and the output tray. */
+    static void pressFrame(GuiGraphics g, float travel, boolean active) {
+        MachineArt.iron(g, 54, 22, 68, 10);                                           // the crown
+        MachineArt.steel(g, 78, 17, 20, 6);                                           // the cylinder
+        MachineArt.iron(g, 58, 32, 7, 54);                                            // the columns
+        MachineArt.iron(g, 111, 32, 7, 54);
+        MachineArt.iron(g, 52, 86, 72, 9);                                            // the bed
+        MachineArt.steel(g, 70, 75, 36, 11);                                          // the die
+        int face = 34 + Math.round(Math.max(0, Math.min(1, travel)) * 16);            // down to the slot's frame
+        FcsDraw.fill(g, 86, 32, 90, face, MachineArt.STEEL_LIGHT);                    // the rod
+        MachineArt.steel(g, 68, face, 40, 6);                                         // the platen
+        if (active) FcsDraw.fill(g, 69, face + 5, 107, face + 6, MachineArt.AMBER);
+        MachineArt.tray(g, MergedSlots.Press.OUT_X, MergedSlots.Press.OUT_Y);
+    }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        MachineArt.cable(g, 28, 82, 32, 82);
+        MachineArt.motor(g, 32, 64, 18, 26);                                          // the pump unit
+        FcsDraw.disc(g, 41, 58, 6, MachineArt.STEEL);
+        FcsDraw.disc(g, 41, 58, 3, MachineArt.STEEL_DARK);
+        MachineArt.pipeV(g, 41, 20, 53, false, -1);
+        MachineArt.pipeH(g, 39, 78, 20, false, -1);
+        pressFrame(g, running() ? stroke((float) progress()) : 0, running());
     }
 
     @Override

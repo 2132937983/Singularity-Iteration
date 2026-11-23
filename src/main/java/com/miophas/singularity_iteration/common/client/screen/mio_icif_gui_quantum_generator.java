@@ -20,6 +20,9 @@ import net.neoforged.api.distmarker.OnlyIn;
  * cable on the right. With a full storage the core dims, the coils go dark and the pairs only flash up and annihilate.
  * Under it the readouts (output and tier, storage, state, source) and the storage bar; the bolt on the left fills with the
  * storage. Was the solar generator texture with a sun icon and an English tooltip.
+ *
+ * <p>0.1.11.181 (176 wide): the machine drawn on the panel, 146 wide (it was 187 in a window); the bolt beside it went (the
+ * bar under the readouts shows the storage).
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -27,12 +30,12 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
     static final String K = "gui.mio_icif.quantum_generator.";
     private static final String[] TIERS = {"LV", "MV", "HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UXV", "OpV", "MAX"};
 
-    // the figure, in window pixels (the window is 207 x 62)
-    static final int CASE_X0 = 10, CASE_Y0 = 4, CASE_X1 = 197, CASE_Y1 = 58;
-    static final int CAV_X0 = 14, CAV_Y0 = 8, CAV_X1 = 193, CAV_Y1 = 54;
-    static final int LEFT_X0 = 16, LEFT_X1 = 24, RIGHT_X0 = 183, RIGHT_X1 = 191, PANEL_Y0 = 11, PANEL_Y1 = 51;
-    static final int CORE_X = 103, CORE_Y = 31, CORE_R = 5;
-    static final int[] COILS = {58, 103, 148};
+    // the figure, in panel pixels (0.1.11.181: the drawing is x 8..168, y 15..77)
+    static final int CASE_X0 = 10, CASE_Y0 = 19, CASE_X1 = 156, CASE_Y1 = 73;
+    static final int CAV_X0 = 14, CAV_Y0 = 23, CAV_X1 = 152, CAV_Y1 = 69;
+    static final int LEFT_X0 = 16, LEFT_X1 = 24, RIGHT_X0 = 142, RIGHT_X1 = 150, PANEL_Y0 = 26, PANEL_Y1 = 66;
+    static final int CORE_X = 83, CORE_Y = 46, CORE_R = 5, CABLE_Y = 44, CABLE_END = 168;
+    static final int[] COILS = {48, 83, 118};
     /** Pair slots, the ticks of a slot's cycle, the share pulled apart while generating, the speed of the halves (px/tick). */
     static final int PAIRS = 28, CYCLE = 36;
     static final double PULLED = 0.75, SPEED = 1.6;
@@ -65,7 +68,7 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
     }
 
     @Override
-    protected void drawWindow(GuiGraphics g, int x, int y, double time) {
+    protected void drawMachine(GuiGraphics g, int x, int y, double time) {
         boolean on = generating();
         int tick = (int) Math.floor(time);
         // casing and cavity
@@ -73,7 +76,7 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
         FcsDraw.fill(g, x + CAV_X0, y + CAV_Y0, x + CAV_X1, y + CAV_Y1, CAVITY);
         // the field of the coils: dashes drifting outwards from the core
         if (on) for (int row = CAV_Y0 + 6; row < CAV_Y1 - 5; row += 7)
-            for (int px = 30; px < 178; px += 6) {
+            for (int px = 30; px < 138; px += 6) {
                 int dx = Math.floorMod(px < CORE_X ? -tick : tick, 6);
                 int fx = px + dx;
                 if (fx > LEFT_X1 + 2 && fx < RIGHT_X0 - 3) FcsDraw.fill(g, x + fx, y + row, x + fx + 2, y + row + 1, FIELD);
@@ -93,7 +96,7 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
             double t = time + unit(k, -1, 0) * CYCLE;
             long cycle = (long) Math.floor(t / CYCLE);
             double age = t - cycle * CYCLE;
-            int px = 36 + (int) (unit(k, cycle, 1) * 134), py = CAV_Y0 + 5 + (int) (unit(k, cycle, 2) * (CAV_Y1 - CAV_Y0 - 10));
+            int px = 32 + (int) (unit(k, cycle, 1) * 102), py = CAV_Y0 + 5 + (int) (unit(k, cycle, 2) * (CAV_Y1 - CAV_Y0 - 10));
             boolean pulled = on && unit(k, cycle, 3) < PULLED;
             pairs[k] = new int[]{px, py, pulled ? 1 : 0, (int) Math.floor(age * 4)};
             if (pulled) {
@@ -153,11 +156,11 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
             }
         }
         // the cable out of the casing, packets running along it
-        FcsDraw.fill(g, x + CASE_X1, y + 29, x + 207, y + 33, COIL);
-        FcsDraw.fill(g, x + CASE_X1, y + 30, x + 207, y + 32, CABLE);
+        FcsDraw.fill(g, x + CASE_X1, y + CABLE_Y, x + CABLE_END, y + CABLE_Y + 4, COIL);
+        FcsDraw.fill(g, x + CASE_X1, y + CABLE_Y + 1, x + CABLE_END, y + CABLE_Y + 3, CABLE);
         if (on) for (int k = 0; k < 3; k++) {
             int px = CASE_X1 + Math.floorMod(tick + k * 4, 12);
-            if (px < 206) FcsDraw.fill(g, x + px, y + 30, x + px + 1, y + 32, BOLT);
+            if (px < CABLE_END - 1) FcsDraw.fill(g, x + px, y + CABLE_Y + 1, x + px + 1, y + CABLE_Y + 3, BOLT);
         }
 
         // the readouts
@@ -176,15 +179,13 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
     @Override
     protected void drawStrip(GuiGraphics g, int x, int y) {
         double share = Math.min(1.0, energy() / (double) capacity());
-        VanillaFrame.bolt(g, leftPos + 13, topPos + 39, share);   // 0.1.11.141: as the processing machines
         bar(g, x, y, Component.translatable(K + "stored"), share, Component.literal(Math.round(share * 100) + "%"));
     }
 
-    /** The tooltip under the mouse (window-relative for the figure), or null. */
-    static List<Component> tip(int rx, int ry, int wx, int wy) {
-        int fx = rx - wx, fy = ry - wy;
-        if (rx >= 14 && rx < 23 && ry >= 38 && ry < 51) return tips("tip.bolt");
-        if (fx < 0 || fy < 0 || fx >= 207 || fy >= 62) return null;
+    /** The tooltip under the mouse (panel coordinates; 0.1.11.181: the bolt went), or null. */
+    static List<Component> tip(int rx, int ry) {
+        int fx = rx, fy = ry;
+        if (fx < ART_X || fy < ART_Y || fx >= ART_RIGHT || fy >= ART_BOTTOM) return null;
         if (Math.abs(fx - CORE_X) + Math.abs(fy - CORE_Y) <= CORE_R + 1) return tips("tip.core");
         if (fx >= LEFT_X0 && fx < LEFT_X1 && fy >= PANEL_Y0 && fy < PANEL_Y1) return tips("tip.resonance");
         if (fx >= RIGHT_X0 && fx < RIGHT_X1 && fy >= PANEL_Y0 && fy < PANEL_Y1) return tips("tip.concentrator");
@@ -192,7 +193,7 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
             if (Math.abs(fx - cx) <= 5 && (fy >= CAV_Y0 && fy < CAV_Y0 + 3 || fy >= CAV_Y1 - 3 && fy < CAV_Y1)) return tips("tip.coil");
         if (fx >= CAV_X0 && fx < CAV_X1 && fy >= CAV_Y0 && fy < CAV_Y1) return tips("tip.cavity");
         if (fx >= CASE_X0 && fx < CASE_X1 && fy >= CASE_Y0 && fy < CASE_Y1) return tips("tip.casing");
-        if (fx >= CASE_X1 && fy >= 29 && fy < 33) return tips("tip.cable");
+        if (fx >= CASE_X1 && fy >= CABLE_Y && fy < CABLE_Y + 4) return tips("tip.cable");
         return null;
     }
 
@@ -204,7 +205,8 @@ public class mio_icif_gui_quantum_generator extends MimicScreen<QuantumGenerator
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
-        List<Component> lines = tip(mouseX - leftPos, mouseY - topPos, wx, wy);
-        if (lines != null) g.renderComponentTooltip(this.font, lines, mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the parts' names and how-it-works texts, hidden for now
+        // List<Component> lines = hoveredSlot != null ? null : tip(mouseX - leftPos, mouseY - topPos);
+        // if (lines != null) g.renderComponentTooltip(this.font, lines, mouseX, mouseY);
     }
 }

@@ -318,6 +318,25 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("gesu_output_luv", () -> 
             BlockEntityType.Builder.of((pos, state) -> new mio_icif_gesu_output_luv_entity(pos, state), com.miophas.singularity_iteration.common.registry.mio_icif_blocks.GESU_OUTPUT_LUV.get()).build(null));
 
+    // 0.1.11.157: TESU (太级储电罐)
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuControllerBlockEntity>> TESU_CONTROLLER =
+        BLOCK_ENTITIES.register("tesu_controller", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuControllerBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_CONTROLLER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuInputPortBlockEntity>> TESU_INPUT =
+        BLOCK_ENTITIES.register("tesu_input", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuInputPortBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_INPUT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuOutputPortBlockEntity>> TESU_OUTPUT =
+        BLOCK_ENTITIES.register("tesu_output", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuOutputPortBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_OUTPUT.get()).build(null));
+
+    // 0.1.11.158: the TESU wireless field
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessPortBlockEntity>> TESU_WIRELESS_PORT =
+        BLOCK_ENTITIES.register("tesu_wireless_port", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessPortBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_WIRELESS_PORT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuRelayBlockEntity>> TESU_RELAY =
+        BLOCK_ENTITIES.register("tesu_relay", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuRelayBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_RELAY.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_wireless_power_transmission_node>> WIRELESS_POWER_TRANSMISSION_NODE =
         BLOCK_ENTITIES.register("wireless_power_transmission_node", () ->
             BlockEntityType.Builder.of((pos, state) -> new mio_icif_wireless_power_transmission_node(pos, state), mio_icif_blocks.WIRELESS_POWER_TRANSMISSION_NODE.get()).build(null));

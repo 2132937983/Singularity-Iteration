@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.menu.producer;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_machine_menu;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_compressor_advanced_elc;
@@ -17,12 +18,12 @@ public class CompressorAdvancedElcMenu extends mio_icif_machine_menu {
 
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 10;
-    private static final int INPUT_Y = 18;
-    private static final int BATTERY_X = 10;
-    private static final int BATTERY_Y = 56;   // 0.1.11.118: the furnace block (bolt between input and battery)
-    private static final int OUTPUT_X = 61;
-    private static final int OUTPUT_Y = 37;
+    private static final int INPUT_X = MergedSlots.Press.IN_X;
+    private static final int INPUT_Y = MergedSlots.Press.IN_Y;
+    private static final int BATTERY_X = MergedSlots.BATTERY_X;
+    private static final int BATTERY_Y = MergedSlots.BATTERY_Y;   // 0.1.11.118: the furnace block (bolt between input and battery)
+    private static final int OUTPUT_X = MergedSlots.Press.OUT_X;
+    private static final int OUTPUT_Y = MergedSlots.Press.OUT_Y;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -117,7 +118,7 @@ public class CompressorAdvancedElcMenu extends mio_icif_machine_menu {
 
     // ---- 0.1.11.112: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240, INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;   // 0.1.11.180: the vanilla width
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

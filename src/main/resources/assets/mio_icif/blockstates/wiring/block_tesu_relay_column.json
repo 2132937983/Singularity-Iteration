@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "part=middle,powered=false": {
+      "model": "mio_icif:block/wiring/block_tesu_relay_middle"
+    },
+    "part=middle,powered=true": {
+      "model": "mio_icif:block/wiring/block_tesu_relay_middle_on"
+    },
+    "part=top,powered=false": {
+      "model": "mio_icif:block/wiring/block_tesu_relay_top"
+    },
+    "part=top,powered=true": {
+      "model": "mio_icif:block/wiring/block_tesu_relay_top_on"
+    }
+  }
+}

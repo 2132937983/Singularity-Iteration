@@ -17,14 +17,21 @@ import net.neoforged.api.distmarker.OnlyIn;
  * paper disc turns once a game day under a fixed pen arm; the red pen writes the furnace temperature, the blue pen the
  * output. The time lines are arcs (the pens swing on arms), as on a real chart. Beside it the fuel queue, the damper and
  * the readings; under the window the stored energy.
+ *
+ * <p>0.1.11.181: the vanilla 176 wide, merged (docs/gui_processing_machines.md, "合并布局"): the furnace drawn on the left
+ * with the fuel slot as its feed door, the fire behind its window, the damper flap in the flue on top, the furnace's heat
+ * under the grate, the cable down to the battery and the lumps burning and waiting beside it; the chart (radius 40, was 42)
+ * on the right. The legend went (the tooltip names the pens).
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGeneratorMenu> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
-    private static final int CX = WX + 47, CY = WY + 48, R = 42;
-    private static final int COL = WX + 98, COL_W = 105;
+    private static final int STRIP_Y = 145, READ_Y = 113, READ_H = 32;   // 0.1.11.121: the readouts under the drawing
+    private static final int CX = 124, CY = 61, R = 40;
+    /** 0.1.11.181: the furnace (its feed door is the fuel slot), the flue, the queue of lumps beside the battery. */
+    private static final int BODY_X = 10, BODY_Y = 28, BODY_W = 50, BODY_H = 50, FLUE_X = 29, QUEUE_X = 38, QUEUE_Y = 90;
+    private List<Component> cutLines = List.of();
     private static final int CHART_PAPER = 0xFFFBFBF6, GRID = 0xFFD9DED9, GRID_MAJOR = 0xFFB9C0BD;
     private static final int PEN_RED = 0xFFC0392B, PEN_BLUE = 0xFF2A5D8A;
     private static final int BLUE = 0x2A5D8A, GREEN = 0x2F6E4F, AMBER = 0xA0602A;
@@ -42,18 +49,52 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
         VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
-        VanillaFrame.slot(g, x + ThermalGeneratorMenu.SLOT_X - 1, y + ThermalGeneratorMenu.FUEL_Y - 1);
-        VanillaFrame.slot(g, x + ThermalGeneratorMenu.SLOT_X - 1, y + ThermalGeneratorMenu.BATTERY_Y - 1);
-        for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            VanillaFrame.slot(g, x + ThermalGeneratorMenu.INVENTORY_X - 1 + c * 18, y + ThermalGeneratorMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) VanillaFrame.slot(g, x + ThermalGeneratorMenu.INVENTORY_X - 1 + c * 18, y + ThermalGeneratorMenu.HOTBAR_Y - 1);
-
-        VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
+        furnace(g, x, y, PlantMimic.time(partialTick));
         chart(g, x + CX, y + CY, partialTick);
-        ReadoutPanel.begin();   // 0.1.11.121: the column's reading lines in the readout window, vanilla font
-        column(g, x + COL, y + WY + 5);
-        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 32);
+        for (var slot : menu.slots) {
+            if (slot.x < 0 || slot.x > imageWidth) continue;
+            VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
+        }
+        ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the vanilla font
+        readings();
+        cutLines = ReadoutPanel.end(g, x + 7, y + READ_Y, 162, READ_H);
         strip(g, x, y + STRIP_Y);
+    }
+
+    // ---- the furnace (0.1.11.181) -------------------------------------------------------------------------------------
+
+    private void furnace(GuiGraphics g, int x, int y, double time) {
+        boolean banked = v(5) != 0, firing = v(0) != 0;
+        double heat = v(1) / 1000.0;
+        // the flue with the damper flap in it: across it closed (banked), along it open
+        MachineArt.steel(g, x + FLUE_X, y + 16, 8, BODY_Y - 16);
+        g.fill(x + FLUE_X + 2, y + 17, x + FLUE_X + 6, y + BODY_Y, MachineArt.WINDOW);
+        if (banked) g.fill(x + FLUE_X + 1, y + 21, x + FLUE_X + 7, y + 23, 0xFF2A5D8A);
+        else g.fill(x + FLUE_X + 3, y + 18, x + FLUE_X + 5, y + 26, 0xFF7A7F85);
+        // the body: the feed door (the fuel slot), the fire behind its window, the grate, the heat under it
+        MachineArt.iron(g, x + BODY_X, y + BODY_Y, BODY_W, BODY_H);
+        MachineArt.sunk(g, x + 36, y + 33, 20, 17, MachineArt.WINDOW);
+        if (heat > 0.01) g.fill(x + 37, y + 34, x + 55, y + 49, FcsDraw.argb(0xD9792B, (float) Math.min(0.6, heat * 0.6)));
+        if (firing && !banked) MachineArt.flames(g, x + 38, x + 54, y + 48, time, 3, 8);
+        else if (heat > 0.01) g.fill(x + 38, y + 46, x + 54, y + 48, 0xFF8A3B22);
+        g.fill(x + BODY_X + 4, y + 54, x + BODY_X + BODY_W - 4, y + 56, MachineArt.IRON_DARK);
+        MachineArt.sunk(g, x + BODY_X + 4, y + 62, BODY_W - 8, 6, MachineArt.GLASS);
+        int hw = (int) Math.round((BODY_W - 10) * Math.max(0, Math.min(1, heat)));
+        if (hw > 0) g.fill(x + BODY_X + 5, y + 63, x + BODY_X + 5 + hw, y + 67, MachineArt.temperature(mio_icif_Thermal_Generator.kelvin(heat) - 273));
+        // the cable down to the battery
+        MachineArt.euCable(g, v(2) > 0, time, x + 23, y + BODY_Y + BODY_H, x + 23, y + ThermalGeneratorMenu.BATTERY_Y - 2);
+        // the lump burning, then the lumps waiting in the slot (+n past two)
+        int left = v(6), dur = Math.max(1, v(7)), count = v(8);
+        for (int c = 0; c < 3; c++) {
+            int bx = x + QUEUE_X + c * 12, by = y + QUEUE_Y;
+            MachineArt.sunk(g, bx, by, 11, 10, 0xFFF4F6F4);
+            double fill = c == 0 ? Math.min(1, left / (double) dur) : (c <= count ? 1 : 0);
+            if (fill > 0) {
+                int top = (int) Math.round(by + 1 + 8 * (1 - fill));
+                g.fill(bx + 1, top, bx + 10, by + 9, c == 0 ? (banked ? 0xFF8A3B22 : 0xFFD9792B) : 0xFF3B3F42);
+            }
+        }
+        if (count > 2) PumpCrossSection.text(g, Component.literal("+" + (count - 2)), x + QUEUE_X + 37, y + QUEUE_Y + 1, WindRoseView.DIM, 1F);
     }
 
     // ---- the chart --------------------------------------------------------------------------------------------------
@@ -134,41 +175,10 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
 
     // ---- readings ---------------------------------------------------------------------------------------------------
 
-    private void column(GuiGraphics g, float x, float y) {
-        float u = WindRoseView.u(), lh = 9 * u + 1;
-        Component lt = Component.literal("— ").append(Component.translatable(K + "legend_temp"));
-        PumpCrossSection.text(g, lt, x, y, PEN_RED & 0xFFFFFF, u);
-        PumpCrossSection.text(g, Component.literal("— ").append(Component.translatable(K + "legend_out")),
-            x + PumpCrossSection.width(lt, u) + 6, y, PEN_BLUE & 0xFFFFFF, u);
-
-        // fuel queue: the lump burning, then the fuel slot (up to six shown, then +n)
-        float qy = y + lh + 1;
-        int left = v(6), dur = Math.max(1, v(7)), count = v(8);
-        boolean banked = v(5) != 0;
-        for (int c = 0; c < 7; c++) {
-            float cxl = x + c * 13;
-            g.fill((int) cxl, (int) qy, (int) cxl + 11, (int) qy + 10, 0xFF9AA3A1);
-            g.fill((int) cxl + 1, (int) qy + 1, (int) cxl + 10, (int) qy + 9, 0xFFF4F6F4);
-            double fill = c == 0 ? Math.min(1, left / (double) dur) : (c <= count ? 1 : 0);
-            if (fill > 0) {
-                int top = (int) Math.round(qy + 1 + 8 * (1 - fill));
-                int col = c == 0 ? (banked ? 0xFF8A3B22 : 0xFFD9792B) : 0xFF3B3F42;
-                g.fill((int) cxl + 1, top, (int) cxl + 10, (int) qy + 9, col);
-            }
-        }
-        if (count > 6) PumpCrossSection.text(g, Component.literal("+" + (count - 6)), x + 7 * 13, qy + 1, WindRoseView.DIM, u);
-        int per = v(9);
-        double full = v(11) / 100.0;
-        if (per > 0) WindRoseView.line(g, Component.translatable(K + "per_item", Math.round(per * full), per), x, qy + 12, WindRoseView.DIM, COL_W);
-
-        // damper and state
-        float dy = qy + 12 + lh + 2;
-        boolean firing = v(0) != 0;
+    private void readings() {
+        int left = v(6), count = v(8);
+        boolean banked = v(5) != 0, firing = v(0) != 0;
         double heat = v(1) / 1000.0;
-        float dx = x + 6;
-        double ang = banked ? 0 : Math.PI / 2.4;
-        FcsDraw.line(g, dx - (float) Math.cos(ang) * 5, dy + 3 + (float) Math.sin(ang) * 5,
-            dx + (float) Math.cos(ang) * 5, dy + 3 - (float) Math.sin(ang) * 5, 1.4F, banked ? 0xFF2A5D8A : 0xFF7A7F85);
         Component state;
         int stateColour;
         if (banked) { state = Component.translatable(K + "state.banked"); stateColour = BLUE; }
@@ -179,25 +189,25 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
         Component damper = Component.translatable(K + (banked ? "damper_closed" : "damper_open")).append(" · ").append(state);
         // 0.1.11.145: the output leads, the damper and state beside it
         ReadoutPanel.headline(Component.literal(String.format(Locale.ROOT, "%.1f EU/t", v(2) / 100.0)), damper, stateColour);
-
-        // readings
-        float ry = dy + lh + 3;
-        WindRoseView.line(g, Component.translatable(K + "temp_line", mio_icif_Thermal_Generator.kelvin(heat),
-            String.format(Locale.ROOT, "%.1f", v(2) / 100.0)), x, ry, WindRoseView.INK, COL_W);
+        ReadoutPanel.add(0, Component.translatable(K + "temp_line", mio_icif_Thermal_Generator.kelvin(heat),
+            String.format(Locale.ROOT, "%.1f", v(2) / 100.0)), WindRoseView.INK);
+        int per = v(9);
+        double full = v(11) / 100.0;
+        if (per > 0) ReadoutPanel.add(1, Component.translatable(K + "per_item", Math.round(per * full), per), WindRoseView.DIM);
         double ticks = Math.max(0, left) + (double) per * count;
         if (ticks > 0) {
-            WindRoseView.line(g, Component.translatable(K + "fuel_line", Math.round(ticks * full)), x, ry + lh, WindRoseView.DIM, COL_W);
             long s = Math.round(ticks / 20);
-            WindRoseView.line(g, Component.translatable(K + "time_line", s / 60, String.format(Locale.ROOT, "%02d", s % 60)), x, ry + 2 * lh, WindRoseView.DIM, COL_W);
+            ReadoutPanel.add(2, Component.translatable(K + "fuel_line", Math.round(ticks * full)).append(" · ")
+                .append(Component.translatable(K + "time_line", s / 60, String.format(Locale.ROOT, "%02d", s % 60))), WindRoseView.DIM);
         } else {
-            WindRoseView.line(g, Component.translatable(K + "no_fuel"), x, ry + lh, WindRoseView.DIM, COL_W);
+            ReadoutPanel.add(2, Component.translatable(K + "no_fuel"), WindRoseView.DIM);
         }
     }
 
     private void strip(GuiGraphics g, int x, int sy) {
         // 0.1.11.121: vanilla font, furnace-style bar; the damper reopens at 85 % (blue mark)
         long e = Integer.toUnsignedLong(v(3)), cap = Math.max(1, Integer.toUnsignedLong(v(4)));
-        int[] bar = VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+        int[] bar = VanillaFrame.labelledBar(g, x + 8, sy, 160, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
             Component.literal(e + " / " + cap + " EU"));
         int mark = (int) (bar[0] + bar[1] * mio_icif_Thermal_Generator.REOPEN);
         if (bar[1] > 0) g.fill(mark, sy + 1, mark + 1, sy + 10, 0xFF2A5D8A);
@@ -207,15 +217,19 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<ThermalGener
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= WX && rx < WX + 94 && ry >= WY && ry < WY + WH) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.chart1"), Component.translatable(K + "tip.chart2"),
-                Component.translatable(K + "tip.chart3")), mouseX, mouseY);
-        } else if (rx >= COL && rx < COL + COL_W && ry >= WY + 14 && ry < WY + 38) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.fuel1"), Component.translatable(K + "tip.fuel2")), mouseX, mouseY);
-        } else if (rx >= COL && rx < COL + COL_W && ry >= WY + 38 && ry < WY + 50) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.damper1"), Component.translatable(K + "tip.damper2")), mouseX, mouseY);
-        } else if (rx >= WX && rx < 241 && ry >= STRIP_Y && ry < STRIP_Y + 12) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.damper2")), mouseX, mouseY);
+        if (hoveredSlot != null) return;   // 0.1.11.181: a slot shows its own tooltip only
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the chart's, the damper's, the fuel queue's and the bar mark's how-it-works texts are hidden for now
+        if (Math.hypot(rx - CX, ry - CY) <= R + 2) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.chart1"), Component.translatable(K + "tip.chart2"),
+            //     Component.translatable(K + "tip.chart3")), mouseX, mouseY);
+        } else if (rx >= FLUE_X && rx < FLUE_X + 8 && ry >= 16 && ry < BODY_Y) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.damper1"), Component.translatable(K + "tip.damper2")), mouseX, mouseY);
+        } else if (rx >= BODY_X && rx < QUEUE_X + 50 && ry >= BODY_Y && ry < QUEUE_Y + 10) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.fuel1"), Component.translatable(K + "tip.fuel2")), mouseX, mouseY);
+        } else if (!cutLines.isEmpty() && rx >= 8 && rx < 168 && ry >= READ_Y && ry < READ_Y + READ_H) {
+            g.renderComponentTooltip(this.font, cutLines, mouseX, mouseY);
+        } else if (rx >= 8 && rx < 168 && ry >= STRIP_Y && ry < STRIP_Y + 12) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.damper2")), mouseX, mouseY);
         }
     }
 

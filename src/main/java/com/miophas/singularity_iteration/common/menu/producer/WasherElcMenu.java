@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.menu.producer;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_washer_elc;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
@@ -31,16 +32,16 @@ public class WasherElcMenu extends mio_icif_machine_menu {
     public static final int SLOT_COUNT = 11;
 
     // 0.1.11.114: two columns on the left of the instrument screen
-    private static final int INPUT_X = 10;
-    private static final int INPUT_Y = 18;
-    private static final int[] OUTPUT_X = {61, 61, 61};   // 0.1.11.118: the furnace block
-    private static final int[] OUTPUT_Y = {18, 38, 58};
-    private static final int BATTERY_X = 10;
-    private static final int BATTERY_Y = 56;
-    private static final int WATER_BUCKET_X = 10;
-    private static final int WATER_BUCKET_Y = 78;
-    private static final int EMPTY_BUCKET_X = 30;
-    private static final int EMPTY_BUCKET_Y = 78;   // beside the water bucket
+    private static final int INPUT_X = MergedSlots.Washer.IN_X;
+    private static final int INPUT_Y = MergedSlots.Washer.IN_Y;
+    private static final int[] OUTPUT_X = {MergedSlots.Washer.OUT_X, MergedSlots.Washer.OUT_X, MergedSlots.Washer.OUT_X};   // 0.1.11.118: the furnace block
+    private static final int[] OUTPUT_Y = {MergedSlots.Washer.OUT_TOP_Y, MergedSlots.Washer.OUT_TOP_Y + MergedSlots.Washer.OUT_STEP, MergedSlots.Washer.OUT_TOP_Y + 2 * MergedSlots.Washer.OUT_STEP};
+    private static final int BATTERY_X = MergedSlots.BATTERY_X;
+    private static final int BATTERY_Y = MergedSlots.BATTERY_Y;
+    private static final int WATER_BUCKET_X = MergedSlots.LEFT_X;
+    private static final int WATER_BUCKET_Y = MergedSlots.LEFT_TOP_Y;
+    private static final int EMPTY_BUCKET_X = MergedSlots.LEFT_X;
+    private static final int EMPTY_BUCKET_Y = MergedSlots.LEFT_SECOND_Y;   // beside the water bucket
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -134,7 +135,7 @@ public class WasherElcMenu extends mio_icif_machine_menu {
 
     // ---- 0.1.11.114: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240, INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;   // 0.1.11.180: the vanilla width
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

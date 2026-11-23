@@ -189,7 +189,8 @@ public class mio_icif_compressor_advanced_elc extends AbstractStandardMachineBlo
         if (prepare(recipe.get()).isEmpty()) return ProcessStatus.OUTPUT_FULL;
         if (charging) return ProcessStatus.CHARGING;
         if (isWorking()) return ProcessStatus.RUNNING;
-        return ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? ProcessStatus.RUNNING : ProcessStatus.NO_POWER;
     }
 
     // ---- slots -------------------------------------------------------------------------------------------------------

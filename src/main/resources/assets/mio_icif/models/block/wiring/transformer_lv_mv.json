@@ -1,22 +1,24 @@
 {
-    "parent": "block/cube",
-    "textures": {
-        "particle": "mio_icif:block/producer/block_machine","particle_ub": "mio_icif:block/wiring/transformer_lv_mv",
-        "all_lbr": "mio_icif:block/wiring/transformer_lv_mv",
-        "face": "mio_icif:block/wiring/transformer_lv_mv"
-    },
-    "elements": [
-        {
-           "from": [ 0, 0, 0 ],
-            "to": [ 16, 16, 16 ],
-            "faces": {
-                "down":  { "uv": [0,0, 1.33,16], "texture": "#particle_ub", "cullface": "down" },
-                "up":    { "uv": [1.33,0, 2.66,16], "texture": "#particle_ub", "cullface": "up" },
-                "south": { "uv": [2.66,0, 4,16], "texture": "#all_lbr", "cullface": "south" },
-                "north": { "uv": [4,0, 5.33,16], "texture": "#all_lbr", "cullface": "north" },
-                "west":  { "uv": [5.33,0, 6.66,16], "texture": "#all_lbr", "cullface": "west" },
-                "east":  { "uv": [6.66,0, 8,16], "texture": "#all_lbr", "cullface": "east" }
-            }
-        }
-    ]
+	"format_version": "26.3",
+	"credit": "Made with Blockbench",
+	"parent": "block/cube",
+	"texture_size": [64, 16],
+	"textures": {
+		"particle_ub": "mio_icif:block/wiring/transformer_lv_mv",
+		"particle": "minecraft:block/spruce_planks"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 16], "texture": "#particle_ub", "cullface": "north"},
+				"east": {"uv": [8, 0, 12, 16], "texture": "#particle_ub", "cullface": "east"},
+				"south": {"uv": [8, 0, 12, 16], "texture": "#particle_ub", "cullface": "south"},
+				"west": {"uv": [8, 0, 12, 16], "texture": "#particle_ub", "cullface": "west"},
+				"up": {"uv": [4, 0, 8, 16], "texture": "#particle_ub", "cullface": "up"},
+				"down": {"uv": [4, 0, 8, 16], "texture": "#particle_ub", "cullface": "down"}
+			}
+		}
+	]
 }

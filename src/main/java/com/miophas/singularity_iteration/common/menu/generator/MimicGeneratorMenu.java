@@ -16,11 +16,12 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 0.1.11.17: base of the generator menus of the plant mimic screens (248 x 204): the player inventory at (44, 122), the
- * hotbar at y 180, and the synced values filled from {@link #values()} on the server.
+ * hotbar at y 180, and the synced values filled from {@link #values()} on the server. 0.1.11.181: 176 x 244, the inventory
+ * at (8, 162); the machine slots sit in the screen's drawing (x 8..168, y 15..77).
  */
 @SuppressWarnings("null")
 public abstract class MimicGeneratorMenu extends mio_icif_generator_menu {
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;   // 0.1.11.181: x 8 (176 wide; was 44)
 
     protected MimicGeneratorMenu(MenuType<?> type, int containerId, int slots, Inventory inv, @Nullable IItemHandler items, int dataCount,
                                  @Nullable Object blockEntity) {

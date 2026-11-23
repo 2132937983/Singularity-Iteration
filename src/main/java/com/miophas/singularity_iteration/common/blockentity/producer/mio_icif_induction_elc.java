@@ -328,7 +328,8 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         if (prepareWorkingLanes().isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
         if (isWorking()) return smeltRate() <= 0
             ? com.miophas.singularity_iteration.common.processing.ProcessStatus.HEATING : com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
-        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     /** True with a Thermal Retention Unit in an upgrade slot (0.1.9.1). */

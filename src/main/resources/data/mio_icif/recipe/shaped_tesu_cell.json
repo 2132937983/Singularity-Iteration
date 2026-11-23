@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SIS",
+    "ECE",
+    "SIS"
+  ],
+  "key": {
+    "S": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:normal/item_super_lapotron_crystal"
+    },
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "E": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:wiring/block_eesu"
+    },
+    "C": {
+      "item": "mio_icif:wiring/block_tesu_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_tesu_cell",
+    "count": 1
+  }
+}

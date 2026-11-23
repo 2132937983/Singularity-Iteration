@@ -18,11 +18,12 @@ public class NeutronPolymerizerMenu extends mio_icif_machine_menu {
     public static final int SLOT_COUNT = 7;
 
     /** 0.1.11.8: 248 x 212 with the implosion-photography window; input, energy and output on the left. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 212;
-    public static final int INPUT_X = 10, INPUT_Y = 29;
-    public static final int OUTPUT_X = 10, OUTPUT_Y = 81;
-    public static final int BATTERY_X = 10, BATTERY_Y = 112;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 130, HOTBAR_Y = 188;
+    /** 0.1.11.181: 176 x 240; the input at the chamber's feed, the battery under it, the output in the tray at the outlet. */
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240;
+    public static final int INPUT_X = 12, INPUT_Y = 19;
+    public static final int OUTPUT_X = 150, OUTPUT_Y = 30;
+    public static final int BATTERY_X = 12, BATTERY_Y = 41;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 

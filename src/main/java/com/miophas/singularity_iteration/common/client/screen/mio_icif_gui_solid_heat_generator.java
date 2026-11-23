@@ -73,7 +73,8 @@ public class mio_icif_gui_solid_heat_generator extends mio_icif_screen<com.mioph
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // 不调用 super.renderLabels() 以避免渲染 Inventory 文本标签
+        // 不调用 super.renderLabels() 以避免渲染 Inventory 文本标签; 0.1.11.183: the title was missing
+        drawTitle(guiGraphics);
     }
 
     @Override

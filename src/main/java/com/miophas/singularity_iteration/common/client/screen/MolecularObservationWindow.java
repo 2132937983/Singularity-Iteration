@@ -96,7 +96,7 @@ public final class MolecularObservationWindow {
 
         boolean bubbleKind = "nuclear".equals(kind) || "exotic".equals(kind);
         schedule(!idle && ("lattice".equals(kind) ? ph >= 1 && ph <= 3 : ph == 2), level, low);
-        int filmW = Math.round(w * 0.66F);
+        int filmW = Math.round(w * (w < 180 ? 0.58F : 0.66F));   // 0.1.11.181: a narrow window leaves the log more of it
         fire(bubbleKind, kind, proc, conv, filmW, h);
         flash = Math.max(0, flash - dt * 3);
         tracks.removeIf(tr -> now - tr.born > TRACK_LIFE);

@@ -48,10 +48,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
     public static final int WRENCH_ELC_ROTATE_ENERGY = 5;
     public static final int WRENCH_ELC_PIPE_WIRE_ENERGY = 2;
 
-    public static final TagKey<Block> WRENCH_CAN_DAMAGED = TagKey.create(
-        Registries.BLOCK,
-        ResourceLocation.fromNamespaceAndPath("c", "wrench_can_damaged")
-    );
+    // 0.1.11.172: c:wrench_can_damaged is gone; what a wrench takes apart is mio_icif:wrenchable (WrenchRules.dismantlable)
 
     public mio_icif_wrench_elc(Properties properties) {
         super(properties, WRENCH_ELC_MAX_ENERGY, 0, "wrench_elc", WRENCH_ELC_MAX_ENERGY, WRENCH_ELC_ENERGY_PER_USE, 1);
@@ -97,7 +94,8 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
         boolean isPipe = state.getBlock() instanceof mio_icif_block_pipe_water
                       || state.getBlock() instanceof mio_icif_block_pipe_water_extract
                       || state.getBlock() instanceof mio_icif_block_pipe_item;
-        boolean isMachine = state.is(mio_icif_tags.MACHINE);
+        // 0.1.11.171: machines, casings and ports, as every SI wrench sees them (WrenchRules)
+        boolean isMachine = WrenchRules.dismantlable(state);
         
         if (!isWire && !isPipe && !isMachine) {
             return;
@@ -124,7 +122,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
 
         if (isWire || isPipe) {
             if (player.isShiftKeyDown()) {
-                boolean canBeDismantled = state.is(WRENCH_CAN_DAMAGED);
+                boolean canBeDismantled = WrenchRules.dismantlable(state);
                 if (canBeDismantled) {
                     if (!hasEnoughEnergy(stack)) {
                         player.setItemInHand(hand, stack);
@@ -148,7 +146,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
             return;
         }
 
-        if (!state.is(mio_icif_tags.MACHINE)) {
+        if (!isMachine) {
             player.setItemInHand(hand, stack);
             return;
         }
@@ -167,25 +165,17 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
             return;
         }
 
-        if (player.isShiftKeyDown()) {
-            rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite());
-            player.setItemInHand(hand, stack);
-            return;
-        }
-
-        Direction currentFacing = getCurrentFacing(state);
-        if (currentFacing != null && currentFacing == clickedFace
-                && com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(stack, FEATURE_FRONT_DISMANTLE)) {
-            if (!hasEnoughEnergy(stack)) {
-                player.setItemInHand(hand, stack);
-                return;
+        // 0.1.11.171: the rules every SI wrench shares (WrenchRules). This wrench never dismantled a block without a facing (it
+        // tried to turn it), and with front dismantle off it dismantled nothing; off now means: only a sneaking click dismantles.
+        boolean frontDismantle = com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(stack, FEATURE_FRONT_DISMANTLE);
+        switch (WrenchRules.action(state, clickedFace, player.isShiftKeyDown(), frontDismantle)) {
+            case DISMANTLE -> {
+                if (hasEnoughEnergy(stack)) dismantleBlock(level, pos, state, player, stack, hand);
             }
-            dismantleBlock(level, pos, state, player, stack, hand);
-            player.setItemInHand(hand, stack);
-            return;
+            case ROTATE -> rotateBlock(level, pos, state, player, stack, clickedFace);
+            case ROTATE_OPPOSITE -> rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite());
+            case NONE -> { }
         }
-
-        rotateBlock(level, pos, state, player, stack, clickedFace);
         player.setItemInHand(hand, stack);
     }
 
@@ -316,16 +306,6 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
             return null;
         }
 
-        return null;
-    }
-
-    private Direction getCurrentFacing(BlockState state) {
-        if (state.hasProperty(BlockStateProperties.FACING)) {
-            return state.getValue(BlockStateProperties.FACING);
-        }
-        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            return state.getValue(BlockStateProperties.HORIZONTAL_FACING);
-        }
         return null;
     }
 

@@ -1,8 +1,8 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.common.menu.producer.BlockCutterMenu;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ public class mio_icif_gui_block_cutter extends ProcessInstrumentScreen<BlockCutt
     private ItemStack blade() { return menu.getSlot(mio_icif_block_cutter.BLADE_SLOT).getItem(); }
     private int bladeHardness() {
         ItemStack b = blade();
-        return b.is(mio_icif_resources.DIAMOND_CUT_BLADE.get()) ? 8 : b.is(mio_icif_resources.IRON_CUT_BLADE.get()) ? 2 : 0;
+        return mio_icif_block_cutter.bladeHardness(b);   // 0.1.11.179: the block entity's (it knows the refined iron blade)
     }
 
     @Override
@@ -48,7 +48,7 @@ public class mio_icif_gui_block_cutter extends ProcessInstrumentScreen<BlockCutt
         // the blade, coming down with the cut (behind the block: its lower part is in the cut)
         float bcy = cy - 14 + p * 20;
         int bh = bladeHardness();
-        int colour = bh == 8 ? DIAMOND : bh == 2 ? STEEL_LIGHT : SHELL;
+        int colour = bh == 8 ? DIAMOND : bh > 0 ? STEEL_LIGHT : SHELL;
         FcsDraw.disc(g, cx, bcy, 22, colour);
         if (bh > 0) for (int k = 0; k < 18; k++) blade(g, cx, bcy, angle + k * tau / 18, 21, 25, 1.6F, 0.2F, colour);
         FcsDraw.disc(g, cx, bcy, 6, STEEL);
@@ -57,6 +57,46 @@ public class mio_icif_gui_block_cutter extends ProcessInstrumentScreen<BlockCutt
         // the block over it, with the kerf going down as the cut goes on
         FcsDraw.fill(g, bx0, by0, bx1, by1, FormingFigure.WORK);
         if (p > 0) FcsDraw.fill(g, (int) cx - 1, by0, (int) cx + 1, by0 + Math.round((by1 - by0) * p), colour);
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Cutter's); 0.1.11.180: 176 wide ----
+    // The saw bench: the block's slot on the table under the blade, the blade coming down into it with the cut; the arm on
+    // the column with the motor at its head (wired to the battery, belted to the arbor); the blade's slot hanging on the
+    // rack beside the column; the arrow to the tray. No blade mounted: the bare arbor.
+    private static final int SAW_X = 96;
+
+    @Override protected int arrowX() { return 120; }
+    @Override protected int arrowY() { return MergedSlots.Cutter.OUT_Y + 1; }
+    @Override protected int[] machineBody() { return new int[]{54, 20, 62, 56}; }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        float tau = 2 * (float) Math.PI;
+        if (running()) angle = (angle + dt * 3.5F * tau) % tau;
+        float p = running() ? (float) progress() : 0;
+        MachineArt.cable(g, 28, 82, 32, 82, 32, 68, 54, 68);
+        MachineArt.iron(g, 30, 76, 112, 8);                                           // the table
+        MachineArt.iron(g, 34, 84, 8, 11);
+        MachineArt.iron(g, 130, 84, 8, 11);
+        MachineArt.iron(g, 54, 20, 8, 56);                                            // the column
+        int bcy = 38 + Math.round(p * 8);
+        MachineArt.iron(g, 62, bcy - 3, 34, 6);                                       // the arm
+        MachineArt.motor(g, 60, 20, 26, 12);
+        FcsDraw.line(g, 73, 32, 73, bcy - 3, 2, MachineArt.RUBBER);                   // the belt
+        int bh = bladeHardness();
+        if (bh > 0) {
+            // 0.1.11.179: iron in steel grey, refined iron brighter, diamond cyan
+            int colour = bh == 8 ? DIAMOND : bh == 5 ? 0xFFD2D8DC : MachineArt.STEEL_LIGHT;
+            FcsDraw.disc(g, SAW_X, bcy, 18, colour);
+            for (int k = 0; k < 18; k++) blade(g, SAW_X, bcy, angle + k * tau / 18, 17, 20, 1.4F, 0.2F, colour);
+            FcsDraw.disc(g, SAW_X, bcy, 16, bh == 8 ? 0xFF5FB3B8 : bh == 5 ? 0xFFB4BCC0 : 0xFF9AA2A6);
+        }
+        FcsDraw.disc(g, SAW_X, bcy, 5, MachineArt.STEEL);                              // the arbor
+        blade(g, SAW_X, bcy, angle, 0, 5, 0.8F, 0.8F, MachineArt.STEEL_LIGHT);
+        MachineArt.steel(g, MergedSlots.Cutter.BLADE_X - 4, MergedSlots.Cutter.BLADE_Y - 4, 24, 4);   // the rack
+        FcsDraw.fill(g, MergedSlots.Cutter.BLADE_X + 7, MergedSlots.Cutter.BLADE_Y - 1, MergedSlots.Cutter.BLADE_X + 9, MergedSlots.Cutter.BLADE_Y,
+            MachineArt.IRON_DARK);
+        MachineArt.tray(g, MergedSlots.Cutter.OUT_X, MergedSlots.Cutter.OUT_Y);
     }
 
     @Override

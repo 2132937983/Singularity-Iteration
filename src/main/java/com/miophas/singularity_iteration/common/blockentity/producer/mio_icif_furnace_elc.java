@@ -432,7 +432,8 @@ tick 更新逻辑
             return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
         if (isWorking()) return temperature() < requiredTemperature()
             ? com.miophas.singularity_iteration.common.processing.ProcessStatus.HEATING : com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
-        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     /** 0.1.10.8: canWork depends only on the inventory, the saved state and the stored energy. */

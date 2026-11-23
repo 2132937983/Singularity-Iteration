@@ -90,6 +90,17 @@ public class mio_icif_block_item_buffer_elc extends mio_icif_entity_block {
         return new mio_icif_item_buffer_elc(pos, state);
     }
 
+    // 0.1.11.164: a comparator reads how full the 48 content slots are
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof mio_icif_item_buffer_elc buffer ? buffer.getComparatorSignal() : 0;
+    }
+
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {

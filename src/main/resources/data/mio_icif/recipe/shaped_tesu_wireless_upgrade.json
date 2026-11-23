@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " W ",
+    "CUC",
+    " P "
+  ],
+  "key": {
+    "W": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:wiring/block_wireless_power_transmission_node"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "U": {
+      "item": "mio_icif:upgrade/transformer_upgrade"
+    },
+    "P": {
+      "tag": "c:plates/alloy"
+    }
+  },
+  "result": {
+    "id": "mio_icif:upgrade/wireless_upgrade",
+    "count": 1
+  }
+}

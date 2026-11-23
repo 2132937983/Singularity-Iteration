@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class StirlingKineticGeneratorMenu extends MimicGeneratorMenu {
     public static final int DATA_COUNT = 19;
     private static final int SLOT_COUNT = 7;
-    public static final int COL1 = 10, COL2 = 30, ROW_WATER = 22, ROW_HOT = 62;
+    public static final int COL1 = 10, COL2 = 30, ROW_WATER = 17, ROW_HOT = 57;   // 0.1.11.181: over and under their fillers
 
     public StirlingKineticGeneratorMenu(int containerId, Inventory playerInventory) { this(containerId, playerInventory, (mio_icif_Stirling_Kinetic_Generator) null); }
 

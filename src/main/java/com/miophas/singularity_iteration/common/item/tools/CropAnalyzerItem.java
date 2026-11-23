@@ -94,9 +94,48 @@ public class CropAnalyzerItem extends mio_icif_tool_elc {
         player.openMenu(new CropAnalyzerMenu.Provider(stack, hand), buffer -> buffer.writeEnum(hand));
     }
 
+    /**
+     * 0.1.11.174: the background menus of the scanners whose screen is closed, by stack identity (server thread only). A
+     * {@code WeakHashMap} would never let go (each menu holds its stack), so scanners not ticked for a while (dropped, put
+     * in a chest) are swept out, saved first.
+     */
+    private static final java.util.Map<ItemStack, Background> BACKGROUND = new java.util.IdentityHashMap<>();
+    private record Background(CropAnalyzerMenu menu, long[] lastTick) {}
+    private static long lastSweep;
+
+    /** 0.1.11.174: saves and ends the background run of {@code stack} (its screen is opening). */
+    public static void flushBackground(ItemStack stack) {
+        Background bg = BACKGROUND.remove(stack);
+        if (bg != null) bg.menu().flush();
+    }
+
+    /**
+     * 0.1.11.174: the scanner's jobs (analysis, breeding research, gene editing, charging from its battery slot) go on in the
+     * player's inventory with the screen closed; they ran only while the screen was open. The open screen runs them itself.
+     * A scanner in a chest does not tick, so it waits there.
+     */
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean selected) {
         super.inventoryTick(stack, level, entity, slotId, selected);
+        if (level.isClientSide || !(entity instanceof Player player)) return;
+        if (player.containerMenu instanceof CropAnalyzerMenu open && open.isFor(stack)) return;
+        long now = level.getGameTime();
+        Background bg = BACKGROUND.get(stack);
+        if (bg == null) {
+            bg = new Background(CropAnalyzerMenu.background(player, stack), new long[]{Long.MIN_VALUE});
+            BACKGROUND.put(stack, bg);
+        }
+        if (bg.lastTick()[0] == now) return;
+        bg.lastTick()[0] = now;
+        bg.menu().backgroundTick();
+        if (now - lastSweep >= 200 || now < lastSweep) {
+            lastSweep = now;
+            BACKGROUND.entrySet().removeIf(e -> {
+                if (Math.abs(now - e.getValue().lastTick()[0]) <= 40) return false;
+                e.getValue().menu().flush();
+                return true;
+            });
+        }
     }
 
     @Override

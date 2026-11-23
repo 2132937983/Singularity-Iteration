@@ -1,15 +1,17 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
-import com.miophas.singularity_iteration.common.client.suit.AsciiHud;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.client.suit.PixelCanvas;
 import com.miophas.singularity_iteration.common.energy.EngineGovernor;
 import com.miophas.singularity_iteration.common.menu.generator.EngineMenu;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -18,14 +20,23 @@ import net.neoforged.api.distmarker.OnlyIn;
  * an exhaust gas temperature bar per cylinder, the tachometer, the coolant and the fuel tank, the readings beside them; a
  * record strip of the load (blue) and exhaust temperature (rust) over the last ~48 s; the output, fuel use, efficiency and
  * state below; the stored energy under the window with the restart (60 %) and stop (98 %) marks.
+ *
+ * <p>0.1.11.181: the vanilla 176 wide, merged (docs/gui_processing_machines.md, "合并布局"): the engine drawn on the panel
+ * (x 8..168, y 15..77). The fuel container over the tank's filler and the empty one under it, the fuel tank, the engine block
+ * with a window per cylinder showing its exhaust temperature, the crank turning while it fires, the generator with the
+ * tachometer over it, the coolant thermometer, the output cable down to the battery; the record strip under the engine.
+ * The readings beside the gauges went into the drawing's tooltip; the readouts' full text shows when a line did not fit.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
 
-    private static final int WX = 34, WY = 15, WW = 207, WH = 66, STRIP_Y = 145;   // 0.1.11.121: the readouts under the window
-    private static final int RUST = 0xFFB4471F, HOT = 0xFFC0392B, BLUE = 0xFF2A5D8A, GREEN = 0xFF2F6E4F, WELL = 0xFFE3E6E4, GRID = 0xFFD9DED9;
+    private static final int W = 176, STRIP_Y = 145, READ_Y = 80, READ_H = 62;
+    private static final int TANK_X = 36, BLOCK_X = 48, BLOCK_Y = 18, BLOCK_W = 62, BLOCK_H = 36, GEN_X = 114, GEN_Y = 34, GEN_W = 26,
+        GEN_H = 20, TACH_X = 127, TACH_Y = 25, TACH_R = 8, COOL_X = 158, COOL_Y = 19, COOL_H = 22, REC_X = 50, REC_Y = 60, REC_W = 92, REC_H = 16;
+    private static final int RUST = 0xFFB4471F, HOT = 0xFFC0392B, BLUE = 0xFF2A5D8A, GREEN = 0xFF2F6E4F, GRID = 0xFFD9DED9;
     private static final String K = "gui.mio_icif.engine.";
+    private List<Component> cutLines = List.of();
 
     public EngineScreen(T menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -37,70 +48,77 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        int x = leftPos, y = topPos;
-        VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
-        VanillaFrame.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.FUEL_Y - 1);
-        VanillaFrame.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.EMPTY_Y - 1);
-        VanillaFrame.slot(g, x + EngineMenu.SLOT_X - 1, y + EngineMenu.BATTERY_Y - 1);
-        for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
-            VanillaFrame.slot(g, x + EngineMenu.INVENTORY_X - 1 + c * 18, y + EngineMenu.INVENTORY_Y - 1 + r * 18);
-        for (int c = 0; c < 9; c++) VanillaFrame.slot(g, x + EngineMenu.INVENTORY_X - 1 + c * 18, y + EngineMenu.HOTBAR_Y - 1);
-        VanillaFrame.inset(g, x + WX - 1, y + WY - 1, WW + 2, WH + 2, WindRoseView.PAPER);   // 0.1.11.119: the vanilla look
-        gauges(g, x + WX, y + WY, partialTick);
-        record(g, x + WX + 4, y + WY + 47, WW - 8, 16);
-        ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the readout window, vanilla font
-        readings(g, x + WX + 4, y + WY + 66);
-        ReadoutPanel.end(g, x + WX - 1, y + WY + WH + 3, WW + 2, 58);
-        strip(g, x, y + STRIP_Y);
+        g.drawManaged(() -> {
+            int x = leftPos, y = topPos;
+            VanillaFrame.panel(g, x, y, imageWidth, imageHeight);
+            double time = PlantMimic.time(partialTick);
+            FcsDraw.beginPixels(new PixelCanvas(x + 4, y + 14, W - 8, 64, x + 4, y + 14, 1F, VanillaFrame.PANEL).flat());
+            try {
+                engine(g, x, y, time);
+            } finally {
+                FcsDraw.endPixels(g);
+            }
+            record(g, x + REC_X, y + REC_Y, REC_W, REC_H);
+            for (Slot slot : menu.slots) {
+                if (slot.x < 0 || slot.x > imageWidth) continue;
+                VanillaFrame.slot(g, x + slot.x - 1, y + slot.y - 1);
+            }
+            ReadoutPanel.begin();   // 0.1.11.121: the reading lines in the vanilla font
+            readings();
+            cutLines = ReadoutPanel.end(g, x + 7, y + READ_Y, W - 14, READ_H);
+            strip(g, x, y + STRIP_Y);
+        });
     }
 
     private boolean firing() { return v(0) >= EngineGovernor.WARMING; }
 
-    // ---- gauges ------------------------------------------------------------------------------------------------------
+    private double load() { return v(1) / 1000.0; }
 
-    private void gauges(GuiGraphics g, int wx, int wy, float partialTick) {
-        float u = WindRoseView.u();
-        double load = v(1) / 1000.0, coolant = v(3) / 10.0;
-        int cylinders = Math.max(1, v(14));
-        // exhaust gas temperature per cylinder
-        PumpCrossSection.text(g, Component.translatable(K + "egt"), wx + 4, wy + 2, WindRoseView.DIM, u);
-        long time = minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0;
+    private double coolant() { return v(3) / 10.0; }
+
+    // ---- the engine ----------------------------------------------------------------------------------------------------
+
+    private void engine(GuiGraphics g, int x, int y, double time) {
+        int fuel = fuelColour();
+        boolean firing = firing();
+        // the fuel container over the filler, the empty one under it, the tank and its pipe into the engine
+        MachineArt.filler(g, x + EngineMenu.SLOT_X - 2, y + EngineMenu.FUEL_Y + 19, 20);
+        MachineArt.pipe(g, x + 28, x + TANK_X - 2, y + 39, v(11) >= 0 ? fuel : 0, -1);
+        MachineArt.level(g, x + TANK_X, y + 19, 8, 52, v(10) > 0 ? v(9) / (double) v(10) : 0, fuel);
+        MachineArt.pipe(g, x + TANK_X + 10, x + BLOCK_X, y + 30, firing ? fuel : 0, MachineArt.phase(time, firing ? 0.4 : 0));
+        // the block: a window per cylinder with its exhaust temperature, the crankcase under them
+        MachineArt.iron(g, x + BLOCK_X, y + BLOCK_Y, BLOCK_W, BLOCK_H);
+        int cylinders = Math.max(1, Math.min(6, v(14))), cx0 = BLOCK_X + (BLOCK_W - (cylinders * 9 - 2)) / 2;
         for (int c = 0; c < cylinders; c++) {
-            double t = EngineGovernor.exhaust(load, coolant, firing()) + (firing() ? 12 * Math.sin(c * 1.7 + (time + partialTick) / 8.0) : 0);
-            float bx = wx + 5 + c * 9, top = wy + 12, h = 30;
-            g.fill((int) bx, (int) top, (int) bx + 6, (int) (top + h), WELL);
-            float f = (float) Math.max(0, Math.min(1, t / 600.0));
-            WindRoseView.fill(g, bx, top + h * (1 - f), 6, h * f, t > 520 ? HOT : RUST);
+            double t = EngineGovernor.exhaust(load(), coolant(), firing) + (firing ? 12 * Math.sin(c * 1.7 + time / 8.0) : 0);
+            int cx = cx0 + c * 9;
+            MachineArt.sunk(g, x + cx, y + BLOCK_Y + 3, 7, 22, 0xFFE3E6E4);
+            int h = (int) Math.round(20 * Math.max(0, Math.min(1, t / 600.0)));
+            if (h > 0) FcsDraw.fill(g, x + cx + 1, y + BLOCK_Y + 24 - h, x + cx + 6, y + BLOCK_Y + 24, t > 520 ? HOT : RUST);
         }
-        // tachometer: 0..2000 rpm over 270°
-        float cx = wx + 86, cy = wy + 27, r = 15;
-        for (int k = 0; k <= 10; k++) {
+        MachineArt.sunk(g, x + BLOCK_X + 3, y + BLOCK_Y + 27, BLOCK_W - 6, 6, MachineArt.WINDOW);
+        if (firing) {
+            int px = (int) Math.floorMod((long) Math.floor(time * 2), (long) (BLOCK_W - 10));
+            FcsDraw.fill(g, x + BLOCK_X + 4 + px, y + BLOCK_Y + 28, x + BLOCK_X + 6 + px, y + BLOCK_Y + 32, MachineArt.STEEL_LIGHT);
+        }
+        // the generator on the crankshaft, the tachometer over it (0..2,000 rpm over 270 degrees)
+        MachineArt.shaft(g, x + BLOCK_X + BLOCK_W, x + GEN_X, y + GEN_Y + GEN_H / 2);
+        MachineArt.generator(g, x + GEN_X, y + GEN_Y, GEN_W, GEN_H);
+        FcsDraw.disc(g, x + TACH_X, y + TACH_Y, TACH_R, MachineArt.STEEL_DARK);
+        FcsDraw.disc(g, x + TACH_X, y + TACH_Y, TACH_R - 1, 0xFFE6E9E7);
+        for (int k = 0; k <= 10; k += 2) {
             double a = Math.toRadians(135 + 27 * k);
-            float c1 = (float) Math.cos(a), s1 = (float) Math.sin(a);
-            FcsDraw.line(g, cx + c1 * (r - 3), cy + s1 * (r - 3), cx + c1 * r, cy + s1 * r, 0.6F, k >= 9 ? HOT : 0xFF5B6867);
+            float c = (float) Math.cos(a), s = (float) Math.sin(a);
+            FcsDraw.line(g, x + TACH_X + c * (TACH_R - 3), y + TACH_Y + s * (TACH_R - 3), x + TACH_X + c * (TACH_R - 1.5F), y + TACH_Y + s * (TACH_R - 1.5F), 1F,
+                k >= 9 ? HOT : MachineArt.STEEL_DARK);
         }
-        FcsDraw.circle(g, cx, cy, r, 0.5F, 0xFF9AA3A1);
         double a = Math.toRadians(135 + 270 * Math.min(1, v(2) / 2000.0));
-        FcsDraw.line(g, cx, cy, cx + (float) Math.cos(a) * (r - 2), cy + (float) Math.sin(a) * (r - 2), 1.0F, HOT);
-        FcsDraw.disc(g, cx, cy, 1.5F, 0xFF33393A);
-        // coolant
-        float kx = wx + 108, ky = wy + 12, kh = 30;
-        g.fill((int) kx, (int) ky, (int) kx + 5, (int) (ky + kh), WELL);
-        float cf = (float) Math.max(0, Math.min(1, coolant / 110.0));
-        WindRoseView.fill(g, kx, ky + kh * (1 - cf), 5, kh * cf, coolant < 70 ? BLUE : GREEN);
-        // fuel tank
-        float fx = wx + 118, fh = 30;
-        g.fill((int) fx, (int) ky, (int) fx + 8, (int) (ky + fh), WELL);
-        float ff = v(10) > 0 ? (float) Math.min(1, v(9) / (double) v(10)) : 0;
-        WindRoseView.fill(g, fx, ky + fh * (1 - ff), 8, fh * ff, fuelColour());
-        PumpCrossSection.text(g, Component.translatable(K + "tank_labels"), wx + 104, wy + 2, WindRoseView.DIM, u);
-        // readings beside the gauges
-        float rx = wx + 132, lh = 9 * u + 1;
-        WindRoseView.line(g, Component.literal(String.format(Locale.ROOT, "%d rpm", v(2))), rx, wy + 4, WindRoseView.INK, 72);
-        WindRoseView.line(g, Component.translatable(K + "load", Math.round(load * 100) + "%"), rx, wy + 4 + lh, WindRoseView.INK, 72);
-        WindRoseView.line(g, Component.translatable(K + "egt_value", Math.round(EngineGovernor.exhaust(load, coolant, firing()))), rx, wy + 4 + 2 * lh, RUST & 0xFFFFFF, 72);
-        WindRoseView.line(g, Component.translatable(K + "coolant", String.format(Locale.ROOT, "%.0f", coolant)), rx, wy + 4 + 3 * lh,
-            (coolant < 70 ? BLUE : GREEN) & 0xFFFFFF, 72);
+        FcsDraw.line(g, x + TACH_X, y + TACH_Y, x + TACH_X + (float) Math.cos(a) * (TACH_R - 2), y + TACH_Y + (float) Math.sin(a) * (TACH_R - 2), 1F, HOT);
+        FcsDraw.disc(g, x + TACH_X, y + TACH_Y, 1.2F, MachineArt.IRON_DARK);
+        // the coolant (blue while cold, green at working temperature) and the output cable down to the battery
+        double coolant = coolant();
+        MachineArt.level(g, x + COOL_X, y + COOL_Y, 4, COOL_H, coolant / 110.0, coolant < 70 ? BLUE : GREEN);
+        MachineArt.euCable(g, v(4) > 0, time, x + GEN_X + GEN_W, y + GEN_Y + GEN_H / 2, x + 152, y + GEN_Y + GEN_H / 2, x + 152, y + EngineMenu.BATTERY_Y - 2);
     }
 
     private int fuelColour() {
@@ -117,7 +135,7 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
     // ---- the record strip --------------------------------------------------------------------------------------------
 
     private void record(GuiGraphics g, float x, float y, float w, float h) {
-        g.fill((int) x, (int) y, (int) (x + w), (int) (y + h), 0xFFFBFBF6);
+        MachineArt.sunk(g, (int) x - 1, (int) y - 1, (int) w + 2, (int) h + 2, 0xFFFBFBF6);
         for (int k = 1; k < 4; k++) FcsDraw.line(g, x, y + h * k / 4, x + w, y + h * k / 4, 0.3F, GRID);
         int n = EngineGovernor.SAMPLES, head = v(15);
         int[] load = new int[n], egt = new int[n];
@@ -143,15 +161,14 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
 
     private static String f1(double v) { return String.format(Locale.ROOT, "%.1f", v); }
 
-    private void readings(GuiGraphics g, float tx, float ty) {
-        float u = WindRoseView.u(), lh = 9 * u, w = WW - 8;
-        WindRoseView.line(g, Component.translatable(K + "out_line", f1(v(4) / 100.0), f1(v(5) / 100.0), String.format(Locale.ROOT, "%.2f", v(6) / 1000.0)),
-            tx, ty, WindRoseView.INK, w);
+    private void readings() {
+        ReadoutPanel.add(0, Component.translatable(K + "out_line", f1(v(4) / 100.0), f1(v(5) / 100.0), String.format(Locale.ROOT, "%.2f", v(6) / 1000.0)),
+            WindRoseView.INK);
         Component fuel = v(11) < 0 ? Component.translatable(K + "no_fuel")
             : BuiltInRegistries.FLUID.byId(v(11)).getFluidType().getDescription();
         boolean stopped = v(0) <= EngineGovernor.STOPPED_FUEL;   // no efficiency to show while stopped
-        WindRoseView.line(g, Component.translatable(K + "fuel_line", stopped ? "—" : Math.round(v(7) / 10.0) + "%", stopped ? "—" : f1(v(8) / 10.0))
-            .append(" · ").append(fuel).append(String.format(Locale.ROOT, " %,d / %,d mB", v(9), v(10))), tx, ty + lh, WindRoseView.DIM, w);
+        ReadoutPanel.add(1, Component.translatable(K + "fuel_line", stopped ? "—" : Math.round(v(7) / 10.0) + "%", stopped ? "—" : f1(v(8) / 10.0))
+            .append(" · ").append(fuel).append(String.format(Locale.ROOT, " %,d / %,d mB", v(9), v(10))), WindRoseView.DIM);
         String state; int colour;
         switch (v(0)) {
             case EngineGovernor.STOPPED_FULL -> { state = "state.stopped_full"; colour = BLUE; }
@@ -167,7 +184,7 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
     private void strip(GuiGraphics g, int x, int sy) {
         // 0.1.11.121: vanilla font, furnace-style bar; the governor's start and stop marks in blue
         long e = Integer.toUnsignedLong(v(12)), cap = Math.max(1, Integer.toUnsignedLong(v(13)));
-        int[] bar = VanillaFrame.labelledBar(g, x + WX, sy, 241 - WX, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
+        int[] bar = VanillaFrame.labelledBar(g, x + 8, sy, W - 16, Component.translatable(K + "stored"), Math.min(1.0, e / (double) cap),
             Component.literal(String.format(Locale.ROOT, "%,d / %,d EU", e, cap)));
         for (double mark : new double[]{EngineGovernor.START_BELOW, EngineGovernor.STOP_AT}) {
             int m = (int) (bar[0] + bar[1] * mark);
@@ -175,18 +192,35 @@ public class EngineScreen<T extends EngineMenu> extends mio_icif_screen<T> {
         }
     }
 
+    /** 0.1.11.181: the gauges' figures (they were written beside the gauges), then what the drawing shows. */
+    private List<Component> engineTip() {
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.literal(String.format(Locale.ROOT, "%d rpm · ", v(2))).append(Component.translatable(K + "load", Math.round(load() * 100) + "%"))
+            .append(" · ").append(Component.translatable(K + "egt_value", Math.round(EngineGovernor.exhaust(load(), coolant(), firing()))))
+            .append(" · ").append(Component.translatable(K + "coolant", String.format(Locale.ROOT, "%.0f", coolant()))));
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): only the gauges' figures; the drawing's how-it-works lines are hidden for now
+        // lines.add(Component.translatable(K + "tip.1"));
+        // lines.add(Component.translatable(K + "tip.2"));
+        return lines;
+    }
+
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
+        if (hoveredSlot != null) return;   // a slot shows its own tooltip only
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= WX && rx < WX + WW && ry >= WY && ry < WY + 46) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.1"), Component.translatable(K + "tip.2")), mouseX, mouseY);
-        } else if (rx >= WX && rx < WX + WW && ry >= WY + 46 && ry < WY + 64) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.3")), mouseX, mouseY);
-        } else if (rx >= WX && rx < WX + WW && ry >= WY + 64 && ry < WY + WH) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.4"), Component.translatable(K + "tip.5")), mouseX, mouseY);
-        } else if (rx >= WX && rx < 241 && ry >= STRIP_Y && ry < STRIP_Y + 12) {
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.6")), mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the record's legend, the economy notes and the bar's start/stop marks are hidden for now
+        if (rx >= REC_X - 1 && rx <= REC_X + REC_W && ry >= REC_Y - 1 && ry <= REC_Y + REC_H) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.3")), mouseX, mouseY);
+        } else if (rx >= TANK_X - 2 && rx < 168 && ry >= 15 && ry < 78) {
+            g.renderComponentTooltip(this.font, engineTip(), mouseX, mouseY);
+        } else if (rx >= 8 && rx < 168 && ry >= READ_Y && ry < READ_Y + READ_H) {
+            List<Component> lines = new ArrayList<>(cutLines);
+            // lines.add(Component.translatable(K + "tip.4"));
+            // lines.add(Component.translatable(K + "tip.5"));
+            if (!lines.isEmpty()) g.renderComponentTooltip(this.font, lines, mouseX, mouseY);
+        } else if (rx >= 8 && rx < 168 && ry >= STRIP_Y && ry < STRIP_Y + 12) {
+            // g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.6")), mouseX, mouseY);
         }
     }
 

@@ -21,9 +21,9 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class EngineMenu extends mio_icif_generator_menu {
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
-    public static final int SLOT_X = 10, FUEL_Y = 22, EMPTY_Y = 48, BATTERY_Y = 82;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 244;   // 0.1.11.181: the vanilla width (was 248)
+    public static final int SLOT_X = 10, FUEL_Y = 17, EMPTY_Y = 47, BATTERY_X = 150, BATTERY_Y = 58;   // 0.1.11.181: at the tank's filler, the battery at the cable's end
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
     public static final int FUEL_SLOT = 0, EMPTY_SLOT = 1, BATTERY_SLOT = 2, SLOT_COUNT = 3;
 
     private final ContainerLevelAccess access;
@@ -75,7 +75,7 @@ public class EngineMenu extends mio_icif_generator_menu {
         this.addSlot(new SlotItemHandler(itemHandler, EMPTY_SLOT, SLOT_X, EMPTY_Y) {
             @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
-        addBatterySlot(BATTERY_SLOT, SLOT_X, BATTERY_Y);
+        addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
     }
 
     /** A container of a fuel this engine burns (by default any semifluid fuel). */

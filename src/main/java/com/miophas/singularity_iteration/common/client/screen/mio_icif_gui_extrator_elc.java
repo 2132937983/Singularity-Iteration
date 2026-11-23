@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.menu.producer.ExtractorElcMenu;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
@@ -68,6 +69,39 @@ public class mio_icif_gui_extrator_elc extends ProcessInstrumentScreen<Extractor
             float f = phase / 10;
             FcsDraw.fill(g, x1, (int) (cy - 4), x1 + 3 + Math.round(5 * f), (int) cy, FormingFigure.WORK);
         }
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Screw's); 0.1.11.180: 176 wide ----
+    // The screw press from the side: the input in the hopper over the inlet, the motor at the inlet end wired to the
+    // battery, the flights moving along the shaft in the barrel, the juice dripping through the screen into the tray, the
+    // cake leaving the outlet, the arrow to the output tray.
+    @Override protected int arrowX() { return 119; }
+    @Override protected int arrowY() { return MergedSlots.Screw.OUT_Y + 1; }
+    @Override protected int[] machineBody() { return new int[]{30, 42, 84, 50}; }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        boolean run = running();
+        if (run) phase = (phase + dt * 12) % 10;
+        MachineArt.cable(g, 28, 82, 36, 82, 36, 66);
+        MachineArt.motor(g, 30, 42, 18, 24);
+        MachineArt.iron(g, 48, 42, 66, 26);                                           // the barrel
+        FcsDraw.fill(g, 52, 46, 110, 64, MachineArt.WINDOW);
+        FcsDraw.fill(g, 50, 54, 112, 56, MachineArt.STEEL);                           // the shaft
+        for (int k = 0; k < 6; k++) {                                                 // the flights, shallower to the outlet
+            float x = 54 + ((k * 9 + phase * 3.6F) % 54), r = 7 - 3 * (x - 52) / 58;
+            FcsDraw.line(g, x - 2, 55 - r, x + 2, 55 + r, 1.4F, MachineArt.STEEL_LIGHT);
+        }
+        MachineArt.hopper(g, MergedSlots.Screw.IN_X, MergedSlots.Screw.IN_Y, 42);
+        for (int x = 72; x < 108; x += 4) FcsDraw.fill(g, x, 68, x + 2, 69, MachineArt.STEEL_LIGHT);   // the screen
+        if (run) for (int k = 0; k < 3; k++) {
+            float f = (phase / 5 + k * 0.37F) % 1;
+            FcsDraw.disc(g, 76 + k * 12, 70 + f * 10, 1.2F, JUICE);
+        }
+        MachineArt.sunk(g, 68, 82, 44, 10, MachineArt.GLASS);                         // the juice tray
+        FcsDraw.fill(g, 69, 86, 111, 91, JUICE);
+        if (run) FcsDraw.fill(g, 114, 50, 115 + Math.round(3 * phase / 10), 60, MachineArt.WORK);   // the cake
+        MachineArt.tray(g, MergedSlots.Screw.OUT_X, MergedSlots.Screw.OUT_Y);
     }
 
     @Override

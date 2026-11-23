@@ -81,8 +81,7 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
     }
 
     private boolean isValidBlade(ItemStack stack) {
-        return stack.is(mio_icif_resources.IRON_CUT_BLADE.get())
-            || stack.is(mio_icif_resources.DIAMOND_CUT_BLADE.get());
+        return bladeHardness(stack) > 0;
     }
 
     /**
@@ -101,7 +100,17 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
      * 获取锯片的硬度上限
      */
     private int getBladeHardness(ItemStack stack) {
+        return bladeHardness(stack);
+    }
+
+    /**
+     * The hardest material a blade cuts (0: not a blade), as in IC2's block cutter: iron 2 (logs and planks, 1; copper, tin, gold,
+     * lead, silver blocks, 2), refined iron 5 (also iron, bronze, refined iron and lapis blocks; 0.1.11.179, it was not accepted before),
+     * diamond 8 (also obsidian). The screen asks here too.
+     */
+    public static int bladeHardness(ItemStack stack) {
         if (stack.is(mio_icif_resources.IRON_CUT_BLADE.get())) return 2;
+        if (stack.is(mio_icif_resources.ADVIRON_CUTBLADE.get())) return 5;
         if (stack.is(mio_icif_resources.DIAMOND_CUT_BLADE.get())) return 8;
         return 0;
     }
@@ -191,8 +200,9 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
 
     /**
      * Blade wear: a cut wears the blade by (material hardness ÷ blade hardness)², in units of the blade's durability
-     * (iron 64, diamond 1,024): the iron blade cuts 64 blocks of hardness 2 or 256 of hardness 1, the diamond blade 1,024 of
-     * hardness 8. Fractions are carried; a blade worn through breaks.
+     * (iron 64, refined iron 256, diamond 1,024): the iron blade cuts 64 blocks of hardness 2 or 256 of hardness 1, the
+     * refined iron blade 256 of hardness 5, the diamond blade 1,024 of hardness 8. Fractions are carried; a blade worn
+     * through breaks.
      */
     private double wearCarry;
 
@@ -240,7 +250,8 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         if (!isValidBlade(blade) || getBladeHardness(blade) < recipe.getHardness()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_BLADE;
         if (prepareOperation().isEmpty()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
         if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
-        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     @Override
@@ -296,6 +307,9 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         if (!operation.get().commit()) { progress = completed; stopWork(); return; }
         wearBlade(wear);
         finishWork();
+        // 0.1.11.174: goes on at once when it can, as the compressor does: it stood still for a tick after each operation
+        // (the screen read "not enough power" then, and the advanced metal former seemed to switch off once per item)
+        if (canWork()) isWorking = true;
         setChanged();
     }
 

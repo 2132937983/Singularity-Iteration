@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class GeomagneticGeneratorMenu extends MimicGeneratorMenu {
     public static final int SLOT_COUNT = 1, BATTERY_SLOT = 0;
+    /** 0.1.11.181: the battery under the pickup coil. */
+    public static final int BATTERY_X = 145, BATTERY_Y = 58;
     public static final int TRACE = 72, KP = 24, TRACE_AT = 8, KP_AT = TRACE_AT + TRACE, DATA_COUNT = KP_AT + KP;
     public static final int SPAN = 3 * GeomagPhysics.DAY;
 
@@ -25,7 +27,7 @@ public class GeomagneticGeneratorMenu extends MimicGeneratorMenu {
     }
 
     @Override
-    protected void addMachineSlots() { addBatterySlot(BATTERY_SLOT, 10, 30); }
+    protected void addMachineSlots() { addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y); }
 
     public int getEnergy() { return value(0); }
     public int getMaxEnergy() { return value(1); }

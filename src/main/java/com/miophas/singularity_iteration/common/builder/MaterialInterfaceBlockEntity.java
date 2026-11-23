@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * Material Interfaces and Blueprint Builders are skipped (no loops).
  */
 @SuppressWarnings("null")
-public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuProvider {
+public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuProvider, MaterialSource {
     public static final int SLOTS = 27;
 
     private final SimpleContainer items = new SimpleContainer(SLOTS) {
@@ -48,6 +48,7 @@ public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuPro
     public SimpleContainer container() { return items; }
 
     /** Number of {@code item} in the own slots and the adjacent storages. */
+    @Override
     public long count(Item item) {
         long n = 0;
         for (int i = 0; i < items.getContainerSize(); i++) if (plain(items.getItem(i), item)) n += items.getItem(i).getCount();
@@ -61,6 +62,7 @@ public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuPro
     }
 
     /** Takes up to {@code max} of {@code item}: own slots first, then the adjacent storages. */
+    @Override
     public ItemStack extract(Item item, int max) {
         ItemStack out = ItemStack.EMPTY;
         int need = max;
@@ -100,6 +102,7 @@ public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuPro
     }
 
     /** Puts {@code stack} back: own slots first, then the adjacent storages. Returns the rest. */
+    @Override
     public ItemStack insert(ItemStack stack) {
         ItemStack rest = ItemHandlerHelper.insertItemStacked(handler, stack, false);
         for (IItemHandler h : neighbours()) {

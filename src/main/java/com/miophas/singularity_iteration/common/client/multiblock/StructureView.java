@@ -25,6 +25,9 @@ import org.joml.Vector3f;
  * "Multiblock Structures"). The view turns slowly until the first drag; a drag turns it, the mouse wheel
  * zooms, and a layer can be shown alone. A position with more than one permitted block changes its block
  * every second. Blocks are drawn from their models (no block entity renderers).
+ *
+ * <p>0.1.11.189: also a fixed list of blocks ({@link #of}): the Blueprint Builder's structure catalog shows a structure as the
+ * builder will place it (each port in its slot), not the alternatives of the plan.
  */
 @OnlyIn(Dist.CLIENT)
 public final class StructureView {
@@ -32,7 +35,9 @@ public final class StructureView {
 
     private record Shown(BlockPos pos, BlockState[] states) {}
 
-    private final StructureBlueprint blueprint;
+    @org.jetbrains.annotations.Nullable private final StructureBlueprint blueprint;
+    private final net.minecraft.resources.ResourceLocation id;
+    private final int sizeX, sizeY, sizeZ;
     private final List<Shown> blocks = new ArrayList<>();
     private float yaw = -35F, pitch = 28F, zoom = 1F;
     private boolean spinning = true;
@@ -41,7 +46,7 @@ public final class StructureView {
     private int layer = -1;
 
     public StructureView(StructureBlueprint blueprint) {
-        this.blueprint = blueprint;
+        this(blueprint, blueprint.id(), blueprint.sizeX(), blueprint.sizeY(), blueprint.sizeZ());
         for (StructureBlueprint.Placement p : blueprint.placements()) {
             List<BlockState> states = new ArrayList<>();
             for (StructureBlueprint.BlockRef ref : p.key().blocks()) {
@@ -52,14 +57,35 @@ public final class StructureView {
         }
     }
 
+    private StructureView(@org.jetbrains.annotations.Nullable StructureBlueprint blueprint, net.minecraft.resources.ResourceLocation id,
+                          int sizeX, int sizeY, int sizeZ) {
+        this.blueprint = blueprint;
+        this.id = id;
+        this.sizeX = sizeX;
+        this.sizeY = sizeY;
+        this.sizeZ = sizeZ;
+    }
+
+    /** 0.1.11.189: a view of fixed blocks ({@code positions} from 0 to the size, each with its one state). */
+    public static StructureView of(net.minecraft.resources.ResourceLocation id, int sizeX, int sizeY, int sizeZ, List<BlockPos> positions, List<BlockState> states) {
+        StructureView view = new StructureView(null, id, sizeX, sizeY, sizeZ);
+        for (int i = 0; i < positions.size(); i++) view.blocks.add(new Shown(positions.get(i), new BlockState[]{states.get(i)}));
+        return view;
+    }
+
+    /** The plan shown, or null for a view of fixed blocks ({@link #of}). */
+    @org.jetbrains.annotations.Nullable
     public StructureBlueprint blueprint() { return blueprint; }
+
+    /** The number of layers. */
+    public int sizeY() { return sizeY; }
 
     /** -1 for all layers, else the layer shown alone. */
     public int layer() { return layer; }
 
     /** Shows the next layer up ({@code step} 1) or down (-1); after the top (or below the bottom) all layers. */
     public void stepLayer(int step) {
-        int count = blueprint.sizeY();
+        int count = sizeY;
         if (count <= 1) { layer = -1; return; }
         int next = layer + step;
         layer = next < -1 ? count - 1 : next >= count ? -1 : next;
@@ -92,7 +118,7 @@ public final class StructureView {
         Vector3f to = matrix.transformPosition(x + width, y + height, 0, new Vector3f());
         // the scissor is in screen coordinates; the pose of a JEI recipe is translated
         graphics.enableScissor((int) Math.floor(from.x), (int) Math.floor(from.y), (int) Math.ceil(to.x), (int) Math.ceil(to.y));
-        int sx = blueprint.sizeX(), sy = blueprint.sizeY(), sz = blueprint.sizeZ();
+        int sx = sizeX, sy = sizeY, sz = sizeZ;
         float diagonal = (float) Math.sqrt(sx * sx + sy * sy + sz * sz);
         float scale = Math.min(width, height) / Math.max(1F, diagonal) * zoom;
         PoseStack pose = graphics.pose();
@@ -117,7 +143,7 @@ public final class StructureView {
             } catch (RuntimeException e) {
                 // a broken model of another mod must not break the recipe screen
                 com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("structure-view-" + state.getBlock(),
-                    "Drawing " + state + " in the structure view " + blueprint.id(), e);
+                    "Drawing " + state + " in the structure view " + id, e);
             }
             pose.popPose();
         }

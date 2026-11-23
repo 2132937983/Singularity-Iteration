@@ -40,6 +40,7 @@
     {
       "id": "mio_icif:wiring/block_gesu_output_luv",
       "required": false
-    }
+    },
+    "mio_icif:wiring/block_tesu_controller"
   ]
 }

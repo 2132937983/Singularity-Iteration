@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings({"null"}) public class SteamKineticGeneratorMenu extends mio_icif_generator_menu {
 
-    public static final int TURBINE_X = 10, TURBINE_Y = 30;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int TURBINE_X = 57, TURBINE_Y = 29;   // 0.1.11.181: in the turbine casing
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
     /**
      * 0 hot steam, 1 has turbine, 2 waterlogged, 3 working, 4 KU/t, 5 (unused), 6 water mB, 7 throttled, 8 venting,
      * 9 steam mB, 10 steam capacity, 11 KU per mB x100, 12 exhaust condensed, 13 exhaust quality x1000,

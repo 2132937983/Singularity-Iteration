@@ -26,6 +26,7 @@ item_ids:
 * 未用完的建材会被送回接口。
 * 漏斗和管道可以向 27 个槽位补充物品。RTS Building 可以把它链接为存储。
 * 建造机使用 16 格内的接口。
+* 创造模式下可以用[无限军械库资材接口](producer_block_infinite_material_interface.md)，所有建材无限供应。
 
 ## 配方
 

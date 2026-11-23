@@ -330,6 +330,10 @@ public class mio_icif_menus {
     public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.generator.CreativeGeneratorMenu>> CREATIVE_GENERATOR_MENU_TYPE =
         MENU_TYPES.register("creative_generator_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<com.miophas.singularity_iteration.common.menu.generator.CreativeGeneratorMenu>) com.miophas.singularity_iteration.common.menu.generator.CreativeGeneratorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
+    // 0.1.11.191: the TESU output port's screen (its output in EU/t)
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.wiring.TesuOutputMenu>> TESU_OUTPUT_MENU_TYPE =
+        MENU_TYPES.register("tesu_output_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<com.miophas.singularity_iteration.common.menu.wiring.TesuOutputMenu>) com.miophas.singularity_iteration.common.menu.wiring.TesuOutputMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+
     public static final DeferredHolder<MenuType<?>, MenuType<ChunkLoaderMenu>> CHUNK_LOADER_MENU_TYPE =
         MENU_TYPES.register("chunk_loader_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<ChunkLoaderMenu>) (containerId, playerInventory, data) -> new ChunkLoaderMenu(containerId, playerInventory, data), net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
@@ -366,6 +370,9 @@ public class mio_icif_menus {
     // ===== GESU =====
     public static final DeferredHolder<MenuType<?>, MenuType<GESUCoreMenu>> GESU_CORE_MENU_TYPE =
         MENU_TYPES.register("gesu_core_menu", () -> new MenuType<>(GESUCoreMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+    /** 0.1.11.157: the TESU controller. */
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.storage.TesuControllerMenu>> TESU_CONTROLLER_MENU_TYPE =
+        MENU_TYPES.register("tesu_controller_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.storage.TesuControllerMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
     // ===== OilRig =====
     public static final DeferredHolder<MenuType<?>, MenuType<OilRigPanelMenu>> OIL_RIG_PANEL_MENU_TYPE =

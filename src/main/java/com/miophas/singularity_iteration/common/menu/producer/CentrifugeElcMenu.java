@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.menu.producer;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_centrifuge_elc;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_machine_menu;
@@ -28,20 +29,20 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        addInputSlot(INPUT_SLOT, 10, 18);   // 0.1.11.114: two columns on the left of the instrument screen
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 61, 18) {
+        addInputSlot(INPUT_SLOT, MergedSlots.Centrifuge.IN_X, MergedSlots.Centrifuge.IN_Y);   // 0.1.11.114: two columns on the left of the instrument screen
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, MergedSlots.Centrifuge.OUT_X, MergedSlots.Centrifuge.OUT_TOP_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 61, 37) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, MergedSlots.Centrifuge.OUT_X, MergedSlots.Centrifuge.OUT_TOP_Y + MergedSlots.Centrifuge.OUT_STEP) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_3, 61, 56) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_3, MergedSlots.Centrifuge.OUT_X, MergedSlots.Centrifuge.OUT_TOP_Y + 2 * MergedSlots.Centrifuge.OUT_STEP) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
-        addBatterySlot(BATTERY_SLOT, 10, 56);   // 0.1.11.118: the furnace block
+        addBatterySlot(BATTERY_SLOT, MergedSlots.BATTERY_X, MergedSlots.BATTERY_Y);   // 0.1.11.118: the furnace block
         this.addUpgradeSlot(UPGRADE_SLOT_START, 152, 8);
         this.addUpgradeSlot(UPGRADE_SLOT_START + 1, 152, 26);
         this.addUpgradeSlot(UPGRADE_SLOT_START + 2, 152, 44);
@@ -92,7 +93,7 @@ import org.jetbrains.annotations.Nullable;
 
     // ---- 0.1.11.114: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240, INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;   // 0.1.11.180: the vanilla width
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

@@ -54,9 +54,9 @@ import org.jetbrains.annotations.Nullable;
     }
 
     /** 0.1.11.9: 248 x 204 with the wind rose and the height curve; the battery slot on the left. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 244;
-    public static final int SLOT_X = 10, SLOT_Y = 46;
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 244;   // 0.1.11.181: the vanilla width
+    public static final int SLOT_X = 12, SLOT_Y = 58;   // 0.1.11.181: the battery at the foot of the mast
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     /** Synced value {@code i} (see the block entity's getContainerData). */
     public int value(int i) { return data.get(i); }

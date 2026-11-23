@@ -362,6 +362,18 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.builder.BuilderActionPacket.CODEC,
             com.miophas.singularity_iteration.common.builder.BuilderActionPacket::handle
         );
+        // 0.1.11.182: blueprint uploads from the player's computer (begin, pieces; the status back)
+        com.miophas.singularity_iteration.common.builder.BuilderUploadPackets.register(registrar);
+        // 0.1.11.184: the builder's plan for the clients' block hologram (asked for, sent in parts)
+        com.miophas.singularity_iteration.common.builder.BuilderPlanPackets.register(registrar);
+        // 0.1.11.185: placing the builder's blueprint in the world (move, turn, mirror, show the area)
+        registrar.playToClient(com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessBeams.Packet.TYPE,   // 0.1.11.188
+            com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessBeams.Packet.CODEC,
+            com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessBeams.Packet::handle);
+        registrar.playToServer(com.miophas.singularity_iteration.common.builder.BuilderStructurePacket.TYPE,   // 0.1.11.188
+            com.miophas.singularity_iteration.common.builder.BuilderStructurePacket.CODEC, com.miophas.singularity_iteration.common.builder.BuilderStructurePacket::handle);
+        registrar.playToServer(com.miophas.singularity_iteration.common.builder.BuilderAdjustPacket.TYPE,
+            com.miophas.singularity_iteration.common.builder.BuilderAdjustPacket.CODEC, com.miophas.singularity_iteration.common.builder.BuilderAdjustPacket::handle);
         // 0.1.8.0 energy weapon charge / compression effect (one packet per shot, to the shooter and its trackers)
         registrar.playToClient(
             com.miophas.singularity_iteration.common.item.tools.WeaponChargeFx.Shot.TYPE,
@@ -452,6 +464,8 @@ public class mio_icif_Network {
             CreativeGeneratorPacket.CODEC,
             CreativeGeneratorPacket::handle
         );
+        // 0.1.11.191, C2S: output typed into the TESU output port screen.
+        registrar.playToServer(TesuOutputPacket.TYPE, TesuOutputPacket.CODEC, TesuOutputPacket::handle);
 
         // C2S: Advanced Miner filter slot (JEI ghost drag).
         registrar.playToServer(

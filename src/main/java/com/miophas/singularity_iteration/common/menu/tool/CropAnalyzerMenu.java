@@ -41,8 +41,9 @@ import org.jetbrains.annotations.Nullable;
  *   <li>Gene editing (locked until 1 Quantum Core, 4 Neutron Plates and 2 Super Circuits are
  *       installed): set Growth / Gain / Resistance of one analyzed bag; UU-Matter is the catalyst.</li>
  * </ul>
- * A battery slot and four overclocker slots serve all pages. The jobs run on the server while the
- * menu is open, once per game tick. One energy budget per tick serves the jobs in this order:
+ * A battery slot and four overclocker slots serve all pages. The jobs run on the server once per game tick: while the
+ * menu is open, and (0.1.11.174) with it closed while the scanner is in the player's inventory (a background menu, see
+ * {@link #background}; before, they stopped when the screen closed). One energy budget per tick serves the jobs in this order:
  * analysis, breeding, gene editing. The held scanner's inventory slot is locked while the menu is
  * open, so the scanner cannot be moved or dropped (no duplication).
  * <p><b>ZH:</b> 次世代作物扫描仪的菜单（0.1.8.2），共三页：
@@ -51,7 +52,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>交配研究（安装 10 块强化铱板与 1 个生体电路后解锁）：两个已分析的亲本、选定的目标物种，结果确定。</li>
  *   <li>基因编辑（安装 1 个量子核心、4 块中子板与 2 个超级电路后解锁）：设定一个已分析种子袋的生长／产量／抗性，以 UU 物质为催化剂。</li>
  * </ul>
- * 电池槽与 4 个超频槽服务所有页面。菜单打开期间，任务每个游戏 tick 在服务器上运行一次；每 tick 的能量预算按分析、交配、基因编辑的顺序分配。
+ * 电池槽与 4 个超频槽服务所有页面。任务每个游戏 tick 在服务器上运行一次：菜单打开时，以及（0.1.11.174）菜单关闭但扫描仪在玩家物品栏中时（后台菜单，见 {@link #background}；此前界面关闭任务就停止）；每 tick 的能量预算按分析、交配、基因编辑的顺序分配。
  * 菜单打开时，所持扫描仪所在的物品栏槽位被锁定，扫描仪无法移动或丢弃（防止复制）。
  * <p><b>JA:</b> 次世代型作物スキャナーのメニュー（0.1.8.2）。3 ページ：
  * <ul>
@@ -59,7 +60,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>交配研究（強化イリジウム板 10 枚と生体回路 1 個の取り付けでアンロック）：分析済みの親 2 つと選んだ目標種で、結果は確定。</li>
  *   <li>遺伝子改変（量子コア 1 個、中性子板 4 枚、スーパー回路 2 個の取り付けでアンロック）：分析済みの種子袋 1 つの成長・収量・耐性を設定する。触媒は UU 物質。</li>
  * </ul>
- * 電池スロットとオーバークロッカー 4 スロットは全ページ共通。作業はメニューを開いている間、サーバーで 1 ゲーム tick に 1 回動く。
+ * 電池スロットとオーバークロッカー 4 スロットは全ページ共通。作業はサーバーで 1 ゲーム tick に 1 回動く：メニューを開いている間と、（0.1.11.174）閉じていてもスキャナーがプレイヤーのインベントリにある間（バックグラウンドメニュー、{@link #background} 参照。以前は画面を閉じると止まった）。
  * 1 tick のエネルギー予算は分析、交配、遺伝子改変の順に配る。メニューを開いている間、手に持ったスキャナーのインベントリスロットは固定され、
  * スキャナーを動かしたり捨てたりできない（複製防止）。
  */
@@ -135,9 +136,67 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
             ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
     }
 
-    /** EN: Server constructor. ZH: 服务器构造函数。JA: サーバー用コンストラクタ。 */
+    /**
+     * EN: Server constructor. 0.1.11.174: a background menu of the same scanner saves first, so the screen opens on its latest
+     * state and the background stops (the open screen runs the jobs).
+     * ZH: 服务器构造函数。0.1.11.174：同一扫描仪的后台菜单先保存，界面打开时拿到最新状态，后台随即停止（由打开的界面运行任务）。
+     * JA: サーバー用コンストラクタ。0.1.11.174：同じスキャナーのバックグラウンドメニューが先に保存するので、画面は最新の状態で開き、
+     * バックグラウンドは止まる（開いた画面が作業を進める）。
+     */
     public CropAnalyzerMenu(int containerId, Inventory playerInventory, ItemStack containerStack, InteractionHand hand) {
-        this(containerId, playerInventory, hand, containerStack, false);
+        this(containerId, playerInventory, hand, flushedBackground(containerStack), false);
+    }
+
+    private static ItemStack flushedBackground(ItemStack stack) {
+        CropAnalyzerItem.flushBackground(stack);
+        return stack;
+    }
+
+    /**
+     * EN: 0.1.11.174: a menu that is never shown, running the jobs of a scanner whose screen is closed
+     * ({@link CropAnalyzerItem#inventoryTick}). Before, the jobs ran only while the screen was open.
+     * ZH: 0.1.11.174：不显示的菜单，为界面关闭的扫描仪运行任务（{@link CropAnalyzerItem#inventoryTick}）。此前任务只在界面打开时运行。
+     * JA: 0.1.11.174：表示しないメニュー。画面を閉じたスキャナーの作業を進める（{@link CropAnalyzerItem#inventoryTick}）。以前は画面を開いている間だけ進んだ。
+     */
+    public static CropAnalyzerMenu background(Player player, ItemStack stack) {
+        return new CropAnalyzerMenu(-1, player.getInventory(), InteractionHand.MAIN_HAND, stack, false);
+    }
+
+    /** EN: Whether this menu works on {@code stack}. ZH: 此菜单是否作用于 {@code stack}。JA: このメニューが {@code stack} を扱うか。 */
+    public boolean isFor(ItemStack stack) {
+        return containerStack == stack;
+    }
+
+    private int backgroundSaveTimer;
+
+    /**
+     * EN: One step of a background menu: saves at once after a finished job, and every second while a job goes on (a restart
+     * or a dropped scanner loses a second at most).
+     * ZH: 后台菜单的一步：任务完成后立即保存，任务进行中每秒保存一次（重启或扫描仪掉落最多丢失一秒）。
+     * JA: バックグラウンドメニューの 1 ステップ：作業が終わればすぐ保存し、進行中は毎秒保存する（再起動や落としたスキャナーで失うのは最大 1 秒）。
+     */
+    public void backgroundTick() {
+        long before = progressSum();
+        processTick();
+        if (dirty) {
+            save();
+            backgroundSaveTimer = 0;
+        } else if (progressSum() != before && ++backgroundSaveTimer >= 20) {
+            save();
+            backgroundSaveTimer = 0;
+        }
+    }
+
+    /** EN: Saves what a background menu has not saved yet. ZH: 保存后台菜单尚未保存的内容。JA: バックグラウンドメニューの未保存分を保存する。 */
+    public void flush() {
+        if (dirty || backgroundSaveTimer > 0) save();
+        backgroundSaveTimer = 0;
+    }
+
+    private long progressSum() {
+        long sum = (long) state.breedProgress + state.geneProgress;
+        for (int p : state.progress) sum += p;
+        return sum;
     }
 
     private CropAnalyzerMenu(int containerId, Inventory playerInventory, InteractionHand hand, @Nullable ItemStack stack, boolean client) {

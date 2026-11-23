@@ -42,8 +42,9 @@ enumExtensions="META-INF/enumextensions.json"
 #logoFile="logo.png" #optional
 
 # A text field displayed in the mod UI
-# 0.1.11.154: the solar panels' models and textures are SCXSYGL's (the pack asks to credit the author, no commercial use)
-credits="Solar panel models and textures: SCXSYGL (center.mcmod.cn/1135392)"
+# 0.1.11.154: the solar panels' models and textures are SCXSYGL's (the pack asks to credit the author, no commercial use);
+# 0.1.11.169: also the generators, energy storage blocks, transformers, wireless node, machine hulls and more from SCXSYGL's machine pack
+credits="Solar panel, generator, energy storage, transformer and machine models and textures: SCXSYGL (center.mcmod.cn/1135392)"
 
 # The authors of the mod, displayed in the mod UI (optional)
 #authors=""

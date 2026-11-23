@@ -78,7 +78,8 @@ import com.miophas.singularity_iteration.common.item.resource.MatronFertilizerIt
  *       （原版/本模组 {@link CropBlock} 作物、{@link NetherWartBlock} 地狱疣、{@link IPlanter} 种植架）
  *       整片连锁收获，并自动补种回 0 龄。耗电或数量达到上限即停止。</li>
  *   <li>副手自动种植：副手持有种子标签（{@code c:seeds}）物品时，锄地后会在范围内耕地
- *       （或空作物架）上自动补种，种子从副手消耗。</li>
+ *       （或空作物架）上自动补种，种子从副手消耗。0.1.11.182：点到的是土壤（或土壤上的草木）才范围锄地；
+ *       点到耕地、作物架等其他方块时只种植和施肥，不会把周围的草地也锄掉种上。</li>
  *   <li>副手批量施肥：副手持有肥料标签（{@code c:fertilizers}）物品时，按范围给作物施肥——
  *       作物架走方块交互（IC2 肥料加营养值），普通作物走肥料物品自身的 {@code useOn}（原版骨粉等）。</li>
  *   <li>自带时运 3：通过 {@link GetEnchantmentLevelEvent} 动态提供时运等级 3，使收获掉落受时运加成。</li>
@@ -232,10 +233,16 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
         boolean weedLayer = isRemovableVegetation(level.getBlockState(clicked))
                 && isTillableSoil(level.getBlockState(soilFor(level, clicked, true)));
 
+        // 0.1.11.182: the clicked block decides whether this click tills. Soil (or the weeds on it) weeds and tills the
+        // range, then plants and fertilizes; farmland, a crop stick or anything else only plants and fertilizes, so
+        // seeding a field from its farmland no longer tills (and plants) the grass round it.
+        boolean tilling = weedLayer || canTill(level, context, clicked)
+                || !weedsToClear(level, clicked, clicked, false).isEmpty();
+
         boolean possible = false;
         for (BlockPos target : targets) {
             if (!level.hasChunkAt(target)) continue;
-            if (wouldAct(level, context, target, player, weedLayer)) {
+            if (wouldAct(level, context, target, player, weedLayer, tilling)) {
                 possible = true;
                 break;
             }
@@ -248,16 +255,18 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
                 if (!hasEnoughEnergy(stack)) break;
                 if (!level.hasChunkAt(target)) continue;
                 BlockPos soilPos = soilFor(level, target, weedLayer);
-                // 除草：原版 HOE_TILL 要求土壤上方为空气，被杂草遮挡时先清除
-                for (BlockPos weed : weedsToClear(level, target, soilPos, weedLayer)) {
-                    if (!hasEnoughEnergy(stack)) break;
-                    if (clearWeeds(level, weed, player)) {
+                if (tilling) {
+                    // 除草：原版 HOE_TILL 要求土壤上方为空气，被杂草遮挡时先清除
+                    for (BlockPos weed : weedsToClear(level, target, soilPos, weedLayer)) {
+                        if (!hasEnoughEnergy(stack)) break;
+                        if (clearWeeds(level, weed, player)) {
+                            consumeEnergy(stack);
+                        }
+                    }
+                    if (hasEnoughEnergy(stack) && tillOne(level, context, soilPos)) {
+                        tilled = true;
                         consumeEnergy(stack);
                     }
-                }
-                if (hasEnoughEnergy(stack) && tillOne(level, context, soilPos)) {
-                    tilled = true;
-                    consumeEnergy(stack);
                 }
                 // 副手持有种子时，自动在耕地/空作物架上补种
                 if (hasEnoughEnergy(stack) && plantOne(level, player, soilPos)) {
@@ -552,11 +561,17 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
         return List.of();
     }
 
-    /** 预判该位置是否会被处理（锄地/除草/播种/施肥），用于决定右键是否消耗（避免空挥）。 */
-    private static boolean wouldAct(Level level, UseOnContext context, BlockPos target, Player player, boolean weedLayer) {
+    /**
+     * 预判该位置是否会被处理（锄地/除草/播种/施肥），用于决定右键是否消耗（避免空挥）。
+     * {@code tilling}：这一下是否锄地（0.1.11.182：点到耕地等非土壤方块时只种植、施肥）。
+     */
+    private static boolean wouldAct(Level level, UseOnContext context, BlockPos target, Player player, boolean weedLayer,
+            boolean tilling) {
         BlockPos soilPos = soilFor(level, target, weedLayer);
-        if (!weedsToClear(level, target, soilPos, weedLayer).isEmpty()) return true;
-        return canTill(level, context, soilPos) || canPlantAt(level, soilPos, player)
+        if (tilling && (!weedsToClear(level, target, soilPos, weedLayer).isEmpty() || canTill(level, context, soilPos))) {
+            return true;
+        }
+        return canPlantAt(level, soilPos, player)
                 || canFertilize(level, target, player) || canFertilize(level, target.above(), player);
     }
 

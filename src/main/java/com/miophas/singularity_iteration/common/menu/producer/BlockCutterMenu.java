@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.menu.producer;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_block_cutter;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
@@ -30,15 +31,15 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, 10, 18));
-        this.addSlot(new SlotItemHandler(itemHandler, BLADE_SLOT, 30, 18));
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 61, 37) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, MergedSlots.Cutter.IN_X, MergedSlots.Cutter.IN_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, BLADE_SLOT, MergedSlots.Cutter.BLADE_X, MergedSlots.Cutter.BLADE_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, MergedSlots.Cutter.OUT_X, MergedSlots.Cutter.OUT_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 56) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, MergedSlots.BATTERY_X, MergedSlots.BATTERY_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
@@ -63,7 +64,7 @@ import org.jetbrains.annotations.Nullable;
 
     // ---- 0.1.11.115: the instrument screen layout (248 x 204; docs/gui_processing_machines.md) ----
 
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 240, INVENTORY_X = 44, INVENTORY_Y = 160, HOTBAR_Y = 218;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 240, INVENTORY_X = 8, INVENTORY_Y = 160, HOTBAR_Y = 218;   // 0.1.11.180: the vanilla width
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

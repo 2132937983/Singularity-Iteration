@@ -668,6 +668,26 @@
     {
       "id": "mio_icif:fusion/block_fusion_poloidal_coil",
       "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_controller",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_input",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_output",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_wireless_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_relay",
+      "required": false
     }
   ]
 }

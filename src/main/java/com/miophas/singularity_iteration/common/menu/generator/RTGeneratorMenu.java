@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class RTGeneratorMenu extends MimicGeneratorMenu {
     public static final int SLOT_COUNT = 6, CHART = 9, DATA_COUNT = CHART + Recorder.SAMPLES;
+    /** 0.1.11.181: the six pellets in their lead container, three by two (also the RT heat generator's). */
+    public static final int PELLET_X = 14, PELLET_Y = 22, PELLET_DX = 19, PELLET_DY = 20;
 
     public RTGeneratorMenu(int containerId, Inventory playerInventory) { this(containerId, playerInventory, null); }
 
@@ -28,7 +30,7 @@ public class RTGeneratorMenu extends MimicGeneratorMenu {
     /** Two columns of three at x 10 and 28 (the window starts at x 54). */
     static void pelletSlots(MimicGeneratorMenu menu, net.neoforged.neoforge.items.IItemHandler items, java.util.function.Consumer<SlotItemHandler> add) {
         for (int i = 0; i < SLOT_COUNT; i++)
-            add.accept(new SlotItemHandler(items, i, 10 + (i % 2) * 18, 20 + (i / 2) * 22) {
+            add.accept(new SlotItemHandler(items, i, PELLET_X + (i % 3) * PELLET_DX, PELLET_Y + (i / 3) * PELLET_DY) {
                 @Override public boolean mayPlace(ItemStack stack) { return stack.is(mio_icif_resources.RTG_PELLET.get()); }
             });
     }

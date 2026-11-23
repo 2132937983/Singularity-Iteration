@@ -1,1428 +1,1151 @@
 package com.miophas.singularity_iteration.common.item;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_items;
-
-import java.util.function.Supplier;
-
+import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.armory.ArmoryRegistry;
+import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
+import com.miophas.singularity_iteration.common.builder.BuilderRegistry;
+import com.miophas.singularity_iteration.common.guide.GuideBook;
 import com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors;
+import com.miophas.singularity_iteration.common.item.build.CFSprayerItem;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_dynamic_cell;
-import com.miophas.singularity_iteration.common.item.reactor.mio_icif_reactors;
-import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.common.item.crop.CropSeedItem;
-import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
-import com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools;
-import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.common.item.envtemplate.mio_icif_env_templates;
+import com.miophas.singularity_iteration.common.item.lathe.mio_icif_lathe_items;
+import com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
+import com.miophas.singularity_iteration.common.item.reactor.mio_icif_reactors;
+import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
+import com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools;
 import com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrades;
+import com.miophas.singularity_iteration.common.logistics.LogisticsRegistry;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-import com.miophas.singularity_iteration.common.Singularity_Iteration;
-
+import com.miophas.singularity_iteration.common.registry.mio_icif_items;
+import com.miophas.singularity_iteration.common.suit.SuitModuleType;
+import com.miophas.singularity_iteration.common.suit.SuitRegistry;
+import com.miophas.singularity_iteration.core.api.MioIcifAPI;
+import com.miophas.singularity_iteration.core.api.item.IItemAPI;
+import com.miophas.singularity_iteration.core.api.suit.SuitClass;
+import java.util.function.Supplier;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
+/**
+ * The mod's creative tab, grouped by kind so that each kind sits in one run (0.1.11.160; regrouped 0.1.11.161):
+ * <ol>
+ *   <li>items: the manual; every tool (hand and electric tools, scanners, remotes and the TESU connector, the building tools:
+ *       sprayer, obscurator, painters, the lathing tools, boxes); weapons and explosives; armour and trinkets; ores and resource
+ *       blocks; each metal's chain (raw, crushed, dust, nugget, ingot, plate, dense plate, casing); non-metals; nuclear and
+ *       advanced materials; components; batteries; reactor components; upgrades and templates; farming; food; fluid containers;
+ *       odds and ends;</li>
+ *   <li>blocks: cables and transformers; energy storage (BatBox to TESU); generators (EU, kinetic, heat, steam); the nuclear and
+ *       fusion reactors; machines; item and fluid transport; every building block (hulls, scaffolds, storage boxes and tanks,
+ *       glass, doors, construction foam, rubber wood);</li>
+ *   <li>last, the suit modification station and the nano and quantum suit plugins (units, Mk.II after each Mk.I, the bay
+ *       expander, the lattice densifier, frame cores).</li>
+ * </ol>
+ * Electric items come empty, then full. 0.1.11.160 put things by theme (the connector by the TESU, the storage boxes with the
+ * pipes...), which split the tools and the building blocks over several places.
+ */
 @SuppressWarnings("null")
 public class mio_icif_creativeTabs {
-    
+
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Singularity_Iteration.MOD_ID);
 
     public static final Supplier<CreativeModeTab> ICIF_TAB = TABS.register("icif_tab", () -> CreativeModeTab.builder()
             .icon(() -> new ItemStack(mio_icif_blocks.THERMAL_GENERATOR.get()))
             .title(Component.translatable("itemGroup.mio_icif"))
-            .displayItems(((parameters, output) -> {
-
-                // ============================================================
-                //  1. TOOLS
-                // ============================================================
-                output.accept(mio_icif_items_tools.TOOL_BRONZE_PICKAXE.get());
-                output.accept(mio_icif_items_tools.TOOL_BRONZE_AXE.get());
-                output.accept(mio_icif_items_tools.TOOL_BRONZE_SHOVEL.get());
-                output.accept(mio_icif_items_tools.TOOL_BRONZE_HOE.get());
-                output.accept(mio_icif_items.TOOL_BRONZE_SWORD.get());
-                output.accept(mio_icif_items_tools.TOOL_HAMMER.get());
-                output.accept(mio_icif_items_tools.TOOL_CUTTER.get());
-
-                output.accept(mio_icif_items_tools.IRON_DRILLER.get());
-                { ItemStack fullIronDriller = new ItemStack(mio_icif_items_tools.IRON_DRILLER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIronDriller, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIronDriller)); output.accept(fullIronDriller); }
-                output.accept(mio_icif_items_tools.DIAMOND_DRILLER.get());
-                { ItemStack fullDiamondDriller = new ItemStack(mio_icif_items_tools.DIAMOND_DRILLER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullDiamondDriller, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullDiamondDriller)); output.accept(fullDiamondDriller); }
-                output.accept(mio_icif_items_tools.IRIDIUM_DRILLER.get());
-                { ItemStack fullIridiumDriller = new ItemStack(mio_icif_items_tools.IRIDIUM_DRILLER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIridiumDriller, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIridiumDriller)); output.accept(fullIridiumDriller); }
-                output.accept(mio_icif_items_tools.IRON_CHAINSAW.get());
-                { ItemStack fullIronChainsaw = new ItemStack(mio_icif_items_tools.IRON_CHAINSAW.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIronChainsaw, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIronChainsaw)); output.accept(fullIronChainsaw); }
-                output.accept(mio_icif_items_tools.IRON_HOE.get());
-                { ItemStack fullIronHoe = new ItemStack(mio_icif_items_tools.IRON_HOE.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIronHoe, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIronHoe)); output.accept(fullIronHoe); }
-                output.accept(mio_icif_items_tools.NANO_SABER.get());
-                { ItemStack fullNanoSaber = new ItemStack(mio_icif_items_tools.NANO_SABER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNanoSaber, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNanoSaber)); output.accept(fullNanoSaber); }
-                output.accept(mio_icif_items_tools.PLASMA_LAUNCHER.get());
-                { ItemStack fullPlasmaLauncher = new ItemStack(mio_icif_items_tools.PLASMA_LAUNCHER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullPlasmaLauncher, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullPlasmaLauncher)); output.accept(fullPlasmaLauncher); }
-                output.accept(mio_icif_items_tools.TOOL_LASER_MINER.get());
-                { ItemStack fullLaserMiner = new ItemStack(mio_icif_items_tools.TOOL_LASER_MINER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullLaserMiner, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullLaserMiner)); output.accept(fullLaserMiner); }
-
-                output.accept(mio_icif_items_tools.WRENCH.get());
-                output.accept(mio_icif_items_tools.AREA_SCANNER.get());
-                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.ARMORY_ITEM.get());
-                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.SHOWCASE_ITEM.get());
-                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.REMOTE.get());
-                output.accept(com.miophas.singularity_iteration.common.builder.BuilderRegistry.BUILDER_ITEM.get());
-                output.accept(com.miophas.singularity_iteration.common.builder.BuilderRegistry.MATERIAL_INTERFACE_ITEM.get());
-                output.accept(com.miophas.singularity_iteration.common.logistics.LogisticsRegistry.EJECTOR_ITEM.get());
-                output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.STATION_ITEM.get());
-                for (var unit : com.miophas.singularity_iteration.common.suit.SuitRegistry.units()) output.accept(unit.get());
-                output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.LATTICE_DENSIFIER.get());
-                output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.BAY_EXPANDER.get());
-                for (var core : com.miophas.singularity_iteration.common.suit.SuitRegistry.cores()) output.accept(core.get());
-                com.miophas.singularity_iteration.common.guide.GuideBook.addToTab(output);
-                output.accept(mio_icif_items_tools.WRENCH_ELC.get());
-                // 电动扳手 - 空电版本
-                { ItemStack emptyWrenchElc = new ItemStack(mio_icif_items_tools.WRENCH_ELC.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyWrenchElc, 0);
-                  output.accept(emptyWrenchElc); }
-                // 电动扳手 - 满电版本
-                { ItemStack fullWrenchElc = new ItemStack(mio_icif_items_tools.WRENCH_ELC.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullWrenchElc, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullWrenchElc)); output.accept(fullWrenchElc); }
-                output.accept(mio_icif_items_tools.TOOL_TREE_TAP.get());
-                output.accept(mio_icif_items_tools.TREETAP_ELC.get());
-                { ItemStack fullTreetapElc = new ItemStack(mio_icif_items_tools.TREETAP_ELC.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullTreetapElc, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullTreetapElc)); output.accept(fullTreetapElc); }
-                output.accept(mio_icif_items_tools.OD_SCANNER.get());
-                { ItemStack fullOdScanner = new ItemStack(mio_icif_items_tools.OD_SCANNER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullOdScanner, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullOdScanner)); output.accept(fullOdScanner); }
-                output.accept(mio_icif_items_tools.OV_SCANNER.get());
-                { ItemStack fullOvScanner = new ItemStack(mio_icif_items_tools.OV_SCANNER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullOvScanner, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullOvScanner)); output.accept(fullOvScanner); }
-                output.accept(mio_icif_items_tools.EU_METER.get());
-                output.accept(mio_icif_items_tools.WINDMETER.get());
-                { ItemStack fullWindmeter = new ItemStack(mio_icif_items_tools.WINDMETER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullWindmeter, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullWindmeter)); output.accept(fullWindmeter); }
-                output.accept(mio_icif_items_tools.POWER_UNIT.get());
-                { ItemStack fullPowerUnit = new ItemStack(mio_icif_items_tools.POWER_UNIT.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullPowerUnit, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullPowerUnit)); output.accept(fullPowerUnit); }
-                output.accept(mio_icif_items_tools.POWER_UNIT_SMALL.get());
-                { ItemStack fullPowerUnitSmall = new ItemStack(mio_icif_items_tools.POWER_UNIT_SMALL.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullPowerUnitSmall, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullPowerUnitSmall)); output.accept(fullPowerUnitSmall); }
-
-                // METS 移植电力工具
-
-                // 电力营养供应器 - 空电和满电
-                output.accept(mio_icif_items_tools.ELECTRIC_NUTRITION_SUPPLY.get());
-                { ItemStack fullNutrition = new ItemStack(mio_icif_items_tools.ELECTRIC_NUTRITION_SUPPLY.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNutrition, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNutrition));
-                  output.accept(fullNutrition); }
-
-                // 电力生命维护仪 - 空电和满电
-                output.accept(mio_icif_items_tools.ELECTRIC_FIRST_AID_LIFE_SUPPORT.get());
-                { ItemStack fullFirstAid = new ItemStack(mio_icif_items_tools.ELECTRIC_FIRST_AID_LIFE_SUPPORT.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullFirstAid, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullFirstAid));
-                  output.accept(fullFirstAid); }
-
-                // 电力伤害吸收仪 - 空电和满电
-                output.accept(mio_icif_items_tools.ELECTRIC_FORCE_FIELD_GENERATOR.get());
-                { ItemStack fullForceField = new ItemStack(mio_icif_items_tools.ELECTRIC_FORCE_FIELD_GENERATOR.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullForceField, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullForceField));
-                  output.accept(fullForceField); }
-
-                // 电动鱼竿 - 空电和满电
-                output.accept(mio_icif_items_tools.ELECTRIC_FISHING_ROD.get());
-                { ItemStack fullFishingRod = new ItemStack(mio_icif_items_tools.ELECTRIC_FISHING_ROD.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullFishingRod, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullFishingRod));
-                  output.accept(fullFishingRod); }
-
-                // 电力光源产生器 - 空电和满电
-                output.accept(mio_icif_items_tools.ELECTRIC_LIGHTER.get());
-                { ItemStack fullLighter = new ItemStack(mio_icif_items_tools.ELECTRIC_LIGHTER.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullLighter, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullLighter));
-                  output.accept(fullLighter); }
-
-                // 无线管理器 - 空电和满电
-                output.accept(mio_icif_items_tools.ELECTRIC_WIRELESS_MANAGER.get());
-                { ItemStack fullWireless = new ItemStack(mio_icif_items_tools.ELECTRIC_WIRELESS_MANAGER.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullWireless, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullWireless));
-                  output.accept(fullWireless); }
-
-                // 地磁探测器 - 空电和满电
-                output.accept(mio_icif_items_tools.GEOMAGNETIC_DETECTOR.get());
-                { ItemStack fullGeomagnetic = new ItemStack(mio_icif_items_tools.GEOMAGNETIC_DETECTOR.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullGeomagnetic, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullGeomagnetic));
-                  output.accept(fullGeomagnetic); }
-
-                // ============================================================
-                //  METS 移植武器
-                // ============================================================
-                output.accept(mio_icif_items_tools.QUANTUM_SWORD.get());
-                { ItemStack fullQuantumSword = new ItemStack(mio_icif_items_tools.QUANTUM_SWORD.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullQuantumSword, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullQuantumSword));
-                  output.accept(fullQuantumSword); }
-                output.accept(mio_icif_items_tools.ELECTRIC_RIFLE.get());
-                { ItemStack fullRifle = new ItemStack(mio_icif_items_tools.ELECTRIC_RIFLE.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullRifle, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullRifle));
-                  output.accept(fullRifle); }
-                output.accept(mio_icif_items_tools.ADVANCED_ELECTRIC_RIFLE.get());
-                { ItemStack fullAdvRifle = new ItemStack(mio_icif_items_tools.ADVANCED_ELECTRIC_RIFLE.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullAdvRifle, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullAdvRifle));
-                  output.accept(fullAdvRifle); }
-                output.accept(mio_icif_items_tools.TACTICAL_LASER_RIFLE.get());
-                { ItemStack fullTacticalRifle = new ItemStack(mio_icif_items_tools.TACTICAL_LASER_RIFLE.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullTacticalRifle, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullTacticalRifle));
-                  output.accept(fullTacticalRifle); }
-                output.accept(mio_icif_items_tools.PLASMA_AIR_CANNON.get());
-                { ItemStack fullPlasmaCannon = new ItemStack(mio_icif_items_tools.PLASMA_AIR_CANNON.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullPlasmaCannon, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullPlasmaCannon));
-                  output.accept(fullPlasmaCannon); }
-                output.accept(mio_icif_items_tools.ELECTRIC_PLASMA_GUN.get());
-                { ItemStack fullPlasmaGun = new ItemStack(mio_icif_items_tools.ELECTRIC_PLASMA_GUN.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullPlasmaGun, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullPlasmaGun));
-                  output.accept(fullPlasmaGun); }
-                output.accept(mio_icif_items_tools.TACHYON_DISRUPTOR.get());
-                { ItemStack fullTachyon = new ItemStack(mio_icif_items_tools.TACHYON_DISRUPTOR.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullTachyon, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullTachyon));
-                  output.accept(fullTachyon); }
-                output.accept(mio_icif_items_tools.STEEL_SHIELD.get());
-                { ItemStack fullShield = new ItemStack(mio_icif_items_tools.STEEL_SHIELD.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullShield, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullShield)); output.accept(fullShield); }
-                output.accept(mio_icif_items_tools.NANO_BOW.get());
-                { ItemStack fullBow = new ItemStack(mio_icif_items_tools.NANO_BOW.get());
-                  MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullBow, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullBow)); output.accept(fullBow); }
-                output.accept(mio_icif_items_tools.ROCKET_LAUNCHER.get());
-                { ItemStack fullRocketLauncher = new ItemStack(mio_icif_items_tools.ROCKET_LAUNCHER.get());
-                  MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullRocketLauncher, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullRocketLauncher));
-                  output.accept(fullRocketLauncher); }
-                output.accept(mio_icif_items_tools.ROCKET.get());
-
-                // ============================================================
-                //  METS 移植饰品 (Curios)
-                // ============================================================
-                if (net.neoforged.fml.ModList.get().isLoaded("curios")) {
-                    try {
-                        Class<?> curiosIntegrationClass = Class.forName("com.miophas.singularity_iteration.common.integration.CuriosIntegration");
-                        java.lang.reflect.Field fireproofNecklaceField = curiosIntegrationClass.getField("TRINKET_FIREPROOF_NECKLACE");
-                        java.lang.reflect.Field energyCrystalBeltField = curiosIntegrationClass.getField("TRINKET_ENERGY_CRYSTAL_BELT");
-                        java.lang.reflect.Field laportonCrystalBeltField = curiosIntegrationClass.getField("TRINKET_LAPORTON_CRYSTAL_BELT");
-                        java.lang.reflect.Field lifeSupportRingField = curiosIntegrationClass.getField("TRINKET_LIFE_SUPPORT_RING");
-                        java.lang.reflect.Field flightRingField = curiosIntegrationClass.getField("TRINKET_FLIGHT_RING");
-
-                        net.neoforged.neoforge.registries.DeferredItem<?> fireproofNecklace = (net.neoforged.neoforge.registries.DeferredItem<?>) fireproofNecklaceField.get(null);
-                        net.neoforged.neoforge.registries.DeferredItem<?> energyCrystalBelt = (net.neoforged.neoforge.registries.DeferredItem<?>) energyCrystalBeltField.get(null);
-                        net.neoforged.neoforge.registries.DeferredItem<?> laportonCrystalBelt = (net.neoforged.neoforge.registries.DeferredItem<?>) laportonCrystalBeltField.get(null);
-                        net.neoforged.neoforge.registries.DeferredItem<?> lifeSupportRing = (net.neoforged.neoforge.registries.DeferredItem<?>) lifeSupportRingField.get(null);
-                        net.neoforged.neoforge.registries.DeferredItem<?> flightRing = (net.neoforged.neoforge.registries.DeferredItem<?>) flightRingField.get(null);
-
-                        // 防火项链 - 空电版本
-                        { ItemStack emptyFireNecklace = new ItemStack(fireproofNecklace.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(emptyFireNecklace, 0);
-                          output.accept(emptyFireNecklace); }
-                        // 防火项链 - 满电版本
-                        { ItemStack fullFireNecklace = new ItemStack(fireproofNecklace.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullFireNecklace, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullFireNecklace));
-                          output.accept(fullFireNecklace); }
-                        // 能量水晶腰带 - 空电版本
-                        { ItemStack emptyEnergyBelt = new ItemStack(energyCrystalBelt.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(emptyEnergyBelt, 0);
-                          output.accept(emptyEnergyBelt); }
-                        // 能量水晶腰带 - 满电版本
-                        { ItemStack fullEnergyBelt = new ItemStack(energyCrystalBelt.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullEnergyBelt, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullEnergyBelt));
-                          output.accept(fullEnergyBelt); }
-                        // 拉普顿水晶腰带 - 空电版本
-                        { ItemStack emptyLapotronBelt = new ItemStack(laportonCrystalBelt.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(emptyLapotronBelt, 0);
-                          output.accept(emptyLapotronBelt); }
-                        // 拉普顿水晶腰带 - 满电版本
-                        { ItemStack fullLapotronBelt = new ItemStack(laportonCrystalBelt.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullLapotronBelt, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullLapotronBelt));
-                          output.accept(fullLapotronBelt); }
-                        // 生命维持指环 - 空电版本
-                        { ItemStack emptyLifeRing = new ItemStack(lifeSupportRing.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(emptyLifeRing, 0);
-                          output.accept(emptyLifeRing); }
-                        // 生命维持指环 - 满电版本
-                        { ItemStack fullLifeRing = new ItemStack(lifeSupportRing.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullLifeRing, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullLifeRing));
-                          output.accept(fullLifeRing); }
-                        // 电力飞行指环 - 空电版本
-                        { ItemStack emptyFlightRing = new ItemStack(flightRing.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(emptyFlightRing, 0);
-                          output.accept(emptyFlightRing); }
-                        // 电力飞行指环 - 满电版本
-                        { ItemStack fullFlightRing = new ItemStack(flightRing.get());
-                          MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullFlightRing, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullFlightRing));
-                          output.accept(fullFlightRing); }
-                    } catch (Exception e) {
-                        com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("creative-tab-curios", "Creative tab entries of the Curios trinkets", e);
-                    }
-                }
-
-                // ============================================================
-                //  2. ARMOR
-                // ============================================================
-                // Bronze Armor
-                output.accept(mio_icif_items_armors.ARMOR_BRONZE_HELMET.get());
-                output.accept(mio_icif_items_armors.ARMOR_BRONZE_CHESTPLATE.get());
-                output.accept(mio_icif_items_armors.ARMOR_BRONZE_LEGGINGS.get());
-                output.accept(mio_icif_items_armors.ARMOR_BRONZE_BOOTS.get());
-                // Hazmat Suit
-                output.accept(mio_icif_items_armors.HAZMAT_HELMET.get());
-                output.accept(mio_icif_items_armors.HAZMAT_CHESTPLATE.get());
-                output.accept(mio_icif_items_armors.HAZMAT_LEGGINGS.get());
-                output.accept(mio_icif_items_armors.HAZMAT_BOOTS.get());
-                // Battery Packs
-                output.accept(mio_icif_items_armors.ARMOR_BATPACK.get());
-                { ItemStack fullBatpack = new ItemStack(mio_icif_items_armors.ARMOR_BATPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullBatpack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullBatpack)); output.accept(fullBatpack); }
-                output.accept(mio_icif_items_armors.ARMOR_ADV_BATPACK.get());
-                { ItemStack fullAdvBatpack = new ItemStack(mio_icif_items_armors.ARMOR_ADV_BATPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvBatpack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvBatpack)); output.accept(fullAdvBatpack); }
-                output.accept(mio_icif_items_armors.ARMOR_ENERGYPACK.get());
-                { ItemStack fullEnergypack = new ItemStack(mio_icif_items_armors.ARMOR_ENERGYPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullEnergypack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullEnergypack)); output.accept(fullEnergypack); }
-                output.accept(mio_icif_items_armors.ARMOR_LAPPACK.get());
-                { ItemStack fullLappack = new ItemStack(mio_icif_items_armors.ARMOR_LAPPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullLappack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullLappack)); output.accept(fullLappack); }
-                // Nightvision Goggles
-                output.accept(mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get());
-                { ItemStack fullNightvision = new ItemStack(mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNightvision, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNightvision)); output.accept(fullNightvision); }
-                // NanoSuit
-                output.accept(mio_icif_items_armors.ARMOR_NANO_HELMET.get());
-                { ItemStack fullNanoHelmet = new ItemStack(mio_icif_items_armors.ARMOR_NANO_HELMET.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNanoHelmet, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNanoHelmet)); output.accept(fullNanoHelmet); }
-                output.accept(mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get());
-                { ItemStack fullNanoChestplate = new ItemStack(mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNanoChestplate, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNanoChestplate)); output.accept(fullNanoChestplate); }
-                output.accept(mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get());
-                { ItemStack fullNanoLeggings = new ItemStack(mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNanoLeggings, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNanoLeggings)); output.accept(fullNanoLeggings); }
-                output.accept(mio_icif_items_armors.ARMOR_NANO_BOOTS.get());
-                { ItemStack fullNanoBoots = new ItemStack(mio_icif_items_armors.ARMOR_NANO_BOOTS.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNanoBoots, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNanoBoots)); output.accept(fullNanoBoots); }
-                // QuantumSuit
-                output.accept(mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get());
-                { ItemStack fullQuantumHelmet = new ItemStack(mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullQuantumHelmet, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullQuantumHelmet)); output.accept(fullQuantumHelmet); }
-                output.accept(mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get());
-                { ItemStack fullQuantumChestplate = new ItemStack(mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullQuantumChestplate, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullQuantumChestplate)); output.accept(fullQuantumChestplate); }
-                output.accept(mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get());
-                { ItemStack fullQuantumLeggings = new ItemStack(mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullQuantumLeggings, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullQuantumLeggings)); output.accept(fullQuantumLeggings); }
-                output.accept(mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get());
-                { ItemStack fullQuantumBoots = new ItemStack(mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullQuantumBoots, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullQuantumBoots)); output.accept(fullQuantumBoots); }
-                // Jetpack
-                output.accept(mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get());
-                { ItemStack fullJetpack = new ItemStack(mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullJetpack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullJetpack)); output.accept(fullJetpack); }
-                // METS 移植装备
-                output.accept(mio_icif_items_armors.ARMOR_DIVING_MASK.get());
-                { ItemStack fullDivingMask = new ItemStack(mio_icif_items_armors.ARMOR_DIVING_MASK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullDivingMask, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullDivingMask)); output.accept(fullDivingMask); }
-                output.accept(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get());
-                { ItemStack fullAdvJetpack = new ItemStack(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvJetpack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvJetpack)); output.accept(fullAdvJetpack); }
-                // 0.1.10.14: Soundproof Earmuffs
-                output.accept(mio_icif_items_armors.SOUNDPROOF_EARMUFFS.get());
-                // 0.1.9.0: heavy / advanced quantum chestplates and solar helmets retired (frame cores, see the suit tab)
-                // Static Boots
-                output.accept(mio_icif_normal.STATIC_BOOTS.get());
-
-                // ============================================================
-                //  3. RAW ORE BLOCKS
-                // ============================================================
-                output.accept(mio_icif_blocks.BLOCK_ORE_TIN.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_TIN_IN_DEEP.get());
-                output.accept(mio_icif_blocks.BLOCK_TIN.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_LEAD.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_LEAD_IN_DEEP.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get());   // 0.1.10.36: made by nuclear blasts
-                output.accept(mio_icif_blocks.BLOCK_LEAD.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_SILVER.get());          // 0.1.11.98
-                output.accept(mio_icif_blocks.BLOCK_ORE_SILVER_IN_DEEP.get());
-                output.accept(mio_icif_blocks.BLOCK_SILVER.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_URAN.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_URAN_IN_DEEP.get());
-                output.accept(mio_icif_blocks.BLOCK_URAN.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_NIOBIUM.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_NIOBIUM_IN_DEEP.get());
-                output.accept(mio_icif_blocks.BLOCK_NIOBIUM.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_TITANIUM.get());
-                output.accept(mio_icif_blocks.BLOCK_ORE_TITANIUM_IN_DEEP.get());
-                output.accept(mio_icif_blocks.BLOCK_TITANIUM.get());
-                output.accept(mio_icif_blocks.BLOCK_RAW_TIN.get());
-                output.accept(mio_icif_blocks.BLOCK_RAW_LEAD.get());
-                output.accept(mio_icif_blocks.BLOCK_RAW_SILVER.get());          // 0.1.11.98
-                output.accept(mio_icif_blocks.BLOCK_RAW_URAN.get());
-                output.accept(mio_icif_blocks.BLOCK_RAW_NIOBIUM.get());
-                output.accept(mio_icif_blocks.BLOCK_RAW_TITANIUM.get());
-                output.accept(mio_icif_resources.ZIP_COAL_BLOCK.get());
-
-                // ============================================================
-                //  4. PROCESSED MATERIALS - BRONZE
-                // ============================================================
-                output.accept(mio_icif_resources.INGOT_BRONZE.get());
-                output.accept(mio_icif_resources.BRONZE_DUST.get());
-                output.accept(mio_icif_resources.BRONZE_DUST_SMALL.get());
-                output.accept(mio_icif_resources.BRONZE_PLATE.get());
-                output.accept(mio_icif_resources.BRONZE_DENSEPLATE.get());
-                output.accept(mio_icif_resources.BRONZE_CASING.get());
-                output.accept(mio_icif_resources.BRONZE_ROTOR_BLADE.get());
-                output.accept(mio_icif_resources.BRONZE_SHAFT.get());
-
-                // PROCESSED MATERIALS - TIN
-                output.accept(mio_icif_resources.INGOT_TIN.get());
-                output.accept(mio_icif_resources.TIN_DUST.get());
-                output.accept(mio_icif_resources.TIN_DUST_SMALL.get());
-                output.accept(mio_icif_resources.TIN_PLATE.get());
-                output.accept(mio_icif_resources.TIN_DENSEPLATE.get());
-                output.accept(mio_icif_resources.TIN_CASING.get());
-                output.accept(mio_icif_resources.TIN_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.TIN_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.RAW_TIN.get());
-                output.accept(mio_icif_resources.TIN_NUGGET.get());
-
-                // PROCESSED MATERIALS - COPPER
-                output.accept(mio_icif_resources.COPPER_DUST.get());
-                output.accept(mio_icif_resources.COPPER_DUST_SMALL.get());
-                output.accept(mio_icif_resources.COPPER_PLATE.get());
-                output.accept(mio_icif_resources.COPPER_DENSEPLATE.get());
-                output.accept(mio_icif_resources.COPPER_CASING.get());
-                output.accept(mio_icif_resources.COPPER_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.COPPER_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.COPPER_BOILER.get());
-                output.accept(mio_icif_resources.COPPER_NUGGET.get());
-
-                // PROCESSED MATERIALS - IRON
-                output.accept(mio_icif_resources.IRON_DUST.get());
-                output.accept(mio_icif_resources.IRON_DUST_SMALL.get());
-                output.accept(mio_icif_resources.IRON_PLATE.get());
-                output.accept(mio_icif_resources.IRON_DENSEPLATE.get());
-                output.accept(mio_icif_resources.IRON_CASING.get());
-                output.accept(mio_icif_resources.IRON_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.IRON_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.IRON_CUT_BLADE.get());
-                output.accept(mio_icif_resources.IRON_ROTOR_BLADE.get());
-                output.accept(mio_icif_resources.IRON_SHAFT.get());
-
-                // PROCESSED MATERIALS - GOLD
-                output.accept(mio_icif_resources.GOLDEN_DUST.get());
-                output.accept(mio_icif_resources.GOLDEN_DUST_SMALL.get());
-                output.accept(mio_icif_resources.GOLDEN_PLATE.get());
-                output.accept(mio_icif_resources.GOLDEN_DENSEPLATE.get());
-                output.accept(mio_icif_resources.GOLDEN_CASING.get());
-                output.accept(mio_icif_resources.GOLD_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.GOLD_ORE_CRUSHED_PURIFIED.get());
-
-                // PROCESSED MATERIALS - LEAD
-                output.accept(mio_icif_resources.LEAD_INGOT.get());
-                output.accept(mio_icif_resources.LEAD_DUST.get());
-                output.accept(mio_icif_resources.LEAD_DUST_SMALL.get());
-                output.accept(mio_icif_resources.LEAD_PLATE.get());
-                output.accept(mio_icif_resources.LEAD_DENSEPLATE.get());
-                output.accept(mio_icif_resources.LEAD_CASING.get());
-                output.accept(mio_icif_resources.LEAD_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.LEAD_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.RAW_LEAD.get());
-                output.accept(mio_icif_resources.LEAD_NUGGET.get());
-
-                // PROCESSED MATERIALS - NIOBIUM
-                output.accept(mio_icif_resources.NIOBIUM_INGOT.get());
-                output.accept(mio_icif_resources.NIOBIUM_DUST.get());
-                output.accept(mio_icif_resources.NIOBIUM_DUST_SMALL.get());
-                output.accept(mio_icif_resources.NIOBIUM_PLATE.get());
-                output.accept(mio_icif_resources.NIOBIUM_DENSEPLATE.get());
-                output.accept(mio_icif_resources.NIOBIUM_CASING.get());
-                output.accept(mio_icif_resources.NIOBIUM_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.NIOBIUM_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.RAW_NIOBIUM.get());
-
-                // PROCESSED MATERIALS - TITANIUM
-                output.accept(mio_icif_resources.TITANIUM_INGOT.get());
-                output.accept(mio_icif_resources.TITANIUM_DUST.get());
-                output.accept(mio_icif_resources.TITANIUM_DUST_SMALL.get());
-                output.accept(mio_icif_resources.TITANIUM_PLATE.get());
-                output.accept(mio_icif_resources.TITANIUM_DENSEPLATE.get());
-                output.accept(mio_icif_resources.TITANIUM_CASING.get());
-                output.accept(mio_icif_resources.TITANIUM_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.TITANIUM_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.RAW_TITANIUM.get());
-                output.accept(mio_icif_resources.TITANIUM_NUGGET.get());
-
-                // PROCESSED MATERIALS - NIOBIUM-TITANIUM ALLOY
-                output.accept(mio_icif_resources.NIOBIUM_TITANIUM_INGOT.get());
-                output.accept(mio_icif_resources.NIOBIUM_TITANIUM_DUST.get());
-                output.accept(mio_icif_resources.NIOBIUM_TITANIUM_PLATE.get());
-
-                // PROCESSED MATERIALS - THORIUM
-                output.accept(mio_icif_resources.THORIUM_DUST.get());
-                output.accept(mio_icif_resources.THORIUM_DUST_SMALL.get());
-                output.accept(mio_icif_resources.THORIUM_SCRAP.get());
-
-                // ============================================================
-                //  METS (MoreElectricTools) 移植材料
-                // ============================================================
-                output.accept(mio_icif_resources.METS_TITANIUM_SHAFT.get());
-
-                output.accept(mio_icif_normal.METS_SUPER_CIRCUIT.get());
-                output.accept(mio_icif_normal.METS_LIVING_CIRCUIT.get());
-                output.accept(mio_icif_normal.METS_LENS.get());
-                output.accept(mio_icif_normal.METS_DIAMOND_LENS.get());
-                output.accept(mio_icif_resources.METS_SUPER_IRIDIUM_ALLOY.get());
-                output.accept(mio_icif_resources.METS_SUPER_IRIDIUM_COMPRESS_PLATE.get());
-                output.accept(mio_icif_resources.METS_PLANT_EXTRACT.get());
-                output.accept(mio_icif_resources.METS_NANO_LIVING_METAL.get());
-                output.accept(mio_icif_resources.METS_NEUTRON_PLATE.get());
-                output.accept(mio_icif_normal.METS_FIELD_GENERATOR.get());
-
-                // PROCESSED MATERIALS - SILVER
-                output.accept(mio_icif_resources.SILVER_INGOT.get());
-                output.accept(mio_icif_resources.SILVER_DUST.get());
-                output.accept(mio_icif_resources.SILVER_DUST_SMALL.get());
-                output.accept(mio_icif_resources.SILVER_PLATE.get());          // 0.1.11.153
-                output.accept(mio_icif_resources.SILVER_DENSEPLATE.get());
-                output.accept(mio_icif_resources.SILVER_CASING.get());
-                output.accept(mio_icif_resources.SILVER_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.SILVER_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.RAW_SILVER.get());
-                output.accept(mio_icif_resources.SILVER_NUGGET.get());
-
-                // PROCESSED MATERIALS - LAPIS
-                output.accept(mio_icif_resources.LAPI_DUST.get());
-                output.accept(mio_icif_resources.LAPI_DUST_SMALL.get());
-                output.accept(mio_icif_resources.LAPI_PLATE.get());
-                output.accept(mio_icif_resources.LAPI_DENSEPLATE.get());
-
-                // PROCESSED MATERIALS - ADVIRON
-                output.accept(mio_icif_resources.ADVIRON_INGOT.get());
-                output.accept(mio_icif_resources.ADVIRON_PLATE.get());
-                output.accept(mio_icif_resources.ADVIRON_DENSEPLATE.get());
-                output.accept(mio_icif_resources.ADVIRON_CASING.get());
-                output.accept(mio_icif_resources.ADVIRON_CUTBLADE.get());
-                output.accept(mio_icif_resources.ADVIRON_ROTOR_BLADE.get());
-                output.accept(mio_icif_resources.ADVIRON_SHAFT.get());
-
-                // PROCESSED MATERIALS - URANIUM / NUCLEAR
-                output.accept(mio_icif_resources.URAN.get());
-                output.accept(mio_icif_resources.URAN_235.get());
-                output.accept(mio_icif_resources.URAN_235_SMALL.get());
-                output.accept(mio_icif_resources.URAN_238.get());
-                output.accept(mio_icif_resources.URAN_238_SMALL.get());
-                output.accept(mio_icif_resources.URAN_ORE_CRUSHED.get());
-                output.accept(mio_icif_resources.URAN_ORE_CRUSHED_PURIFIED.get());
-                output.accept(mio_icif_resources.RAW_URAN.get());
-                output.accept(mio_icif_resources.URAN_PELLET.get());
-                output.accept(mio_icif_resources.PLUTONIUM.get());
-                output.accept(mio_icif_resources.PLUTONIUM_SMALL.get());
-                output.accept(mio_icif_resources.MOX.get());
-                output.accept(mio_icif_resources.PELLET.get());
-                output.accept(mio_icif_resources.RTG_PELLET.get());
-                output.accept(mio_icif_resources.LITHIUM_DUST.get());
-                output.accept(mio_icif_resources.LITHIUM_DUST_SMALL.get());
-
-                // PROCESSED MATERIALS - ALLOY
-                output.accept(mio_icif_resources.ALLOY_INGOT.get());
-                output.accept(mio_icif_resources.ALLOY_PLATE.get());
-                output.accept(mio_icif_resources.DCP_PLATE.get());
-
-                // PROCESSED MATERIALS - CARBON
-                output.accept(mio_icif_resources.CARBON_PLATE.get());
-                output.accept(mio_icif_resources.CARBON_ROTORBLADE.get());
-                output.accept(mio_icif_resources.CF_DUST.get());
-
-                // PROCESSED MATERIALS - OBSIDIAN
-                output.accept(mio_icif_resources.OBSIDIAN_DUST.get());
-                output.accept(mio_icif_resources.OBSIDIAN_DUST_SMALL.get());
-                output.accept(mio_icif_resources.OBSIDIAN_PLATE.get());
-                output.accept(mio_icif_resources.OBSIDIAN_DENSEPLATE.get());
-
-                // PROCESSED MATERIALS - IRIDIUM / DIAMOND
-                output.accept(mio_icif_resources.IRIDIUM.get());
-                output.accept(mio_icif_resources.IRIDIUM_INGOT.get());
-                output.accept(mio_icif_resources.IRIDIUM_PLATE.get());
-                output.accept(mio_icif_resources.SHARD_IRIDIUM.get());
-                output.accept(mio_icif_resources.IRIDIUM_DUST_SMALL.get());
-                output.accept(mio_icif_resources.DIAMOND_DUST.get());
-                output.accept(mio_icif_resources.DIAMOND_CUT_BLADE.get());
-                output.accept(mio_icif_resources.ENERGIUM_DUST.get());
-
-                // PROCESSED MATERIALS - ASP (Advanced Solar Panels)
-                output.accept(mio_icif_resources.SUNNARIUM.get());
-                output.accept(mio_icif_resources.SUNNARIUM_SMALL.get());
-                output.accept(mio_icif_resources.SUNNARIUM_ALLOY.get());
-                output.accept(mio_icif_resources.ENRICHED_SUNNARIUM.get());
-                output.accept(mio_icif_resources.ENRICHED_SUNNARIUM_ALLOY.get());
-                output.accept(mio_icif_resources.URANIUM_INGOT.get());
-                output.accept(mio_icif_resources.IRRADIANT_URANIUM_INGOT.get());
-                output.accept(mio_icif_resources.IRIDIUMIRON_PLATE.get());
-                output.accept(mio_icif_resources.IRIDIUMIRON_REINFORCED_PLATE.get());
-                output.accept(mio_icif_resources.IRRADIANT_REINFORCED_PLATE.get());
-                output.accept(mio_icif_resources.QUANTUM_CORE.get());
-                output.accept(mio_icif_resources.MOLECULAR_TRANSFORMER_CORE.get());
-
-                // PROCESSED MATERIALS - MISCELLANEOUS DUSTS
-                output.accept(mio_icif_resources.COAL_DUST.get());
-                output.accept(mio_icif_resources.COAL_BALL.get());
-                output.accept(mio_icif_resources.COAL_CHUNK.get());
-                output.accept(mio_icif_resources.COAL_FABRE.get());
-                output.accept(mio_icif_resources.COAL_MESH.get());
-                output.accept(mio_icif_resources.CLAY_DUST.get());
-                output.accept(mio_icif_resources.GRIN_DUST.get());
-                output.accept(mio_icif_resources.STONE_DUST.get());
-                output.accept(mio_icif_resources.ASH.get());
-                output.accept(mio_icif_resources.SILICONDIOXIDE_DUST.get());
-                output.accept(mio_icif_resources.SULFUR_DUST.get());
-                output.accept(mio_icif_resources.SULFUR_DUST_SMALL.get());
-                output.accept(mio_icif_resources.NETHERRACK_DUST.get());
-                // 新增粉末物品
-                output.accept(mio_icif_resources.FLINT_DUST.get());
-                output.accept(mio_icif_resources.CHARCOAL_DUST.get());
-                output.accept(mio_icif_resources.NITRE_DUST.get());
-
-                // ============================================================
-                //  5. COMPONENTS & PARTS
-                // ============================================================
-                // Rotors
-                output.accept(mio_icif_items.ROTOR_WOOD.get());
-                output.accept(mio_icif_items.ROTOR_BRONZE.get());
-                output.accept(mio_icif_items.ROTOR_IRON.get());
-                output.accept(mio_icif_items.ROTOR_CARBON.get());
-                output.accept(mio_icif_items.ROTOR_ADVIRON.get());
-                output.accept(mio_icif_items.ROTOR_TITANIUM_IRON.get());
-                output.accept(mio_icif_items.ROTOR_SUPER_IRIDIUM.get());
-                output.accept(mio_icif_resources.WOOD_ROTOR_BLADE.get());
-                output.accept(mio_icif_resources.TITANIUM_IRON_ROTOR_BLADE.get());
-                output.accept(mio_icif_resources.SUPER_IRIDIUM_ROTOR_BLADE.get());
-
-                // Circuits
-                output.accept(mio_icif_normal.CIRCUIT.get());
-                output.accept(mio_icif_normal.ADCIRCUIT.get());
-
-                // Mechanical Parts
-                output.accept(mio_icif_resources.MOTOR.get());
-                output.accept(mio_icif_resources.COIL.get());
-                output.accept(mio_icif_resources.DRILL_BIT.get());
-                output.accept(mio_icif_resources.CHAINSAW_BLADE.get());
-                output.accept(mio_icif_resources.HEATCONDUCTOR.get());
-                output.accept(mio_icif_resources.HARZ.get());
-
-                // Crystals
-                output.accept(mio_icif_normal.CRYSTAL_LEV0.get());
-                {
-                    ItemStack fullCrystalLev4 = new ItemStack(mio_icif_normal.CRYSTAL_LEV0.get());
-                    if (fullCrystalLev4.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat bat) bat.setEnergy(fullCrystalLev4, bat.getMaxEnergy());
-                    output.accept(fullCrystalLev4);
-                }
-                output.accept(mio_icif_normal.LAPOTRON_CRYSTAL_LEV0.get());
-                {
-                    ItemStack fullLapotronCrystalLev4 = new ItemStack(mio_icif_normal.LAPOTRON_CRYSTAL_LEV0.get());
-                    if (fullLapotronCrystalLev4.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat bat) bat.setEnergy(fullLapotronCrystalLev4, bat.getMaxEnergy());
-                    output.accept(fullLapotronCrystalLev4);
-                }
-                output.accept(mio_icif_resources.CRYSTAL_MEMORY.get());
-                output.accept(mio_icif_resources.CRYSTAL_MEMORY_RAW.get());
-
-                // ============================================================
-                //  6. BATTERIES & POWER ITEMS
-                // ============================================================
-                // Re-Battery - 空电状态
-                { ItemStack emptyBat = new ItemStack(mio_icif_normal.BAT_LEV0.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)emptyBat.getItem()).setEnergy(emptyBat, 0); output.accept(emptyBat); }
-                // Re-Battery - 满电状态
-                { ItemStack fullBat = new ItemStack(mio_icif_normal.BAT_LEV0.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)fullBat.getItem()).setEnergy(fullBat, 10000); output.accept(fullBat); }
-
-                // Advanced Battery - 空电状态
-                { ItemStack emptyAdvBat = new ItemStack(mio_icif_normal.ADVBAT_LEV0.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)emptyAdvBat.getItem()).setEnergy(emptyAdvBat, 0); output.accept(emptyAdvBat); }
-                // Advanced Battery - 满电状态
-                { ItemStack fullAdvBat = new ItemStack(mio_icif_normal.ADVBAT_LEV0.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)fullAdvBat.getItem()).setEnergy(fullAdvBat, 100000); output.accept(fullAdvBat); }
-
-                // Charged Battery - 空电状态
-                { ItemStack emptyChargeBat = new ItemStack(mio_icif_normal.CHARGEBAT_LEV0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyChargeBat, 0); output.accept(emptyChargeBat); }
-                // Charged Battery - 满电状态
-                { ItemStack fullChargeBat = new ItemStack(mio_icif_normal.CHARGEBAT_LEV0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullChargeBat, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullChargeBat)); output.accept(fullChargeBat); }
-
-                // Advanced Charged Battery - 空电状态
-                { ItemStack emptyAdvChargeBat = new ItemStack(mio_icif_normal.ADVCHARGEBAT_0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyAdvChargeBat, 0); output.accept(emptyAdvChargeBat); }
-                // Advanced Charged Battery - 满电状态
-                { ItemStack fullAdvChargeBat = new ItemStack(mio_icif_normal.ADVCHARGEBAT_0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvChargeBat, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvChargeBat)); output.accept(fullAdvChargeBat); }
-
-                // Crystal Battery - 空电状态
-                { ItemStack emptyCrystalChargeBat = new ItemStack(mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyCrystalChargeBat, 0); output.accept(emptyCrystalChargeBat); }
-                // Crystal Battery - 满电状态
-                { ItemStack fullCrystalChargeBat = new ItemStack(mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullCrystalChargeBat, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullCrystalChargeBat)); output.accept(fullCrystalChargeBat); }
-
-                // LapCrystal Battery - 空电状态
-                { ItemStack emptyLamaCrystalChargeBat = new ItemStack(mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyLamaCrystalChargeBat, 0); output.accept(emptyLamaCrystalChargeBat); }
-                // LapCrystal Battery - 满电状态
-                { ItemStack fullLamaCrystalChargeBat = new ItemStack(mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullLamaCrystalChargeBat, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullLamaCrystalChargeBat)); output.accept(fullLamaCrystalChargeBat); }
-
-                // METS 超级兰波顿水晶 - 空电状态
-                { ItemStack emptySuperLapotron = new ItemStack(mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptySuperLapotron, 0); output.accept(emptySuperLapotron); }
-                // METS 超级兰波顿水晶 - 满电状态
-                { ItemStack fullSuperLapotron = new ItemStack(mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullSuperLapotron, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullSuperLapotron)); output.accept(fullSuperLapotron); }
-
-                // METS 充电超级兰波顿水晶 - 空电状态
-                { ItemStack emptyChargingSuperLapotron = new ItemStack(mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyChargingSuperLapotron, 0); output.accept(emptyChargingSuperLapotron); }
-                // METS 充电超级兰波顿水晶 - 满电状态
-                { ItemStack fullChargingSuperLapotron = new ItemStack(mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullChargingSuperLapotron, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullChargingSuperLapotron)); output.accept(fullChargingSuperLapotron); }
-
-
-
-                // METS 锂电池 - 空电状态
-                { ItemStack emptyLithiumBat = new ItemStack(mio_icif_normal.LITHIUM_BATTERY.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)emptyLithiumBat.getItem()).setEnergy(emptyLithiumBat, 0); output.accept(emptyLithiumBat); }
-                // METS 锂电池 - 满电状态
-                { ItemStack fullLithiumBat = new ItemStack(mio_icif_normal.LITHIUM_BATTERY.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)fullLithiumBat.getItem()).setEnergy(fullLithiumBat, 50000); output.accept(fullLithiumBat); }
-
-                // METS 高级锂电池 - 空电状态
-                { ItemStack emptyAdvLithiumBat = new ItemStack(mio_icif_normal.ADV_LITHIUM_BATTERY.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)emptyAdvLithiumBat.getItem()).setEnergy(emptyAdvLithiumBat, 0); output.accept(emptyAdvLithiumBat); }
-                // METS 高级锂电池 - 满电状态
-                { ItemStack fullAdvLithiumBat = new ItemStack(mio_icif_normal.ADV_LITHIUM_BATTERY.get()); ((com.miophas.singularity_iteration.common.item.normal.mio_icif_bat)fullAdvLithiumBat.getItem()).setEnergy(fullAdvLithiumBat, 200000); output.accept(fullAdvLithiumBat); }
-
-                // METS 钍电池 - 空电状态
-                { ItemStack emptyThoriumBat = new ItemStack(mio_icif_normal.THORIUM_BATTERY.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(emptyThoriumBat, 0); output.accept(emptyThoriumBat); }
-                // METS 钍电池 - 满电状态
-                { ItemStack fullThoriumBat = new ItemStack(mio_icif_normal.THORIUM_BATTERY.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullThoriumBat, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullThoriumBat)); output.accept(fullThoriumBat); }
-
-                // Energy Crystal
-                output.accept(mio_icif_normal.ALE.get());
-
-                // Fuel Items
-                output.accept(mio_icif_resources.FUEL_PLANT_BALL.get());
-
-                // ============================================================
-                //  7. CROP SEEDS
-                // ============================================================
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "wheat", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "carrots", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "potato", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "cocoa", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "coffee", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "hops", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "melon", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "pumpkin", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "dandelion", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "rose", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "tulip", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "cyazint", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "ferru", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "cyprium", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "stagnium", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "plumbiscus", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "redwheat", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "netherWart", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "redMushroom", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "brownMushroom", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "reed", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "stickreed", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "aurelia", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "shining", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "blackthorn", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "venomilia", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "eatingplant", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "titanium", 0, 0, 0));
-                output.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", "uranium", 0, 0, 0));
-
-                // 富集作物种子 (原版耕地种植)
-                output.accept(mio_icif_normal.SEED_IRON_RICH.get());
-                output.accept(mio_icif_normal.SEED_COPPER_RICH.get());
-                output.accept(mio_icif_normal.SEED_TIN_RICH.get());
-                output.accept(mio_icif_normal.SEED_TITANIUM_RICH.get());
-                output.accept(mio_icif_normal.SEED_LEAD_RICH.get());
-                output.accept(mio_icif_normal.SEED_URANIUM_RICH.get());
-
-                // ============================================================
-                //  8. MISCELLANEOUS ITEMS
-                // ============================================================
-                // Rubber
-                output.accept(mio_icif_resources.RUBBER.get());
-
-                // Fertilizer & Crops
-                output.accept(mio_icif_resources.FERTILIZER.get());
-                output.accept(mio_icif_resources.TERRA_WART.get());
-                output.accept(mio_icif_resources.DIAMOND_DUST_SMALL.get());
-                output.accept(mio_icif_resources.ENDER_PEARL_DUST.get());
-                output.accept(mio_icif_resources.MILK_WART.get());
-                output.accept(mio_icif_resources.OIL_BERRY.get());
-                output.accept(mio_icif_resources.BOBS_BERRY.get());
-                output.accept(mio_icif_resources.EMERALD_DUST_SMALL.get());
-                output.accept(mio_icif_resources.EMERALD_DUST.get());
-
-                output.accept(mio_icif_resources.COFFEE_BEAN.get());
-                output.accept(mio_icif_resources.COFFEE_DUST.get());
-                output.accept(mio_icif_normal.WEEDEX.get());
-                output.accept(mio_icif_normal.WEEDING_TROWEL.get());
-
-                // Food & Drinks
-                output.accept(mio_icif_normal.COFFEE_0.get());
-                output.accept(mio_icif_normal.COFFEE_1.get());
-                output.accept(mio_icif_normal.COFFEE_2.get());
-                output.accept(mio_icif_normal.BEER.get());
-                output.accept(mio_icif_normal.BREW.get());
-                output.accept(mio_icif_normal.RUM.get());
-                output.accept(mio_icif_normal.HOPS.get());
-
-                // Cans & Containers
-                output.accept(mio_icif_normal.CAN.get());
-                output.accept(mio_icif_normal.TIN_EMPTY_CAN.get());
-                output.accept(mio_icif_normal.TIN_FILLED_CAN.get());
-                output.accept(mio_icif_normal.EMPTY_MUG.get());
-                output.accept(mio_icif_normal.RED_MUG.get());
-
-                // Boats
-                output.accept(mio_icif_normal.ENTITY_COAL_BOAT.get());
-                output.accept(mio_icif_normal.ENTITY_ELECTRIC_BOAT.get());
-                output.accept(mio_icif_normal.ENTITY_RUBBER_BOAT.get());
-                output.accept(mio_icif_normal.BROKEN_RUBBER_BOAT.get());
-
-                // Explosives
-                output.accept(mio_icif_normal.DYNAMITE.get());
-                output.accept(mio_icif_normal.STICKY_DYNAMITE.get());
-
-                // Special Items
-                output.accept(mio_icif_normal.REMOTE.get());
-                output.accept(mio_icif_normal.TOOLBOX.get());
-                output.accept(mio_icif_normal.TOOLBOX_X.get());
-                output.accept(mio_icif_normal.CONTAIN_MENT_BOX.get());
-                output.accept(mio_icif_normal.CROP_ANALYZER.get());
-                { ItemStack fullCropAnalyzer = new ItemStack(mio_icif_normal.CROP_ANALYZER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullCropAnalyzer, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullCropAnalyzer)); output.accept(fullCropAnalyzer); }
-                output.accept(mio_icif_normal.PORTABLE_FUTURES_TRADER.get());   // 0.1.10.38
-                { ItemStack fullTrader = new ItemStack(mio_icif_normal.PORTABLE_FUTURES_TRADER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullTrader, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullTrader)); output.accept(fullTrader); }
-                output.accept(mio_icif_normal.INTELLIGENCE.get());
-                output.accept(mio_icif_normal.MODIFY.get());
-                output.accept(mio_icif_normal.YOUNGSTER.get());
-                output.accept(mio_icif_normal.FREQ.get());
-                output.accept(mio_icif_normal.COIN.get());
-                output.accept(mio_icif_normal.STUFF.get());
-
-                // Industrial Diamond
-                output.accept(mio_icif_normal.INDUSTRIAL_DIAMOND.get());
-
-                // Scrap
-                output.accept(mio_icif_normal.SCRAP.get());
-                output.accept(mio_icif_normal.SCRAPBOX.get());
-                output.accept(com.miophas.singularity_iteration.common.item.resource.mio_icif_resources.THORIUM_SCRAP.get());
-                output.accept(mio_icif_normal.SLAG.get());
-
-                // Lathe Items
-                output.accept(mio_icif_normal.IRON_TURNING_BLANKS.get());
-                output.accept(mio_icif_normal.WOODEN_TURNING_BLANKS.get());
-                output.accept(com.miophas.singularity_iteration.common.item.lathe.mio_icif_lathe_items.IRON_LATHING_TOOL.get());
-                output.accept(com.miophas.singularity_iteration.common.item.lathe.mio_icif_lathe_items.DIAMOND_LATHING_TOOL.get());
-
-                // Steam Turbine
-                output.accept(mio_icif_normal.STEAM_TURBIN.get());
-                output.accept(mio_icif_normal.STEAM_TURBINE_BLADE.get());
-
-                // Fuel Rods & Cells
-                output.accept(mio_icif_normal.FUEL_ROD.get());
-                output.accept(mio_icif_normal.MOX_QUAD_DEPLETE.get());
-                output.accept(mio_icif_normal.RE_ENRICHED_URANIUM.get());
-                output.accept(mio_icif_normal.BIOCHAFF.get());
-                output.accept(mio_icif_normal.DRAGONBLOOD.get());
-
-                // Painters
-                output.accept(mio_icif_normal.PAINTER.get());
-                output.accept(mio_icif_normal.PAINTER_WHITE.get());
-                output.accept(mio_icif_normal.PAINTER_ORANGE.get());
-                output.accept(mio_icif_normal.PAINTER_MAGENTA.get());
-                output.accept(mio_icif_normal.PAINTER_LIGHT_BLUE.get());
-                output.accept(mio_icif_normal.PAINTER_YELLOW.get());
-                output.accept(mio_icif_normal.PAINTER_LIME.get());
-                output.accept(mio_icif_normal.PAINTER_PINK.get());
-                output.accept(mio_icif_normal.PAINTER_GRAY.get());
-                output.accept(mio_icif_normal.PAINTER_LIGHT_GRAY.get());
-                output.accept(mio_icif_normal.PAINTER_CYAN.get());
-                output.accept(mio_icif_normal.PAINTER_PURPLE.get());
-                output.accept(mio_icif_normal.PAINTER_BLUE.get());
-                output.accept(mio_icif_normal.PAINTER_BROWN.get());
-                output.accept(mio_icif_normal.PAINTER_GREEN.get());
-                output.accept(mio_icif_normal.PAINTER_RED.get());
-                output.accept(mio_icif_normal.PAINTER_BLACK.get());
-
-                // Construction Tools
-                // CF喷枪 - 空状态
-                output.accept(mio_icif_normal.CF_SPRAYER.get());
-                // CF喷枪 - 满装载状态（注入一满罐建筑泡沫流体）
-                {
-                    ItemStack fullCfSprayer = new ItemStack(mio_icif_normal.CF_SPRAYER.get());
-                    mio_icif_normal.CF_SPRAYER.get().fillFluid(fullCfSprayer,
-                        new net.neoforged.neoforge.fluids.FluidStack(
-                            com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.CONSTRUCTIONFOAM.get(),
-                            com.miophas.singularity_iteration.common.item.build.CFSprayerItem.CAPACITY));
-                    output.accept(fullCfSprayer);
-                }
-                output.accept(mio_icif_normal.OBSCURATOR.get());
-
-                // ============================================================
-                //  9. REACTOR COMPONENTS
-                // ============================================================
-                // Coolant
-                output.accept(mio_icif_reactors.COLLANT_SIMPLE.get());
-                output.accept(mio_icif_reactors.COLLANT_TRIPLE.get());
-                output.accept(mio_icif_reactors.COOLANT_SIX.get());
-
-                // Condensators
-                output.accept(mio_icif_reactors.CONDENSATOR.get());
-                output.accept(mio_icif_reactors.CONDENSATOR_LAP.get());
-
-                // Heat Vents
-                output.accept(mio_icif_reactors.VENT.get());
-                output.accept(mio_icif_reactors.VENT_CORE.get());
-                output.accept(mio_icif_reactors.VENT_SPREAD.get());
-                output.accept(mio_icif_reactors.OVERCLOCKED_HEAT_VENT.get());
-                output.accept(mio_icif_reactors.DIAMOND_VENT.get());
-                output.accept(mio_icif_reactors.IRIDIUM_HEAT_VENT.get());
-                output.accept(mio_icif_reactors.IRIDIUM_OVERCLOCKED_HEAT_VENT.get());
-                // 0.1.10.36: steam vents (steam reactor)
-                output.accept(mio_icif_reactors.STEAM_VENT.get());
-                output.accept(mio_icif_reactors.STEAM_VENT_CORE.get());
-                output.accept(mio_icif_reactors.STEAM_VENT_OVERCLOCKED.get());
-                output.accept(mio_icif_reactors.STEAM_VENT_ADVANCED.get());
-
-                // Heat Switches
-                output.accept(mio_icif_reactors.HEAT_SWITCH.get());
-                output.accept(mio_icif_reactors.HEAT_SWITCH_CORE.get());
-                output.accept(mio_icif_reactors.HEAT_SWITCH_SPREAD.get());
-                output.accept(mio_icif_reactors.DIAMOND_HEAT_SWITCH.get());
-
-                // Heat Plates & Exchangers
-                output.accept(mio_icif_reactors.HEAT_PLATE.get());
-
-                // Protection Plates
-                output.accept(mio_icif_reactors.PLATE.get());
-                output.accept(mio_icif_reactors.EXPLOSIVE_PLATE.get());
-
-                // Reflectors
-                output.accept(mio_icif_reactors.REFLECTOR.get());
-                output.accept(mio_icif_reactors.THICK_REFLECTOR.get());
-                output.accept(mio_icif_reactors.IRIDIUM_REFLECTOR.get());
-
-                // Heat Pack & Breeding Components
-                output.accept(mio_icif_reactors.HEATPACK.get());
-                output.accept(mio_icif_reactors.LITHIUM_CELL.get());
-                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.TRITIUM_CELL.get());   // 0.1.10.36: neutron source
-                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.DEUTERIUM_CELL.get());   // 0.1.11.92: fusion fuel
-                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.FROZEN_NEON_PELLET.get());   // 0.1.11.137
-                output.accept(mio_icif_reactors.ISOTOPE_ROD.get());
-
-                // Uranium Fuel Rods
-                output.accept(mio_icif_reactors.URANIUM_SIMPLE.get());
-                output.accept(mio_icif_reactors.URANIUM_SIMPLE_DEPLETED.get());
-                output.accept(mio_icif_reactors.URANIUM_DUAL.get());
-                output.accept(mio_icif_reactors.URANIUM_DUAL_DEPLETED.get());
-                output.accept(mio_icif_reactors.URANIUM_QUAD.get());
-                output.accept(mio_icif_reactors.URANIUM_QUAD_DEPLETED.get());
-
-                // MOX Fuel Rods
-                output.accept(mio_icif_reactors.MOX_SIMPLE.get());
-                output.accept(mio_icif_reactors.MOX_SIMPLE_DEPLETED.get());
-                output.accept(mio_icif_reactors.MOX_DUAL.get());
-                output.accept(mio_icif_reactors.MOX_DUAL_DEPLETED.get());
-                output.accept(mio_icif_reactors.MOX_QUAD.get());
-                output.accept(mio_icif_reactors.MOX_QUAD_DEPLETED.get());
-
-                // Proton Fuel Rods (0.1.10.36)
-                output.accept(mio_icif_reactors.PROTON_SIMPLE.get());
-                output.accept(mio_icif_reactors.PROTON_SIMPLE_DEPLETED.get());
-                output.accept(mio_icif_reactors.PROTON_DUAL.get());
-                output.accept(mio_icif_reactors.PROTON_DUAL_DEPLETED.get());
-                output.accept(mio_icif_reactors.PROTON_QUAD.get());
-                output.accept(mio_icif_reactors.PROTON_QUAD_DEPLETED.get());
-                output.accept(mio_icif_reactors.PROTON_OCTUPLE.get());   // 0.1.10.38
-                output.accept(mio_icif_reactors.PROTON_OCTUPLE_DEPLETED.get());
-                output.accept(mio_icif_reactors.PROTON_OCTUPLE_CASING.get());
-                output.accept(mio_icif_reactors.PROTON_SHARD.get());
-
-                // Accident audit (0.1.10.12)
-                output.accept(mio_icif_reactors.REACTOR_BLACKBOX.get());
-                output.accept(mio_icif_reactors.REACTOR_CONFIG_CARD.get());   // 0.1.11.76
-
-                // ============================================================
-                //  10. FLUID BUCKETS
-                // ============================================================
-                output.accept(mio_icif_fluids.BIOGAS_BUCKET.get());
-                output.accept(mio_icif_fluids.BIOMASS_BUCKET.get());
-                output.accept(mio_icif_fluids.CONSTRUCTIONFOAM_BUCKET.get());
-                output.accept(mio_icif_fluids.COOLANT_BUCKET.get());
-                output.accept(mio_icif_fluids.DISTILLEDWATER_BUCKET.get());
-                output.accept(mio_icif_fluids.HOTCOOLANT_BUCKET.get());
-                output.accept(mio_icif_fluids.HOTWATER_BUCKET.get());
-                output.accept(mio_icif_fluids.UNSTABLE_HOTWATER_BUCKET.get());   // 0.1.11.94
-                output.accept(mio_icif_fluids.PAHOEHOELAVA_BUCKET.get());
-                output.accept(mio_icif_fluids.STEAM_BUCKET.get());
-                output.accept(mio_icif_fluids.SUPERHEATEDSTEAM_BUCKET.get());
-                output.accept(mio_icif_fluids.UUMATTER_BUCKET.get());
-                output.accept(mio_icif_fluids.CRUDEOIL_BUCKET.get());
-                output.accept(mio_icif_fluids.DIESELOIL_BUCKET.get());
-
-                // ============================================================
-                //  11. CELLS (Dynamic)
-                // ============================================================
-                output.accept(mio_icif_cells.CELL_EMPTY.get());
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(Fluids.WATER, 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(Fluids.LAVA, 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.BIOGAS.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.HOTWATER.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());   // 0.1.11.94
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.UNSTABLE_HOTWATER.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.BIOMASS.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.CONSTRUCTIONFOAM.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.COOLANT.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.DISTILLEDWATER.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.HOTCOOLANT.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.PAHOEHOELAVA.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.STEAM.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.SUPERHEATEDSTEAM.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.UUMATTER.get(), 1000));
-                  output.accept(cell); }
-                { ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-                  ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(mio_icif_fluids.AIR.get(), 1000));
-                  output.accept(cell); }
-
-                // ============================================================
-                //  12. ENVIRONMENT TEMPLATES
-                // ============================================================
-                output.accept(mio_icif_env_templates.EVT_EMPTY.get());
-                output.accept(mio_icif_env_templates.EVT_CULTIVATION.get());
-                output.accept(mio_icif_env_templates.EVT_DESERT.get());
-                output.accept(mio_icif_env_templates.EVT_IRRIGATION.get());
-                output.accept(mio_icif_env_templates.EVT_CHILLING.get());
-                output.accept(mio_icif_env_templates.EVT_FLATIFICATION.get());
-                output.accept(mio_icif_env_templates.EVT_MUSHROOM.get());
-
-                // ============================================================
-                //  13. UPGRADE MODULES
-                // ============================================================
-                output.accept(mio_icif_upgrades.OVERCLOCKER_UPGRADE.get());
-                output.accept(mio_icif_upgrades.ENERGY_STORAGE_UPGRADE.get());
-                output.accept(mio_icif_upgrades.TRANSFORMER_UPGRADE.get());
-                output.accept(mio_icif_upgrades.EJECTOR_UPGRADE.get());
-                output.accept(mio_icif_upgrades.PULLING_UPGRADE.get());
-                output.accept(mio_icif_upgrades.FLUID_EJECTOR_UPGRADE.get());
-                output.accept(mio_icif_upgrades.FLUID_PULLING_UPGRADE.get());
-            output.accept(mio_icif_upgrades.THERMAL_RETENTION_UPGRADE.get());   // 0.1.9.1
-                output.accept(mio_icif_upgrades.REDSTONE_INVERTER_UPGRADE.get());
-
-                // ============================================================
-                //  14. BLOCKS - WIRING & CABLES
-                // ============================================================
-                // Bare Wires (by voltage tier)
-                output.accept(mio_icif_blocks.WIRE_LV.get());
-                output.accept(mio_icif_blocks.WIRE_MV.get());
-                output.accept(mio_icif_blocks.WIRE_HV.get());
-                output.accept(mio_icif_blocks.WIRE_EV.get());
-                output.accept(mio_icif_blocks.WIRE_IV.get());
-                // Insulated Wires (by voltage tier)
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_LV.get());
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_MV.get());
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_HV.get());
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_EV.get());
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_HV_2.get());
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_EV_2.get());
-                output.accept(mio_icif_blocks.WIRE_ISOLATION_EV_3.get());
-                // Superconducting Cable (METS)
-                output.accept(mio_icif_blocks.SUPERCONDUCTING_CABLE.get());
-                // EU Detector Cable & EU Splitter Cable
-                output.accept(mio_icif_blocks.WIRE_DETECTOR.get());
-                output.accept(mio_icif_blocks.WIRE_SPLITTER.get());
-                output.accept(mio_icif_blocks.WIRE_BREAKER.get());   // 0.1.10.22
-                output.accept(mio_icif_blocks.WIRE_FUSE.get());
-                // Transformers
-                output.accept(mio_icif_blocks.TRANSFORMER_LV_MV.get());
-                output.accept(mio_icif_blocks.TRANSFORMER_MV_HV.get());
-                output.accept(mio_icif_blocks.TRANSFORMER_HV_EV.get());
-                output.accept(mio_icif_blocks.TRANSFORMER_EV_SC.get());
-                output.accept(mio_icif_blocks.TRANSFORMER_IV_LUV.get());
-                output.accept(mio_icif_blocks.TRANSFORMER_LUV_ZPMV.get());
-                // Wireless Power Transmission Node
-                output.accept(mio_icif_blocks.WIRELESS_POWER_TRANSMISSION_NODE.get());
-
-                // ============================================================
-                //  15. BLOCKS - ENERGY STORAGE
-                // ============================================================
-                // BatBox (40000 EU)
-                output.accept(mio_icif_blocks.BAT_BOX.get());
-                {
-                    ItemStack fullBatBox = new ItemStack(mio_icif_blocks.BAT_BOX.get());
-                    fullBatBox.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(40000L, "mio_icif:batbox")));
-                    output.accept(fullBatBox);
-                }
-                output.accept(mio_icif_blocks.BATBOX_CHARGER.get());
-                {
-                    ItemStack fullBatboxCharger = new ItemStack(mio_icif_blocks.BATBOX_CHARGER.get());
-                    fullBatboxCharger.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(40000L, "mio_icif:batbox_charger")));
-                    output.accept(fullBatboxCharger);
-                }
-                // CESU (300000 EU)
-                output.accept(mio_icif_blocks.CESU.get());
-                {
-                    ItemStack fullCesu = new ItemStack(mio_icif_blocks.CESU.get());
-                    fullCesu.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(300000L, "mio_icif:cesu")));
-                    output.accept(fullCesu);
-                }
-                output.accept(mio_icif_blocks.CESU_CHARGER.get());
-                {
-                    ItemStack fullCesuCharger = new ItemStack(mio_icif_blocks.CESU_CHARGER.get());
-                    fullCesuCharger.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(300000L, "mio_icif:cesu_charger")));
-                    output.accept(fullCesuCharger);
-                }
-                // MFE (4000000 EU)
-                output.accept(mio_icif_blocks.MFE.get());
-                {
-                    ItemStack fullMfe = new ItemStack(mio_icif_blocks.MFE.get());
-                    fullMfe.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(4000000L, "mio_icif:mfe")));
-                    output.accept(fullMfe);
-                }
-                output.accept(mio_icif_blocks.MFE_CHARGER.get());
-                {
-                    ItemStack fullMfeCharger = new ItemStack(mio_icif_blocks.MFE_CHARGER.get());
-                    fullMfeCharger.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(4000000L, "mio_icif:mfe_charger")));
-                    output.accept(fullMfeCharger);
-                }
-                // MFSU (40000000 EU)
-                output.accept(mio_icif_blocks.MFSU.get());
-                {
-                    ItemStack fullMfsu = new ItemStack(mio_icif_blocks.MFSU.get());
-                    fullMfsu.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(40000000L, "mio_icif:mfsu")));
-                    output.accept(fullMfsu);
-                }
-                output.accept(mio_icif_blocks.MFSU_CHARGER.get());
-                {
-                    ItemStack fullMfsuCharger = new ItemStack(mio_icif_blocks.MFSU_CHARGER.get());
-                    fullMfsuCharger.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(40000000L, "mio_icif:mfsu_charger")));
-                    output.accept(fullMfsuCharger);
-                }
-                // LESU (1000000 EU)
-                output.accept(mio_icif_blocks.LESU.get());
-                {
-                    ItemStack fullLesu = new ItemStack(mio_icif_blocks.LESU.get());
-                    fullLesu.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(1000000L, "mio_icif:lesu")));
-                    output.accept(fullLesu);
-                }
-                output.accept(mio_icif_blocks.LESU_CHARGER.get());
-                {
-                    ItemStack fullLesuCharger = new ItemStack(mio_icif_blocks.LESU_CHARGER.get());
-                    fullLesuCharger.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(1000000L, "mio_icif:lesu_charger")));
-                    output.accept(fullLesuCharger);
-                }
-                // EESU (400000000 EU)
-                output.accept(mio_icif_blocks.EESU.get());
-                {
-                    ItemStack fullEesu = new ItemStack(mio_icif_blocks.EESU.get());
-                    fullEesu.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(400000000L, "mio_icif:eesu")));
-                    output.accept(fullEesu);
-                }
-                output.accept(mio_icif_blocks.EESU_CHARGER.get());
-                {
-                    ItemStack fullEesuCharger = new ItemStack(mio_icif_blocks.EESU_CHARGER.get());
-                    fullEesuCharger.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(400000000L, "mio_icif:eesu_charger")));
-                    output.accept(fullEesuCharger);
-                }
-
-                // GESU Core (2147483647 EU)
-                output.accept(mio_icif_blocks.GESU_CORE.get());
-                {
-                    ItemStack fullGesu = new ItemStack(mio_icif_blocks.GESU_CORE.get());
-                    fullGesu.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(2147483647L, "mio_icif:gesu_core")));
-                    output.accept(fullGesu);
-                }
-                // GESU Input Module IV
-                output.accept(mio_icif_blocks.GESU_INPUT_IV.get());
-                // GESU Output Module IV
-                output.accept(mio_icif_blocks.GESU_OUTPUT_IV.get());
-                // GESU Output Module LuV
-                output.accept(mio_icif_blocks.GESU_OUTPUT_LUV.get());
-
-                // Oil Rig Series (石油钻机系列)
-                output.accept(mio_icif_blocks.OIL_RIG_CORE.get());
-                output.accept(mio_icif_blocks.OIL_RIG_BASE.get());
-                output.accept(mio_icif_blocks.OIL_RIG_INPUT.get());
-                output.accept(mio_icif_blocks.OIL_RIG_OUTPUT.get());
-                output.accept(mio_icif_blocks.OIL_RIG_PANEL.get());
-                output.accept(mio_icif_blocks.DIMENSION_OIL_RIG_CORE.get());
-
-                // ============================================================
-                //  16. BLOCKS - EU GENERATORS
-                // ============================================================
-                output.accept(mio_icif_blocks.SOLAR_GENERATOR.get());
-                output.accept(mio_icif_blocks.ADVANCED_SOLAR_PANEL.get());
-                output.accept(mio_icif_blocks.HYBRID_SOLAR_PANEL.get());
-                output.accept(mio_icif_blocks.ULTIMATE_HYBRID_SOLAR_PANEL.get());
-                output.accept(mio_icif_blocks.QUANTUM_SOLAR_PANEL.get());
-                output.accept(mio_icif_blocks.METS_ADVANCED_SOLAR_GENERATOR.get());
-                output.accept(mio_icif_blocks.PHOTON_RESONANCE_SOLAR_GENERATOR.get());
-                output.accept(mio_icif_blocks.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR.get());
-                // 量子发电机不在创造模式物品栏中显示
-                output.accept(mio_icif_blocks.WIND_GENERATOR.get());
-                output.accept(mio_icif_blocks.WATER_GENERATOR.get());
-                output.accept(mio_icif_blocks.GEO_GENERATOR.get());
-                output.accept(mio_icif_blocks.GEOMAGNETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.GEOMAGNETIC_ANTENNA.get());
-                output.accept(mio_icif_blocks.GEOMAGNETIC_PEDESTAL.get());
-                output.accept(mio_icif_blocks.THERMAL_GENERATOR.get());
-                output.accept(mio_icif_blocks.SEMIFLUID_GENERATOR.get());
-                output.accept(mio_icif_blocks.DIESEL_GENERATOR.get());
-                output.accept(mio_icif_blocks.RT_GENERATOR.get());
-                output.accept(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
-                output.accept(mio_icif_blocks.STEAM_REACTOR.get());   // 0.1.10.36
-                output.accept(mio_icif_blocks.STEAM_TURBINE.get());   // 0.1.10.36
-                output.accept(mio_icif_blocks.STEAM_TUNNEL.get());   // 0.1.10.39
-                output.accept(mio_icif_blocks.STEAM_TUNNEL_CASING.get());
-                output.accept(mio_icif_blocks.STEAM_TUNNEL_FLUID_PORT.get());
-                output.accept(mio_icif_blocks.STEAM_TUNNEL_POWER_PORT.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_BRONZE.get());   // 0.1.10.41
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRON.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_ADVIRON.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_TITANIUM.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRIDIUM.get());
-                output.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_NETHERITE.get());
-                output.accept(mio_icif_blocks.FUSION_CONTROLLER.get());   // 0.1.11.89: fusion reactor
-                output.accept(mio_icif_blocks.FUSION_CENTRAL_SOLENOID.get());
-                output.accept(mio_icif_blocks.FUSION_TOROIDAL_COIL.get());
-                output.accept(mio_icif_blocks.FUSION_POLOIDAL_COIL.get());
-                output.accept(mio_icif_blocks.FUSION_VACUUM_VESSEL.get());
-                output.accept(mio_icif_blocks.FUSION_BLANKET.get());
-                output.accept(mio_icif_blocks.FUSION_VIEWPORT.get());   // 0.1.11.139
-                output.accept(mio_icif_blocks.FUSION_DIVERTOR.get());
-                output.accept(mio_icif_blocks.FUSION_CRYOSTAT.get());
-                output.accept(mio_icif_blocks.FUSION_NBI_PORT.get());
-                output.accept(mio_icif_blocks.FUSION_ECRH_PORT.get());
-                output.accept(mio_icif_blocks.FUSION_FUEL_PORT.get());
-                output.accept(mio_icif_blocks.FUSION_EXHAUST_PORT.get());
-                output.accept(mio_icif_blocks.FUSION_CRYO_PORT.get());
-                output.accept(mio_icif_blocks.FUSION_POWER_PORT.get());
-                output.accept(mio_icif_blocks.FUSION_MITIGATION_PORT.get());
-
-                // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive); use the Creative Generator
-                output.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
-
-                // ============================================================
-                //  17. BLOCKS - KINETIC GENERATORS
-                // ============================================================
-                output.accept(mio_icif_blocks.MANUAL_KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.STIRLING_KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.WIND_KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.WATER_KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.KINETIC_GENERATOR_ELC.get());
-                output.accept(mio_icif_blocks.KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.TURBO_KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.TWIN_TURBO_KINETIC_GENERATOR.get());
-
-                // ============================================================
-                //  18. BLOCKS - HEAT SOURCES
-                // ============================================================
-                output.accept(mio_icif_blocks.SOLID_HEAT_GENERATOR.get());
-                output.accept(mio_icif_blocks.FLUID_HEAT_GENERATOR.get());
-                output.accept(mio_icif_blocks.RT_HEAT_GENERATOR.get());
-                output.accept(mio_icif_blocks.HEAT_SOURCE_FLUID.get());
-                output.accept(mio_icif_blocks.HEAT_GENERATOR_ELC.get());
-                output.accept(mio_icif_blocks.STIRLING_GENERATOR.get());
-                output.accept(mio_icif_blocks.DROP_GENERATOR.get());
-                output.accept(mio_icif_blocks.ADVANCED_DROP_GENERATOR.get());
-                output.accept(mio_icif_blocks.ADVANCED_STIRLING_GENERATOR.get());
-                output.accept(mio_icif_blocks.ADVANCED_SEMIFLUID_GENERATOR.get());
-                output.accept(mio_icif_blocks.EXPERIENCE_GENERATOR.get());
-                output.accept(mio_icif_blocks.ADVANCED_EXPERIENCE_GENERATOR.get());
-
-                // ============================================================
-                //  19. BLOCKS - STEAM SYSTEM
-                // ============================================================
-                output.accept(mio_icif_blocks.STEAM_GENERATOR.get());
-                output.accept(mio_icif_blocks.STEAM_KINETIC_GENERATOR.get());
-                output.accept(mio_icif_blocks.SOLAR_DISTILLER.get());
-                output.accept(mio_icif_blocks.STEAM_REPRESSURIZER.get());
-
-                // ============================================================
-                //  20. BLOCKS - BASIC PROCESSING MACHINES
-                // ============================================================
-                output.accept(mio_icif_blocks.FURNACE_ELC.get());
-                output.accept(mio_icif_blocks.POWDER_ELC.get());
-                output.accept(mio_icif_blocks.POWDER_ADVANCED_ELC.get());
-                output.accept(mio_icif_blocks.COMPRESSOR_ELC.get());
-                output.accept(mio_icif_blocks.COMPRESSOR_ADVANCED_ELC.get());
-                output.accept(mio_icif_blocks.EXTRACTOR_ELC.get());
-                output.accept(mio_icif_blocks.WASHER_ELC.get());
-                output.accept(mio_icif_blocks.METAL_FORMER.get());
-                output.accept(mio_icif_blocks.METAL_FORMER_ADVANCED.get());
-                output.accept(mio_icif_blocks.BLOCK_CUTTER.get());
-                output.accept(mio_icif_blocks.LATHE.get());
-                output.accept(mio_icif_blocks.CANNER_ELC.get());
-                output.accept(mio_icif_blocks.RECYCLER_ELC.get());
-                output.accept(mio_icif_blocks.BLAST_FURNACE.get());
-                output.accept(mio_icif_blocks.BLAST_FURNACE_ELC.get());
-                output.accept(mio_icif_blocks.BLAST_FURNACE_ADVANCED.get());
-
-                // ============================================================
-                //  21. BLOCKS - INTERMEDIATE MACHINES
-                // ============================================================
-                output.accept(mio_icif_blocks.CENTRIFUGE_ELC.get());
-                output.accept(mio_icif_blocks.ELECTROLYZER.get());
-                output.accept(mio_icif_blocks.PUMP_ELC.get());
-                output.accept(mio_icif_blocks.CONDENSER.get());
-                output.accept(mio_icif_blocks.FERMENTER_ELC.get());
-                output.accept(mio_icif_blocks.OIL_REFINERY_ELC.get());
-                output.accept(mio_icif_blocks.MAGNETIZER.get());
-
-                // ============================================================
-                //  22. BLOCKS - ADVANCED MACHINES
-                // ============================================================
-                output.accept(mio_icif_blocks.INDUCTION_ELC.get());
-                output.accept(mio_icif_blocks.MATTER_ELC.get());
-                output.accept(mio_icif_blocks.LARGE_FABRICATOR_CORE.get());
-                output.accept(mio_icif_blocks.LARGE_FABRICATOR_INPUT_IV.get());
-                output.accept(mio_icif_blocks.LARGE_FABRICATOR_TANK.get());
-                output.accept(mio_icif_blocks.LARGE_FABRICATOR_SCRAP.get());
-                output.accept(mio_icif_blocks.NEUTRON_POLYMERIZER.get());
-                output.accept(mio_icif_blocks.REPLICATOR_ELC.get());
-                output.accept(mio_icif_blocks.SCANNER_ELC.get());
-                output.accept(mio_icif_blocks.MOLECULAR_TRANSFORMER.get());
-                output.accept(mio_icif_blocks.TELEPORTER_ELC.get());
-                output.accept(mio_icif_blocks.TERRA_ELC.get());
-                output.accept(mio_icif_blocks.FUTURE_ELC.get());
-                output.accept(mio_icif_blocks.TRADE_TERMINAL.get());
-                output.accept(mio_icif_blocks.TRADE_BOX.get());   // 0.1.10.42
-                output.accept(mio_icif_blocks.TRADE_BOX_ADVANCED.get());
-                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.TRADE_BOX_UPGRADE.get());
-                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.ID_CARD.get());
-                output.accept(mio_icif_blocks.TESLA.get());
-                output.accept(mio_icif_blocks.ENERGY_TERMINAL.get());
-                output.accept(mio_icif_blocks.LASER_DEFENSE_TOWER.get());
-                output.accept(mio_icif_blocks.SKY_PATROL_LASER_TOWER.get());
-
-                // 工业工作台               
-                output.accept(mio_icif_blocks.INDUSTRIAL_WORKBENCH.get());
-                // 0.1.11.1: the grid-tie interface (Energy Converter id; a legacy block from 0.1.10.39 to 0.1.11.0)
-                output.accept(mio_icif_blocks.ENERGY_CONVERTER.get());
-                // ============================================================
-                //  22.5 BLOCKS - ITEM & FLUID TRANSPORT
-                // ============================================================
-                output.accept(mio_icif_blocks.ITEM_BUFFER_ELC.get());
-                output.accept(mio_icif_blocks.SORTER_ELC.get());
-                output.accept(mio_icif_blocks.ITEM_DISTRIBUTOR_ELC.get());
-                output.accept(mio_icif_blocks.FLUID_DISTRIBUTOR_ELC.get());
-                output.accept(mio_icif_blocks.WEIGHTED_FLUID_DISTRIBUTOR_ELC.get());
-                output.accept(mio_icif_blocks.FLUID_REGULATOR_ELC.get());
-                output.accept(mio_icif_blocks.BATCH_CRAFTER.get());
-                output.accept(mio_icif_blocks.CHUNK_LOADER.get());
-
-                // ============================================================
-                //  23. BLOCKS - AGRICULTURE
-                // ============================================================
-                output.accept(mio_icif_blocks.CROP_STICK.get());
-                output.accept(mio_icif_blocks.CROP_STICK_UPGRADED.get());
-                output.accept(mio_icif_blocks.HARVEST_ELC.get());
-                output.accept(mio_icif_blocks.MATRON_ELC.get());
-
-                // ============================================================
-                //  24. BLOCKS - MINING
-                // ============================================================
-                output.accept(mio_icif_blocks.MINER_ELC.get());
-                output.accept(mio_icif_blocks.ADVANCED_MINER_ELC.get());
-                output.accept(mio_icif_blocks.BLOCK_MINING_PIPE.get());
-                output.accept(mio_icif_blocks.BLOCK_MINING_TIP.get());
-
-                // ============================================================
-                //  25. BLOCKS - FLUID PIPES
-                // ============================================================
-                // Legacy water pipe remains registered and craftable for existing worlds.
-                mio_icif_blocks.FLUID_PIPE_ITEMS.forEach(pipe -> output.accept(pipe.get()));
-                output.accept(mio_icif_blocks.PIPE_WATER_EXTRACT.get());
-                output.accept(mio_icif_blocks.PIPE_ITEM_INPUT.get());
-                output.accept(mio_icif_blocks.PIPE_ITEM_TRANSPORT.get());
-
-                // ============================================================
-                //  26. BLOCKS - MACHINE HULLS & MISC
-                // ============================================================
-                output.accept(mio_icif_blocks.MACHINE_HULL_BASIC.get());
-                output.accept(mio_icif_blocks.MACHINE_HULL_ADVANCED.get());
-                output.accept(mio_icif_blocks.CHECKER.get());
-
-                // ============================================================
-                //  27. BLOCKS - REACTOR STRUCTURE
-                // ============================================================
-                output.accept(mio_icif_blocks.REACTOR_CHAMBER.get());
-                output.accept(mio_icif_blocks.STEAM_REACTOR_CHAMBER.get());   // 0.1.10.36
-                output.accept(mio_icif_blocks.REACTOR_VESSEL.get());
-                output.accept(mio_icif_blocks.REACTOR_ACCESS_HATCH.get());
-                output.accept(mio_icif_blocks.REACTOR_FLUID_PORT.get());
-                output.accept(mio_icif_blocks.REACTOR_REDSTONE_PORT.get());
-                output.accept(mio_icif_blocks.REDSTONE_REACTOR_COOLANT_INJECTOR.get());
-                output.accept(mio_icif_blocks.LAPIS_REACTOR_COOLANT_INJECTOR.get());
-                output.accept(mio_icif_blocks.IC_TNT.get());
-                output.accept(mio_icif_blocks.NUKE.get());
-
-                // ============================================================
-                //  28. BLOCKS - RADIATION
-                // ============================================================
-                output.accept(mio_icif_blocks.BLOCK_RADIATING_STONE.get());
-                output.accept(mio_icif_blocks.BLOCK_RADIATING_DIRT.get());
-                output.accept(mio_icif_blocks.BLOCK_RADIATING_DEEPSLATE.get());
-
-                // ============================================================
-                //  29. BLOCKS - SCAFFOLDING
-                // ============================================================
-                output.accept(mio_icif_blocks.SCAFFOLD_WOOD.get());
-                output.accept(mio_icif_blocks.SCAFFOLD_IRON.get());
-                output.accept(mio_icif_blocks.SCAFFOLD_STEEL.get());
-                output.accept(mio_icif_blocks.SCAFFOLD_CARBON.get());
-                output.accept(mio_icif_blocks.TITANIUM_DRILL_FRAME.get());
-
-                // ============================================================
-                //  30. BLOCKS - CONSTRUCTION
-                // ============================================================
-                output.accept(mio_icif_blocks.BLOCK_BRONZE.get());
-                output.accept(mio_icif_blocks.BLOCK_ADVIRON.get());
-                output.accept(mio_icif_blocks.BLOCK_ALLOY_GLASS.get());
-                output.accept(mio_icif_blocks.BLOCK_IRRADIANT_GLASS_PANE.get());
-                output.accept(mio_icif_blocks.BLOCK_ALLOY_DOOR.get());
-                output.accept(mio_icif_blocks.CONSTRUCTION_FOAM.get());
-                output.accept(mio_icif_blocks.CONSTRUCTION_WALL.get());
-
-                // ============================================================
-                //  30.5. BLOCKS - STORAGE BOXES
-                // ============================================================
-                output.accept(mio_icif_blocks.STORAGE_BOX_WOOD.get());
-                output.accept(mio_icif_blocks.STORAGE_BOX_BRONZE.get());
-                output.accept(mio_icif_blocks.STORAGE_BOX_IRON.get());
-                output.accept(mio_icif_blocks.STORAGE_BOX_ADVIRON.get());
-                output.accept(mio_icif_blocks.STORAGE_BOX_IRIDIUM.get());
-                output.accept(mio_icif_blocks.STORAGE_BOX_TITANIUM.get());
-                output.accept(mio_icif_blocks.BRONZE_TANK.get());
-                output.accept(mio_icif_blocks.IRON_TANK.get());
-                output.accept(mio_icif_blocks.TITANIUM_TANK.get());
-                output.accept(mio_icif_blocks.ADVIRON_TANK.get());
-                output.accept(mio_icif_blocks.IRIDIUM_TANK.get());
-
-                // ============================================================
-                //  31. BLOCKS - RUBBER TREE & RUBBER WOOD SERIES
-                // ============================================================
-                output.accept(mio_icif_blocks.BLOCK_RUBBER_SAPLING.get());
-                output.accept(mio_icif_blocks.RESIN_COLLECTOR.get());
-                output.accept(mio_icif_blocks.BLOCK_RUBBER_TREE.get());
-                output.accept(mio_icif_blocks.BLOCK_STRIPPED_RUBBER_WOOD.get());
-                output.accept(mio_icif_blocks.BLOCK_RUBBER_LEAF.get());
-                output.accept(mio_icif_blocks.RUBBER_PLANKS.get());
-                output.accept(mio_icif_blocks.RUBBER_STAIRS.get());
-                output.accept(mio_icif_blocks.RUBBER_SLAB.get());
-                output.accept(mio_icif_blocks.RUBBER_FENCE.get());
-                output.accept(mio_icif_blocks.RUBBER_FENCE_GATE.get());
-                output.accept(mio_icif_blocks.RUBBER_DOOR.get());
-                output.accept(mio_icif_blocks.RUBBER_TRAPDOOR.get());
-                output.accept(mio_icif_blocks.RUBBER_PRESSURE_PLATE.get());
-                output.accept(mio_icif_blocks.RUBBER_BUTTON.get());
-                output.accept(mio_icif_blocks.RUBBER_SIGN.get());
-                output.accept(mio_icif_blocks.RUBBER_HANGING_SIGN.get());
-                output.accept(mio_icif_blocks.BLOCK_FENCE_IRON.get());
-
-            })).build());
+            .displayItems((parameters, output) -> {
+                GuideBook.addToTab(output);
+                // items
+                tools(output);
+                weapons(output);
+                armor(output);
+                worldResources(output);
+                metals(output);
+                nonMetals(output);
+                nuclearMaterials(output);
+                advancedMaterials(output);
+                components(output);
+                batteries(output);
+                reactorComponents(output);
+                upgrades(output);
+                farming(output);
+                food(output);
+                fluids(output);
+                miscItems(output);
+                // blocks
+                grid(output);
+                energyStorage(output);
+                generators(output);
+                reactors(output);
+                machines(output);
+                logistics(output);
+                building(output);
+                suit(output);   // the suit station and the nano / quantum plugins close the tab
+            }).build());
+
+    // ------------------------------------------------------------------ stacks
+
+    private static IItemAPI api() { return MioIcifAPI.instance().getItemAPI(); }
+
+    /** A battery-based item holding {@code energy}. */
+    private static ItemStack charged(ItemLike item, long energy) {
+        ItemStack stack = new ItemStack(item);
+        api().setBatteryEnergy(stack, energy);
+        return stack;
+    }
+
+    /** A battery-based item at full charge. */
+    private static ItemStack full(ItemLike item) {
+        ItemStack stack = new ItemStack(item);
+        api().setBatteryEnergy(stack, api().getBatteryCapacity(stack));
+        return stack;
+    }
+
+    /** An electric tool (its own energy store) holding {@code energy}. */
+    private static ItemStack tool(ItemLike item, long energy) {
+        ItemStack stack = new ItemStack(item);
+        api().setElectricToolEnergy(stack, energy);
+        return stack;
+    }
+
+    /** An electric tool at full charge. */
+    private static ItemStack fullTool(ItemLike item) {
+        ItemStack stack = new ItemStack(item);
+        api().setElectricToolEnergy(stack, api().getElectricToolMaxEnergy(stack));
+        return stack;
+    }
+
+    /** A battery item ({@link mio_icif_bat}) holding {@code energy}. */
+    private static ItemStack bat(ItemLike item, long energy) {
+        ItemStack stack = new ItemStack(item);
+        ((mio_icif_bat) stack.getItem()).setEnergy(stack, energy);
+        return stack;
+    }
+
+    /**
+     * The item empty, then full (battery-based). 0.1.11.161: the empty one is written out: many tools hold their full capacity
+     * as the default charge, so the item as registered is the full one and the tab used to show no empty one.
+     */
+    private static void withFull(CreativeModeTab.Output out, ItemLike item) {
+        out.accept(charged(item, 0));
+        out.accept(full(item));
+    }
+
+    /** The item empty, then full (electric tool). */
+    private static void withFullTool(CreativeModeTab.Output out, ItemLike item) {
+        out.accept(tool(item, 0));
+        out.accept(fullTool(item));
+    }
+
+    /** A battery item at 0, then at {@code max}. */
+    private static void batPair(CreativeModeTab.Output out, ItemLike item, long max) {
+        out.accept(bat(item, 0));
+        out.accept(bat(item, max));
+    }
+
+    /** A battery-based item at 0, then full. */
+    private static void chargedPair(CreativeModeTab.Output out, ItemLike item) {
+        out.accept(charged(item, 0));
+        out.accept(full(item));
+    }
+
+    /** An energy crystal empty, then full. */
+    private static void crystal(CreativeModeTab.Output out, ItemLike item) {
+        out.accept(bat(item, 0));
+        ItemStack full = new ItemStack(item);
+        if (full.getItem() instanceof mio_icif_bat bat) bat.setEnergy(full, bat.getMaxEnergy());
+        out.accept(full);
+    }
+
+    /** A storage block as crafted, then holding {@code energy} (its block entity data). */
+    private static void storageBlock(CreativeModeTab.Output out, ItemLike block, long energy, String blockEntityId) {
+        out.accept(block);
+        ItemStack full = new ItemStack(block);
+        full.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(createEnergyTag(energy, blockEntityId)));
+        out.accept(full);
+    }
+
+    /** A universal fluid cell holding 1000 mB of {@code fluid}. */
+    private static void cell(CreativeModeTab.Output out, Fluid fluid) {
+        ItemStack cell = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
+        ((mio_icif_dynamic_cell) cell.getItem()).writeFluidToNBT(cell, new FluidStack(fluid, 1000));
+        out.accept(cell);
+    }
+
+    private static void seed(CreativeModeTab.Output out, String crop) {
+        out.accept(CropSeedItem.createSeedStack(mio_icif_normal.CROP_SEED.get(), "mio_icif", crop, 0, 0, 0));
+    }
+
+    // ================================================================== items
+
+    /** Every tool in one place: hand and electric tools, scanners, remotes, the TESU connector, building and farming tools. */
+    private static void tools(CreativeModeTab.Output o) {
+        // bronze and hand tools
+        o.accept(mio_icif_items_tools.TOOL_BRONZE_PICKAXE.get());
+        o.accept(mio_icif_items_tools.TOOL_BRONZE_AXE.get());
+        o.accept(mio_icif_items_tools.TOOL_BRONZE_SHOVEL.get());
+        o.accept(mio_icif_items_tools.TOOL_BRONZE_HOE.get());
+        o.accept(mio_icif_items.TOOL_BRONZE_SWORD.get());
+        o.accept(mio_icif_items_tools.TOOL_HAMMER.get());
+        o.accept(mio_icif_items_tools.TOOL_CUTTER.get());
+        o.accept(mio_icif_items_tools.WRENCH.get());
+        o.accept(mio_icif_items_tools.TOOL_TREE_TAP.get());
+        o.accept(mio_icif_normal.WEEDING_TROWEL.get());
+        // electric tools
+        withFull(o, mio_icif_items_tools.WRENCH_ELC.get());
+        withFull(o, mio_icif_items_tools.TREETAP_ELC.get());
+        withFull(o, mio_icif_items_tools.IRON_DRILLER.get());
+        withFull(o, mio_icif_items_tools.DIAMOND_DRILLER.get());
+        withFull(o, mio_icif_items_tools.IRIDIUM_DRILLER.get());
+        withFull(o, mio_icif_items_tools.IRON_CHAINSAW.get());
+        withFull(o, mio_icif_items_tools.IRON_HOE.get());
+        withFull(o, mio_icif_items_tools.TOOL_LASER_MINER.get());
+        withFull(o, mio_icif_items_tools.POWER_UNIT_SMALL.get());
+        withFull(o, mio_icif_items_tools.POWER_UNIT.get());
+        // scanners and meters
+        withFull(o, mio_icif_items_tools.OD_SCANNER.get());
+        withFull(o, mio_icif_items_tools.OV_SCANNER.get());
+        o.accept(mio_icif_items_tools.AREA_SCANNER.get());
+        withFull(o, mio_icif_items_tools.GEOMAGNETIC_DETECTOR.get());
+        withFull(o, mio_icif_normal.CROP_ANALYZER.get());
+        o.accept(mio_icif_items_tools.EU_METER.get());
+        withFull(o, mio_icif_items_tools.WINDMETER.get());
+        // remotes and link tools
+        withFull(o, mio_icif_items_tools.ELECTRIC_WIRELESS_MANAGER.get());
+        o.accept(mio_icif_normal.TESU_CONNECTOR.get());
+        o.accept(mio_icif_normal.FREQ.get());
+        o.accept(ArmoryRegistry.REMOTE.get());
+        withFull(o, mio_icif_normal.PORTABLE_FUTURES_TRADER.get());   // 0.1.10.38
+        // portable electric devices
+        withFull(o, mio_icif_items_tools.ELECTRIC_NUTRITION_SUPPLY.get());
+        withFull(o, mio_icif_items_tools.ELECTRIC_FIRST_AID_LIFE_SUPPORT.get());
+        withFull(o, mio_icif_items_tools.ELECTRIC_FORCE_FIELD_GENERATOR.get());
+        withFull(o, mio_icif_items_tools.ELECTRIC_FISHING_ROD.get());
+        withFull(o, mio_icif_items_tools.ELECTRIC_LIGHTER.get());
+        // building tools: the construction foam sprayer (empty, then with a full tank), the obscurator, the painters
+        o.accept(mio_icif_normal.CF_SPRAYER.get());
+        ItemStack fullSprayer = new ItemStack(mio_icif_normal.CF_SPRAYER.get());
+        mio_icif_normal.CF_SPRAYER.get().fillFluid(fullSprayer, new FluidStack(mio_icif_fluids.CONSTRUCTIONFOAM.get(), CFSprayerItem.CAPACITY));
+        o.accept(fullSprayer);
+        withFull(o, mio_icif_normal.OBSCURATOR.get());   // 0.1.11.161: it is electric too
+        o.accept(mio_icif_normal.PAINTER.get());
+        o.accept(mio_icif_normal.PAINTER_WHITE.get());
+        o.accept(mio_icif_normal.PAINTER_ORANGE.get());
+        o.accept(mio_icif_normal.PAINTER_MAGENTA.get());
+        o.accept(mio_icif_normal.PAINTER_LIGHT_BLUE.get());
+        o.accept(mio_icif_normal.PAINTER_YELLOW.get());
+        o.accept(mio_icif_normal.PAINTER_LIME.get());
+        o.accept(mio_icif_normal.PAINTER_PINK.get());
+        o.accept(mio_icif_normal.PAINTER_GRAY.get());
+        o.accept(mio_icif_normal.PAINTER_LIGHT_GRAY.get());
+        o.accept(mio_icif_normal.PAINTER_CYAN.get());
+        o.accept(mio_icif_normal.PAINTER_PURPLE.get());
+        o.accept(mio_icif_normal.PAINTER_BLUE.get());
+        o.accept(mio_icif_normal.PAINTER_BROWN.get());
+        o.accept(mio_icif_normal.PAINTER_GREEN.get());
+        o.accept(mio_icif_normal.PAINTER_RED.get());
+        o.accept(mio_icif_normal.PAINTER_BLACK.get());
+        // lathing tools
+        o.accept(mio_icif_lathe_items.IRON_LATHING_TOOL.get());
+        o.accept(mio_icif_lathe_items.DIAMOND_LATHING_TOOL.get());
+        // boxes
+        o.accept(mio_icif_normal.TOOLBOX.get());
+        o.accept(mio_icif_normal.TOOLBOX_X.get());
+        o.accept(mio_icif_normal.CONTAIN_MENT_BOX.get());
+    }
+
+    private static void weapons(CreativeModeTab.Output o) {
+        withFull(o, mio_icif_items_tools.NANO_SABER.get());
+        withFullTool(o, mio_icif_items_tools.QUANTUM_SWORD.get());
+        withFull(o, mio_icif_items_tools.PLASMA_LAUNCHER.get());
+        withFullTool(o, mio_icif_items_tools.ELECTRIC_RIFLE.get());
+        withFullTool(o, mio_icif_items_tools.ADVANCED_ELECTRIC_RIFLE.get());
+        withFullTool(o, mio_icif_items_tools.TACTICAL_LASER_RIFLE.get());
+        withFullTool(o, mio_icif_items_tools.PLASMA_AIR_CANNON.get());
+        withFullTool(o, mio_icif_items_tools.ELECTRIC_PLASMA_GUN.get());
+        withFullTool(o, mio_icif_items_tools.TACHYON_DISRUPTOR.get());
+        withFull(o, mio_icif_items_tools.NANO_BOW.get());
+        withFullTool(o, mio_icif_items_tools.ROCKET_LAUNCHER.get());
+        o.accept(mio_icif_items_tools.ROCKET.get());
+        withFull(o, mio_icif_items_tools.STEEL_SHIELD.get());
+        // explosives
+        o.accept(mio_icif_normal.DYNAMITE.get());
+        o.accept(mio_icif_normal.STICKY_DYNAMITE.get());
+        o.accept(mio_icif_normal.REMOTE.get());
+        o.accept(mio_icif_blocks.IC_TNT.get());
+        o.accept(mio_icif_blocks.NUKE.get());
+    }
+
+    private static void armor(CreativeModeTab.Output o) {
+        o.accept(mio_icif_items_armors.ARMOR_BRONZE_HELMET.get());
+        o.accept(mio_icif_items_armors.ARMOR_BRONZE_CHESTPLATE.get());
+        o.accept(mio_icif_items_armors.ARMOR_BRONZE_LEGGINGS.get());
+        o.accept(mio_icif_items_armors.ARMOR_BRONZE_BOOTS.get());
+        o.accept(mio_icif_items_armors.HAZMAT_HELMET.get());
+        o.accept(mio_icif_items_armors.HAZMAT_CHESTPLATE.get());
+        o.accept(mio_icif_items_armors.HAZMAT_LEGGINGS.get());
+        o.accept(mio_icif_items_armors.HAZMAT_BOOTS.get());
+        o.accept(mio_icif_normal.STATIC_BOOTS.get());
+        o.accept(mio_icif_items_armors.SOUNDPROOF_EARMUFFS.get());   // 0.1.10.14
+        withFull(o, mio_icif_items_armors.ARMOR_DIVING_MASK.get());
+        withFull(o, mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get());
+        // battery packs and jetpacks
+        withFull(o, mio_icif_items_armors.ARMOR_BATPACK.get());
+        withFull(o, mio_icif_items_armors.ARMOR_ADV_BATPACK.get());
+        withFull(o, mio_icif_items_armors.ARMOR_ENERGYPACK.get());
+        withFull(o, mio_icif_items_armors.ARMOR_LAPPACK.get());
+        withFull(o, mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get());
+        withFull(o, mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get());
+        // nano and quantum suits (0.1.9.0: heavy / advanced quantum chestplates and solar helmets retired: frame cores)
+        withFull(o, mio_icif_items_armors.ARMOR_NANO_HELMET.get());
+        withFull(o, mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get());
+        withFull(o, mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get());
+        withFull(o, mio_icif_items_armors.ARMOR_NANO_BOOTS.get());
+        withFull(o, mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get());
+        withFull(o, mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get());
+        withFull(o, mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get());
+        withFull(o, mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get());
+        trinkets(o);
+    }
+
+    /** The Curios trinkets, empty then full (only with Curios). */
+    private static void trinkets(CreativeModeTab.Output o) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("curios")) return;
+        try {
+            Class<?> curios = Class.forName("com.miophas.singularity_iteration.common.integration.CuriosIntegration");
+            for (String field : new String[]{"TRINKET_FIREPROOF_NECKLACE", "TRINKET_ENERGY_CRYSTAL_BELT", "TRINKET_LAPORTON_CRYSTAL_BELT",
+                                             "TRINKET_LIFE_SUPPORT_RING", "TRINKET_FLIGHT_RING"}) {
+                ItemLike item = ((DeferredItem<?>) curios.getField(field).get(null)).get();
+                o.accept(tool(item, 0));
+                o.accept(fullTool(item));
+            }
+        } catch (Exception e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("creative-tab-curios", "Creative tab entries of the Curios trinkets", e);
+        }
+    }
+
+    /** Ores, raw ore blocks, metal blocks, irradiated ground and the rubber tree: what the world gives. */
+    private static void worldResources(CreativeModeTab.Output o) {
+        // ores, each with its deepslate form
+        o.accept(mio_icif_blocks.BLOCK_ORE_TIN.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_TIN_IN_DEEP.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_LEAD.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_LEAD_IN_DEEP.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_SILVER.get());          // 0.1.11.98
+        o.accept(mio_icif_blocks.BLOCK_ORE_SILVER_IN_DEEP.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_URAN.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_URAN_IN_DEEP.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_NIOBIUM.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_NIOBIUM_IN_DEEP.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_TITANIUM.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_TITANIUM_IN_DEEP.get());
+        o.accept(mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get());   // 0.1.10.36: made by nuclear blasts
+        // raw ore blocks
+        o.accept(mio_icif_blocks.BLOCK_RAW_TIN.get());
+        o.accept(mio_icif_blocks.BLOCK_RAW_LEAD.get());
+        o.accept(mio_icif_blocks.BLOCK_RAW_SILVER.get());
+        o.accept(mio_icif_blocks.BLOCK_RAW_URAN.get());
+        o.accept(mio_icif_blocks.BLOCK_RAW_NIOBIUM.get());
+        o.accept(mio_icif_blocks.BLOCK_RAW_TITANIUM.get());
+        // metal blocks
+        o.accept(mio_icif_blocks.BLOCK_TIN.get());
+        o.accept(mio_icif_blocks.BLOCK_BRONZE.get());
+        o.accept(mio_icif_blocks.BLOCK_LEAD.get());
+        o.accept(mio_icif_blocks.BLOCK_SILVER.get());
+        o.accept(mio_icif_blocks.BLOCK_ADVIRON.get());
+        o.accept(mio_icif_blocks.BLOCK_URAN.get());
+        o.accept(mio_icif_blocks.BLOCK_NIOBIUM.get());
+        o.accept(mio_icif_blocks.BLOCK_TITANIUM.get());
+        // irradiated ground
+        o.accept(mio_icif_blocks.BLOCK_RADIATING_STONE.get());
+        o.accept(mio_icif_blocks.BLOCK_RADIATING_DIRT.get());
+        o.accept(mio_icif_blocks.BLOCK_RADIATING_DEEPSLATE.get());
+        // the rubber tree (its planks and other wood blocks are with the building blocks)
+        o.accept(mio_icif_blocks.BLOCK_RUBBER_SAPLING.get());
+        o.accept(mio_icif_blocks.BLOCK_RUBBER_TREE.get());
+        o.accept(mio_icif_blocks.BLOCK_STRIPPED_RUBBER_WOOD.get());
+        o.accept(mio_icif_blocks.BLOCK_RUBBER_LEAF.get());
+    }
+
+    /** Each metal: raw, crushed, purified crushed, dust, small dust, nugget, ingot, plate, dense plate, casing. */
+    private static void metals(CreativeModeTab.Output o) {
+        // copper
+        o.accept(mio_icif_resources.COPPER_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.COPPER_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.COPPER_DUST.get());
+        o.accept(mio_icif_resources.COPPER_DUST_SMALL.get());
+        o.accept(mio_icif_resources.COPPER_NUGGET.get());
+        o.accept(mio_icif_resources.COPPER_PLATE.get());
+        o.accept(mio_icif_resources.COPPER_DENSEPLATE.get());
+        o.accept(mio_icif_resources.COPPER_CASING.get());
+        // tin
+        o.accept(mio_icif_resources.RAW_TIN.get());
+        o.accept(mio_icif_resources.TIN_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.TIN_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.TIN_DUST.get());
+        o.accept(mio_icif_resources.TIN_DUST_SMALL.get());
+        o.accept(mio_icif_resources.TIN_NUGGET.get());
+        o.accept(mio_icif_resources.INGOT_TIN.get());
+        o.accept(mio_icif_resources.TIN_PLATE.get());
+        o.accept(mio_icif_resources.TIN_DENSEPLATE.get());
+        o.accept(mio_icif_resources.TIN_CASING.get());
+        // bronze
+        o.accept(mio_icif_resources.BRONZE_DUST.get());
+        o.accept(mio_icif_resources.BRONZE_DUST_SMALL.get());
+        o.accept(mio_icif_resources.INGOT_BRONZE.get());
+        o.accept(mio_icif_resources.BRONZE_PLATE.get());
+        o.accept(mio_icif_resources.BRONZE_DENSEPLATE.get());
+        o.accept(mio_icif_resources.BRONZE_CASING.get());
+        // iron
+        o.accept(mio_icif_resources.IRON_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.IRON_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.IRON_DUST.get());
+        o.accept(mio_icif_resources.IRON_DUST_SMALL.get());
+        o.accept(mio_icif_resources.IRON_PLATE.get());
+        o.accept(mio_icif_resources.IRON_DENSEPLATE.get());
+        o.accept(mio_icif_resources.IRON_CASING.get());
+        // refined iron
+        o.accept(mio_icif_resources.ADVIRON_INGOT.get());
+        o.accept(mio_icif_resources.ADVIRON_PLATE.get());
+        o.accept(mio_icif_resources.ADVIRON_DENSEPLATE.get());
+        o.accept(mio_icif_resources.ADVIRON_CASING.get());
+        // gold
+        o.accept(mio_icif_resources.GOLD_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.GOLD_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.GOLDEN_DUST.get());
+        o.accept(mio_icif_resources.GOLDEN_DUST_SMALL.get());
+        o.accept(mio_icif_resources.GOLDEN_PLATE.get());
+        o.accept(mio_icif_resources.GOLDEN_DENSEPLATE.get());
+        o.accept(mio_icif_resources.GOLDEN_CASING.get());
+        // lead
+        o.accept(mio_icif_resources.RAW_LEAD.get());
+        o.accept(mio_icif_resources.LEAD_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.LEAD_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.LEAD_DUST.get());
+        o.accept(mio_icif_resources.LEAD_DUST_SMALL.get());
+        o.accept(mio_icif_resources.LEAD_NUGGET.get());
+        o.accept(mio_icif_resources.LEAD_INGOT.get());
+        o.accept(mio_icif_resources.LEAD_PLATE.get());
+        o.accept(mio_icif_resources.LEAD_DENSEPLATE.get());
+        o.accept(mio_icif_resources.LEAD_CASING.get());
+        // silver (0.1.11.98; plate, dense plate and casing 0.1.11.153)
+        o.accept(mio_icif_resources.RAW_SILVER.get());
+        o.accept(mio_icif_resources.SILVER_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.SILVER_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.SILVER_DUST.get());
+        o.accept(mio_icif_resources.SILVER_DUST_SMALL.get());
+        o.accept(mio_icif_resources.SILVER_NUGGET.get());
+        o.accept(mio_icif_resources.SILVER_INGOT.get());
+        o.accept(mio_icif_resources.SILVER_PLATE.get());
+        o.accept(mio_icif_resources.SILVER_DENSEPLATE.get());
+        o.accept(mio_icif_resources.SILVER_CASING.get());
+        // niobium
+        o.accept(mio_icif_resources.RAW_NIOBIUM.get());
+        o.accept(mio_icif_resources.NIOBIUM_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.NIOBIUM_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.NIOBIUM_DUST.get());
+        o.accept(mio_icif_resources.NIOBIUM_DUST_SMALL.get());
+        o.accept(mio_icif_resources.NIOBIUM_INGOT.get());
+        o.accept(mio_icif_resources.NIOBIUM_PLATE.get());
+        o.accept(mio_icif_resources.NIOBIUM_DENSEPLATE.get());
+        o.accept(mio_icif_resources.NIOBIUM_CASING.get());
+        // titanium
+        o.accept(mio_icif_resources.RAW_TITANIUM.get());
+        o.accept(mio_icif_resources.TITANIUM_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.TITANIUM_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.TITANIUM_DUST.get());
+        o.accept(mio_icif_resources.TITANIUM_DUST_SMALL.get());
+        o.accept(mio_icif_resources.TITANIUM_NUGGET.get());
+        o.accept(mio_icif_resources.TITANIUM_INGOT.get());
+        o.accept(mio_icif_resources.TITANIUM_PLATE.get());
+        o.accept(mio_icif_resources.TITANIUM_DENSEPLATE.get());
+        o.accept(mio_icif_resources.TITANIUM_CASING.get());
+        // niobium-titanium
+        o.accept(mio_icif_resources.NIOBIUM_TITANIUM_DUST.get());
+        o.accept(mio_icif_resources.NIOBIUM_TITANIUM_INGOT.get());
+        o.accept(mio_icif_resources.NIOBIUM_TITANIUM_PLATE.get());
+        // iridium
+        o.accept(mio_icif_resources.IRIDIUM.get());
+        o.accept(mio_icif_resources.SHARD_IRIDIUM.get());
+        o.accept(mio_icif_resources.IRIDIUM_DUST_SMALL.get());
+        o.accept(mio_icif_resources.IRIDIUM_INGOT.get());
+        o.accept(mio_icif_resources.IRIDIUM_PLATE.get());
+        // advanced alloy
+        o.accept(mio_icif_resources.ALLOY_INGOT.get());
+        o.accept(mio_icif_resources.ALLOY_PLATE.get());
+        o.accept(mio_icif_resources.DCP_PLATE.get());
+    }
+
+    private static void nonMetals(CreativeModeTab.Output o) {
+        // rubber
+        o.accept(mio_icif_resources.HARZ.get());
+        o.accept(mio_icif_resources.RUBBER.get());
+        // lapis and obsidian
+        o.accept(mio_icif_resources.LAPI_DUST.get());
+        o.accept(mio_icif_resources.LAPI_DUST_SMALL.get());
+        o.accept(mio_icif_resources.LAPI_PLATE.get());
+        o.accept(mio_icif_resources.LAPI_DENSEPLATE.get());
+        o.accept(mio_icif_resources.OBSIDIAN_DUST.get());
+        o.accept(mio_icif_resources.OBSIDIAN_DUST_SMALL.get());
+        o.accept(mio_icif_resources.OBSIDIAN_PLATE.get());
+        o.accept(mio_icif_resources.OBSIDIAN_DENSEPLATE.get());
+        // gems
+        o.accept(mio_icif_resources.DIAMOND_DUST.get());
+        o.accept(mio_icif_resources.DIAMOND_DUST_SMALL.get());
+        o.accept(mio_icif_normal.INDUSTRIAL_DIAMOND.get());
+        o.accept(mio_icif_resources.EMERALD_DUST.get());
+        o.accept(mio_icif_resources.EMERALD_DUST_SMALL.get());
+        o.accept(mio_icif_resources.ENDER_PEARL_DUST.get());
+        o.accept(mio_icif_resources.ENERGIUM_DUST.get());
+        // coal and carbon
+        o.accept(mio_icif_resources.COAL_DUST.get());
+        o.accept(mio_icif_resources.CHARCOAL_DUST.get());
+        o.accept(mio_icif_resources.COAL_BALL.get());
+        o.accept(mio_icif_resources.ZIP_COAL_BLOCK.get());
+        o.accept(mio_icif_resources.COAL_CHUNK.get());
+        o.accept(mio_icif_resources.COAL_FABRE.get());
+        o.accept(mio_icif_resources.COAL_MESH.get());
+        o.accept(mio_icif_resources.CARBON_PLATE.get());
+        // other dusts
+        o.accept(mio_icif_resources.STONE_DUST.get());
+        o.accept(mio_icif_resources.CLAY_DUST.get());
+        o.accept(mio_icif_resources.NETHERRACK_DUST.get());
+        o.accept(mio_icif_resources.FLINT_DUST.get());
+        o.accept(mio_icif_resources.SILICONDIOXIDE_DUST.get());
+        o.accept(mio_icif_resources.SULFUR_DUST.get());
+        o.accept(mio_icif_resources.SULFUR_DUST_SMALL.get());
+        o.accept(mio_icif_resources.NITRE_DUST.get());
+        o.accept(mio_icif_resources.LITHIUM_DUST.get());
+        o.accept(mio_icif_resources.LITHIUM_DUST_SMALL.get());
+        o.accept(mio_icif_resources.GRIN_DUST.get());
+        o.accept(mio_icif_resources.ASH.get());
+        // construction foam
+        o.accept(mio_icif_resources.CF_DUST.get());
+        o.accept(mio_icif_resources.PELLET.get());
+        // scrap
+        o.accept(mio_icif_normal.SCRAP.get());
+        o.accept(mio_icif_normal.SCRAPBOX.get());
+        o.accept(mio_icif_normal.SLAG.get());
+    }
+
+    private static void nuclearMaterials(CreativeModeTab.Output o) {
+        o.accept(mio_icif_resources.RAW_URAN.get());
+        o.accept(mio_icif_resources.URAN_ORE_CRUSHED.get());
+        o.accept(mio_icif_resources.URAN_ORE_CRUSHED_PURIFIED.get());
+        o.accept(mio_icif_resources.URAN.get());
+        o.accept(mio_icif_resources.URAN_238.get());
+        o.accept(mio_icif_resources.URAN_238_SMALL.get());
+        o.accept(mio_icif_resources.URAN_235.get());
+        o.accept(mio_icif_resources.URAN_235_SMALL.get());
+        o.accept(mio_icif_resources.URAN_PELLET.get());
+        o.accept(mio_icif_normal.RE_ENRICHED_URANIUM.get());
+        o.accept(mio_icif_resources.PLUTONIUM.get());
+        o.accept(mio_icif_resources.PLUTONIUM_SMALL.get());
+        o.accept(mio_icif_resources.MOX.get());
+        o.accept(mio_icif_resources.RTG_PELLET.get());
+        o.accept(mio_icif_resources.THORIUM_DUST.get());
+        o.accept(mio_icif_resources.THORIUM_DUST_SMALL.get());
+        o.accept(mio_icif_resources.THORIUM_SCRAP.get());
+    }
+
+    private static void advancedMaterials(CreativeModeTab.Output o) {
+        // the advanced solar panels' materials
+        o.accept(mio_icif_resources.SUNNARIUM_SMALL.get());
+        o.accept(mio_icif_resources.SUNNARIUM.get());
+        o.accept(mio_icif_resources.SUNNARIUM_ALLOY.get());
+        o.accept(mio_icif_resources.ENRICHED_SUNNARIUM.get());
+        o.accept(mio_icif_resources.ENRICHED_SUNNARIUM_ALLOY.get());
+        o.accept(mio_icif_resources.URANIUM_INGOT.get());
+        o.accept(mio_icif_resources.IRRADIANT_URANIUM_INGOT.get());
+        o.accept(mio_icif_resources.IRIDIUMIRON_PLATE.get());
+        o.accept(mio_icif_resources.IRIDIUMIRON_REINFORCED_PLATE.get());
+        o.accept(mio_icif_resources.IRRADIANT_REINFORCED_PLATE.get());
+        // late-game alloys
+        o.accept(mio_icif_resources.METS_SUPER_IRIDIUM_ALLOY.get());
+        o.accept(mio_icif_resources.METS_SUPER_IRIDIUM_COMPRESS_PLATE.get());
+        o.accept(mio_icif_resources.METS_NEUTRON_PLATE.get());
+        o.accept(mio_icif_resources.METS_NANO_LIVING_METAL.get());
+        o.accept(mio_icif_resources.METS_PLANT_EXTRACT.get());
+    }
+
+    private static void components(CreativeModeTab.Output o) {
+        // circuits
+        o.accept(mio_icif_normal.CIRCUIT.get());
+        o.accept(mio_icif_normal.ADCIRCUIT.get());
+        o.accept(mio_icif_normal.METS_SUPER_CIRCUIT.get());
+        o.accept(mio_icif_normal.METS_LIVING_CIRCUIT.get());
+        // parts
+        o.accept(mio_icif_resources.MOTOR.get());
+        o.accept(mio_icif_resources.COIL.get());
+        o.accept(mio_icif_resources.HEATCONDUCTOR.get());
+        o.accept(mio_icif_resources.DRILL_BIT.get());
+        o.accept(mio_icif_resources.CHAINSAW_BLADE.get());
+        o.accept(mio_icif_resources.IRON_CUT_BLADE.get());
+        o.accept(mio_icif_resources.ADVIRON_CUTBLADE.get());
+        o.accept(mio_icif_resources.DIAMOND_CUT_BLADE.get());
+        o.accept(mio_icif_normal.METS_LENS.get());
+        o.accept(mio_icif_normal.METS_DIAMOND_LENS.get());
+        o.accept(mio_icif_normal.METS_FIELD_GENERATOR.get());
+        o.accept(mio_icif_resources.CRYSTAL_MEMORY_RAW.get());
+        o.accept(mio_icif_resources.CRYSTAL_MEMORY.get());
+        o.accept(mio_icif_resources.QUANTUM_CORE.get());
+        o.accept(mio_icif_resources.MOLECULAR_TRANSFORMER_CORE.get());
+        // shafts, rotor blades and the rotors of the wind and water kinetic generators
+        o.accept(mio_icif_resources.BRONZE_SHAFT.get());
+        o.accept(mio_icif_resources.IRON_SHAFT.get());
+        o.accept(mio_icif_resources.ADVIRON_SHAFT.get());
+        o.accept(mio_icif_resources.METS_TITANIUM_SHAFT.get());
+        o.accept(mio_icif_resources.WOOD_ROTOR_BLADE.get());
+        o.accept(mio_icif_resources.BRONZE_ROTOR_BLADE.get());
+        o.accept(mio_icif_resources.IRON_ROTOR_BLADE.get());
+        o.accept(mio_icif_resources.CARBON_ROTORBLADE.get());
+        o.accept(mio_icif_resources.ADVIRON_ROTOR_BLADE.get());
+        o.accept(mio_icif_resources.TITANIUM_IRON_ROTOR_BLADE.get());
+        o.accept(mio_icif_resources.SUPER_IRIDIUM_ROTOR_BLADE.get());
+        o.accept(mio_icif_items.ROTOR_WOOD.get());
+        o.accept(mio_icif_items.ROTOR_BRONZE.get());
+        o.accept(mio_icif_items.ROTOR_IRON.get());
+        o.accept(mio_icif_items.ROTOR_CARBON.get());
+        o.accept(mio_icif_items.ROTOR_ADVIRON.get());
+        o.accept(mio_icif_items.ROTOR_TITANIUM_IRON.get());
+        o.accept(mio_icif_items.ROTOR_SUPER_IRIDIUM.get());
+        // steam parts
+        o.accept(mio_icif_resources.COPPER_BOILER.get());
+        o.accept(mio_icif_normal.STEAM_TURBIN.get());
+        o.accept(mio_icif_normal.STEAM_TURBINE_BLADE.get());
+        // lathe blanks
+        o.accept(mio_icif_normal.WOODEN_TURNING_BLANKS.get());
+        o.accept(mio_icif_normal.IRON_TURNING_BLANKS.get());
+    }
+
+    /** Batteries and energy crystals, empty then full; the charging ones (they charge your inventory) after them. */
+    private static void batteries(CreativeModeTab.Output o) {
+        batPair(o, mio_icif_normal.BAT_LEV0.get(), 10_000);
+        batPair(o, mio_icif_normal.ADVBAT_LEV0.get(), 100_000);
+        batPair(o, mio_icif_normal.LITHIUM_BATTERY.get(), 50_000);
+        batPair(o, mio_icif_normal.ADV_LITHIUM_BATTERY.get(), 200_000);
+        chargedPair(o, mio_icif_normal.THORIUM_BATTERY.get());
+        crystal(o, mio_icif_normal.CRYSTAL_LEV0.get());
+        crystal(o, mio_icif_normal.LAPOTRON_CRYSTAL_LEV0.get());
+        chargedPair(o, mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get());
+        chargedPair(o, mio_icif_normal.CHARGEBAT_LEV0.get());
+        chargedPair(o, mio_icif_normal.ADVCHARGEBAT_0.get());
+        chargedPair(o, mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get());
+        chargedPair(o, mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get());
+        chargedPair(o, mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get());
+    }
+
+    /** What goes into the nuclear reactor's grid, and the fusion reactor's fuel. */
+    private static void reactorComponents(CreativeModeTab.Output o) {
+        // fuel rods: uranium, MOX, proton (0.1.10.36; octuple 0.1.10.38)
+        o.accept(mio_icif_normal.FUEL_ROD.get());
+        o.accept(mio_icif_reactors.URANIUM_SIMPLE.get());
+        o.accept(mio_icif_reactors.URANIUM_DUAL.get());
+        o.accept(mio_icif_reactors.URANIUM_QUAD.get());
+        o.accept(mio_icif_reactors.URANIUM_SIMPLE_DEPLETED.get());
+        o.accept(mio_icif_reactors.URANIUM_DUAL_DEPLETED.get());
+        o.accept(mio_icif_reactors.URANIUM_QUAD_DEPLETED.get());
+        o.accept(mio_icif_reactors.MOX_SIMPLE.get());
+        o.accept(mio_icif_reactors.MOX_DUAL.get());
+        o.accept(mio_icif_reactors.MOX_QUAD.get());
+        o.accept(mio_icif_reactors.MOX_SIMPLE_DEPLETED.get());
+        o.accept(mio_icif_reactors.MOX_DUAL_DEPLETED.get());
+        o.accept(mio_icif_reactors.MOX_QUAD_DEPLETED.get());
+        o.accept(mio_icif_normal.MOX_QUAD_DEPLETE.get());
+        o.accept(mio_icif_reactors.PROTON_SIMPLE.get());
+        o.accept(mio_icif_reactors.PROTON_DUAL.get());
+        o.accept(mio_icif_reactors.PROTON_QUAD.get());
+        o.accept(mio_icif_reactors.PROTON_OCTUPLE.get());
+        o.accept(mio_icif_reactors.PROTON_SIMPLE_DEPLETED.get());
+        o.accept(mio_icif_reactors.PROTON_DUAL_DEPLETED.get());
+        o.accept(mio_icif_reactors.PROTON_QUAD_DEPLETED.get());
+        o.accept(mio_icif_reactors.PROTON_OCTUPLE_DEPLETED.get());
+        o.accept(mio_icif_reactors.PROTON_OCTUPLE_CASING.get());
+        o.accept(mio_icif_reactors.PROTON_SHARD.get());
+        // neutron sources and breeding
+        o.accept(mio_icif_reactors.ISOTOPE_ROD.get());
+        o.accept(mio_icif_reactors.LITHIUM_CELL.get());
+        o.accept(mio_icif_normal.TRITIUM_CELL.get());   // 0.1.10.36
+        o.accept(mio_icif_reactors.HEATPACK.get());
+        // cooling
+        o.accept(mio_icif_reactors.COLLANT_SIMPLE.get());
+        o.accept(mio_icif_reactors.COLLANT_TRIPLE.get());
+        o.accept(mio_icif_reactors.COOLANT_SIX.get());
+        o.accept(mio_icif_reactors.CONDENSATOR.get());
+        o.accept(mio_icif_reactors.CONDENSATOR_LAP.get());
+        o.accept(mio_icif_reactors.VENT.get());
+        o.accept(mio_icif_reactors.VENT_CORE.get());
+        o.accept(mio_icif_reactors.VENT_SPREAD.get());
+        o.accept(mio_icif_reactors.OVERCLOCKED_HEAT_VENT.get());
+        o.accept(mio_icif_reactors.DIAMOND_VENT.get());
+        o.accept(mio_icif_reactors.IRIDIUM_HEAT_VENT.get());
+        o.accept(mio_icif_reactors.IRIDIUM_OVERCLOCKED_HEAT_VENT.get());
+        o.accept(mio_icif_reactors.STEAM_VENT.get());   // 0.1.10.36: the steam reactor's vents
+        o.accept(mio_icif_reactors.STEAM_VENT_CORE.get());
+        o.accept(mio_icif_reactors.STEAM_VENT_OVERCLOCKED.get());
+        o.accept(mio_icif_reactors.STEAM_VENT_ADVANCED.get());
+        o.accept(mio_icif_reactors.HEAT_SWITCH.get());
+        o.accept(mio_icif_reactors.HEAT_SWITCH_CORE.get());
+        o.accept(mio_icif_reactors.HEAT_SWITCH_SPREAD.get());
+        o.accept(mio_icif_reactors.DIAMOND_HEAT_SWITCH.get());
+        // plating and reflectors
+        o.accept(mio_icif_reactors.PLATE.get());
+        o.accept(mio_icif_reactors.HEAT_PLATE.get());
+        o.accept(mio_icif_reactors.EXPLOSIVE_PLATE.get());
+        o.accept(mio_icif_reactors.REFLECTOR.get());
+        o.accept(mio_icif_reactors.THICK_REFLECTOR.get());
+        o.accept(mio_icif_reactors.IRIDIUM_REFLECTOR.get());
+        // records and configuration
+        o.accept(mio_icif_reactors.REACTOR_BLACKBOX.get());   // 0.1.10.12
+        o.accept(mio_icif_reactors.REACTOR_CONFIG_CARD.get());   // 0.1.11.76
+        // fusion fuel
+        o.accept(mio_icif_normal.DEUTERIUM_CELL.get());   // 0.1.11.92
+        o.accept(mio_icif_normal.FROZEN_NEON_PELLET.get());   // 0.1.11.137
+    }
+
+    /** Machine upgrades, the trade box upgrade kit and the terraformer's templates. */
+    private static void upgrades(CreativeModeTab.Output o) {
+        o.accept(mio_icif_upgrades.OVERCLOCKER_UPGRADE.get());
+        o.accept(mio_icif_upgrades.ENERGY_STORAGE_UPGRADE.get());
+        o.accept(mio_icif_upgrades.TRANSFORMER_UPGRADE.get());
+        o.accept(mio_icif_upgrades.EJECTOR_UPGRADE.get());
+        o.accept(mio_icif_upgrades.PULLING_UPGRADE.get());
+        o.accept(mio_icif_upgrades.FLUID_EJECTOR_UPGRADE.get());
+        o.accept(mio_icif_upgrades.FLUID_PULLING_UPGRADE.get());
+        o.accept(mio_icif_upgrades.THERMAL_RETENTION_UPGRADE.get());   // 0.1.9.1
+        o.accept(mio_icif_upgrades.REDSTONE_INVERTER_UPGRADE.get());
+        o.accept(mio_icif_upgrades.WIRELESS_UPGRADE.get());   // 0.1.11.158: the TESU wireless field
+        o.accept(mio_icif_normal.TRADE_BOX_UPGRADE.get());
+        o.accept(mio_icif_env_templates.EVT_EMPTY.get());
+        o.accept(mio_icif_env_templates.EVT_CULTIVATION.get());
+        o.accept(mio_icif_env_templates.EVT_DESERT.get());
+        o.accept(mio_icif_env_templates.EVT_IRRIGATION.get());
+        o.accept(mio_icif_env_templates.EVT_CHILLING.get());
+        o.accept(mio_icif_env_templates.EVT_FLATIFICATION.get());
+        o.accept(mio_icif_env_templates.EVT_MUSHROOM.get());
+    }
+
+    private static void farming(CreativeModeTab.Output o) {
+        o.accept(mio_icif_resources.FERTILIZER.get());
+        o.accept(mio_icif_normal.WEEDEX.get());
+        // seeds
+        for (String crop : new String[]{"wheat", "carrots", "potato", "cocoa", "coffee", "hops", "melon", "pumpkin", "dandelion", "rose",
+                                        "tulip", "cyazint", "ferru", "cyprium", "stagnium", "plumbiscus", "redwheat", "netherWart",
+                                        "redMushroom", "brownMushroom", "reed", "stickreed", "aurelia", "shining", "blackthorn",
+                                        "venomilia", "eatingplant", "titanium", "uranium"}) seed(o, crop);
+        // ore-rich seeds (vanilla farmland)
+        o.accept(mio_icif_normal.SEED_IRON_RICH.get());
+        o.accept(mio_icif_normal.SEED_COPPER_RICH.get());
+        o.accept(mio_icif_normal.SEED_TIN_RICH.get());
+        o.accept(mio_icif_normal.SEED_TITANIUM_RICH.get());
+        o.accept(mio_icif_normal.SEED_LEAD_RICH.get());
+        o.accept(mio_icif_normal.SEED_URANIUM_RICH.get());
+        // harvests
+        o.accept(mio_icif_resources.TERRA_WART.get());
+        o.accept(mio_icif_resources.MILK_WART.get());
+        o.accept(mio_icif_resources.OIL_BERRY.get());
+        o.accept(mio_icif_resources.BOBS_BERRY.get());
+        o.accept(mio_icif_resources.COFFEE_BEAN.get());
+        o.accept(mio_icif_resources.COFFEE_DUST.get());
+        o.accept(mio_icif_normal.HOPS.get());
+        o.accept(mio_icif_normal.BIOCHAFF.get());
+        o.accept(mio_icif_resources.FUEL_PLANT_BALL.get());
+    }
+
+    private static void food(CreativeModeTab.Output o) {
+        o.accept(mio_icif_normal.COFFEE_0.get());
+        o.accept(mio_icif_normal.COFFEE_1.get());
+        o.accept(mio_icif_normal.COFFEE_2.get());
+        o.accept(mio_icif_normal.BEER.get());
+        o.accept(mio_icif_normal.RUM.get());
+        o.accept(mio_icif_normal.ALE.get());
+        o.accept(mio_icif_normal.BREW.get());
+        o.accept(mio_icif_normal.YOUNGSTER.get());
+        o.accept(mio_icif_normal.EMPTY_MUG.get());
+        o.accept(mio_icif_normal.RED_MUG.get());
+        o.accept(mio_icif_normal.CAN.get());
+        o.accept(mio_icif_normal.TIN_EMPTY_CAN.get());
+        o.accept(mio_icif_normal.TIN_FILLED_CAN.get());
+    }
+
+    /** Buckets, then the universal cell empty and filled, in the same fluid order. */
+    private static void fluids(CreativeModeTab.Output o) {
+        o.accept(mio_icif_fluids.DISTILLEDWATER_BUCKET.get());
+        o.accept(mio_icif_fluids.HOTWATER_BUCKET.get());
+        o.accept(mio_icif_fluids.UNSTABLE_HOTWATER_BUCKET.get());   // 0.1.11.94
+        o.accept(mio_icif_fluids.STEAM_BUCKET.get());
+        o.accept(mio_icif_fluids.SUPERHEATEDSTEAM_BUCKET.get());
+        o.accept(mio_icif_fluids.COOLANT_BUCKET.get());
+        o.accept(mio_icif_fluids.HOTCOOLANT_BUCKET.get());
+        o.accept(mio_icif_fluids.PAHOEHOELAVA_BUCKET.get());
+        o.accept(mio_icif_fluids.BIOMASS_BUCKET.get());
+        o.accept(mio_icif_fluids.BIOGAS_BUCKET.get());
+        o.accept(mio_icif_fluids.CRUDEOIL_BUCKET.get());
+        o.accept(mio_icif_fluids.DIESELOIL_BUCKET.get());
+        o.accept(mio_icif_fluids.CONSTRUCTIONFOAM_BUCKET.get());
+        o.accept(mio_icif_fluids.UUMATTER_BUCKET.get());
+        o.accept(mio_icif_cells.CELL_EMPTY.get());
+        cell(o, Fluids.WATER);
+        cell(o, Fluids.LAVA);
+        cell(o, mio_icif_fluids.DISTILLEDWATER.get());
+        cell(o, mio_icif_fluids.HOTWATER.get());
+        cell(o, mio_icif_fluids.UNSTABLE_HOTWATER.get());
+        cell(o, mio_icif_fluids.STEAM.get());
+        cell(o, mio_icif_fluids.SUPERHEATEDSTEAM.get());
+        cell(o, mio_icif_fluids.COOLANT.get());
+        cell(o, mio_icif_fluids.HOTCOOLANT.get());
+        cell(o, mio_icif_fluids.PAHOEHOELAVA.get());
+        cell(o, mio_icif_fluids.BIOMASS.get());
+        cell(o, mio_icif_fluids.BIOGAS.get());
+        cell(o, mio_icif_fluids.CONSTRUCTIONFOAM.get());
+        cell(o, mio_icif_fluids.UUMATTER.get());
+        cell(o, mio_icif_fluids.AIR.get());
+    }
+
+    private static void miscItems(CreativeModeTab.Output o) {
+        o.accept(mio_icif_normal.ENTITY_RUBBER_BOAT.get());
+        o.accept(mio_icif_normal.BROKEN_RUBBER_BOAT.get());
+        o.accept(mio_icif_normal.ENTITY_COAL_BOAT.get());
+        o.accept(mio_icif_normal.ENTITY_ELECTRIC_BOAT.get());
+        o.accept(mio_icif_normal.COIN.get());
+        o.accept(mio_icif_normal.ID_CARD.get());
+        o.accept(mio_icif_normal.INTELLIGENCE.get());
+        o.accept(mio_icif_normal.MODIFY.get());
+        o.accept(mio_icif_normal.STUFF.get());
+        o.accept(mio_icif_normal.DRAGONBLOOD.get());
+    }
+
+    // ================================================================== blocks
+
+    private static void grid(CreativeModeTab.Output o) {
+        // bare and insulated wires by voltage
+        o.accept(mio_icif_blocks.WIRE_LV.get());
+        o.accept(mio_icif_blocks.WIRE_MV.get());
+        o.accept(mio_icif_blocks.WIRE_HV.get());
+        o.accept(mio_icif_blocks.WIRE_EV.get());
+        o.accept(mio_icif_blocks.WIRE_IV.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_LV.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_MV.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_HV.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_EV.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_HV_2.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_EV_2.get());
+        o.accept(mio_icif_blocks.WIRE_ISOLATION_EV_3.get());
+        o.accept(mio_icif_blocks.SUPERCONDUCTING_CABLE.get());
+        // special cables
+        o.accept(mio_icif_blocks.WIRE_DETECTOR.get());
+        o.accept(mio_icif_blocks.WIRE_SPLITTER.get());
+        o.accept(mio_icif_blocks.WIRE_BREAKER.get());   // 0.1.10.22
+        o.accept(mio_icif_blocks.WIRE_FUSE.get());
+        // 0.1.11.177: the voltage checker is hidden (still registered, so placed ones survive)
+        // transformers
+        o.accept(mio_icif_blocks.TRANSFORMER_LV_MV.get());
+        o.accept(mio_icif_blocks.TRANSFORMER_MV_HV.get());
+        o.accept(mio_icif_blocks.TRANSFORMER_HV_EV.get());
+        o.accept(mio_icif_blocks.TRANSFORMER_EV_SC.get());
+        o.accept(mio_icif_blocks.TRANSFORMER_IV_LUV.get());
+        o.accept(mio_icif_blocks.TRANSFORMER_LUV_ZPMV.get());
+        // wireless power, the grid-tie interface (Energy Converter id; a legacy block from 0.1.10.39 to 0.1.11.0) and the terminal
+        o.accept(mio_icif_blocks.WIRELESS_POWER_TRANSMISSION_NODE.get());
+        o.accept(mio_icif_blocks.ENERGY_CONVERTER.get());
+        o.accept(mio_icif_blocks.ENERGY_TERMINAL.get());
+    }
+
+    /** Each storage block as crafted, then full; the chargers beside them. */
+    private static void energyStorage(CreativeModeTab.Output o) {
+        storageBlock(o, mio_icif_blocks.BAT_BOX.get(), 40_000L, "mio_icif:batbox");
+        storageBlock(o, mio_icif_blocks.BATBOX_CHARGER.get(), 40_000L, "mio_icif:batbox_charger");
+        storageBlock(o, mio_icif_blocks.CESU.get(), 300_000L, "mio_icif:cesu");
+        storageBlock(o, mio_icif_blocks.CESU_CHARGER.get(), 300_000L, "mio_icif:cesu_charger");
+        storageBlock(o, mio_icif_blocks.MFE.get(), 4_000_000L, "mio_icif:mfe");
+        storageBlock(o, mio_icif_blocks.MFE_CHARGER.get(), 4_000_000L, "mio_icif:mfe_charger");
+        storageBlock(o, mio_icif_blocks.MFSU.get(), 40_000_000L, "mio_icif:mfsu");
+        storageBlock(o, mio_icif_blocks.MFSU_CHARGER.get(), 40_000_000L, "mio_icif:mfsu_charger");
+        storageBlock(o, mio_icif_blocks.LESU.get(), 1_000_000L, "mio_icif:lesu");
+        storageBlock(o, mio_icif_blocks.LESU_CHARGER.get(), 1_000_000L, "mio_icif:lesu_charger");
+        storageBlock(o, mio_icif_blocks.EESU.get(), 400_000_000L, "mio_icif:eesu");
+        storageBlock(o, mio_icif_blocks.EESU_CHARGER.get(), 400_000_000L, "mio_icif:eesu_charger");
+        // GESU
+        storageBlock(o, mio_icif_blocks.GESU_CORE.get(), 2_147_483_647L, "mio_icif:gesu_core");
+        o.accept(mio_icif_blocks.GESU_INPUT_IV.get());
+        o.accept(mio_icif_blocks.GESU_OUTPUT_IV.get());
+        o.accept(mio_icif_blocks.GESU_OUTPUT_LUV.get());
+        // TESU (0.1.11.157; 227,000,000,000 EU since 0.1.11.158) and its wireless field (the connector is with the tools)
+        storageBlock(o, mio_icif_blocks.TESU_CONTROLLER.get(), 227_000_000_000L, "mio_icif:tesu_controller");
+        o.accept(mio_icif_blocks.TESU_INPUT.get());
+        o.accept(mio_icif_blocks.TESU_OUTPUT.get());
+        o.accept(mio_icif_blocks.TESU_CASING.get());
+        o.accept(mio_icif_blocks.TESU_CELL.get());
+        o.accept(mio_icif_blocks.TESU_WIRELESS_PORT.get());
+        o.accept(mio_icif_blocks.TESU_RELAY.get());
+    }
+
+    /** EU generators, then kinetic, heat and steam. */
+    private static void generators(CreativeModeTab.Output o) {
+        o.accept(mio_icif_blocks.THERMAL_GENERATOR.get());
+        o.accept(mio_icif_blocks.GEO_GENERATOR.get());
+        o.accept(mio_icif_blocks.WATER_GENERATOR.get());
+        o.accept(mio_icif_blocks.WIND_GENERATOR.get());
+        // solar panels
+        o.accept(mio_icif_blocks.SOLAR_GENERATOR.get());
+        o.accept(mio_icif_blocks.ADVANCED_SOLAR_PANEL.get());
+        o.accept(mio_icif_blocks.HYBRID_SOLAR_PANEL.get());
+        o.accept(mio_icif_blocks.ULTIMATE_HYBRID_SOLAR_PANEL.get());
+        o.accept(mio_icif_blocks.QUANTUM_SOLAR_PANEL.get());
+        o.accept(mio_icif_blocks.METS_ADVANCED_SOLAR_GENERATOR.get());
+        o.accept(mio_icif_blocks.PHOTON_RESONANCE_SOLAR_GENERATOR.get());
+        o.accept(mio_icif_blocks.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR.get());
+        // fuel generators
+        o.accept(mio_icif_blocks.SEMIFLUID_GENERATOR.get());
+        o.accept(mio_icif_blocks.ADVANCED_SEMIFLUID_GENERATOR.get());
+        o.accept(mio_icif_blocks.DIESEL_GENERATOR.get());
+        o.accept(mio_icif_blocks.RT_GENERATOR.get());
+        o.accept(mio_icif_blocks.DROP_GENERATOR.get());
+        o.accept(mio_icif_blocks.ADVANCED_DROP_GENERATOR.get());
+        o.accept(mio_icif_blocks.EXPERIENCE_GENERATOR.get());
+        o.accept(mio_icif_blocks.ADVANCED_EXPERIENCE_GENERATOR.get());
+        // geomagnetic
+        o.accept(mio_icif_blocks.GEOMAGNETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.GEOMAGNETIC_ANTENNA.get());
+        o.accept(mio_icif_blocks.GEOMAGNETIC_PEDESTAL.get());
+        // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive), and so is the quantum generator
+        o.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
+        // kinetic
+        o.accept(mio_icif_blocks.MANUAL_KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.STIRLING_KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.WIND_KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.WATER_KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.KINETIC_GENERATOR_ELC.get());
+        o.accept(mio_icif_blocks.KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.TURBO_KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.TWIN_TURBO_KINETIC_GENERATOR.get());
+        // heat
+        o.accept(mio_icif_blocks.SOLID_HEAT_GENERATOR.get());
+        o.accept(mio_icif_blocks.FLUID_HEAT_GENERATOR.get());
+        o.accept(mio_icif_blocks.RT_HEAT_GENERATOR.get());
+        o.accept(mio_icif_blocks.HEAT_GENERATOR_ELC.get());
+        o.accept(mio_icif_blocks.HEAT_SOURCE_FLUID.get());
+        o.accept(mio_icif_blocks.STIRLING_GENERATOR.get());
+        o.accept(mio_icif_blocks.ADVANCED_STIRLING_GENERATOR.get());
+        // steam, the steam tunnel (0.1.10.39) and its rotors (0.1.10.41)
+        o.accept(mio_icif_blocks.STEAM_GENERATOR.get());
+        o.accept(mio_icif_blocks.STEAM_KINETIC_GENERATOR.get());
+        o.accept(mio_icif_blocks.SOLAR_DISTILLER.get());
+        o.accept(mio_icif_blocks.STEAM_REPRESSURIZER.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE.get());   // 0.1.10.36
+        o.accept(mio_icif_blocks.STEAM_TUNNEL.get());
+        o.accept(mio_icif_blocks.STEAM_TUNNEL_CASING.get());
+        o.accept(mio_icif_blocks.STEAM_TUNNEL_FLUID_PORT.get());
+        o.accept(mio_icif_blocks.STEAM_TUNNEL_POWER_PORT.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_BRONZE.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRON.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_ADVIRON.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_TITANIUM.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_IRIDIUM.get());
+        o.accept(mio_icif_blocks.STEAM_TURBINE_ROTOR_NETHERITE.get());
+    }
+
+    /** The nuclear reactors' blocks and the fusion reactor's. */
+    private static void reactors(CreativeModeTab.Output o) {
+        o.accept(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
+        o.accept(mio_icif_blocks.REACTOR_CHAMBER.get());
+        o.accept(mio_icif_blocks.STEAM_REACTOR.get());   // 0.1.10.36
+        o.accept(mio_icif_blocks.STEAM_REACTOR_CHAMBER.get());
+        o.accept(mio_icif_blocks.REACTOR_VESSEL.get());
+        o.accept(mio_icif_blocks.REACTOR_ACCESS_HATCH.get());
+        o.accept(mio_icif_blocks.REACTOR_FLUID_PORT.get());
+        o.accept(mio_icif_blocks.REACTOR_REDSTONE_PORT.get());
+        o.accept(mio_icif_blocks.REDSTONE_REACTOR_COOLANT_INJECTOR.get());
+        o.accept(mio_icif_blocks.LAPIS_REACTOR_COOLANT_INJECTOR.get());
+        o.accept(mio_icif_blocks.FUSION_CONTROLLER.get());   // 0.1.11.89
+        o.accept(mio_icif_blocks.FUSION_CENTRAL_SOLENOID.get());
+        o.accept(mio_icif_blocks.FUSION_TOROIDAL_COIL.get());
+        o.accept(mio_icif_blocks.FUSION_POLOIDAL_COIL.get());
+        o.accept(mio_icif_blocks.FUSION_VACUUM_VESSEL.get());
+        o.accept(mio_icif_blocks.FUSION_BLANKET.get());
+        o.accept(mio_icif_blocks.FUSION_VIEWPORT.get());   // 0.1.11.139
+        o.accept(mio_icif_blocks.FUSION_DIVERTOR.get());
+        o.accept(mio_icif_blocks.FUSION_CRYOSTAT.get());
+        o.accept(mio_icif_blocks.FUSION_NBI_PORT.get());
+        o.accept(mio_icif_blocks.FUSION_ECRH_PORT.get());
+        o.accept(mio_icif_blocks.FUSION_FUEL_PORT.get());
+        o.accept(mio_icif_blocks.FUSION_EXHAUST_PORT.get());
+        o.accept(mio_icif_blocks.FUSION_CRYO_PORT.get());
+        o.accept(mio_icif_blocks.FUSION_POWER_PORT.get());
+        o.accept(mio_icif_blocks.FUSION_MITIGATION_PORT.get());
+    }
+
+    private static void machines(CreativeModeTab.Output o) {
+        // basic processing
+        o.accept(mio_icif_blocks.FURNACE_ELC.get());
+        o.accept(mio_icif_blocks.INDUCTION_ELC.get());
+        o.accept(mio_icif_blocks.POWDER_ELC.get());
+        o.accept(mio_icif_blocks.POWDER_ADVANCED_ELC.get());
+        o.accept(mio_icif_blocks.COMPRESSOR_ELC.get());
+        o.accept(mio_icif_blocks.COMPRESSOR_ADVANCED_ELC.get());
+        o.accept(mio_icif_blocks.EXTRACTOR_ELC.get());
+        o.accept(mio_icif_blocks.WASHER_ELC.get());
+        o.accept(mio_icif_blocks.METAL_FORMER.get());
+        o.accept(mio_icif_blocks.METAL_FORMER_ADVANCED.get());
+        o.accept(mio_icif_blocks.BLOCK_CUTTER.get());
+        o.accept(mio_icif_blocks.LATHE.get());
+        o.accept(mio_icif_blocks.CANNER_ELC.get());
+        o.accept(mio_icif_blocks.RECYCLER_ELC.get());
+        o.accept(mio_icif_blocks.BLAST_FURNACE.get());
+        o.accept(mio_icif_blocks.BLAST_FURNACE_ELC.get());
+        o.accept(mio_icif_blocks.BLAST_FURNACE_ADVANCED.get());
+        // chemistry and fluids
+        o.accept(mio_icif_blocks.CENTRIFUGE_ELC.get());
+        o.accept(mio_icif_blocks.ELECTROLYZER.get());
+        o.accept(mio_icif_blocks.MAGNETIZER.get());
+        o.accept(mio_icif_blocks.PUMP_ELC.get());
+        o.accept(mio_icif_blocks.CONDENSER.get());
+        o.accept(mio_icif_blocks.FERMENTER_ELC.get());
+        o.accept(mio_icif_blocks.OIL_REFINERY_ELC.get());
+        // UU-matter
+        o.accept(mio_icif_blocks.MATTER_ELC.get());
+        o.accept(mio_icif_blocks.LARGE_FABRICATOR_CORE.get());
+        o.accept(mio_icif_blocks.LARGE_FABRICATOR_INPUT_IV.get());
+        o.accept(mio_icif_blocks.LARGE_FABRICATOR_TANK.get());
+        o.accept(mio_icif_blocks.LARGE_FABRICATOR_SCRAP.get());
+        o.accept(mio_icif_blocks.SCANNER_ELC.get());
+        o.accept(mio_icif_blocks.REPLICATOR_ELC.get());
+        o.accept(mio_icif_blocks.NEUTRON_POLYMERIZER.get());
+        o.accept(mio_icif_blocks.MOLECULAR_TRANSFORMER.get());
+        // special machines
+        o.accept(mio_icif_blocks.TELEPORTER_ELC.get());
+        o.accept(mio_icif_blocks.TERRA_ELC.get());
+        o.accept(mio_icif_blocks.INDUSTRIAL_WORKBENCH.get());
+        o.accept(mio_icif_blocks.BATCH_CRAFTER.get());
+        o.accept(BuilderRegistry.BUILDER_ITEM.get());
+        o.accept(mio_icif_blocks.CHUNK_LOADER.get());
+        // agriculture
+        o.accept(mio_icif_blocks.RESIN_COLLECTOR.get());
+        o.accept(mio_icif_blocks.CROP_STICK.get());
+        o.accept(mio_icif_blocks.CROP_STICK_UPGRADED.get());
+        o.accept(mio_icif_blocks.HARVEST_ELC.get());
+        o.accept(mio_icif_blocks.MATRON_ELC.get());
+        // oil and mining
+        o.accept(mio_icif_blocks.OIL_RIG_CORE.get());
+        o.accept(mio_icif_blocks.OIL_RIG_BASE.get());
+        o.accept(mio_icif_blocks.OIL_RIG_INPUT.get());
+        o.accept(mio_icif_blocks.OIL_RIG_OUTPUT.get());
+        o.accept(mio_icif_blocks.OIL_RIG_PANEL.get());
+        o.accept(mio_icif_blocks.DIMENSION_OIL_RIG_CORE.get());
+        o.accept(mio_icif_blocks.MINER_ELC.get());
+        o.accept(mio_icif_blocks.ADVANCED_MINER_ELC.get());
+        o.accept(mio_icif_blocks.BLOCK_MINING_PIPE.get());
+        o.accept(mio_icif_blocks.BLOCK_MINING_TIP.get());
+        // defence
+        o.accept(mio_icif_blocks.TESLA.get());
+        o.accept(mio_icif_blocks.LASER_DEFENSE_TOWER.get());
+        o.accept(mio_icif_blocks.SKY_PATROL_LASER_TOWER.get());
+        // the armory
+        o.accept(ArmoryRegistry.ARMORY_ITEM.get());
+        o.accept(ArmoryRegistry.SHOWCASE_ITEM.get());
+        o.accept(BuilderRegistry.MATERIAL_INTERFACE_ITEM.get());
+        o.accept(BuilderRegistry.INFINITE_MATERIAL_INTERFACE_ITEM.get());   // 0.1.11.187
+        // trade and futures
+        o.accept(mio_icif_blocks.TRADE_TERMINAL.get());
+        o.accept(mio_icif_blocks.TRADE_BOX.get());   // 0.1.10.42
+        o.accept(mio_icif_blocks.TRADE_BOX_ADVANCED.get());
+        o.accept(mio_icif_blocks.FUTURE_ELC.get());
+    }
+
+    /** Item and fluid transport. */
+    private static void logistics(CreativeModeTab.Output o) {
+        o.accept(mio_icif_blocks.ITEM_BUFFER_ELC.get());
+        o.accept(mio_icif_blocks.SORTER_ELC.get());
+        o.accept(mio_icif_blocks.ITEM_DISTRIBUTOR_ELC.get());
+        o.accept(LogisticsRegistry.EJECTOR_ITEM.get());
+        o.accept(mio_icif_blocks.PIPE_ITEM_INPUT.get());
+        o.accept(mio_icif_blocks.PIPE_ITEM_TRANSPORT.get());
+        // fluids (the legacy water pipe stays registered and craftable for existing worlds)
+        o.accept(mio_icif_blocks.FLUID_DISTRIBUTOR_ELC.get());
+        o.accept(mio_icif_blocks.WEIGHTED_FLUID_DISTRIBUTOR_ELC.get());
+        o.accept(mio_icif_blocks.FLUID_REGULATOR_ELC.get());
+        mio_icif_blocks.FLUID_PIPE_ITEMS.forEach(pipe -> o.accept(pipe.get()));
+        o.accept(mio_icif_blocks.PIPE_WATER_EXTRACT.get());
+    }
+
+    /** Every building block in one run: machine hulls, the iron fence, then all the build/ blocks. */
+    private static void building(CreativeModeTab.Output o) {
+        o.accept(mio_icif_blocks.MACHINE_HULL_BASIC.get());
+        o.accept(mio_icif_blocks.MACHINE_HULL_ADVANCED.get());
+        o.accept(mio_icif_blocks.BLOCK_FENCE_IRON.get());
+        // scaffolds
+        o.accept(mio_icif_blocks.SCAFFOLD_WOOD.get());
+        o.accept(mio_icif_blocks.SCAFFOLD_IRON.get());
+        o.accept(mio_icif_blocks.SCAFFOLD_STEEL.get());
+        o.accept(mio_icif_blocks.SCAFFOLD_CARBON.get());
+        o.accept(mio_icif_blocks.TITANIUM_DRILL_FRAME.get());
+        // storage boxes and tanks, by material
+        o.accept(mio_icif_blocks.STORAGE_BOX_WOOD.get());
+        o.accept(mio_icif_blocks.STORAGE_BOX_BRONZE.get());
+        o.accept(mio_icif_blocks.STORAGE_BOX_IRON.get());
+        o.accept(mio_icif_blocks.STORAGE_BOX_ADVIRON.get());
+        o.accept(mio_icif_blocks.STORAGE_BOX_TITANIUM.get());
+        o.accept(mio_icif_blocks.STORAGE_BOX_IRIDIUM.get());
+        o.accept(mio_icif_blocks.BRONZE_TANK.get());
+        o.accept(mio_icif_blocks.IRON_TANK.get());
+        o.accept(mio_icif_blocks.ADVIRON_TANK.get());
+        o.accept(mio_icif_blocks.TITANIUM_TANK.get());
+        o.accept(mio_icif_blocks.IRIDIUM_TANK.get());
+        // glass, door, construction foam
+        o.accept(mio_icif_blocks.BLOCK_ALLOY_GLASS.get());
+        o.accept(mio_icif_blocks.BLOCK_IRRADIANT_GLASS_PANE.get());
+        o.accept(mio_icif_blocks.BLOCK_ALLOY_DOOR.get());
+        o.accept(mio_icif_blocks.CONSTRUCTION_FOAM.get());
+        o.accept(mio_icif_blocks.CONSTRUCTION_WALL.get());
+        // rubber wood
+        o.accept(mio_icif_blocks.RUBBER_PLANKS.get());
+        o.accept(mio_icif_blocks.RUBBER_STAIRS.get());
+        o.accept(mio_icif_blocks.RUBBER_SLAB.get());
+        o.accept(mio_icif_blocks.RUBBER_FENCE.get());
+        o.accept(mio_icif_blocks.RUBBER_FENCE_GATE.get());
+        o.accept(mio_icif_blocks.RUBBER_DOOR.get());
+        o.accept(mio_icif_blocks.RUBBER_TRAPDOOR.get());
+        o.accept(mio_icif_blocks.RUBBER_PRESSURE_PLATE.get());
+        o.accept(mio_icif_blocks.RUBBER_BUTTON.get());
+        o.accept(mio_icif_blocks.RUBBER_SIGN.get());
+        o.accept(mio_icif_blocks.RUBBER_HANGING_SIGN.get());
+    }
+
+    // ------------------------------------------------------------------ suits (last)
+
+    /**
+     * The suit modification station, then the plugins: quantum-only units and the bay expander, units both suits take, nano-only
+     * units and the lattice densifier, each unit's Mk.II right after its Mk.I; the frame cores last.
+     */
+    private static void suit(CreativeModeTab.Output o) {
+        o.accept(SuitRegistry.STATION_ITEM.get());
+        for (int group = 0; group < 3; group++) {
+            for (SuitModuleType type : SuitModuleType.VALUES) {
+                boolean nano = type.allows(SuitClass.NANO), quantum = type.allows(SuitClass.QUANTUM);
+                int of = type.nanoOnly() ? 2 : nano && quantum ? 1 : 0;
+                if (of != group) continue;
+                o.accept(SuitRegistry.unitItem(type));
+                if (type.hasMk2()) o.accept(SuitRegistry.unitItem(type, 2));
+            }
+            if (group == 0) o.accept(SuitRegistry.BAY_EXPANDER.get());
+            if (group == 2) o.accept(SuitRegistry.LATTICE_DENSIFIER.get());
+        }
+        for (var core : SuitRegistry.cores()) o.accept(core.get());
+    }
 
     /**
      * 创建包含能量数据的BlockEntityTag NBT 标签
@@ -1431,8 +1154,8 @@ public class mio_icif_creativeTabs {
      * @param blockEntityId BlockEntity 的注册ID（如 "mio_icif:batbox"）
      * @return 包含能量数据的CompoundTag
      */
-    private static net.minecraft.nbt.CompoundTag createEnergyTag(long energy, String blockEntityId) {
-        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+    private static CompoundTag createEnergyTag(long energy, String blockEntityId) {
+        CompoundTag tag = new CompoundTag();
         tag.putString("id", blockEntityId);
         tag.putLong("energy", energy);
         return tag;

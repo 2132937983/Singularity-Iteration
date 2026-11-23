@@ -219,8 +219,9 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
         if (rx >= PX && rx < PX + 108 && ry >= 20 && ry < 160 && hoveredSlot == null)
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip_scram1"), Component.translatable(K + "tip_scram2"),
                 Component.translatable(K + "tip_scram3")), mouseX, mouseY);
-        else if (rx >= RX && rx < RX + RW && ry >= RY && ry < RY + RH)
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip_record1"), Component.translatable(K + "tip_record2")), mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the record chart's legend, hidden for now (the SCRAM panel keeps its control help)
+        // else if (rx >= RX && rx < RX + RW && ry >= RY && ry < RY + RH)
+        //     g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip_record1"), Component.translatable(K + "tip_record2")), mouseX, mouseY);
     }
 
     @Override

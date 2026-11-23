@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NWN",
+    "CTC",
+    "NWN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/neutron"
+    },
+    "W": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:wiring/block_wireless_power_transmission_node"
+    },
+    "C": {
+      "tag": "c:circuits/ultimate"
+    },
+    "T": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:wiring/block_tesu_output"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_tesu_wireless_port",
+    "count": 1
+  }
+}

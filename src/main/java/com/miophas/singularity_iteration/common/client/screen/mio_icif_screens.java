@@ -597,6 +597,8 @@ public class mio_icif_screens {
             mio_icif_menus.CREATIVE_GENERATOR_MENU_TYPE.get(),
             CreativeGeneratorScreen::new
         );
+        // 0.1.11.191: TESU output port (its output in EU/t)
+        event.register(mio_icif_menus.TESU_OUTPUT_MENU_TYPE.get(), TesuOutputScreen::new);
 
         event.register(
             mio_icif_menus.CHUNK_LOADER_MENU_TYPE.get(),
@@ -608,6 +610,8 @@ public class mio_icif_screens {
             mio_icif_menus.GESU_CORE_MENU_TYPE.get(),
             mio_icif_gui_gesu_core::new
         );
+        // 0.1.11.157: the TESU controller
+        event.register(mio_icif_menus.TESU_CONTROLLER_MENU_TYPE.get(), TesuControllerScreen::new);
 
         // 注册大型物质生成机核心的 GUI 界面
         event.register(

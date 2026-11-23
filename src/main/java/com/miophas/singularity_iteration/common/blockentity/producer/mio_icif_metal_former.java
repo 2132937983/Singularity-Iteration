@@ -303,6 +303,9 @@ public enum MetalFormerMode {
         progress = 0;
         if (!operation.get().commit()) { progress = completed; stopWork(); return; }
         finishWork();
+        // 0.1.11.174: goes on at once when it can, as the compressor does: it stood still for a tick after each operation
+        // (the screen read "not enough power" then, and the advanced metal former seemed to switch off once per item)
+        if (canWork()) isWorking = true;
         setChanged();
     }
 
@@ -353,7 +356,8 @@ public enum MetalFormerMode {
         if ((switch (currentMode) { case ROLLING -> getRollingRecipe(); case CUTTING -> getCuttingRecipe(); case EXTRUDING -> getExtrudingRecipe(); }) == null) return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_RECIPE;
         if (!(switch (currentMode) { case ROLLING -> canWorkRolling(itemHandler.getStackInSlot(INPUT_SLOT)); case CUTTING -> canWorkCutting(itemHandler.getStackInSlot(INPUT_SLOT)); case EXTRUDING -> canWorkExtruding(itemHandler.getStackInSlot(INPUT_SLOT)); })) return com.miophas.singularity_iteration.common.processing.ProcessStatus.OUTPUT_FULL;
         if (isWorking()) return com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING;
-        return com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
+        // 0.1.11.174: idle with everything ready means it starts on the next tick; "not enough power" only when it is short
+        return hasEnoughEnergy() ? com.miophas.singularity_iteration.common.processing.ProcessStatus.RUNNING : com.miophas.singularity_iteration.common.processing.ProcessStatus.NO_POWER;
     }
 
     /**

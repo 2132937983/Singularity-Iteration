@@ -1,6 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
-import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 
 import com.miophas.singularity_iteration.common.menu.producer.MetalFormerAdvancedMenu;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
@@ -36,6 +36,17 @@ public class mio_icif_gui_metal_former_advanced extends ProcessInstrumentScreen<
         if (running()) spin = (spin + dt * 2.5F) % (float) (2 * Math.PI);
         int max = menu.getMaxProgress();
         FormingFigure.draw(g, cx, cy, menu.getMode().name(), max > 0 ? (float) menu.getProgress() / max : 0, spin, running());
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Former's); 0.1.11.180: 176 wide ----
+    @Override protected int arrowX() { return 120; }
+    @Override protected int arrowY() { return MergedSlots.Former.OUT_Y + 1; }
+    @Override protected int[] machineBody() { return FormingFigure.BENCH_TOOL.clone(); }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        if (running()) spin = (spin + dt * 2.5F) % (float) (2 * Math.PI);
+        FormingFigure.bench(g, menu.getMode().name(), (float) progress(), spin, running());
     }
 
     @Override

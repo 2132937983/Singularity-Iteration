@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null") public class WaterGeneratorMenu extends mio_icif_machine_menu {
     public static final int BUCKET_SLOT = 0;
     public static final int BATTERY_SLOT = 1;
+    /** 0.1.11.181: the bucket over the tank's filler, the battery at the end of the output cable. */
+    public static final int BUCKET_X = 10, BUCKET_Y = 17, BATTERY_X = 146, BATTERY_Y = 58;
     public static final int SLOT_COUNT = 2;
     /** 0.1.11.18: 0 energy, 1 capacity, 2 generating, 3 EU/t, 4 water mB, 5 tank, 6 water in front, 7 EU/t from the water in front, 8 its speed x1000, 9 source. */
     public static final int DATA_COUNT = 10;
@@ -40,13 +42,13 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, BUCKET_SLOT, 10, 30) {
+        this.addSlot(new SlotItemHandler(itemHandler, BUCKET_SLOT, BUCKET_X, BUCKET_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.is(Items.WATER_BUCKET);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 70) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, BATTERY_X, BATTERY_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
@@ -124,7 +126,7 @@ import org.jetbrains.annotations.Nullable;
     @Override protected int progressDataIndex() { return -1; }
 
     // 0.1.11.18: the 248 x 204 rotor cross-section screen
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

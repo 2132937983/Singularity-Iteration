@@ -19,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
     public static final int BATTERY_SLOT = 6;
     public static final int UPGRADE_SLOT = 7;
     public static final int SLOT_COUNT = 8;
+    /** 0.1.11.181: the item positions in the drawing. */
+    public static final int VENT_X = 35, VENT_Y = 18, VENT_STEP = 20, CONTAINER_X = 138, CONTAINER_IN_Y = 18, CONTAINER_OUT_Y = 44,
+        BATTERY_X = 10, BATTERY_Y = 58;
 
     public CondenserMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -46,13 +49,12 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_1, 10, 18));
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_2, 30, 18));
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_3, 10, 38));
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_4, 30, 38));
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_BUCKET_SLOT, 10, 62));
-        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_BUCKET_SLOT, 30, 62));
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 88));
+        // 0.1.11.181: the vents on the condenser's deck, the containers at the distilled water tank's filler, the battery
+        // cabled to the fans (CondenserScreen draws round these places)
+        for (int k = 0; k < 4; k++) this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_1 + k, VENT_X + k * VENT_STEP, VENT_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_BUCKET_SLOT, CONTAINER_X, CONTAINER_IN_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_BUCKET_SLOT, CONTAINER_X, CONTAINER_OUT_Y));
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, BATTERY_X, BATTERY_Y));
         this.addUpgradeSlot(UPGRADE_SLOT, 30, 88);
     }
 
@@ -92,7 +94,7 @@ import org.jetbrains.annotations.Nullable;
     @Override
     protected void addPlayerInventory(net.minecraft.world.entity.player.Inventory playerInventory, int startY, int hotbarY) {
         for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
-            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 44 + j * 18, startY + i * 18));
-        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 44 + i * 18, hotbarY));
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 8 + i * 18, hotbarY));
     }
 }

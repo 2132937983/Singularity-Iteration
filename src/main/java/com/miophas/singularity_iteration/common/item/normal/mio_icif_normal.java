@@ -106,6 +106,8 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> CRYSTAL_CHARGEBAT_LEV0 = ITEMS.register("normal/item_crystal_chargebat_lev0", () -> new mio_icif_bat(new Item.Properties(), 4000000, 4000000, "item_crystal_chargebat", 8192)); // 空电状态（0FE，最低）
 
     // 能量水晶 (对应原版IC2 energy_crystal: 1000000EU, 2048EU/t, Tier 3, 可堆叠)
+    // 0.1.11.158: links TESU relays to a wireless output port or another relay
+    public static final DeferredItem<Item> TESU_CONNECTOR = ITEMS.register("normal/item_tesu_connector", () -> new TesuConnectorItem(new Item.Properties()));
     public static final DeferredItem<Item> CRYSTAL_LEV0 = ITEMS.register("normal/item_crystal_lev0", () -> new mio_icif_bat(new Item.Properties(), 1000000, 1000000, "normal/item_crystal", 2048, 16)); // 空电状态（0FE，最低）
 
 
@@ -166,8 +168,9 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> TIN_FILLED_CAN = ITEMS.register("normal/item_tin_filled_can",
         () -> new com.miophas.singularity_iteration.common.item.food.TinCanFoodItem(new Item.Properties()));
     public static final DeferredItem<Item> TOOL_MFSU_UPGRADE_KIT = ITEMS.register("normal/item_tool_mfsu_upgrade_kit", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> TOOLBOX = ITEMS.register("normal/item_toolbox", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> TOOLBOX_X = ITEMS.register("normal/item_toolbox_x", () -> new Item(new Item.Properties()));
+    // 0.1.11.170: real toolboxes (they were plain items: no GUI, nothing went in): 9 slots, and 27 for the advanced one
+    public static final DeferredItem<Item> TOOLBOX = ITEMS.register("normal/item_toolbox", () -> new com.miophas.singularity_iteration.common.item.tools.mio_icif_toolbox(new Item.Properties()));
+    public static final DeferredItem<Item> TOOLBOX_X = ITEMS.register("normal/item_toolbox_x", () -> new com.miophas.singularity_iteration.common.item.tools.mio_icif_toolbox(new Item.Properties(), com.miophas.singularity_iteration.common.item.tools.mio_icif_toolbox.ADVANCED_SIZE));
     // 0.1.10.36: a reactor component (neutron source) instead of a plain item; the id stays for saves and recipes
     public static final DeferredItem<Item> TRITIUM_CELL = ITEMS.register("normal/item_tritium_cell",
         () -> new com.miophas.singularity_iteration.common.item.reactor.mio_icif_tritium_cell(new Item.Properties().component(

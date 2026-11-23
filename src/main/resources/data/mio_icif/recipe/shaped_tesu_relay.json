@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PWP",
+    "CHC",
+    "PFP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/titanium"
+    },
+    "W": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:wiring/block_wireless_power_transmission_node"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "H": {
+      "item": "mio_icif:wiring/block_tesu_casing"
+    },
+    "F": {
+      "item": "mio_icif:normal/item_field_generator"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_tesu_relay",
+    "count": 1
+  }
+}

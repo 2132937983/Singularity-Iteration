@@ -778,6 +778,10 @@
       "required": false
     },
     {
+      "id": "mio_icif:producer/block_infinite_material_interface",
+      "required": false
+    },
+    {
       "id": "mio_icif:pipe/block_pipe_ejector",
       "required": false
     },
@@ -919,6 +923,38 @@
     },
     {
       "id": "mio_icif:block_raw_silver",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_casing",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_cell",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_controller",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_input",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_output",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_wireless_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_relay",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_relay_column",
       "required": false
     }
   ]

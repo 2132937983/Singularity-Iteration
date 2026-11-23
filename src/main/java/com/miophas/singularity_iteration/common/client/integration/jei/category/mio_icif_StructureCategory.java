@@ -127,8 +127,8 @@ public class mio_icif_StructureCategory implements IRecipeCategory<StructureBlue
         @Override public ScreenRectangle getArea() { return area; }
 
         private Component layerLabel() {
-            return view.layer() < 0 ? Component.translatable("jei.mio_icif.structure.layer_all", view.blueprint().sizeY())
-                : Component.translatable("jei.mio_icif.structure.layer", view.layer() + 1, view.blueprint().sizeY());
+            return view.layer() < 0 ? Component.translatable("jei.mio_icif.structure.layer_all", view.sizeY())
+                : Component.translatable("jei.mio_icif.structure.layer", view.layer() + 1, view.sizeY());
         }
 
         private int labelWidth() {

@@ -1,23 +1,24 @@
 {
-    "parent": "block/cube",
-    "textures": {
-        "particle": "mio_icif:block/producer/block_machine",
-        "particle_ub": "mio_icif:block/wiring/block_lesu_chargepad",
-        "all_lbr": "mio_icif:block/wiring/block_lesu_chargepad",
-        "face": "mio_icif:block/wiring/block_lesu_chargepad"
-    },
-    "elements": [
-        {
-            "from": [ 0, 0, 0 ],
-            "to": [ 16, 15, 16 ],
-            "faces": {
-                "down":  { "uv": [8,0, 9.33,16], "texture": "#particle_ub", "cullface": "down" },
-                "up":    { "uv": [9.33,0, 10.66,16], "texture": "#particle_ub" },
-                "south": { "uv": [14.66,0, 16,16], "texture": "#all_lbr" },
-                "north": { "uv": [12,0, 13.33,16], "texture": "#all_lbr" },
-                "west":  { "uv": [13.33,0, 14.66,16], "texture": "#all_lbr" },
-                "east":  { "uv": [10.66,0, 12,16], "texture": "#all_lbr" }
-            }
-        }
-    ]
+	"format_version": "26.3",
+	"credit": "Made with Blockbench",
+	"parent": "block/cube",
+	"texture_size": [96, 16],
+	"textures": {
+		"particle_ub": "mio_icif:block/wiring/block_lesu_chargepad",
+		"particle": "mio_icif:block/producer/block_machine"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [8, 0, 10.66667, 16], "texture": "#particle_ub"},
+				"east": {"uv": [10.66667, 0, 13.33333, 16], "texture": "#particle_ub"},
+				"south": {"uv": [5.33333, 0, 8, 16], "texture": "#particle_ub"},
+				"west": {"uv": [10.66667, 0, 13.33333, 16], "texture": "#particle_ub"},
+				"up": {"uv": [13.33334, 0, 16, 16], "texture": "#particle_ub"},
+				"down": {"uv": [0, 0, 2.66667, 16], "texture": "#particle_ub", "cullface": "down"}
+			}
+		}
+	]
 }

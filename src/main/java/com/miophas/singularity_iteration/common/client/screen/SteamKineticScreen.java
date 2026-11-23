@@ -15,6 +15,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 /**
  * 0.1.11.16: the steam kinetic generator's mimic: the steam tank and inlet, the turbine with its wear, the shaft to the
  * kinetic output on the front, the condensate (distilled water) tank, and the exhaust to a condenser or a vent.
+ *
+ * <p>0.1.11.181 (176 wide, merged): the turbine slot in the turbine casing (its wear shows on the item), drawn on the panel.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -26,35 +28,37 @@ public class SteamKineticScreen extends MimicScreen<SteamKineticGeneratorMenu> {
     private int v(int i) { return menu.value(i); }
 
     @Override
-    protected void drawWindow(GuiGraphics g, int x, int y, double time) {
-        float u = WindRoseView.u();
+    protected void drawMachine(GuiGraphics g, int x, int y, double time) {
         boolean hot = v(0) != 0, hasSteam = v(15) >= 0 && v(9) > 0;
-        int inlet = hasSteam ? PlantMimic.colour(hot ? 401 : 180) : 0xFFB0B6B8;
+        int inlet = hasSteam ? (hot ? MachineArt.HOT_STEAM : MachineArt.STEAM) : 0;
         double flow = v(4) > 0 ? Math.min(1.5, v(4) / 1000.0) : 0;
-        PlantMimic.tank(g, x + 6, y + 8, 8, 44, v(10) > 0 ? v(9) / (double) v(10) : 0, inlet);
-        PlantMimic.pipe(g, new float[]{x + 14, y + 24, x + 46, y + 24}, inlet, 3, flow, time);
-        PlantMimic.turbine(g, x + 46, y + 8, 40, 34, flow > 0 ? time : 0);
-        PlantMimic.shaft(g, x + 86, y + 25, x + 110, y + 25);
-        PlantMimic.machine(g, x + 118, y + 25, 8, "KU", 0xFFDDE3E6, u);
-        // turbine wear under the casing
-        float life = v(14) / 1000F;
-        FcsDraw.fill(g, x + 46, y + 45, x + 86, y + 48, 0xFF33393A);
-        WindRoseView.fill(g, x + 46, y + 45, 40 * life, 3, life > 0.25F ? 0xFF2F6E4F : 0xFFC0392B);
-        // condensate tank
-        PlantMimic.tank(g, x + 96, y + 36, 6, 18, v(16) > 0 ? v(6) / (double) v(16) : 0, PlantMimic.DISTILLED);
-        // exhaust
+        int tx = SteamKineticGeneratorMenu.TURBINE_X - 19;
+        // 0.1.11.181: the steam tank, the turbine casing with the turbine slot in it (its wear is the item's own bar), the shaft
+        // to the kinetic coupling; the exhaust down to the condenser (or the vent stack) and the condensate tank
+        MachineArt.level(g, x + 12, y + 19, 8, 40, v(10) > 0 ? v(9) / (double) v(10) : 0, hasSteam ? inlet : MachineArt.STEAM);
+        MachineArt.pipe(g, x + 22, x + tx, y + 32, flow > 0 ? inlet : 0, MachineArt.phase(time, flow));
+        MachineArt.turbine(g, x + tx, y + 17, 54, 40, flow > 0 ? time : -1);
+        MachineArt.shaft(g, x + tx + 54, x + 116, y + 37);
+        MachineArt.coupling(g, x + 116, y + 28, 22, 18);
+        MachineArt.level(g, x + 100, y + 52, 6, 14, v(16) > 0 ? v(6) / (double) v(16) : 0, MachineArt.DISTILLED);
         boolean condensed = v(12) != 0;
-        PlantMimic.pipe(g, new float[]{x + 76, y + 42, x + 76, y + 52, x + 140, y + 52}, PlantMimic.colour(condensed ? 46 : 100), 3, flow, time);
+        int exhaust = flow > 0 ? (condensed ? MachineArt.DISTILLED : MachineArt.STEAM) : 0;
+        MachineArt.pipeDown(g, x + 74, y + 57, y + 72, exhaust, MachineArt.phase(time, flow));
+        MachineArt.pipe(g, x + 72, x + 140, y + 70, exhaust, MachineArt.phase(time, flow));
         if (condensed) {
-            PlantMimic.box(g, x + 140, y + 42, 40, 16, 0xFFDBE6EF);
-            PlantMimic.label(g, Component.translatable(K + "condenser"), x + 160, y + 46, 0x1C2524);
+            MachineArt.steel(g, x + 140, y + 60, 24, 16);
+            MachineArt.sunk(g, x + 143, y + 63, 18, 10, 0xFFDBE6EF);
         } else {
-            PlantMimic.vent(g, x + 140, y + 36, 18, v(8) != 0, time);
-            PumpCrossSection.text(g, Component.translatable(K + "to_air"), x + 148, y + 46, WindRoseView.DIM, u);
+            MachineArt.steel(g, x + 146, y + 50, 6, 26);
+            if (v(8) != 0) for (int k = 0; k < 3; k++) {
+                double t = (time / 10 + k / 3.0) % 1;
+                FcsDraw.disc(g, x + 149 + (float) Math.sin(t * 6 + k) * 2, y + 48 - (float) (t * 10), 1.2F + (float) t * 2, 0x80FFFFFF);
+            }
         }
-        PlantMimic.label(g, Component.literal(f("%,d KU/t", v(4))), x + 148, y + 21, 0x2A5D8A);   // 0.1.11.145: room for the vanilla font
+        float life = v(14) / 1000F;
 
         Component fluid = hasSteam ? BuiltInRegistries.FLUID.byId(v(15)).getFluidType().getDescription() : Component.translatable(K + "no_steam");
+
         line(g, x, y, 0, Component.translatable(K + "kinetic_inlet", fluid, f("%,d", v(9)), f("%,d", v(10)), f("%.2f", v(11) / 100.0)), WindRoseView.INK);
         double quality = v(13) / 1000.0;
         line(g, x, y, 1, Component.translatable(K + "kinetic_expansion", condensed ? "0.1" : "1.0", Math.round(quality * 100) + "%",
@@ -74,8 +78,9 @@ public class SteamKineticScreen extends MimicScreen<SteamKineticGeneratorMenu> {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= wx && rx < wx + ww && ry >= wy && ry < wy + wh)
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.kinetic1"), Component.translatable(K + "tip.kinetic2"),
-                Component.translatable(K + "tip.turbine3")), mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the drawing's how-it-works text, hidden for now
+        // if (overMachine(rx, ry))
+        //     g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.kinetic1"), Component.translatable(K + "tip.kinetic2"),
+        //         Component.translatable(K + "tip.turbine3")), mouseX, mouseY);
     }
 }

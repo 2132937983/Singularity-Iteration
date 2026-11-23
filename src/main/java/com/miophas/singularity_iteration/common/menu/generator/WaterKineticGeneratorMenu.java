@@ -113,7 +113,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, ROTOR_SLOT, 10, 30) {
+        this.addSlot(new SlotItemHandler(itemHandler, ROTOR_SLOT, ROTOR_X, ROTOR_Y) {   // 0.1.11.181: at the disc's hub
             @Override
             public boolean mayPlace(ItemStack stack) {
                 if (!(stack.getItem() instanceof IKineticRotor)) return false;
@@ -123,7 +123,9 @@ import org.jetbrains.annotations.Nullable;
     }
 
     // 0.1.11.18: the 248 x 204 rotor cross-section screen
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 162, HOTBAR_Y = 220;
+    /** 0.1.11.181: the rotor at the hub of the disc (its centre at 37, 45 in WaterRotorScreen). */
+    public static final int ROTOR_X = 29, ROTOR_Y = 37;
 
     @Override
     protected int getPlayerInventoryY() { return INVENTORY_Y; }

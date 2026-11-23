@@ -132,7 +132,7 @@ import org.jetbrains.annotations.Nullable;
     @Override
     protected void addPlayerInventory(net.minecraft.world.entity.player.Inventory playerInventory, int startY, int hotbarY) {
         for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
-            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 44 + j * 18, startY + i * 18));
-        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 44 + i * 18, hotbarY));
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 8 + i * 18, hotbarY));
     }
 }

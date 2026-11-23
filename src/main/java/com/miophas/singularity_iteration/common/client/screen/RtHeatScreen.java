@@ -9,7 +9,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-/** 0.1.11.20: the RT heat generator's recorder: the heat offered over the last 12 seconds and the pellets. */
+/** 0.1.11.20: the RT heat generator's recorder: the heat offered over the last 12 seconds and the pellets. *
+ * <p>0.1.11.181 (176 wide, merged): the six pellet slots in a lead container, three by two, the heat pipe out to the record.
+ */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class RtHeatScreen extends MimicScreen<RTHeatGeneratorMenu> {
@@ -17,20 +19,19 @@ public class RtHeatScreen extends MimicScreen<RTHeatGeneratorMenu> {
 
     public RtHeatScreen(RTHeatGeneratorMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        wx = 54;
-        ww = 187;
     }
 
     private int v(int i) { return menu.value(i); }
 
     @Override
-    protected void drawWindow(GuiGraphics g, int x, int y, double time) {
-        float u = WindRoseView.u();
+    protected void drawMachine(GuiGraphics g, int x, int y, double time) {
         int rate = v(2), pellets = v(3);
-        ChartView.draw(g, x + 4, y + 4, 126, 52, i -> v(RTHeatGeneratorMenu.CHART + i), 70, 0xFFD9531E, new int[0],
+        // 0.1.11.181: the pellets in their lead container, the heat out of the front face, the record
+        RtgScreen.container(g, x, y);
+        MachineArt.pipe(g, x + 74, x + 86, y + 40, pellets > 0 ? MachineArt.HEAT : 0, MachineArt.phase(time, pellets > 0 ? 0.5 : 0));
+        ChartView.draw(g, x + 88, y + 18, 78, 56, i -> v(RTHeatGeneratorMenu.CHART + i), 70, 0xFFD9531E, new int[0],
             new ChartView.Ref(64, 0xFF5B6867, Component.literal("64")));
-        PumpCrossSection.text(g, Component.literal(rate + " HU/t"), x + 136, y + 6, 0xA8461F, u);
-        PumpCrossSection.text(g, Component.translatable(K + "pellets", pellets), x + 136, y + 18, 0x1C2524, u);
+
         line(g, x, y, 0, Component.translatable(K + "heat_line", pellets, rate), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "heat_front"), WindRoseView.DIM);
         ReadoutPanel.headline(Component.literal(rate + " HU/t"), Component.translatable(K + (pellets > 0 ? "state.running" : "state.no_pellets")),
@@ -46,8 +47,9 @@ public class RtHeatScreen extends MimicScreen<RTHeatGeneratorMenu> {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= wx && rx < wx + ww && ry >= wy && ry < wy + wh)
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "heat_tip")), mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the drawing's how-it-works text, hidden for now
+        // if (overMachine(rx, ry))
+        //     g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "heat_tip")), mouseX, mouseY);
     }
 
     /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */

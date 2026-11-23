@@ -52,16 +52,21 @@ public final class ReadoutPanel {
      * Writes the collected lines in the area at (x, y) (outer edge, w x h; the window's left edge is x + 1) and closes the
      * panel. 0.1.11.144 (calm layout): no window, the text sits on the panel; the first line in the body colour, the
      * later lines muted, a line in a state colour (running, fault) keeps it.
+     *
+     * <p>0.1.11.181: returns the lines in full when any of them was cut short or left out (the screens show them when the
+     * mouse is over the readouts), else an empty list.
      */
-    public static void end(GuiGraphics g, int x, int y, int w, int h) {
+    public static List<Component> end(GuiGraphics g, int x, int y, int w, int h) {
         List<Entry> lines = open;
         open = null;
-        if (lines == null) return;
+        if (lines == null) return List.of();
         lines.sort((a, b) -> a.order != b.order ? Integer.compare(a.order, b.order) : Integer.compare(a.seq, b.seq));
+        List<Component> full = new ArrayList<>();
+        for (Entry e : lines) full.add(e.text);
         Font font = Minecraft.getInstance().font;
         int maxW = w - 2, rows = (h - 4) / ROW_H, ty = y + 4, used = 0;
         x -= 3;   // the text starts at the window's left edge (x + 1); it was 3 pixels inside the window
-        boolean firstLine = true;
+        boolean firstLine = true, cutShort = false;
         Component headline = head, sideText = side;
         head = null; side = null;
         if (headline != null) {
@@ -74,6 +79,7 @@ public final class ReadoutPanel {
             g.pose().popPose();
             if (sideText != null && !below) g.drawString(font, sideText, right - font.width(sideText), y + 6, sideRgb & 0xFFFFFF, false);
             if (below) lines.add(0, new Entry(Integer.MIN_VALUE, -1, sideText, sideRgb));
+            if (sideText != null) full.add(0, sideText);
             ty = y + 23;
             rows = (h - 23) / ROW_H + ((h - 23) % ROW_H >= 8 ? 1 : 0);
             firstLine = true;
@@ -93,7 +99,8 @@ public final class ReadoutPanel {
             for (int k = 0; k < pieces.size(); k++) {
                 String next = row.isEmpty() ? pieces.get(k) : row + joins.get(k) + pieces.get(k);
                 if (!row.isEmpty() && font.width(next) > maxW) {
-                    if (used >= rows) return;
+                    if (used >= rows) return full;
+                    if (font.width(row) > maxW) cutShort = true;
                     g.drawString(font, cut(font, row, maxW), x + 4, ty, colour, false);
                     ty += ROW_H; used++;
                     row = pieces.get(k);
@@ -102,11 +109,13 @@ public final class ReadoutPanel {
                 }
             }
             if (!row.isEmpty()) {
-                if (used >= rows) return;
+                if (used >= rows) return full;
+                if (font.width(row) > maxW) cutShort = true;
                 g.drawString(font, cut(font, row, maxW), x + 4, ty, colour, false);
                 ty += ROW_H; used++;
             }
         }
+        return cutShort ? full : List.of();
     }
 
     /** The screens' ink colours become the vanilla text colour; the state colours stay. */

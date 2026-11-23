@@ -60,10 +60,11 @@ public class mio_icif_toolbox_menu extends AbstractContainerMenu {
             AbstractElectricTool.loadHandHeldInventory(containerStack, inventory, playerInventory.player.level().registryAccess());
         }
 
-        // 对齐 IC2: ContainerToolbox - 一排 SlotBoxable，y=41
+        // 对齐 IC2: ContainerToolbox - 一排 SlotBoxable，y=41; 0.1.11.170: rows of nine (the advanced toolbox has three)
+        ToolboxInventory toolbox = new ToolboxInventory();
         for (int i = 0; i < inventorySize; i++) {
             final int slot = i;
-            this.addSlot(new Slot(new ToolboxInventory(), slot, 8 + i * 18, 41) {
+            this.addSlot(new Slot(toolbox, slot, 8 + (i % 9) * 18, 41 + (i / 9) * 18) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return mio_icif_toolbox.canBeStored(stack);
@@ -71,16 +72,24 @@ public class mio_icif_toolbox_menu extends AbstractContainerMenu {
             });
         }
 
-        // 对齐 IC2: ContainerToolbox - 玩家背包 y=84 / 快捷栏 y=142
+        // 对齐 IC2: ContainerToolbox - 玩家背包 y=84 / 快捷栏 y=142; 0.1.11.170: lower by the extra rows
+        int shift = extraRowsHeight(inventorySize);
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new LockedSlot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new LockedSlot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18 + shift));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new LockedSlot(playerInventory, col, 8 + col * 18, 142));
+            this.addSlot(new LockedSlot(playerInventory, col, 8 + col * 18, 142 + shift));
         }
     }
+
+    /** 0.1.11.170: the height the toolbox rows beyond the first add (18 pixels a row). */
+    public static int extraRowsHeight(int inventorySize) {
+        return (Math.max(1, (inventorySize + 8) / 9) - 1) * 18;
+    }
+
+    public int getInventorySize() { return inventorySize; }
 
     private static MenuType<mio_icif_toolbox_menu> getMenuType() {
         return mio_icif_tool_menus.TOOLBOX_MENU.get();

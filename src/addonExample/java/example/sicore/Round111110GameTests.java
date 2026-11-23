@@ -78,12 +78,14 @@ public final class Round111110GameTests {
             ContainerData da = (ContainerData) call(a, "getData"), db = (ContainerData) call(b, "getData");
             h.assertTrue(da.get(5) == 4 && da.get(6) == 1191 && da.get(7) == 252, "macerator data: status " + da.get(5) + ", EU " + da.get(6) + ", Wi " + da.get(7));
             h.assertTrue(db.get(8) == 4 && db.get(9) == 480 && db.get(10) == 127, "cyclone data: status " + db.get(8) + ", EU " + db.get(9) + ", Wi " + db.get(10));
-            for (AbstractContainerMenu menu : new AbstractContainerMenu[]{a, b}) {
+            int[][] hoppers = {{73, 19}, {71, 19}};   // 0.1.11.180: in the mill's hopper (MergedSlots.Mill, .Cyclone), 176 wide; 0.1.11.176 had 35,39
+            for (int m = 0; m < 2; m++) {
+                AbstractContainerMenu menu = m == 0 ? a : b;
                 var input = menu.getSlot(0);
-                h.assertTrue(input.x == 10 && input.y == 18, "input slot at " + input.x + "," + input.y);
+                h.assertTrue(input.x == hoppers[m][0] && input.y == hoppers[m][1], "input slot at " + input.x + "," + input.y);
                 boolean inventoryAt = false;
-                for (var s : menu.slots) if (s.container == player.getInventory() && s.getContainerSlot() == 9) inventoryAt = s.x == 44 && s.y == 160;   // 0.1.11.120: under the readout window
-                h.assertTrue(inventoryAt, "the player inventory does not start at 44,160");
+                for (var s : menu.slots) if (s.container == player.getInventory() && s.getContainerSlot() == 9) inventoryAt = s.x == 8 && s.y == 160;   // 0.1.11.120: under the readout window; 0.1.11.180: the vanilla x 8
+                h.assertTrue(inventoryAt, "the player inventory does not start at 8,160");
             }
             h.assertTrue(!(boolean) call(cyclone, "isHoldingSpeed"), "hold starts off");
             h.assertTrue(b.clickMenuButton(player, 0) && (boolean) call(cyclone, "isHoldingSpeed"), "the hold button switches hold speed on");

@@ -16,7 +16,8 @@ public class ChargeCarryingRecipeSerializer implements RecipeSerializer<ChargeCa
             Codec.STRING.optionalFieldOf("group", "").forGetter(ChargeCarryingRecipe::getGroup),
             ShapedRecipePattern.MAP_CODEC.forGetter(ChargeCarryingRecipe::getPattern),
             ItemStack.CODEC.fieldOf("result").forGetter(ChargeCarryingRecipe::getResult),
-            Codec.BOOL.optionalFieldOf("transfer_charge", true).forGetter(ChargeCarryingRecipe::shouldTransferCharge)
+            Codec.BOOL.optionalFieldOf("transfer_charge", true).forGetter(ChargeCarryingRecipe::shouldTransferCharge),
+            Codec.BOOL.optionalFieldOf("carry_contents", false).forGetter(ChargeCarryingRecipe::shouldCarryContents)   // 0.1.11.170
         ).apply(instance, ChargeCarryingRecipe::new)
     );
 
@@ -40,7 +41,8 @@ public class ChargeCarryingRecipeSerializer implements RecipeSerializer<ChargeCa
         ShapedRecipePattern pattern = ShapedRecipePattern.STREAM_CODEC.decode(buffer);
         ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
         boolean transferCharge = buffer.readBoolean();
-        return new ChargeCarryingRecipe(group, pattern, result, transferCharge);
+        boolean carryContents = buffer.readBoolean();
+        return new ChargeCarryingRecipe(group, pattern, result, transferCharge, carryContents);
     }
 
     private static void toNetwork(RegistryFriendlyByteBuf buffer, ChargeCarryingRecipe recipe) {
@@ -48,5 +50,6 @@ public class ChargeCarryingRecipeSerializer implements RecipeSerializer<ChargeCa
         ShapedRecipePattern.STREAM_CODEC.encode(buffer, recipe.getPattern());
         ItemStack.STREAM_CODEC.encode(buffer, recipe.getResult());
         buffer.writeBoolean(recipe.shouldTransferCharge());
+        buffer.writeBoolean(recipe.shouldCarryContents());
     }
 }

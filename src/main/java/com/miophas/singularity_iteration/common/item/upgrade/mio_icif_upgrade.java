@@ -216,7 +216,9 @@ public class mio_icif_upgrade extends Item implements IUpgradeItem {
         REDSTONE_INVERTER("redstone_inverter", false),
         FLUID_PULLING("fluid_pulling", true),
         /** 0.1.9.1: induction furnace insulation (no heat loss while idle; holding the heat costs no EU). */
-        THERMAL_RETENTION("thermal_retention", false);
+        THERMAL_RETENTION("thermal_retention", false),
+        /** 0.1.11.158: TESU wireless charging (AbstractProcessingMachineBlockEntity#chargeWirelessly). */
+        WIRELESS("wireless", false);
 
         private final String name;
         public final boolean directional;
@@ -247,6 +249,8 @@ public class mio_icif_upgrade extends Item implements IUpgradeItem {
             case FLUID_PULLING -> properties.contains(UpgradableProperty.FLUID_CONSUMING);
             case REDSTONE_INVERTER -> properties.contains(UpgradableProperty.REDSTONE_SENSITIVE);
             case THERMAL_RETENTION -> false;   // induction furnace only (InductionElcMenu)
+            // 0.1.11.158: any machine that takes energy (it has a voltage tier or an energy buffer to upgrade)
+            case WIRELESS -> properties.contains(UpgradableProperty.TRANSFORMER) || properties.contains(UpgradableProperty.ENERGY_STORAGE);
         };
     }
 

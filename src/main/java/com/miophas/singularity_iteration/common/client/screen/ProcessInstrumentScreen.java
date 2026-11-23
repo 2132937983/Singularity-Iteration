@@ -1,7 +1,7 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
-import com.miophas.singularity_iteration.common.client.suit.AsciiHud;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_machine_menu;
 import com.miophas.singularity_iteration.common.processing.ProcessStatus;
 import java.util.List;
@@ -29,7 +29,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         SHELL = 0xFFD5DAD8, CHAMBER = 0xFFE6E9E7, STEEL = 0xFF5B6867, STEEL_LIGHT = 0xFFB9C1BF, TRACK = 0xFFE1E5E3;
     /** RGB (no alpha) for text. */
     public static final int INK = 0x1C2524, DIM = 0x5B6867, BLUE = 0x2A5D8A, AMBER = 0xD49A12, RED = 0xC0392B, GREEN = 0x2F6E4F;
-    public static final int W = 248, H = 240, SPLIT = 116;
+    public static final int W = 176, H = 240, SPLIT = 116;   // 0.1.11.180: the vanilla width (was 248)
     /** The figure's centre and the readout column. */
     public static final int FIG_X = 162, FIG_Y = 56, READ_X = 12, READ_W = 226, PROGRESS_Y = 112, ENERGY_Y = 112;
     /**
@@ -112,8 +112,96 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
      */
     protected boolean calm() { return true; }
 
-    /** 0.1.11.143: the battery slot of the furnace block (lower left). */
-    protected static boolean batterySlot(Slot slot) { return slot.x == 10 && slot.y == 56; }
+    /**
+     * 0.1.11.175 (the merged layout, docs/gui_processing_machines.md): the machine draws itself on the panel with its slots in
+     * the drawing ({@link #drawMerged}), instead of a separate figure window beside the furnace block on the left. The
+     * headline, the readouts and the player's inventory stay as in the calm layout. A merged screen places its own energy
+     * bolt and progress arrow ({@link #boltX} and the like), its icon buttons ({@link #iconButtonX}) and its hover texts
+     * ({@link #mergedTooltip}). 0.1.11.178: each machine draws itself ({@link #drawMachine}) round its own slot layout
+     * ({@link MergedSlots}), as the canner does: the input where the machine takes it, the output at the outlet.
+     */
+    protected boolean merged() { return true; }   // 0.1.11.176: every processing machine (the canner first, in 0.1.11.175)
+
+    /**
+     * 0.1.11.175: draws the merged machine at the panel's corner (x, y), before the slot frames; see {@link #merged}.
+     * 0.1.11.178: the machine's own drawing ({@link #drawMachine}) in a pixel canvas over the panel's upper part, then the
+     * energy bolt on the battery slot and the progress arrow to the output (the canner draws all of it itself).
+     */
+    protected void drawMerged(GuiGraphics g, int x, int y, float dt) {
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0);
+        FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(ART_X, ART_Y, ART_W, ART_H, 0, 0, 1F,
+            VanillaFrame.PANEL).flat());
+        try {
+            drawMachine(g, dt);
+        } finally {
+            FcsDraw.endPixels(g);
+            g.pose().popPose();
+        }
+        VanillaFrame.bolt(g, x + boltX(), y + boltY(), energyFraction());
+        VanillaFrame.arrow(g, x + arrowX(), y + arrowY(), progress());
+    }
+
+    /** 0.1.11.178: the area of the machine's drawing (panel coordinates): under the title, over the headline. */
+    public static final int ART_X = 4, ART_Y = 15, ART_W = W - 8, ART_H = 84;
+
+    /**
+     * 0.1.11.178: draws the machine in panel coordinates, one unit a GUI pixel, with {@link MachineArt} and the {@link FcsDraw}
+     * primitives (they go into a flat pixel canvas, later parts over earlier ones; textures cannot); its slots go where the
+     * menu put them ({@link MergedSlots}) and their frames are drawn over it. {@code dt}: seconds since the last frame.
+     */
+    protected void drawMachine(GuiGraphics g, float dt) { }
+
+    /** 0.1.11.178: the operation's progress (0..1), as the arrow shows it. */
+    protected final double progress() {
+        int max = menu.getMaxProgress();
+        return max > 0 ? Math.max(0, Math.min(1, (double) menu.getProgress() / max)) : 0;
+    }
+
+    /** 0.1.11.176: the drawing's scale in the figure window (only the old layout draws the figure). */
+    protected final float figScale() { return figureScale(); }
+
+    /**
+     * 0.1.11.178: the machine's body in a merged screen (panel x, y, w, h), where the mouse shows {@link #figureTooltip}, or
+     * null for none.
+     */
+    protected int[] machineBody() { return null; }
+
+    /**
+     * 0.1.11.175: the hover text at panel position (rx, ry) of a merged screen (a tank, a part), or null. By default the
+     * machine's text over its body ({@link #machineBody}).
+     */
+    protected List<Component> mergedTooltip(int rx, int ry) {
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the how-it-works text over the machine's body is hidden for now
+        // int[] b = machineBody();
+        // return b != null && inside(rx, ry, b[0], b[1], b[2], b[3]) ? figureTooltip() : null;
+        return null;
+    }
+
+    /** 0.1.11.175: where the energy bolt and the progress arrow are (panel coordinates; their hover texts follow). */
+    protected int boltX() { return merged() ? MergedSlots.BOLT_X : BOLT_X; }
+    protected int boltY() { return merged() ? MergedSlots.BOLT_Y : BOLT_Y; }
+    protected int arrowX() { return ARROW_X; }
+    protected int arrowY() { return ARROW_Y; }
+
+    /** 0.1.11.178: whether panel position (rx, ry) is on a progress arrow (the induction furnace has two). */
+    protected boolean overArrow(int rx, int ry) { return inside(rx, ry, arrowX(), arrowY(), 22, 15); }
+
+    /**
+     * 0.1.11.175: where icon button {@code index} goes (panel coordinates). 0.1.11.178: in a merged screen a column at the
+     * upper right corner of the panel, the highest index on top; else the top right corner of the old figure window.
+     */
+    protected int iconButtonX(int index) {
+        return merged() ? W - 23 : FIG_WIN_X + FIG_WIN_W - 2 - (index + 1) * (ICON + 1) + 1;
+    }
+    protected int iconButtonY(int index) {
+        return merged() ? 19 + Math.max(0, buttonCount() - 1 - index) * (ICON + 2) : FIG_WIN_Y + 2;
+    }
+
+    /** 0.1.11.143: the battery slot of the furnace block (lower left); 0.1.11.176: or of the merged screen. */
+    protected static boolean batterySlot(Slot slot) {
+        return slot.x == 10 && slot.y == 56 || slot.x == MergedSlots.BATTERY_X && slot.y == MergedSlots.BATTERY_Y;
+    }
 
     protected static net.minecraft.world.item.ItemStack itemOf(String id) {
         return new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(id)));
@@ -149,7 +237,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     protected void drawOverFigure(GuiGraphics g, float cx, float cy) { }
 
     /** 0.1.11.141: a figure coordinate {@code c + d} on the screen (the canvas scales the figure about its centre). */
-    protected final int figPx(float c, float d) { return Math.round(c + d * figureScale()); }
+    protected final int figPx(float c, float d) { return Math.round(c + d * figScale()); }   // 0.1.11.176: the merged window's scale
 
     /** 0.1.11.141: the text on the right of a calm headline: the progress while running, else the status. */
     protected Component calmSide() {
@@ -176,24 +264,25 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
+        panelButtons.clear();
+        float dt = frameSeconds();
         // 0.1.11.118: the vanilla container look (docs/gui_processing_machines.md)
         VanillaFrame.panel(g, x, y, W, H);
         if (!calm()) {
             VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
             VanillaFrame.inset(g, x + READ_WIN_X, y + READ_WIN_Y, READ_WIN_W, READ_WIN_H, PAPER);
         }
+        if (merged()) drawMerged(g, x, y, dt);   // 0.1.11.175: the machine first, its slots on it
         for (Slot s : menu.slots) {
             if (s.x < 0 || s.x > W) continue;   // docked upgrade slots are drawn by the dock
             if (!slotShown(s)) continue;
             VanillaFrame.slot(g, x + s.x - 1, y + s.y - 1);
         }
-        if (furnaceBlock()) {
+        if (furnaceBlock() && !merged()) {
             VanillaFrame.bolt(g, x + BOLT_X, y + BOLT_Y, energyFraction());
             int max = menu.getMaxProgress();
             VanillaFrame.arrow(g, x + ARROW_X, y + ARROW_Y, max > 0 ? (double) menu.getProgress() / max : 0);
         }
-        panelButtons.clear();
-        float dt = frameSeconds();
         if (calm()) { renderCalm(g, x, y, dt, mouseX, mouseY); return; }
         // 0.1.11.118: the figure as pixel art, one cell a GUI pixel, inside its window
         FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X + 1, y + FIG_WIN_Y + 1,
@@ -238,16 +327,18 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
 
     /** 0.1.11.141: the calm layout (see {@link #calm}). */
     private void renderCalm(GuiGraphics g, int x, int y, float dt, int mouseX, int mouseY) {
-        // 0.1.11.142: the figure window sunk into the panel like the slots (the vanilla look; the flat window read as a hole)
-        VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
-        FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X + 1, y + FIG_WIN_Y + 1,
-            FIG_WIN_W - 2, FIG_WIN_H - 2, x + FIG_X, y + FIG_Y, figureScale(), VanillaFrame.SLOT).flat());
-        try {
-            drawFigure(g, x + FIG_X, y + FIG_Y, dt);
-        } finally {
-            FcsDraw.endPixels(g);
+        if (!merged()) {   // 0.1.11.175: a merged screen drew its machine already (drawMerged)
+            // 0.1.11.142: the figure window sunk into the panel like the slots (the vanilla look; the flat window read as a hole)
+            VanillaFrame.inset(g, x + FIG_WIN_X, y + FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H, VanillaFrame.SLOT);
+            FcsDraw.beginPixels(new com.miophas.singularity_iteration.common.client.suit.PixelCanvas(x + FIG_WIN_X + 1, y + FIG_WIN_Y + 1,
+                FIG_WIN_W - 2, FIG_WIN_H - 2, x + FIG_X, y + FIG_Y, figureScale(), VanillaFrame.SLOT).flat());
+            try {
+                drawFigure(g, x + FIG_X, y + FIG_Y, dt);
+            } finally {
+                FcsDraw.endPixels(g);
+            }
+            drawOverFigure(g, x + FIG_X, y + FIG_Y);
         }
-        drawOverFigure(g, x + FIG_X, y + FIG_Y);
 
         int left = x + 8, right = x + W - 8;
         int code = status();
@@ -280,10 +371,13 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         int ty = y + CALM_LINE_Y, n = 0;
         java.util.List<Component> lines = new java.util.ArrayList<>(readouts());
         if (sideBelow) lines.add(0, side);
+        cutLines.clear();
         for (Component c : lines) {
             if (n == CALM_LINES) break;
             int colour = sideBelow && n == 0 ? sideColour : n == (sideBelow ? 1 : 0) ? TEXT : MUTED;
-            g.drawString(font, fit(c, W - 16), left, ty, colour, false);
+            Component shown = fit(c, W - 16);
+            g.drawString(font, shown, left, ty, colour, false);
+            if (shown != c) cutLines.add(new CutLine(left - x, ty - y, font.width(shown), c));   // 0.1.11.180
             ty += CALM_LINE_H;
             n++;
         }
@@ -303,7 +397,7 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
         ICON_SWAP = {".....#.", "#######", ".....#.", ".......", ".#.....", "#######", ".#....."};
 
     protected void iconButton(GuiGraphics g, int index, String[] icon, boolean on, int id, int mouseX, int mouseY, List<Component> tooltip) {
-        int bx = FIG_WIN_X + FIG_WIN_W - 2 - (index + 1) * (ICON + 1) + 1, by = FIG_WIN_Y + 2;
+        int bx = iconButtonX(index), by = iconButtonY(index);   // 0.1.11.175: a merged screen places them
         boolean hover = inside(mouseX - leftPos, mouseY - topPos, bx, by, ICON, ICON);
         if (hover || on) g.fill(leftPos + bx, topPos + by, leftPos + bx + ICON, topPos + by + ICON, on ? 0xFF6B7176 : 0x30FFFFFF);
         int ix = leftPos + bx + 2, iy = topPos + by + 2, ink = on ? 0xFFFFFFFF : 0xFF3C4245;
@@ -352,6 +446,10 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
     // ---- 0.1.11.113: menu buttons drawn in the panel (flat, no outline) ----
 
     private record PanelButton(int x, int y, int w, int h, int id, List<Component> tooltip) {}
+
+    /** 0.1.11.180: a readout line cut with an ellipsis (panel coordinates of what is drawn), with its whole text. */
+    private record CutLine(int x, int y, int w, Component text) {}
+    private final java.util.ArrayList<CutLine> cutLines = new java.util.ArrayList<>();
     private final java.util.ArrayList<PanelButton> panelButtons = new java.util.ArrayList<>();
 
     /**
@@ -409,17 +507,26 @@ public abstract class ProcessInstrumentScreen<T extends mio_icif_machine_menu> e
             Component hint = slotHint(hs);
             if (hint != null) { g.renderTooltip(font, hint, mouseX, mouseY); return; }
         }
+        // 0.1.11.179: a slot says only its own text (the item's tooltip); a merged machine's body holds slots (the press's
+        // charge on its die) and its hover text was drawn over the item's
+        if (hs != null) return;
+        for (CutLine l : cutLines)   // 0.1.11.180: a readout cut to the narrow panel shows whole under the mouse
+            if (inside(rx, ry, l.x, l.y - 1, l.w, 10)) { g.renderTooltip(font, l.text, mouseX, mouseY); return; }
         for (PanelButton b : panelButtons) {
             if (!b.tooltip.isEmpty() && inside(rx, ry, b.x, b.y, b.w, b.h)) {
                 g.renderComponentTooltip(this.font, b.tooltip, mouseX, mouseY);
                 return;
             }
         }
-        if (inside(rx, ry, FIG_WIN_X, FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H)) {
-            g.renderComponentTooltip(this.font, figureTooltip(), mouseX, mouseY);
-        } else if (inside(rx, ry, ARROW_X, ARROW_Y, 22, 15)) {   // 0.1.11.120: the arrow is the progress
+        List<Component> part = merged() ? mergedTooltip(rx, ry) : null;   // 0.1.11.175
+        if (part != null) {
+            g.renderComponentTooltip(this.font, part, mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the old layout's figure-window text, hidden for now
+        // } else if (!merged() && inside(rx, ry, FIG_WIN_X, FIG_WIN_Y, FIG_WIN_W, FIG_WIN_H)) {
+        //     g.renderComponentTooltip(this.font, figureTooltip(), mouseX, mouseY);
+        } else if (overArrow(rx, ry)) {   // 0.1.11.120: the arrow is the progress (0.1.11.178: any of them)
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.progress", menu.getProgress(), menu.getMaxProgress())), mouseX, mouseY);
-        } else if (inside(rx, ry, BOLT_X - 2, BOLT_Y - 1, 13, 15)) {   // the bolt is the stored energy
+        } else if (inside(rx, ry, boltX() - 2, boltY() - 1, 13, 15)) {   // the bolt is the stored energy
             g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.energy",
                 String.format(Locale.ROOT, "%,d", Integer.toUnsignedLong(menu.getEnergy())),
                 String.format(Locale.ROOT, "%,d", Integer.toUnsignedLong(menu.getMaxEnergy())))), mouseX, mouseY);

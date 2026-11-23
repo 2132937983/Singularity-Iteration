@@ -21,6 +21,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
@@ -53,7 +54,11 @@ import org.jetbrains.annotations.Nullable;
  *       and mirror of the item), else a file of the {@code schematics} folder ({@code .nbt} or
  *       {@code .litematic}), placed with its minimum corner at the builder position plus the
  *       offset, with the rotation and mirror of the GUI.</li>
- *   <li>Every block of the placement must be within {@link #RANGE} blocks of the builder.</li>
+ *   <li>0.1.11.182: or a blueprint the player uploaded from their own computer's {@code schematics} folder
+ *       ({@link BlueprintUploads}, the Upload button of the screen), placed as a file is. On a dedicated server the
+ *       folder above is the server's, so this is how a player builds their own schematics there.</li>
+ *   <li>Every block of the placement must be within {@link #RANGE} blocks of the builder. 0.1.11.186: no longer: a plan
+ *       of any size builds (the offset up to {@link #OFFSET_LIMIT}); a block in a chunk that is not loaded waits for it.</li>
  *   <li>{@link #DRONES} drones. A drone takes up to {@link #BATCH} blocks of one material from the
  *       nearest Material Interface within {@link #INTERFACE_RANGE} blocks that has it, flies to
  *       each position and places the block. Order: bottom layer first, near blocks first.</li>
@@ -88,9 +93,18 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     public static final int BATTERY_SLOT = 0, SCHEMATIC_SLOT = 1, SLOT_COUNT = 2;
     public static final long CAPACITY = 200_000L, MAX_RECEIVE = 512L, EU_PER_BLOCK = 40L;
     public static final int DRONES = 4, BATCH = 8, RANGE = 64, INTERFACE_RANGE = 16, SCAN_WINDOW = 512;
+    /**
+     * 0.1.11.189: the check after the last block waits {@link #CHECK_DELAY} ticks, reads {@link #CHECK_PER_TICK} positions a
+     * tick and runs at most {@link #CHECK_PASSES} times a start (a block that can never stay must not keep the drones busy).
+     */
+    public static final int CHECK_DELAY = 40, CHECK_PER_TICK = 16384, CHECK_PASSES = 3;
+    /** 0.1.11.186: the largest offset of a file's blueprint from the builder, each axis (the range limit went). */
+    public static final int OFFSET_LIMIT = 1024;
     public static final double SPEED = 0.8;
     public static final int DATA_COUNT = 23;
     public static final int NO_BLUEPRINT = 0, READY = 1, RUNNING = 2, PAUSED = 3, DONE = 4, TOO_FAR = 5, READ_ERROR = 6;
+    /** 0.1.11.187: the blueprint is too large for the server's free memory (there is no fixed block limit any more). */
+    public static final int TOO_LARGE = 7;
 
     private static final SlotLayout LAYOUT = SlotLayout.builder().battery().extra(1).build();
 
@@ -98,6 +112,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     @Nullable private UUID owner;
     private String ownerName = "";
     private String fileName = "";
+    /** 0.1.11.182: the uploaded blueprint in use ({@code "<uuid>/<name>"}, {@link BlueprintUploads#resolve}), or empty. */
+    private String upload = "";
+    /** 0.1.11.188: the multiblock structure in use (its id in {@link BuilderStructures}), or empty. */
+    private String structure = "";
     private int fileIndex;
     private int rotation, mirror;
     private int offX = 1, offY = 0, offZ = 1;
@@ -107,6 +125,12 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     @Nullable private List<Blueprint.Entry> plan;
     private boolean[] done = new boolean[0], claimed = new boolean[0];
     private int cursor, placed, obstructed, doneCount;
+    /**
+     * 0.1.11.189: the check after the last block: from when (game time) it may start (blocks that fall for want of support
+     * have fallen by then), where it is in the plan (-1: not checking), the passes made and the blocks it found missing.
+     */
+    private long checkFrom = -1;
+    private int checkAt = -1, checkPasses, checkFound, cleared;
     private boolean reloadPlan;
     @Nullable private AABB bounds;
     private final Map<Item, Integer> missing = new HashMap<>();
@@ -186,7 +210,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
                 case 13 -> mirror;
                 case 14 -> offX & 0xFFFF; case 15 -> offY & 0xFFFF; case 16 -> offZ & 0xFFFF;
                 case 17 -> fileIndex;
-                case 18 -> useCreate ? 1 : fileName.isEmpty() ? 0 : 2;
+                case 18 -> useCreate ? 1 : !structure.isEmpty() ? 4 : !upload.isEmpty() ? 3 : fileName.isEmpty() ? 0 : 2;
                 case 19 -> preview ? 1 : 0;
                 case 20 -> activeDrones();
                 case 21 -> doneCount & 0xFFFF; case 22 -> doneCount >>> 16;
@@ -245,7 +269,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
      * clicks), a file list refresh runs at most once a second, and a load at most every half second. Each button packet
      * used to read the blueprint (up to 16 MB of NBT) or list the folder on the server thread at once.
      */
-    static final int REBUILD_DELAY = 5, REFRESH_GAP = 20, LOAD_GAP = 10;
+    static final int REBUILD_DELAY = 2, REFRESH_GAP = 20, LOAD_GAP = 10;   // 0.1.11.185: 2 ticks (the blueprint is kept, a rebuild only places it)
     private long rebuildAt = -1, lastRefresh = Long.MIN_VALUE / 2, lastLoad = Long.MIN_VALUE / 2;
 
     private void scheduleRebuild() {
@@ -257,6 +281,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         if (rebuildAt < 0 || level == null || (!now && level.getGameTime() < rebuildAt)) return;
         rebuildAt = -1;
         rebuild();
+        markSync();   // 0.1.11.185: the new box and plan version to the clients at once (they waited for the next sync)
     }
 
     private void refreshFilesLimited() {
@@ -298,6 +323,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
                 running = !running;
                 status = running ? RUNNING : PAUSED;
                 missingUntil.clear();
+                if (running) { checkPasses = 0; checkAt = -1; checkFrom = -1; }   // 0.1.11.189: a start checks the whole build again
             }
             case A_PREVIEW -> preview = !preview;
             case A_STOP -> stop();
@@ -307,7 +333,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         markSync();
     }
 
-    private static int clampOffset(int v) { return Math.max(-RANGE, Math.min(RANGE, v)); }
+    private static int clampOffset(int v) { return Math.max(-OFFSET_LIMIT, Math.min(OFFSET_LIMIT, v)); }
 
     private void refreshFiles() {
         files = BlueprintReader.list();
@@ -318,6 +344,9 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         stop();
         ItemStack slot = getItemHandler().getStackInSlot(SCHEMATIC_SLOT);
         useCreate = BlueprintReader.isCreateSchematic(slot);
+        upload = "";   // 0.1.11.182: the load button takes the slot or the server's list
+        structure = "";   // 0.1.11.188: and leaves a multiblock structure
+        keptKey = null;   // 0.1.11.185: the load button reads the file again (it may have changed)
         if (!useCreate) {
             if (files.isEmpty()) refreshFiles();
             fileName = files.isEmpty() ? "" : files.get(Math.min(fileIndex, files.size() - 1));
@@ -325,12 +354,35 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             fileName = "";
         }
         rebuild();
-        if (status == READ_ERROR) player.displayClientMessage(Component.translatable("message.mio_icif.builder.read_error"), true);
+        readMessage(player);
     }
 
-    /** Reads the blueprint of the current settings and builds the plan. */
+    /** The line over the hotbar after a read that failed (0.1.11.187: or found the blueprint too large). */
+    private void readMessage(Player player) {
+        if (status == READ_ERROR) player.displayClientMessage(Component.translatable("message.mio_icif.builder.read_error"), true);
+        if (status == TOO_LARGE) player.displayClientMessage(Component.translatable("message.mio_icif.builder.too_large"), true);
+    }
+
+    /**
+     * Reads the blueprint of the current settings and builds the plan. 0.1.11.187: a blueprint the free memory cannot hold
+     * (with its plan) is {@link #TOO_LARGE}; nothing of it stays in memory.
+     */
     private void rebuild() {
+        try {
+            build();
+        } catch (Blueprint.TooLarge e) {
+            plan = null;
+            bounds = null;
+            kept = null;
+            keptKey = null;
+            status = TOO_LARGE;
+            clientName = !upload.isEmpty() ? upload.substring(upload.indexOf('/') + 1) : fileName;
+        }
+    }
+
+    private void build() {
         if (!(level instanceof ServerLevel world)) return;
+        planVersion++;   // 0.1.11.184: the clients' block holograms ask for the new plan (BuilderPlanPackets)
         plan = null;
         bounds = null;
         status = NO_BLUEPRINT;
@@ -344,10 +396,17 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             placed = create.blueprint().placeAnchored(create.anchor(), create.rotation(), create.mirror());
             name = create.blueprint().name();
         } else {
-            if (fileName.isEmpty()) return;
-            Blueprint bp = BlueprintReader.readFile(fileName, blocks);
-            if (bp == null) { status = READ_ERROR; clientName = fileName; return; }
+            boolean uploaded = !upload.isEmpty(), preset = !structure.isEmpty();
+            if (!uploaded && !preset && fileName.isEmpty()) return;
+            String key = preset ? "s:" + structure : uploaded ? "u:" + upload : "f:" + fileName;
+            ResourceLocation structureId = preset ? ResourceLocation.tryParse(structure) : null;
+            Blueprint bp = key.equals(keptKey) ? kept : preset ? (structureId == null ? null : BuilderStructures.blueprint(structureId))
+                : uploaded ? BlueprintUploads.read(upload, blocks) : BlueprintReader.readFile(fileName, blocks);
+            kept = bp;
+            keptKey = bp != null ? key : null;
+            if (bp == null) { status = READ_ERROR; clientName = preset ? structure : uploaded ? upload.substring(upload.indexOf('/') + 1) : fileName; return; }
             placed = bp.place(worldPosition.offset(offX, offY, offZ), Rotation.values()[rotation], Mirror.values()[mirror]);
+            planOffset = new int[]{offX, offY, offZ};
             name = bp.name();
         }
         clientName = name;
@@ -369,16 +428,92 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         obstructed = 0;
         doneCount = 0;
         int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
-        boolean far = false;
         for (Blueprint.Entry e : plan) {
             BlockPos p = e.pos();
             minX = Math.min(minX, p.getX()); minY = Math.min(minY, p.getY()); minZ = Math.min(minZ, p.getZ());
             maxX = Math.max(maxX, p.getX()); maxY = Math.max(maxY, p.getY()); maxZ = Math.max(maxZ, p.getZ());
-            far |= Math.abs(p.getX() - c.getX()) > RANGE || Math.abs(p.getY() - c.getY()) > RANGE || Math.abs(p.getZ() - c.getZ()) > RANGE;
         }
         if (!plan.isEmpty()) bounds = new AABB(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
-        status = far ? TOO_FAR : plan.isEmpty() ? DONE : READY;
+        status = plan.isEmpty() ? DONE : READY;   // 0.1.11.186: no "too far" any more (TOO_FAR stays for old saves)
     }
+
+    /**
+     * 0.1.11.182: uses the blueprint {@code player} uploaded ({@code ref} is {@code "<uuid>/<name>"}) with the placement
+     * settings of the screen; false (nothing changed) while the builder runs. The read error shows as for a file.
+     */
+    boolean selectUpload(Player player, String ref) {
+        if (running || !(level instanceof ServerLevel)) return false;
+        keptKey = null;   // read it again
+        stop();
+        useCreate = false;
+        structure = "";
+        upload = ref;
+        rebuildAt = -1;
+        rebuild();
+        readMessage(player);
+        setChanged();
+        markSync();
+        return status != READ_ERROR && status != TOO_LARGE;
+    }
+
+    /**
+     * 0.1.11.188: builds the multiblock structure {@code id} ({@link BuilderStructures}: the build plans of JEI's "Multiblock
+     * Structures") with the placement settings of the screen; false (nothing changed) while the builder runs or for an id
+     * that names no structure.
+     */
+    boolean selectStructure(Player player, ResourceLocation id) {
+        if (running || !(level instanceof ServerLevel)
+            || com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprintRegistry.get(id) == null) return false;
+        keptKey = null;
+        stop();
+        useCreate = false;
+        upload = "";
+        structure = id.toString();
+        rebuildAt = -1;
+        rebuild();
+        readMessage(player);
+        setChanged();
+        markSync();
+        return status != READ_ERROR && status != TOO_LARGE;
+    }
+
+    /** 0.1.11.188: the multiblock structure in use, or empty. */
+    public String structure() { return structure; }
+
+    /**
+     * 0.1.11.184: the plan's version, raised by each rebuild and sent in the update tag: a client whose block hologram holds
+     * another version asks for the plan again ({@link BuilderPlanPackets}).
+     */
+    private int planVersion = java.util.concurrent.ThreadLocalRandom.current().nextInt(1 << 24);   // a new builder at the same place is another plan
+
+    public int planVersion() { return planVersion; }
+
+    /** 0.1.11.185: the blueprint read last, kept for the rebuilds of a move or turn (its key: "f:" file or "u:" upload). */
+    @Nullable private Blueprint kept;
+    @Nullable private String keptKey;
+    /** 0.1.11.185: the offset the plan was placed with. */
+    private int[] planOffset = {1, 0, 1};
+    private boolean clientCreate;
+
+    /** 0.1.11.185: the offset the plan (and its box) was placed with (client: from the update tag). */
+    public int[] planOffset() { return planOffset; }
+
+    /** 0.1.11.185: the rotation (quarter turns) and mirror (0 none, 1 left-right, 2 front-back) set (client: from the update tag). */
+    public int rotationSteps() { return rotation; }
+
+    public int mirrorMode() { return mirror; }
+
+    /** 0.1.11.185: whether the plan is a Create schematic (placed by its own anchor; the offset does not move it). */
+    public boolean placedByCreate() { return level != null && level.isClientSide ? clientCreate : useCreate; }
+
+    /** 0.1.11.184: the plan (world positions and target states), or null; for the plan packets (server side). */
+    @Nullable public List<Blueprint.Entry> plan() { return plan; }
+
+    /** 0.1.11.182: the uploaded blueprint in use ({@code "<uuid>/<name>"}), or empty (the tests). */
+    public String upload() { return upload; }
+
+    /** 0.1.11.182: the state of the builder for the tests: {@link #status} codes. */
+    public int status() { return status; }
 
     /** Stops: claims are released, drones bring their cargo back. */
     private void stop() {
@@ -420,9 +555,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             while (cursor < done.length && done[cursor]) cursor++;
             boolean busy = false;
             for (Agent a : agents) busy |= a.taskIndex < a.tasks.length;
-            if (cursor >= done.length && !busy) {
+            if (cursor >= done.length && !busy && !check(world, now)) {
                 running = false;
                 status = DONE;
+                checkFrom = -1;
                 world.playSound(null, worldPosition, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ARMORY_COMPLETE.get(),
                     SoundSource.BLOCKS, 1.0F, 1.0F);
                 markSync();
@@ -434,14 +570,92 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         }
     }
 
+    /**
+     * 0.1.11.189: the check after the last block (a scaffold placed before its support falls a tick later, a block may have been
+     * broken meanwhile): {@link #CHECK_DELAY} ticks after the last block, the plan is read again, {@link #CHECK_PER_TICK}
+     * positions a tick; a position that does not hold its block and can take it (free, or a block the drones may clear) goes
+     * back to the plan, and the drones build it. At most {@link #CHECK_PASSES} passes a start. True while checking or when the
+     * check gave work back (the build goes on); false when it is done.
+     */
+    private boolean check(ServerLevel world, long now) {
+        if (plan == null || checkPasses >= CHECK_PASSES) return false;
+        if (checkFrom < 0) { checkFrom = now + CHECK_DELAY; return true; }
+        if (now < checkFrom) return true;
+        if (checkAt < 0) { checkAt = 0; checkFound = 0; }
+        int end = Math.min(plan.size(), checkAt + CHECK_PER_TICK);
+        for (int t = checkAt; t < end; t++) {
+            Blueprint.Entry e = plan.get(t);
+            if (!done[t] || !world.isLoaded(e.pos())) continue;
+            BlockState here = world.getBlockState(e.pos()), target = target(e.state());
+            if (built(here, target) || !here.canBeReplaced() && !clearable(world, e.pos(), here)) continue;
+            done[t] = false;
+            claimed[t] = false;
+            doneCount--;
+            checkFound++;
+            cursor = Math.min(cursor, t);
+        }
+        checkAt = end;
+        if (checkAt < plan.size()) return true;
+        checkPasses++;
+        checkAt = -1;
+        checkFrom = -1;
+        if (checkFound > 0) markSync();
+        return checkFound > 0;
+    }
+
+    /** 0.1.11.189: whether the position holds the plan's block (its running or lit states, its joins aside). */
+    static boolean built(BlockState here, BlockState target) {
+        return here.equals(target) || target(here).equals(target) || here.getBlock() == target.getBlock();
+    }
+
+    private static boolean clearing() {
+        return com.miophas.singularity_iteration.common.Singularity_Iteration_Config.BUILDER_CLEAR_OBSTRUCTIONS.get();
+    }
+
+    /**
+     * 0.1.11.189: whether the drones may take the block {@code here} away to put the plan's block in its place: the option is on,
+     * the block can be broken (not bedrock and the like) and holds no block entity (a machine, a chest: those stay, as before).
+     * The claim and protection mods are asked when the drone gets there ({@link #mayBreak}).
+     */
+    private boolean clearable(ServerLevel world, BlockPos pos, BlockState here) {
+        return clearing() && !here.hasBlockEntity() && here.getDestroySpeed(world, pos) >= 0;
+    }
+
+    /** Claim and protection checks for taking a block away, with the owner identity. */
+    private boolean mayBreak(ServerLevel world, BlockPos pos, BlockState here) {
+        var event = new net.neoforged.neoforge.event.level.BlockEvent.BreakEvent(world, pos, here, placer(world));
+        return !net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event).isCanceled();
+    }
+
+    /**
+     * 0.1.11.189: takes the block in the way away, as mined with a pickaxe: its drops go to the nearest Armory Material
+     * Interface (what does not fit falls there; an infinite interface's drones keep nothing), with the breaking sound and dust.
+     */
+    private void clear(ServerLevel world, BlockPos pos, BlockState here) {
+        List<ItemStack> drops = net.minecraft.world.level.block.Block.getDrops(here, world, pos, null, placer(world), new ItemStack(Items.NETHERITE_PICKAXE));
+        world.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(here));
+        boolean infinite = false;
+        for (ItemStack drop : drops) {
+            ItemStack rest = drop;
+            for (BlockPos p : interfaces) {
+                if (rest.isEmpty()) break;
+                net.minecraft.world.level.block.entity.BlockEntity be = world.getBlockEntity(p);
+                if (be instanceof MaterialInterfaceBlockEntity mi) rest = mi.insert(rest);
+                else if (be instanceof InfiniteMaterialInterfaceBlockEntity) infinite = true;
+            }
+            if (!rest.isEmpty() && !infinite) net.minecraft.world.level.block.Block.popResource(world, pos, rest);
+        }
+        cleared++;
+    }
+
     private void arrive(ServerLevel world, int i, Agent a, long now) {
         switch (a.phase) {
             case Agent.TO_SOURCE -> fetch(world, i, a);
             case Agent.PLACING -> placeNext(world, i, a, now);
             case Agent.RETURNING -> {
                 if (!a.cargo.isEmpty()) {
-                    ItemStack rest = a.source != null && world.getBlockEntity(a.source) instanceof MaterialInterfaceBlockEntity mi ? mi.insert(a.cargo) : a.cargo;
-                    if (!rest.isEmpty() && !interfaces.isEmpty() && world.getBlockEntity(interfaces.get(0)) instanceof MaterialInterfaceBlockEntity near) rest = near.insert(rest);
+                    ItemStack rest = a.source != null && world.getBlockEntity(a.source) instanceof MaterialSource mi ? mi.insert(a.cargo) : a.cargo;
+                    if (!rest.isEmpty() && !interfaces.isEmpty() && world.getBlockEntity(interfaces.get(0)) instanceof MaterialSource near) rest = near.insert(rest);
                     if (!rest.isEmpty()) net.minecraft.world.Containers.dropItemStack(world, a.to.x, a.to.y, a.to.z, rest);
                     a.cargo = ItemStack.EMPTY;
                 }
@@ -468,8 +682,8 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             if (!world.isLoaded(e.pos())) continue;
             BlockState here = world.getBlockState(e.pos());
             BlockState target = target(e.state());
-            if (here.equals(target)) { markDone(t); continue; }
-            if (!here.canBeReplaced()) { markDone(t); obstructed++; continue; }
+            if (built(here, target)) { markDone(t); continue; }
+            if (!here.canBeReplaced() && !clearable(world, e.pos(), here)) { markDone(t); obstructed++; continue; }   // 0.1.11.189: else cleared
             Item m = material(target);
             if (m != null && m != Items.AIR && missingUntil.getOrDefault(m, 0L) > now) continue;
             first = t;
@@ -519,7 +733,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         int need = 0;
         for (int t : a.tasks) need += amount(target(plan.get(t).state()));
         var sourceEntity = a.source == null || item == null ? null : world.getBlockEntity(a.source);
-        ItemStack got = sourceEntity instanceof MaterialInterfaceBlockEntity mi ? mi.extract(item, need)
+        ItemStack got = sourceEntity instanceof MaterialSource mi ? mi.extract(item, need)   // 0.1.11.187: or the infinite one
             : sourceEntity instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep ? rep.takeOutput(item, need) : ItemStack.EMPTY;
         if (got.isEmpty()) {
             release(a);
@@ -547,9 +761,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         BlockState target = target(e.state());
         BlockState here = world.getBlockState(e.pos());
         boolean finished = true;
-        if (here.equals(target)) {
-            // somebody else built it
-        } else if (!here.canBeReplaced()) {
+        boolean inTheWay = !here.canBeReplaced();
+        if (built(here, target)) {
+            // somebody else built it (0.1.11.188: its running, lit or similar states may differ)
+        } else if (inTheWay && !clearable(world, e.pos(), here)) {
             obstructed++;
         } else {
             Item m = material(target);
@@ -558,13 +773,18 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
                 // no cargo for this one: give it back to the plan
                 claimed[t] = false;
                 finished = false;
-            } else if (apiGetStoredEnergy() < EU_PER_BLOCK) {
+            } else if (apiGetStoredEnergy() < EU_PER_BLOCK * (inTheWay ? 2 : 1)) {
                 a.from = a.to; a.legStart = now; a.legTicks = 10;               // hover in place, wait for power
                 return;
-            } else if (mayPlace(world, e.pos(), target)) {
+            } else if (mayPlace(world, e.pos(), target) && (!inTheWay || mayBreak(world, e.pos(), here))) {
+                if (inTheWay) {   // 0.1.11.189: the block in the way goes first (its drops to the interface)
+                    apiConsumeEnergy(EU_PER_BLOCK);
+                    clear(world, e.pos(), here);
+                }
                 apiConsumeEnergy(EU_PER_BLOCK);
                 if (cost > 0) a.cargo.shrink(cost);
                 world.setBlock(e.pos(), target, flags(target));
+                BuiltBlocks.afterPlace(world, e.pos(), target, placer(world));   // 0.1.11.188: ports, owner, extra parts
                 var sound = target.getSoundType(world, e.pos(), null);
                 world.playSound(null, e.pos(), sound.getPlaceSound(), SoundSource.BLOCKS, (sound.getVolume() + 1) / 2, sound.getPitch() * 0.8F);
                 world.sendParticles(ParticleTypes.ELECTRIC_SPARK, e.pos().getX() + 0.5, e.pos().getY() + 0.8, e.pos().getZ() + 0.5, 4, 0.25, 0.1, 0.25, 0.02);
@@ -623,7 +843,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
                 for (int cz = (worldPosition.getZ() - r) >> 4; cz <= (worldPosition.getZ() + r) >> 4; cz++) {
                     if (!world.hasChunk(cx, cz)) continue;
                     for (var be : world.getChunk(cx, cz).getBlockEntities().values()) {
-                        if (be instanceof MaterialInterfaceBlockEntity && be.getBlockPos().closerThan(worldPosition, r + 0.5)) found.add(be.getBlockPos());
+                        if (be instanceof MaterialSource && be.getBlockPos().closerThan(worldPosition, r + 0.5)) found.add(be.getBlockPos());
                     }
                 }
             }
@@ -632,7 +852,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             replicators = supplyEnabled() ? scanReplicators(world) : List.of();
         }
         for (BlockPos p : interfaces) {
-            if (world.getBlockEntity(p) instanceof MaterialInterfaceBlockEntity mi && mi.count(item) > 0) return p;
+            if (world.getBlockEntity(p) instanceof MaterialSource mi && mi.count(item) > 0) return p;
         }
         for (BlockPos p : replicators) {
             if (world.getBlockEntity(p) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep && rep.outputCount(item) > 0) return p;
@@ -691,11 +911,16 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         return false;
     }
 
-    /** Claim and protection checks with the owner identity. */
-    private boolean mayPlace(ServerLevel world, BlockPos pos, BlockState state) {
+    /** The builder's owner as the player who places the blocks (claims, protection, 0.1.11.188: the placed block's owner). */
+    private net.neoforged.neoforge.common.util.FakePlayer placer(ServerLevel world) {
         GameProfile profile = new GameProfile(owner != null ? owner : UUID.nameUUIDFromBytes("mio_icif_builder".getBytes()),
             ownerName.isEmpty() ? "[Blueprint Builder]" : ownerName);
-        var fake = net.neoforged.neoforge.common.util.FakePlayerFactory.get(world, profile);
+        return net.neoforged.neoforge.common.util.FakePlayerFactory.get(world, profile);
+    }
+
+    /** Claim and protection checks with the owner identity. */
+    private boolean mayPlace(ServerLevel world, BlockPos pos, BlockState state) {
+        var fake = placer(world);
         if (world.getServer().isUnderSpawnProtection(world, pos, fake)) return false;
         var snapshot = net.neoforged.neoforge.common.util.BlockSnapshot.create(world.dimension(), world, pos);
         var event = new net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent(snapshot, world.getBlockState(pos.below()), fake);
@@ -723,7 +948,24 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             if (p instanceof net.minecraft.world.level.block.state.properties.IntegerProperty age && "age".equals(age.getName()))
                 s = s.setValue(age, java.util.Collections.min(age.getPossibleValues()));
         }
+        if (Blueprint.ours(s)) {   // 0.1.11.188: a state the blueprint caught at work is placed as the block's default (the block sets it)
+            BlockState plain = s.getBlock().defaultBlockState();
+            for (net.minecraft.world.level.block.state.properties.Property<?> p : s.getProperties())
+                if (RUNTIME.contains(p.getName())) s = copy(s, plain, p);
+        }
         return s;
+    }
+
+    /**
+     * 0.1.11.188: the states of this mod's blocks that show what the block is doing (running, lit, formed, charging, a
+     * redstone signal...), not how it was built. A blueprint saved while a machine ran had it running for ever when nothing
+     * set it back (a machine changes the state only when its work starts or stops); these go back to the block's default.
+     */
+    static final java.util.Set<String> RUNTIME = java.util.Set.of("lit", "active", "working", "spinning", "charging", "discharging",
+        "scanning", "replicating", "formed", "complete", "has_fluid", "powered");
+
+    private static <T extends Comparable<T>> BlockState copy(BlockState to, BlockState from, net.minecraft.world.level.block.state.properties.Property<T> p) {
+        return to.setValue(p, from.getValue(p));
     }
 
     /** The material item; {@link Items#AIR} for a free second half; null for a state that is not built (fluids, no item). */
@@ -801,6 +1043,8 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         if (owner != null) tag.putUUID("BuilderOwner", owner);
         tag.putString("BuilderOwnerName", ownerName);
         tag.putString("BuilderFile", fileName);
+        tag.putString("BuilderUpload", upload);
+        tag.putString("BuilderStructure", structure);   // 0.1.11.188
         tag.putInt("BuilderFileIndex", fileIndex);
         tag.putInt("BuilderRotation", rotation);
         tag.putInt("BuilderMirror", mirror);
@@ -819,6 +1063,9 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         owner = tag.hasUUID("BuilderOwner") ? tag.getUUID("BuilderOwner") : null;
         ownerName = tag.getString("BuilderOwnerName");
         fileName = tag.getString("BuilderFile");
+        upload = BlueprintUploads.resolve(tag.getString("BuilderUpload")) != null ? tag.getString("BuilderUpload") : "";
+        ResourceLocation saved = ResourceLocation.tryParse(tag.getString("BuilderStructure"));
+        structure = saved != null && com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprintRegistry.get(saved) != null ? saved.toString() : "";
         fileIndex = tag.getInt("BuilderFileIndex");
         rotation = Math.floorMod(tag.getInt("BuilderRotation"), 4);
         mirror = Math.floorMod(tag.getInt("BuilderMirror"), 3);
@@ -833,7 +1080,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             if (i < list.size()) agents[i].load(list.getCompound(i), registries);
             if (agents[i].to.equals(Vec3.ZERO)) agents[i].from = agents[i].to = dock(i);
         }
-        reloadPlan = useCreate || !fileName.isEmpty();
+        reloadPlan = useCreate || !fileName.isEmpty() || !upload.isEmpty() || !structure.isEmpty();
     }
 
     /** Clients get the drone legs, the work area, the name, the file list and the missing materials (no inventory). */
@@ -855,6 +1102,11 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             tag.putIntArray("Bounds", new int[]{(int) bounds.minX, (int) bounds.minY, (int) bounds.minZ, (int) bounds.maxX, (int) bounds.maxY, (int) bounds.maxZ});
         }
         tag.putBoolean("Preview", preview);
+        tag.putInt("PlanVersion", planVersion);   // 0.1.11.184
+        tag.putIntArray("PlanOffset", planOffset);   // 0.1.11.185: the in-world placing's prediction
+        tag.putBoolean("Create", useCreate);
+        tag.putInt("Rot", rotation);
+        tag.putInt("Mir", mirror);
         tag.putBoolean("Running", running);
         tag.putString("Name", clientName);
         ListTag names = new ListTag();
@@ -905,6 +1157,12 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     final long[] clientWork = new long[DRONES];
 
     private void readClient(CompoundTag tag) {
+        planVersion = tag.getInt("PlanVersion");   // 0.1.11.184
+        int[] po = tag.getIntArray("PlanOffset");
+        if (po.length == 3) planOffset = po;
+        clientCreate = tag.getBoolean("Create");
+        rotation = Math.floorMod(tag.getInt("Rot"), 4);
+        mirror = Math.floorMod(tag.getInt("Mir"), 3);
         ListTag drones = tag.getList("Drones", Tag.TAG_COMPOUND);
         for (int i = 0; i < DRONES && i < drones.size(); i++) {
             CompoundTag t = drones.getCompound(i);

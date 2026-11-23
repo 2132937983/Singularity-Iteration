@@ -47,10 +47,15 @@ import org.jetbrains.annotations.Nullable;
 public final class BlueprintReader {
     private BlueprintReader() {}
 
-    /** Largest file that the reader opens (compressed size). */
-    static final long MAX_FILE_BYTES = 16L << 20;
-    /** NBT memory quota for one file. */
+    /** Largest file that the reader opens (compressed size). 0.1.11.187: 256 MB (was 16 MB); the memory decides the rest. */
+    static final long MAX_FILE_BYTES = 256L << 20;
+    /**
+     * NBT memory quota for one file: 256 MB, 0.1.11.187: or half the free memory when that is more. A file over it is
+     * {@link Blueprint.TooLarge} (it was a read error).
+     */
     static final long NBT_QUOTA = 0x10000000L;
+
+    static long nbtQuota() { return Math.max(NBT_QUOTA, Blueprint.free() / 2); }
 
     public static Path folder() {
         return FMLPaths.GAMEDIR.get().resolve("schematics").toAbsolutePath().normalize();
@@ -72,7 +77,7 @@ public final class BlueprintReader {
         }
     }
 
-    /** Reads {@code name} from the schematics folder. Null on any error (logged). */
+    /** Reads {@code name} from the schematics folder. Null on any error (logged); 0.1.11.187: {@link Blueprint.TooLarge} when the memory cannot hold it. */
     @Nullable
     public static Blueprint readFile(String name, HolderGetter<Block> blocks) {
         Path dir = folder();
@@ -87,9 +92,15 @@ public final class BlueprintReader {
             if (!Files.isRegularFile(file) || Files.size(file) > MAX_FILE_BYTES) return null;
             CompoundTag root;
             try (InputStream in = Files.newInputStream(file)) {
-                root = NbtIo.readCompressed(in, NbtAccounter.create(NBT_QUOTA));
+                root = NbtIo.readCompressed(in, NbtAccounter.create(nbtQuota()));
             }
             return name.endsWith(".litematic") ? litematic(root, name, blocks) : structure(root, name, blocks);
+        } catch (Blueprint.TooLarge e) {
+            Singularity_Iteration.LOGGER.warn("Blueprint Builder: {} is too large for the free memory ({})", name, e.getMessage());
+            throw e;
+        } catch (net.minecraft.nbt.NbtAccounterException e) {
+            Singularity_Iteration.LOGGER.warn("Blueprint Builder: {} is too large for the free memory ({})", name, e.getMessage());
+            throw new Blueprint.TooLarge(e.getMessage());
         } catch (Exception e) {
             Singularity_Iteration.LOGGER.warn("Blueprint Builder: cannot read {}: {}", name, e.toString());
             return null;
@@ -105,10 +116,12 @@ public final class BlueprintReader {
         ListTag size = root.getList("size", Tag.TAG_INT);
         List<Blueprint.Entry> entries = new ArrayList<>();
         ListTag list = root.getList("blocks", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size() && entries.size() < Blueprint.MAX_BLOCKS; i++) {
+        Blueprint.Budget budget = new Blueprint.Budget();   // 0.1.11.187: no fixed limit, only the memory
+        for (int i = 0; i < list.size(); i++) {
             CompoundTag b = list.getCompound(i);
             int index = b.getInt("state");
             if (index < 0 || index >= palette.length || palette[index].isAir()) continue;
+            budget.add();
             ListTag pos = b.getList("pos", Tag.TAG_INT);
             entries.add(new Blueprint.Entry(new BlockPos(pos.getInt(0), pos.getInt(1), pos.getInt(2)), palette[index]));
         }
@@ -119,6 +132,7 @@ public final class BlueprintReader {
     static Blueprint litematic(CompoundTag root, String name, HolderGetter<Block> blocks) {
         CompoundTag regions = root.getCompound("Regions");
         List<Blueprint.Entry> raw = new ArrayList<>();
+        Blueprint.Budget budget = new Blueprint.Budget();   // 0.1.11.187: no fixed limit, only the memory
         int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
         for (String key : regions.getAllKeys()) {
@@ -138,9 +152,10 @@ public final class BlueprintReader {
             int bits = LitematicBits.bitsFor(palette.length);
             long volume = (long) ax * ay * az;
             if (!LitematicBits.fits(data, bits, volume)) continue;            // damaged region
-            for (long i = 0; i < volume && raw.size() < Blueprint.MAX_BLOCKS; i++) {
+            for (long i = 0; i < volume; i++) {
                 int v = LitematicBits.get(data, bits, i);
                 if (v >= palette.length || palette[v].isAir()) continue;
+                budget.add();
                 int x = (int) (i % ax), z = (int) ((i / ax) % az), y = (int) (i / ((long) ax * az));
                 BlockPos at = new BlockPos(ox + x, oy + y, oz + z);
                 raw.add(new Blueprint.Entry(at, palette[(int) v]));

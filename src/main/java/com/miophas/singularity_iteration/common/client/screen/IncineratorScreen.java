@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.energy.IncineratorPhysics;
 import com.miophas.singularity_iteration.common.menu.generator.IncineratorValues;
 import com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu;
@@ -15,6 +16,8 @@ import net.neoforged.api.distmarker.OnlyIn;
  * 0.1.11.19: the item generators' recorder: the chamber temperature of the last 12 seconds with the design (850 °C) and
  * ignition (300 °C) lines, a mark for every item that went in (orange burning, grey not burning); the temperature, the
  * efficiency and the output beside it; the ash pit under it. Values as in {@link IncineratorValues}.
+ *
+ * <p>0.1.11.181 (176 wide, merged): the furnace on the left with the ash slot as the drawer under its grate, the record beside it; the figures beside the record went (they are in the readouts).
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -26,16 +29,17 @@ public class IncineratorScreen<M extends MimicGeneratorMenu> extends MimicScreen
     private int v(int i) { return menu.value(i); }
 
     @Override
-    protected void drawWindow(GuiGraphics g, int x, int y, double time) {
-        float u = WindRoseView.u();
-        ChartView.draw(g, x + 4, y + 4, 120, 52, i -> v(IncineratorValues.CHART + i), 1100, 0xFFD9531E, new int[]{0xFFF0913A, 0xFF8D8F92},
+    protected void drawMachine(GuiGraphics g, int x, int y, double time) {
+        int chamber = v(4);
+        // 0.1.11.181: the furnace: the fire in its chamber, the grate, the ash drawer (the ash slot) under it; the record beside it
+        MachineArt.iron(g, x + 10, y + 18, 52, 56);
+        MachineArt.sunk(g, x + 14, y + 22, 44, 26, MachineArt.WINDOW);
+        if (v(3) != 0) MachineArt.flames(g, x + 16, x + 56, y + 46, time, 5, Math.max(3, Math.min(12, chamber / 80)));
+        FcsDraw.fill(g, x + 14, y + 48, x + 58, y + 51, MachineArt.IRON_DARK);
+        for (int k = 16; k < 56; k += 4) FcsDraw.fill(g, x + k, y + 49, x + k + 2, y + 50, 0xFF8D8F92);
+        ChartView.draw(g, x + 68, y + 18, 98, 56, i -> v(IncineratorValues.CHART + i), 1100, 0xFFD9531E, new int[]{0xFFF0913A, 0xFF8D8F92},
             new ChartView.Ref(IncineratorPhysics.DESIGN, 0xFF2F6E4F, Component.literal("850")),
             new ChartView.Ref(IncineratorPhysics.IGNITION, 0xFFC0392B, Component.literal("300")));
-        int chamber = v(4);
-        PumpCrossSection.text(g, Component.literal(chamber + " °C"), x + 130, y + 6, PlantMimic.colour(chamber * 0.45) & 0xFFFFFF, u);
-        PumpCrossSection.text(g, Component.translatable(K + "eff", Math.round(v(5) / 10.0) + "%"), x + 130, y + 18, 0x1C2524, u);
-        PumpCrossSection.text(g, Component.literal(v(7) + " EU/t"), x + 130, y + 30, 0x2F6E4F, u);
-        PumpCrossSection.text(g, Component.translatable(K + "ash_short", v(6)), x + 130, y + 42, v(6) >= IncineratorPhysics.ASH_CAPACITY - 1 ? 0xC0392B : 0x5B6867, u);
 
         line(g, x, y, 0, Component.translatable(K + "line_chamber", chamber, Math.round(v(5) / 10.0) + "%"), WindRoseView.INK);
         line(g, x, y, 1, Component.translatable(K + "line_fuel", f("%,d", v(2)), v(9), v(8)), WindRoseView.DIM);
@@ -52,16 +56,17 @@ public class IncineratorScreen<M extends MimicGeneratorMenu> extends MimicScreen
     @Override
     protected void drawStrip(GuiGraphics g, int x, int y) {
         long e = Integer.toUnsignedLong(v(0)), cap = Math.max(1, Integer.toUnsignedLong(v(1)));
-        bar(g, x, y, Component.translatable(K + "stored"), e / (double) cap, Component.literal(f("%,d / %,d EU", e, cap)));
+        bar(g, x, y, Component.translatable(K + "stored"), e / (double) cap, stored(e, cap));
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         int rx = mouseX - leftPos, ry = mouseY - topPos;
-        if (rx >= wx && rx < wx + ww && ry >= wy && ry < wy + wh)
-            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip1"), Component.translatable(K + "tip2"),
-                Component.translatable(K + "tip3")), mouseX, mouseY);
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the drawing's how-it-works text, hidden for now
+        // if (overMachine(rx, ry))
+        //     g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip1"), Component.translatable(K + "tip2"),
+        //         Component.translatable(K + "tip3")), mouseX, mouseY);
     }
 
     /** 0.1.11.119: the window is a chart: kept as it was (not pixel art). */

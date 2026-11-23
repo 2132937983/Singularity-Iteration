@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "mio_icif:item/normal/item_tesu_connector"
+  }
+}

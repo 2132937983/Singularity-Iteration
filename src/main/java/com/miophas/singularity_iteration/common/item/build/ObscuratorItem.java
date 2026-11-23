@@ -241,16 +241,14 @@ public class ObscuratorItem extends mio_icif_tool_elc {
         tooltip.add(Component.translatable("tooltip.mio_icif.obscurator.scan_usage"));
     }
 
-    /**
-     * 获取当前存储的能量（EU）
-     */
-    public long getEnergy(ItemStack stack) {
-        return getMaxEnergy() - stack.getDamageValue();
-    }
+    // 0.1.11.161: the energy lives in the shared battery component, as with every electric tool. Before, getEnergy / setEnergy /
+    // extractEnergy kept it in the damage value; the item has no durability, so the damage stayed 0 and it read as always full
+    // (it never ran out, and could not be shown empty).
 
     /**
      * 获取最大能量
      */
+    @Override
     public long getMaxEnergy() {
         return MAX_ENERGY;
     }
@@ -272,24 +270,5 @@ public class ObscuratorItem extends mio_icif_tool_elc {
             return true;
         }
         return false;
-    }
-
-    /**
-     * 提取能量（重写父类方法以支持更大的能量容量）
-     */
-    @Override
-    public long extractEnergy(ItemStack stack, long amount) {
-        long currentEnergy = getEnergy(stack);
-        long newEnergy = Math.max(0, currentEnergy - amount);
-        setEnergy(stack, newEnergy);
-        return currentEnergy - newEnergy;
-    }
-
-    /**
-     * 设置能量
-     */
-    public void setEnergy(ItemStack stack, long energy) {
-        energy = Math.max(0, Math.min(getMaxEnergy(), energy));
-        stack.setDamageValue((int) (getMaxEnergy() - energy));
     }
 }

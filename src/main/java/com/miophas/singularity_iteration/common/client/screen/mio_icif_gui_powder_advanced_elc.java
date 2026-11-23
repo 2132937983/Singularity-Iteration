@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.MergedSlots;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_powder_advanced_elc;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.menu.producer.PowderAdvancedElcMenu;
@@ -50,6 +51,62 @@ public class mio_icif_gui_powder_advanced_elc extends ProcessInstrumentScreen<Po
         for (int k = 0; k < 16; k++)                     // the classifier blades
             blade(g, cx, cy, classifier + k * tau / 16, 5, 17, 1.2F, 2.4F, (k % 2 == 0 ? 0xFF000000 | BLUE : 0xFF6E9ACB));
         FcsDraw.disc(g, cx, cy, 5, STEEL);
+    }
+
+    // ---- 0.1.11.178: the merged drawing (panel coordinates; the slots are MergedSlots.Cyclone's); 0.1.11.180: 176 wide ----
+    // The ring mill from the front with the input in its hopper, the motor on the left wired to the battery, the rollers
+    // rolling round the ring and the classifier turning at the rotor speed; the progress arrow up to the cyclone, the dust
+    // swirling down its barrel and cone, out of the spigot into the tray under it.
+    private static final int MILL_X = 79, MILL_Y = 67, CYCLONE_X = 141;
+    private float swirl;
+
+    @Override protected int arrowX() { return 106; }
+    @Override protected int arrowY() { return 40; }
+    @Override protected int[] machineBody() { return new int[]{32, 40, 72, 54}; }
+
+    @Override
+    protected List<Component> mergedTooltip(int rx, int ry) {
+        // EXPLAIN_TIP_HIDDEN (0.1.11.182): the cyclone's how-it-works text, hidden for now
+        // return inside(rx, ry, CYCLONE_X - 11, 20, 22, 47) ? figureTooltip() : super.mergedTooltip(rx, ry);
+        return super.mergedTooltip(rx, ry);
+    }
+
+    @Override
+    protected void drawMachine(GuiGraphics g, float dt) {
+        float s = speed(), tau = 2 * (float) Math.PI;
+        classifier = (classifier + dt * s * CLASSIFIER_TURNS_PER_SECOND * tau) % tau;
+        orbit = (orbit + dt * s * ROLLER_ORBITS_PER_SECOND * tau) % tau;
+        swirl = (swirl + dt * s * 1.5F) % 1;
+        MachineArt.cable(g, 28, 82, 34, 82);
+        MachineArt.motor(g, 32, 66, 20, 24);
+        FcsDraw.fill(g, 52, 74, 56, 80, MachineArt.STEEL_DARK);
+        MachineArt.iron(g, 54, 40, 50, 54);
+        FcsDraw.disc(g, MILL_X, MILL_Y, 21, MachineArt.WINDOW);
+        FcsDraw.circle(g, MILL_X, MILL_Y, 17.5F, 3, MachineArt.STEEL_DARK);           // the grinding ring
+        for (int k = 0; k < 3; k++) {                                                 // the rollers
+            float a = orbit + k * tau / 3;
+            float x = MILL_X + (float) Math.cos(a) * 12, y = MILL_Y + (float) Math.sin(a) * 12;
+            FcsDraw.disc(g, x, y, 4.5F, MachineArt.STEEL_LIGHT);
+            blade(g, x, y, -classifier * 2, 0, 3.5F, 0.6F, 0.6F, MachineArt.STEEL_DARK);
+        }
+        for (int k = 0; k < 8; k++)                                                   // the classifier
+            blade(g, MILL_X, MILL_Y, classifier + k * tau / 8, 3, 7, 0.8F, 1.3F, k % 2 == 0 ? 0xFF000000 | BLUE : 0xFF6E9ACB);
+        FcsDraw.disc(g, MILL_X, MILL_Y, 3, MachineArt.STEEL);
+        MachineArt.hopper(g, MergedSlots.Cyclone.IN_X, MergedSlots.Cyclone.IN_Y, 40);
+        MachineArt.steel(g, CYCLONE_X - 11, 20, 22, 28);                              // the barrel
+        FcsDraw.fill(g, CYCLONE_X - 8, 23, CYCLONE_X + 8, 45, MachineArt.WINDOW);
+        if (s > 0) for (int k = 0; k < 5; k++) {                                      // the dust swirling down
+            float ph = (swirl + k / 5F) % 1, y = 24 + ph * 19, x = CYCLONE_X + (float) Math.sin(ph * tau * 2) * 6;
+            FcsDraw.fill(g, x - 1, y, x + 1, y + 1, 0xFF6E9ACB);
+        }
+        for (int y = 48; y < 62; y++) {                                               // the cone
+            int half = Math.round(11 - 8 * (y - 48) / 14F);
+            FcsDraw.fill(g, CYCLONE_X - half, y, CYCLONE_X + half, y + 1, MachineArt.STEEL);
+            FcsDraw.fill(g, CYCLONE_X - half, y, CYCLONE_X + 1 - half, y + 1, MachineArt.STEEL_LIGHT);
+            FcsDraw.fill(g, CYCLONE_X - 1 + half, y, CYCLONE_X + half, y + 1, MachineArt.STEEL_DARK);
+        }
+        MachineArt.steel(g, CYCLONE_X - 3, 62, 6, 5);                                 // the spigot
+        MachineArt.tray(g, MergedSlots.Cyclone.OUT_X, MergedSlots.Cyclone.OUT_Y);
     }
 
     @Override

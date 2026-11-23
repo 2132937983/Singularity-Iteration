@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/wiring/block_tesu_input"
+    },
+    "facing=east": {
+      "model": "mio_icif:block/wiring/block_tesu_input"
+    },
+    "facing=south": {
+      "model": "mio_icif:block/wiring/block_tesu_input"
+    },
+    "facing=west": {
+      "model": "mio_icif:block/wiring/block_tesu_input"
+    }
+  }
+}

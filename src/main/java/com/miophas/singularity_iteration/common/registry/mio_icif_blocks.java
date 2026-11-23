@@ -327,11 +327,11 @@ public static final DeferredBlock<mio_icif_Block_Geo_Generator> GEO_GENERATOR =
 
     // 注册风力发电机方法
 public static final DeferredBlock<mio_icif_Block_Wind_Generator> WIND_GENERATOR =
-        registerBlock("generator/block_wind_generator", () -> new mio_icif_Block_Wind_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_wind_generator", () -> new mio_icif_Block_Wind_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));   // 0.1.11.169: SCXSYGL's open model
 
     // 注册水力发电机方法
 public static final DeferredBlock<mio_icif_Block_Water_Generator> WATER_GENERATOR =
-        registerBlock("generator/block_water_generator", () -> new mio_icif_Block_Water_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_water_generator", () -> new mio_icif_Block_Water_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));   // 0.1.11.169: SCXSYGL's open model
 
     // 注册半流质发电机方块
     public static final DeferredBlock<mio_icif_Block_Semifluid_Generator> SEMIFLUID_GENERATOR =
@@ -473,6 +473,27 @@ public static final DeferredBlock<mio_icif_mfsu_charger> MFSU_CHARGER = register
 
     // 注册 GESU 输出模块(IV)方块
     public static final DeferredBlock<mio_icif_gesu_output_iv> GESU_OUTPUT_IV = registerBlock("wiring/block_gesu_output_iv", () -> new mio_icif_gesu_output_iv(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 8.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+
+    // 0.1.11.157: TESU (太级储电罐), the 7 x 7 x 13 storage cylinder (data/mio_icif/multiblock/tesu.json)
+    public static final DeferredBlock<Block> TESU_CASING = registerBlock("wiring/block_tesu_casing", () -> new Block(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<Block> TESU_CELL = registerBlock("wiring/block_tesu_cell", () -> new Block(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().lightLevel(s -> 7)));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuControllerBlock> TESU_CONTROLLER = registerBlock("wiring/block_tesu_controller", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuControllerBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(10.0f, 20.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuPortBlock> TESU_INPUT = registerBlock("wiring/block_tesu_input", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuPortBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops(), false));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuPortBlock> TESU_OUTPUT = registerBlock("wiring/block_tesu_output", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuPortBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops(), true));
+    static {
+        // 0.1.11.166: the TESU top electrode is gone and the cap's middle is casing; an electrode in a world or an inventory
+        // turns into casing, so a TESU built before stays formed.
+        net.minecraft.resources.ResourceLocation electrode = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "wiring/block_tesu_electrode");
+        net.minecraft.resources.ResourceLocation casing = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "wiring/block_tesu_casing");
+        BLOCKS.addAlias(electrode, casing);
+        mio_icif_items.ITEMS.addAlias(electrode, casing);
+    }
+
+    // 0.1.11.158: the TESU wireless field: the wireless output port (a port slot) and the relay
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuWirelessBlock> TESU_WIRELESS_PORT = registerBlock("wiring/block_tesu_wireless_port", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuWirelessBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+    // 0.1.11.167: the relay is a pylon three blocks tall: this base and the column above it (no item, no drop)
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuRelayBlock> TESU_RELAY = registerBlock("wiring/block_tesu_relay", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuRelayBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuRelayColumnBlock> TESU_RELAY_COLUMN = registerBlockNoItem("wiring/block_tesu_relay_column", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuRelayColumnBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
 
     // 注册 GESU 输出模块(LuV)方块
     public static final DeferredBlock<mio_icif_gesu_output_luv> GESU_OUTPUT_LUV = registerBlock("wiring/block_gesu_output_luv", () -> new mio_icif_gesu_output_luv(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 8.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));

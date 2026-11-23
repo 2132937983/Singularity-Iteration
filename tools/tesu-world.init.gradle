@@ -1,0 +1,23 @@
+// 0.1.11.157: the server run that builds the TESU structure sample world (example.sicore.TesuWorldBuilder).
+// python tools/tesu_world.py prepare; ./gradlew --offline -I tools/tesu-world.init.gradle runTesuWorldBuild; python tools/tesu_world.py install
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('tesuWorldBuild') {
+            type = 'server'
+            loadedMods = [project.neoForge.mods[project.mod_id], project.neoForge.mods.si_core_example]
+            gameDirectory = project.file('build/tesu-world/game')
+            systemProperty 'si.tesu.world', 'true'
+            programArgument '--nogui'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        // 0.1.11.177: writes the showcase data pack for the installed world (python tools/tesu_world.py install-pack after)
+        project.neoForge.runs.register('tesuWorldPack') {
+            type = 'server'
+            loadedMods = [project.neoForge.mods[project.mod_id], project.neoForge.mods.si_core_example]
+            gameDirectory = project.file('build/tesu-world/game')
+            systemProperty 'si.tesu.world.pack', 'true'
+            programArgument '--nogui'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

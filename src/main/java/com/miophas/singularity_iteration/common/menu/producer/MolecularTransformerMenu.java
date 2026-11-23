@@ -16,13 +16,14 @@ public class MolecularTransformerMenu extends mio_icif_machine_menu {
     public static final int SLOT_COUNT = 2;
 
     /** 0.1.11.6: the screen is 248 x 204 (observation window); input and output stand in a column on the left. */
-    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
-    public static final int INPUT_X = 10;
-    public static final int INPUT_Y = 29;
-    public static final int OUTPUT_X = 10;
-    public static final int OUTPUT_Y = 81;
+    public static final int GUI_WIDTH = 176, GUI_HEIGHT = 204;   // 0.1.11.181: the vanilla width
+    /** 0.1.11.181: the input port on the chamber's top at the left, the output port at the right. */
+    public static final int INPUT_X = 12;
+    public static final int INPUT_Y = 17;
+    public static final int OUTPUT_X = 148;
+    public static final int OUTPUT_Y = 17;
     /** Player inventory: centred under the window. */
-    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    public static final int INVENTORY_X = 8, INVENTORY_Y = 122, HOTBAR_Y = 180;
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_MAX_PROGRESS = 1;

@@ -20,6 +20,16 @@ public class mio_icif_tags {
 
     public static final TagKey<Block> CABLE = BlockTags.create(ResourceLocation.fromNamespaceAndPath("c", "cable"));
 
+    /**
+     * 0.1.11.170: parts the wrench takes apart as it takes machines (multiblock casings and ports, machine hulls): a wrench mines
+     * them fast and right-click dismantles them. They are not machines ({@link #MACHINE}): any correct tool still drops them
+     * whole, they carry no settings and get no salvage.
+     */
+    public static final TagKey<Block> WRENCHABLE = BlockTags.create(ResourceLocation.fromNamespaceAndPath("mio_icif", "wrenchable"));
+
+    /** 0.1.11.170: items a toolbox takes besides tools, weapons and electric items (this mod's hand tools; see mio_icif_toolbox). */
+    public static final TagKey<Item> TOOLBOX_STORABLE = ItemTags.create(ResourceLocation.fromNamespaceAndPath("mio_icif", "toolbox_storable"));
+
     public static final TagKey<Block> GENERATOR = BlockTags.create(ResourceLocation.fromNamespaceAndPath("mio_icif", "generator"));
 
     public static final TagKey<Block> ENERGY_CONTAINER = BlockTags.create(ResourceLocation.fromNamespaceAndPath("mio_icif", "energy_container"));

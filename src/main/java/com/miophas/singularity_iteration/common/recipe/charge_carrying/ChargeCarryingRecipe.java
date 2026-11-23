@@ -27,12 +27,19 @@ public class ChargeCarryingRecipe extends ShapedRecipe {
     private final ShapedRecipePattern pattern;
     private final ItemStack result;
     private final boolean transferCharge;
+    /** 0.1.11.170: the result takes the stored contents (custom data) of the input that has them (a toolbox made bigger). */
+    private final boolean carryContents;
 
     public ChargeCarryingRecipe(String group, ShapedRecipePattern pattern, ItemStack result, boolean transferCharge) {
+        this(group, pattern, result, transferCharge, false);
+    }
+
+    public ChargeCarryingRecipe(String group, ShapedRecipePattern pattern, ItemStack result, boolean transferCharge, boolean carryContents) {
         super(group, CraftingBookCategory.MISC, pattern, result);
         this.pattern = pattern;
         this.result = result;
         this.transferCharge = transferCharge;
+        this.carryContents = carryContents;
     }
 
     @Override
@@ -42,7 +49,20 @@ public class ChargeCarryingRecipe extends ShapedRecipe {
             long totalCharge = collectInputCharge(input);
             chargeResult(ret, totalCharge);
         }
+        if (this.carryContents) {
+            for (int i = 0; i < input.size(); i++) {
+                net.minecraft.world.item.component.CustomData data = input.getItem(i).get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+                if (data != null) {
+                    ret.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, data);
+                    break;
+                }
+            }
+        }
         return ret;
+    }
+
+    public boolean shouldCarryContents() {
+        return this.carryContents;
     }
 
     @Override

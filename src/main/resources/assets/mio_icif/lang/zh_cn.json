@@ -6139,5 +6139,14 @@
   "hud.mio_icif.synergy.resonant_deflection": "共振偏转",
   "hud.mio_icif.synergy.afterimage_decoy": "残影诱饵",
   "hud.mio_icif.synergy.phase_counter": "相位反震",
-  "hud.mio_icif.synergy.fleet_datalink": "舰队链"
+  "hud.mio_icif.synergy.fleet_datalink": "舰队链",
+  "module.mio_icif.category.active": "主动技能",
+  "module.mio_icif.category.sensor": "面罩视野",
+  "module.mio_icif.category.passive": "常驻被动",
+  "module.mio_icif.tooltip.always_on": "装上即自动生效（无需手动开关）",
+  "module.mio_icif.tooltip.compute_core_boost": "算力增幅：量子相干恢复 +20%（可叠加）",
+  "module.mio_icif.tooltip.auto_synergy": "✦ 自动联动：%s（搭配 %s）",
+  "gui.mio_icif.station.hint_quantum": "可装：%s模块 · 剩余 %s 槽",
+  "gui.mio_icif.station.hint_nano": "可装：%s模块 · 剩余 %s LP",
+  "gui.mio_icif.station.synergy_preview": "✦ 将自动激活联动：%s"
 }

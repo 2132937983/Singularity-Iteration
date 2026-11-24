@@ -6139,5 +6139,14 @@
   "hud.mio_icif.synergy.resonant_deflection": "共鳴偏向",
   "hud.mio_icif.synergy.afterimage_decoy": "残像囮",
   "hud.mio_icif.synergy.phase_counter": "位相反撃",
-  "hud.mio_icif.synergy.fleet_datalink": "僚機接続"
+  "hud.mio_icif.synergy.fleet_datalink": "僚機接続",
+  "module.mio_icif.category.active": "アクティブ",
+  "module.mio_icif.category.sensor": "バイザー",
+  "module.mio_icif.category.passive": "パッシブ",
+  "module.mio_icif.tooltip.always_on": "装着するだけで自動発動（スイッチ不要）",
+  "module.mio_icif.tooltip.compute_core_boost": "演算増幅：量子コヒーレンス回復 +20%（重複可）",
+  "module.mio_icif.tooltip.auto_synergy": "✦ 自動シナジー：%s（%s と併用）",
+  "gui.mio_icif.station.hint_quantum": "対応：%s · 空き %s スロット",
+  "gui.mio_icif.station.hint_nano": "対応：%s · 残り %s LP",
+  "gui.mio_icif.station.synergy_preview": "✦ 自動シナジー発動：%s"
 }

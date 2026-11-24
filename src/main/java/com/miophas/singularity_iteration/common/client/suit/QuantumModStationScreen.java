@@ -193,7 +193,7 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
             List<net.minecraft.util.FormattedCharSequence> lines = font.split(hint, lw - 8);
             for (int i = 0; i < lines.size() && i < 4; i++) g.drawString(font, lines.get(i), lx + 4, ly + (nano ? 26 : 22) + i * 10, 0xFF8FA4AE, false);
         }
-        // status line
+        // status line (with smart slot/capacity & auto-synergy preview when IDLE)
         QuantumModStationBlockEntity.Status status = menu.status();
         int color = switch (status) {
             case WORKING, UPGRADING, CORE_INSTALL, CORE_SWAP -> 0xFF4DE1C1;
@@ -202,7 +202,38 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
             default -> 0xFFFF7A5C;
         };
         Component text = Component.translatable("gui.mio_icif.station.status." + status.name().toLowerCase(java.util.Locale.ROOT));
+        if (status == QuantumModStationBlockEntity.Status.IDLE && !suit.isEmpty() && slot != null && cap > 0) {
+            Component synPreview = synergyPreview(suit, menu.unit());
+            if (synPreview != null) {
+                text = synPreview;
+                color = 0xFFC398FF;
+            } else {
+                int free = nano ? Math.max(0, cap - SuitModules.latticeUsed(suit)) : Math.max(0, cap - units.size());
+                Component slotName = Component.translatable("module.mio_icif.slot." + slot.getName());
+                text = Component.translatable(nano ? "gui.mio_icif.station.hint_nano" : "gui.mio_icif.station.hint_quantum", slotName, free);
+                color = 0xFF7CD8FF;
+            }
+        }
         drawFitted(g, font, text, lx + 4, ly + lh - 10, lw - 8, color, false);
+    }
+
+    /** If the incoming module completes a Quantum Auto-Synergy with an installed module, preview it right in the station. */
+    @org.jetbrains.annotations.Nullable
+    private Component synergyPreview(ItemStack suit, ItemStack unitStack) {
+        if (!SuitModules.isQuantumPiece(suit)) return null;
+        var incoming = com.miophas.singularity_iteration.common.suit.UnitRef.ofItem(unitStack);
+        if (incoming == null || incoming.builtin() == null) return null;
+        SuitModuleType type = incoming.builtin();
+        var installed = SuitModules.installed(suit);
+        for (var syn : com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.VALUES) {
+            SuitModuleType other = syn.a == type ? syn.b : syn.b == type ? syn.a : null;
+            if (other == null) continue;
+            if (installed.has(other) || (minecraft != null && minecraft.player != null
+                    && !SuitModules.wornPieceWith(minecraft.player, other).isEmpty())) {
+                return Component.translatable("gui.mio_icif.station.synergy_preview", Component.translatable(syn.nameKey()));
+            }
+        }
+        return null;
     }
 
     @Override

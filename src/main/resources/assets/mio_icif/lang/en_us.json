@@ -6139,5 +6139,14 @@
   "hud.mio_icif.synergy.resonant_deflection": "Resonant",
   "hud.mio_icif.synergy.afterimage_decoy": "Decoy",
   "hud.mio_icif.synergy.phase_counter": "Counter",
-  "hud.mio_icif.synergy.fleet_datalink": "Fleet"
+  "hud.mio_icif.synergy.fleet_datalink": "Fleet",
+  "module.mio_icif.category.active": "Active",
+  "module.mio_icif.category.sensor": "Visor",
+  "module.mio_icif.category.passive": "Passive",
+  "module.mio_icif.tooltip.always_on": "Always active once installed (no switch needed)",
+  "module.mio_icif.tooltip.compute_core_boost": "Compute boost: +20% coherence regen (stacks)",
+  "module.mio_icif.tooltip.auto_synergy": "✦ Auto-Synergy: %s (with %s)",
+  "gui.mio_icif.station.hint_quantum": "Accepts: %s · %s slot(s) free",
+  "gui.mio_icif.station.hint_nano": "Accepts: %s · %s LP free",
+  "gui.mio_icif.station.synergy_preview": "✦ Auto-Synergy: %s"
 }

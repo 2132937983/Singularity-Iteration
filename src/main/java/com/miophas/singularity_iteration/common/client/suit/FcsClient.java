@@ -144,9 +144,8 @@ public final class FcsClient {
             play(mc, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.VISOR_BOOT.get(), 1.0F, 0.5F);
         }
         visorOn = visor;
-        // 0.1.10.0: a decoherent quantum core refreshes the sensors at half rate; 0.1.10.1: so does a saturated suit computer
-        if ((com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.decoherent()
-                || com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.saturated()) && (tick & 1) == 1) return;
+        // A decoherent quantum core refreshes the sensors at half rate (no hidden QB bandwidth throttle)
+        if (com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.decoherent() && (tick & 1) == 1) return;
         boolean esp = hud && FcsState.active(SuitModuleType.ENTITY_ESP);
         boolean predict = hud && FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR);
         boolean blast = hud && FcsState.active(SuitModuleType.BLAST_WARNING);

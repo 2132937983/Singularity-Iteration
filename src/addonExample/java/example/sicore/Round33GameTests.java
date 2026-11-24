@@ -138,16 +138,16 @@ public final class Round33GameTests {
         slots(be).setStackInSlot(1, helmet);
         slots(be).setStackInSlot(2, unit("entity_esp").copyWithCount(2));
         long start = ((AbstractEnergyBlockEntity) be).getEnergyStorageInternal().getAmount();
-        h.runAfterDelay(60, () -> {
+        h.runAfterDelay(10, () -> {
             h.assertTrue(installed(slots(be).getStackInSlot(1)).isEmpty(), "the unit went in before the install time");
             h.assertTrue(String.valueOf(call(be, "status")).equals("WORKING"), "station status: " + call(be, "status"));
         });
-        h.runAfterDelay(115, () -> {
+        h.runAfterDelay(30, () -> {
             ItemStack piece = slots(be).getStackInSlot(1);
             h.assertTrue(installed(piece).contains("entity_esp"), "ESP unit not installed: " + installed(piece));
             h.assertTrue(slots(be).getStackInSlot(2).getCount() == 1, "the station must use one unit, left " + slots(be).getStackInSlot(2).getCount());
             long used = start - ((AbstractEnergyBlockEntity) be).getEnergyStorageInternal().getAmount();
-            h.assertTrue(used >= 100 * 64 && used <= 100 * 64 + 64, "install cost " + used + " EU, expected 6400");
+            h.assertTrue(used >= 20 * 64 && used <= 20 * 64 + 64, "install cost " + used + " EU, expected 1280");
             // the second ESP unit is refused: already installed
             h.assertTrue(String.valueOf(call(be, "evaluate")).equals("ALREADY_INSTALLED"), "duplicate unit: " + call(be, "evaluate"));
             h.assertTrue(ArmorFeatures.features(piece).stream().anyMatch(f -> f.featureKey().equals("fcs_entity_esp")),

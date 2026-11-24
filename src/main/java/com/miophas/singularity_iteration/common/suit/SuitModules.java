@@ -36,8 +36,8 @@ public final class SuitModules {
     public static final long DEFLECTOR_EU_PER_DAMAGE_MK2 = 3_000;
     /** Damage the deflector can cancel in one hit (two hearts more than a diamond sword crit). */
     public static final float DEFLECTOR_MAX_PER_HIT = 12.0F;
-    /** Station work per unit: ticks and EU per tick. */
-    public static final int INSTALL_TICKS = 100;
+    /** Station work per unit: 1 second (20 ticks) at 64 EU/t for snappy loadout swaps. */
+    public static final int INSTALL_TICKS = 20;
     public static final long INSTALL_EU_PER_TICK = 64;
     /** Drain is collected once a second so the piece is not re-synced every tick. */
     public static final int DRAIN_INTERVAL = 20;

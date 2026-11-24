@@ -207,8 +207,9 @@ public final class QuantumCore {
     private static void regen(ServerPlayer player, QuantumCoreState s, @Nullable ItemStack core, float max) {
         if (core == null || s.decoherentTicks > 0 || s.sustaining() || s.coherence >= max) return;
         if (player.level().getGameTime() - s.lastAction < QuantumConfig.regenDelay() || player.tickCount % 5 != 0) return;
-        // 0.1.10.1: a saturated suit computer (load above the bandwidth budget) regains at half speed
-        double rate = QuantumConfig.coherenceRegen() * (capacitor(player) ? 1.25 : 1.0) * (QuantumBandwidth.saturated(player) ? 0.5 : 1.0);
+        // Pure positive compute-core bonus (+20 % coherence regen per active core); no hidden saturation penalty
+        double coreBoost = 1.0 + 0.20 * QuantumLinks.activeComputeCores(player);
+        double rate = QuantumConfig.coherenceRegen() * (capacitor(player) ? 1.25 : 1.0) * coreBoost;
         float points = (float) Math.min(max - s.coherence, rate / 4.0);
         long cost = (long) Math.ceil(points * QuantumConfig.euPerCoherence());
         if (points <= 0 || cost > 0 && !SuitModules.canPay(player, core, cost)) return;

@@ -172,8 +172,40 @@ public enum SuitModuleType {
     public boolean allows(SuitClass suitClass) { return traits.allows(suitClass); }
     public boolean nanoOnly() { return traits.allows(SuitClass.NANO) && !traits.allows(SuitClass.QUANTUM); }
     @Nullable public SuitBurstSpec burst() { return traits.burst(); }
-    /** False for passive hardware that has no panel switch (the micro-capacitor). */
-    public boolean switchable() { return this != MICRO_CAPACITOR; }
+    /** Three player-facing module categories shown in tooltips and the Modification Station. */
+    public enum Category {
+        ACTIVE("active", 0xFFB85C),
+        SENSOR("sensor", 0x5CEBFF),
+        PASSIVE("passive", 0x69F0AE);
+
+        public final String id;
+        public final int color;
+        Category(String id, int color) { this.id = id; this.color = color; }
+        public String nameKey() { return "module.mio_icif.category." + id; }
+    }
+
+    /** Player-facing category at the given tier (e.g. Deflector/Predictor gain active skills at Mk.II). */
+    public Category category(int tier) {
+        if (burst() != null) return Category.ACTIVE;
+        if (this == PHASE_JUMP_DRIVE || this == PHASE_MODULATOR || this == ENTANGLEMENT_RELAY) return Category.ACTIVE;
+        if (tier >= 2 && (this == DEFLECTOR || this == BEHAVIOR_PREDICTOR)) return Category.ACTIVE;
+        if (needsVisor()) return Category.SENSOR;
+        return Category.PASSIVE;
+    }
+
+    public Category category() { return category(1); }
+
+    /**
+     * False for zero-drain always-wanted passive hardware that works automatically once installed
+     * and does not need to clutter the Equipment Console switch list.
+     */
+    public boolean switchable() {
+        return switch (this) {
+            case MICRO_CAPACITOR, SHOCK_GEL, HEAT_SINK_FINS, HYDROPHOBIC,
+                 KINETIC_GENERATOR, SOLAR_SKIN, COHERENCE_CAPACITOR, SELF_REPAIR -> false;
+            default -> true;
+        };
+    }
     /** False for units that work without suit energy (the generators and the capacitor). */
     public boolean needsPower() { return this != MICRO_CAPACITOR && this != SOLAR_SKIN && this != KINETIC_GENERATOR; }
     /**

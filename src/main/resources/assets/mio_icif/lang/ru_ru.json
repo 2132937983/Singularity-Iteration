@@ -6139,5 +6139,14 @@
   "hud.mio_icif.synergy.resonant_deflection": "Резонанс",
   "hud.mio_icif.synergy.afterimage_decoy": "Приманка",
   "hud.mio_icif.synergy.phase_counter": "Контрфаза",
-  "hud.mio_icif.synergy.fleet_datalink": "Флот"
+  "hud.mio_icif.synergy.fleet_datalink": "Флот",
+  "module.mio_icif.category.active": "Активный",
+  "module.mio_icif.category.sensor": "Визор",
+  "module.mio_icif.category.passive": "Пассивный",
+  "module.mio_icif.tooltip.always_on": "Работает автоматически после установки",
+  "module.mio_icif.tooltip.compute_core_boost": "Усиление: +20% к восст. когерентности",
+  "module.mio_icif.tooltip.auto_synergy": "✦ Авто-синергия: %s (с %s)",
+  "gui.mio_icif.station.hint_quantum": "Слот: %s · свободно %s",
+  "gui.mio_icif.station.hint_nano": "Слот: %s · свободно %s LP",
+  "gui.mio_icif.station.synergy_preview": "✦ Авто-синергия: %s"
 }

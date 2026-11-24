@@ -1,33 +1,63 @@
 {
   "variants": {
-    "facing=north,lit=false": {
+    "facing=north,half=lower,lit=false": {
       "model": "mio_icif:block/producer/block_armory"
     },
-    "facing=east,lit=false": {
+    "facing=east,half=lower,lit=false": {
       "model": "mio_icif:block/producer/block_armory",
       "y": 90
     },
-    "facing=south,lit=false": {
+    "facing=south,half=lower,lit=false": {
       "model": "mio_icif:block/producer/block_armory",
       "y": 180
     },
-    "facing=west,lit=false": {
+    "facing=west,half=lower,lit=false": {
       "model": "mio_icif:block/producer/block_armory",
       "y": 270
     },
-    "facing=north,lit=true": {
+    "facing=north,half=lower,lit=true": {
       "model": "mio_icif:block/producer/block_armory_on"
     },
-    "facing=east,lit=true": {
+    "facing=east,half=lower,lit=true": {
       "model": "mio_icif:block/producer/block_armory_on",
       "y": 90
     },
-    "facing=south,lit=true": {
+    "facing=south,half=lower,lit=true": {
       "model": "mio_icif:block/producer/block_armory_on",
       "y": 180
     },
-    "facing=west,lit=true": {
+    "facing=west,half=lower,lit=true": {
       "model": "mio_icif:block/producer/block_armory_on",
+      "y": 270
+    },
+    "facing=north,half=upper,lit=false": {
+      "model": "mio_icif:block/producer/block_armory_upper"
+    },
+    "facing=east,half=upper,lit=false": {
+      "model": "mio_icif:block/producer/block_armory_upper",
+      "y": 90
+    },
+    "facing=south,half=upper,lit=false": {
+      "model": "mio_icif:block/producer/block_armory_upper",
+      "y": 180
+    },
+    "facing=west,half=upper,lit=false": {
+      "model": "mio_icif:block/producer/block_armory_upper",
+      "y": 270
+    },
+    "facing=north,half=upper,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_upper_on"
+    },
+    "facing=east,half=upper,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_upper_on",
+      "y": 90
+    },
+    "facing=south,half=upper,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_upper_on",
+      "y": 180
+    },
+    "facing=west,half=upper,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_upper_on",
       "y": 270
     }
   }

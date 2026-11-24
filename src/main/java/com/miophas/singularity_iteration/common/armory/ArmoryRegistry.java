@@ -51,7 +51,8 @@ public final class ArmoryRegistry {
 
     public static final DeferredBlock<ArmoryBlock> ARMORY = BLOCKS.register("producer/block_armory",
         () -> new ArmoryBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(4.0F, 30.0F)
-            .sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+            .sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()
+            .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
     public static final DeferredItem<BlockItem> ARMORY_ITEM = ITEMS.register("producer/block_armory",
         () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(ARMORY.get(), new Item.Properties().rarity(Rarity.UNCOMMON)));
 

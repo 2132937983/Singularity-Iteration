@@ -116,18 +116,20 @@ public class TradeTerminalBlockEntity extends AbstractEnergyBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, TradeTerminalBlockEntity be) {
         if (level.isClientSide) return;
-        long capacity = Singularity_Iteration_Config.FUTURE_ENERGY_CAPACITY.get();
-        long receive = Singularity_Iteration_Config.FUTURE_MAX_RECEIVE.get();
-        if (be.energyStorage.getCapacity() != capacity || be.energyStorage.getMaxReceive() != receive) {
-            be.energyStorage.setCapacity(capacity);
-            be.energyStorage.setMaxReceive(receive);
-            be.refreshRegistration();
-            be.setChanged();
+        if ((level.getGameTime() & 31L) == 0L) {
+            long capacity = Singularity_Iteration_Config.FUTURE_ENERGY_CAPACITY.get();
+            long receive = Singularity_Iteration_Config.FUTURE_MAX_RECEIVE.get();
+            if (be.energyStorage.getCapacity() != capacity || be.energyStorage.getMaxReceive() != receive) {
+                be.energyStorage.setCapacity(capacity);
+                be.energyStorage.setMaxReceive(receive);
+                be.refreshRegistration();
+                be.setChanged();
+            }
         }
         AbstractEnergyBlockEntity.tick(level, pos, state, be);
         if (!(level instanceof ServerLevel server)) return;
         // the market day (0.1.10.27: a terminal alone keeps the daily auction going)
-        MarketDayDriver.check(server);
+        if ((server.getGameTime() & 15L) == 0L) MarketDayDriver.check(server);
         if (TerminalRules.runsOn(server.getGameTime(), pos.asLong())) be.runOrders(server);
     }
 

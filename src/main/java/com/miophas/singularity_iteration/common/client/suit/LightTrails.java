@@ -10,6 +10,7 @@ import com.miophas.singularity_iteration.common.suit.LightTrail;
 import com.miophas.singularity_iteration.common.suit.LightTrailRules;
 import com.miophas.singularity_iteration.common.suit.ManeuverMode;
 import com.miophas.singularity_iteration.common.suit.QuantumNozzles;
+import com.miophas.singularity_iteration.common.suit.SuitModules;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -20,6 +21,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -41,9 +43,16 @@ import org.joml.Vector3f;
 public final class LightTrails {
     private LightTrails() {}
 
-    /** The two trails (right, left) of one flyer and the time of its last sample. */
+    /** The two trails (right, left) of one flyer, its current palette, and the time of its last sample. */
     private static final class Flyer {
-        final LightTrail[] sides = {new LightTrail(), new LightTrail()};
+        final LightTrail[] sides = {
+            new LightTrail(LightTrailRules.RIBBON_AGE_TICKS),
+            new LightTrail(LightTrailRules.RIBBON_AGE_TICKS)
+        };
+        float[] lineColor = LightTrailRules.CYAN_LINE;
+        float[] curtainColor = LightTrailRules.CYAN_CURTAIN;
+        float[] coreColor = LightTrailRules.CYAN_CORE;
+        float mach;
         double seen;
     }
 
@@ -75,13 +84,20 @@ public final class LightTrails {
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         Vec3 chest = player.getPosition(partial).add(0, 1, 0);
         double time = player.level().getGameTime() + partial;
-        float level = LightTrailRules.level(ManeuverModeClient.machOf(player));
+        double mach = ManeuverModeClient.machOf(player);
+        float level = LightTrailRules.level(mach);
         Flyer f = null;
         for (int side = 0; side < 2; side++) {
             if (count[side] == 0) continue;
             Vec3 world = new Vec3(sum[side * 3] / count[side], sum[side * 3 + 1] / count[side], sum[side * 3 + 2] / count[side]).add(cam);
             if (world.distanceToSqr(chest) > 9) return;   // not a draw in the world (the inventory figure, a menu preview)
-            if (f == null) f = flyer(player.getId());
+            if (f == null) {
+                f = flyer(player.getId());
+                f.lineColor = LightTrailRules.playerLineColor(mach);
+                f.curtainColor = LightTrailRules.playerCurtainColor(mach);
+                f.coreColor = LightTrailRules.playerCoreColor(mach);
+                f.mach = (float) mach;
+            }
             f.sides[side].sample(time, world, level);
             f.seen = time;
         }
@@ -93,7 +109,8 @@ public final class LightTrails {
         for (Entity e : mc.level.entitiesForRendering()) {
             if (!(e instanceof WingmanEntity w) || !w.isAlive() || w.landed() || FxBudget.tier(w) == FxLodRules.FAR) continue;
             double speed = w.position().subtract(w.xo, w.yo, w.zo).length();
-            float level = LightTrailRules.level(ManeuverMode.mach(speed));
+            double mach = ManeuverMode.mach(speed);
+            float level = LightTrailRules.wingmanLevel(mach);
             Flyer f = FLYERS.get(w.getId());
             if (level <= 0 && f == null) continue;
             double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
@@ -103,6 +120,11 @@ public final class LightTrails {
             Vec3 back = ahead.scale(-Math.cos(pitch)).add(0, Math.sin(pitch), 0);
             Vec3 base = w.getPosition(partial).add(0, 0.9, 0).add(bodyUp.scale(LightTrailRules.WINGMAN_UP)).add(back.scale(LightTrailRules.WINGMAN_BACK));
             if (f == null) f = flyer(w.getId());
+            boolean living = SuitModules.hasLivingLining(w.getItemBySlot(EquipmentSlot.CHEST));
+            f.lineColor = LightTrailRules.wingmanLineColor(w.mode(), living);
+            f.curtainColor = LightTrailRules.wingmanCurtainColor(w.mode(), living);
+            f.coreColor = LightTrailRules.wingmanCoreColor(w.mode(), living);
+            f.mach = (float) mach;
             for (int side = 0; side < 2; side++)
                 f.sides[side].sample(time, base.add(right.scale(LightTrailRules.WINGMAN_SIDE * (side == 0 ? 1 : -1))), level);
             f.seen = time;
@@ -128,7 +150,10 @@ public final class LightTrails {
         java.util.List<Trail> trails = new java.util.ArrayList<>();
         for (Flyer f : FLYERS.values()) {
             if (now - f.seen > 0.5) continue;   // not drawn this frame (out of view, or the own flyer in first person)
-            for (LightTrail t : f.sides) { Trail built = build(t.path(), now, cam); if (built != null) trails.add(built); }
+            for (LightTrail t : f.sides) {
+                Trail built = build(t.path(), t.maxAgeTicks(), now, cam, f.lineColor, f.curtainColor, f.coreColor, f.mach);
+                if (built != null) trails.add(built);
+            }
         }
         if (!trails.isEmpty()) {
             RenderType curtainType = LightTrailRules.CURTAIN_ADDITIVE ? SiRenderTypes.FIELD_GLOW : SiRenderTypes.VAPOR;
@@ -139,18 +164,21 @@ public final class LightTrails {
                 vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
             }
             for (Trail t : trails) {
-                line(vc, m, t, LightTrailRules.LINE_HALF_WIDTH, LightTrailRules.LINE_RED, LightTrailRules.LINE_ALPHA);
-                line(vc, m, t, LightTrailRules.CORE_HALF_WIDTH, LightTrailRules.CORE_WHITE, LightTrailRules.CORE_ALPHA);
+                float superBoost = Mth.clamp((t.mach - 0.95F) / 0.35F, 0F, 1F);
+                line(vc, m, t, LightTrailRules.RIBBON_LINE_HALF_WIDTH + 0.012F * superBoost, t.lineColor, LightTrailRules.LINE_ALPHA);
+                line(vc, m, t, LightTrailRules.RIBBON_CORE_HALF_WIDTH + 0.004F * superBoost, t.coreColor, LightTrailRules.CORE_ALPHA + 0.2F * superBoost);
             }
             buffers.endBatch(SiRenderTypes.FIELD_GLOW);
         }
         pose.popPose();
     }
 
-    /** A trail ready to draw: camera-relative points along a spline, the side of a camera-facing ribbon, the curtain's way down, alpha and depth. */
-    private record Trail(Vec3[] p, Vec3[] side, Vec3[] hang, float[] alpha, float[] depth) {}
+    /** A trail ready to draw: camera-relative points along a spline, ribbon axes, alpha, depth, and dynamic palette. */
+    private record Trail(Vec3[] p, Vec3[] side, Vec3[] hang, float[] alpha, float[] depth,
+                         float[] lineColor, float[] curtainColor, float[] coreColor, float mach) {}
 
-    private static Trail build(double[][] path, double now, Vec3 cam) {
+    private static Trail build(double[][] path, float maxAge, double now, Vec3 cam,
+                               float[] lineColor, float[] curtainColor, float[] coreColor, float mach) {
         int n = path.length;
         if (n < 2) return null;
         int sub = LightTrailRules.SUBDIVISIONS, max = (n - 1) * sub + 1;
@@ -162,7 +190,7 @@ public final class LightTrails {
             double[] a = path[Math.max(0, i - 1)], b = path[i], c = path[i + 1], d = path[Math.min(n - 1, i + 2)];
             for (int s = 0; s < sub; s++) {
                 double u = s / (double) sub;
-                k = point(p, alpha, depth, k, spline(a, b, c, d, u), b[3] + (c[3] - b[3]) * u, b[4] + (c[4] - b[4]) * u, now, cam);
+                k = point(p, alpha, depth, k, spline(a, b, c, d, u), b[3] + (c[3] - b[3]) * u, b[4] + (c[4] - b[4]) * u, maxAge, now, cam);
                 if (alpha[k - 1] > 0.005F) any = true;
                 if (depth[k - 1] >= 1F) break;
             }
@@ -170,7 +198,7 @@ public final class LightTrails {
         }
         if (k > 0 && depth[k - 1] < 1F) {
             double[] last = path[n - 1];
-            k = point(p, alpha, depth, k, new Vec3(last[0], last[1], last[2]), last[3], last[4], now, cam);
+            k = point(p, alpha, depth, k, new Vec3(last[0], last[1], last[2]), last[3], last[4], maxAge, now, cam);
         }
         if (!any || k < 2) return null;
         Vec3[] side = new Vec3[k], hang = new Vec3[k];
@@ -180,12 +208,13 @@ public final class LightTrails {
             side[i] = s.lengthSqr() < 1.0E-12 ? new Vec3(1, 0, 0) : s.normalize();
             hang[i] = LightTrailRules.hang(tangent, side[i]);
         }
-        return new Trail(java.util.Arrays.copyOf(p, k), side, hang, java.util.Arrays.copyOf(alpha, k), java.util.Arrays.copyOf(depth, k));
+        return new Trail(java.util.Arrays.copyOf(p, k), side, hang, java.util.Arrays.copyOf(alpha, k), java.util.Arrays.copyOf(depth, k),
+            lineColor, curtainColor, coreColor, mach);
     }
 
     /** Adds a point (world {@code at}, sampled at {@code time} with strength {@code level}) as camera-relative, with its alpha and age. */
-    private static int point(Vec3[] p, float[] alpha, float[] depth, int k, Vec3 at, double time, double level, double now, Vec3 cam) {
-        float age = (float) Mth.clamp((now - time) / LightTrailRules.MAX_AGE_TICKS, 0, 1);
+    private static int point(Vec3[] p, float[] alpha, float[] depth, int k, Vec3 at, double time, double level, float maxAge, double now, Vec3 cam) {
+        float age = (float) Mth.clamp((now - time) / maxAge, 0, 1);
         Vec3 rel = at.subtract(cam);
         p[k] = rel;
         depth[k] = age;
@@ -203,11 +232,11 @@ public final class LightTrails {
 
     /** The curtain: rows of quads hanging from the line, brightest at the line, nothing at the lower edge. */
     private static void curtain(VertexConsumer vc, Matrix4f m, Trail t) {
-        float[] c = LightTrailRules.CURTAIN_RED;
+        float[] c = t.curtainColor;
         for (int i = 0; i + 1 < t.p.length; i++) {
             float a0 = t.alpha[i] * LightTrailRules.CURTAIN_TOP_ALPHA, a1 = t.alpha[i + 1] * LightTrailRules.CURTAIN_TOP_ALPHA;
             if (a0 <= 0.003F && a1 <= 0.003F) continue;
-            float h0 = LightTrailRules.curtainHeight(t.depth[i]), h1 = LightTrailRules.curtainHeight(t.depth[i + 1]);
+            float h0 = LightTrailRules.ribbonCurtainHeight(t.depth[i]), h1 = LightTrailRules.ribbonCurtainHeight(t.depth[i + 1]);
             for (int r = 0; r + 1 < ROWS.length; r++) {
                 float d0 = ROWS[r], d1 = ROWS[r + 1], f0 = LightTrailRules.curtainFade(d0), f1 = LightTrailRules.curtainFade(d1);
                 put(vc, m, t.p[i].add(t.hang[i].scale(h0 * d0)), c, a0 * f0);

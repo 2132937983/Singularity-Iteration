@@ -805,13 +805,19 @@ public final class ExchangeService {
         return true;
     }
 
+    private static final java.util.concurrent.ConcurrentHashMap<String, net.minecraft.tags.TagKey<Item>> TAG_KEY_CACHE =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
     /** 0.1.10.26: the first commodity (in datapack order) whose tag holds the stack's item, or null. */
     static FutureCommodity byTag(ItemStack stack) {
         for (FutureCommodity c : FutureCommodityManager.getCommodities()) {
             String tag = c.getSelling().tag();
             if (tag.isEmpty()) continue;
-            ResourceLocation rl = ResourceLocation.tryParse(tag);
-            if (rl != null && stack.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, rl))) return c;
+            net.minecraft.tags.TagKey<Item> key = TAG_KEY_CACHE.computeIfAbsent(tag, t -> {
+                ResourceLocation rl = ResourceLocation.tryParse(t);
+                return rl == null ? null : net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, rl);
+            });
+            if (key != null && stack.is(key)) return c;
         }
         return null;
     }

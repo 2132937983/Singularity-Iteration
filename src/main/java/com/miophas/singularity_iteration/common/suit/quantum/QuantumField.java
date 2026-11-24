@@ -72,6 +72,7 @@ public final class QuantumField {
                 com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "force_field", "stopped");   // 0.1.11.79
                 continue;
             }
+            boolean newlyCaught = false;
             if (!s.frozen.containsKey(p.getId())) {
                 // only shots in flight: an arrow stuck in the ground or a resting projectile is left alone
                 if (p.getDeltaMovement().lengthSqr() < 0.01) continue;
@@ -79,10 +80,13 @@ public final class QuantumField {
                 com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "force_field", "stopped");   // 0.1.11.79: a shot in flight held by the field
                 s.frozenVelocity.put(p.getId(), p.getDeltaMovement());       // 0.1.10.1 Static Barrage
                 if (caught.size() < NanoPackets.Fx.MAX_POINTS) { caught.add((float) p.getX()); caught.add((float) p.getY()); caught.add((float) p.getZ()); }
+                newlyCaught = true;
             }
-            p.setDeltaMovement(Vec3.ZERO);
-            p.setNoGravity(true);
-            p.hurtMarked = true;
+            if (newlyCaught || p.getDeltaMovement().lengthSqr() > 1.0E-6 || !p.isNoGravity()) {
+                p.setDeltaMovement(Vec3.ZERO);
+                p.setNoGravity(true);
+                p.hurtMarked = true;
+            }
         }
         if (!caught.isEmpty()) {
             NanoPackets.broadcast(player, new NanoPackets.Fx(player.getId(), QuantumPackets.FX_FIELD_CATCH, (float) c.x, (float) c.y, (float) c.z,

@@ -193,16 +193,17 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     public boolean isTripped(){return tripped;}
     public int getScramSetpoint(){return scramSetpoint;}
     public void setScramSetpoint(int percent){scramSetpoint=Math.max(MIN_SETPOINT,Math.min(MAX_SETPOINT,percent));dirty();}
-    public void scram(){if(!tripped){tripped=true;dirty();}}
+    public void scram(){if(!tripped){tripped=true;lastSignal=true;dirty();}}
     private boolean belowSetpoint(){long max=heat.getMaxHeatStored();return scramSetpoint>=MAX_SETPOINT||max<=0||heat.getHeatStored()*100<max*scramSetpoint;}
     /** Resets a trip when the hull is below the setpoint; true when the reactor may run again. */
     public boolean resetTrip(){if(tripped&&belowSetpoint()){tripped=false;dirty();}return !tripped;}
     private void scramTick(){
+        if(!tripped)return;
         boolean signal=signal();
-        if(tripped&&signal&&!lastSignal)resetTrip();   // a redstone signal coming back on resets the trip
+        if(signal&&!lastSignal)resetTrip();   // a redstone signal coming back on resets the trip
         lastSignal=signal;
     }
-    private void scramCheck(){if(!tripped&&scramSetpoint<MAX_SETPOINT&&!belowSetpoint()){tripped=true;dirty();}}
+    private void scramCheck(){if(!tripped&&scramSetpoint<MAX_SETPOINT&&!belowSetpoint()){tripped=true;lastSignal=true;dirty();}}
 
     // ---- 0.1.11.21: the heat balance of the last cycle and the record of the last 60 cycles (the control-room screen)
     public static final int RECORD=60;
@@ -279,7 +280,6 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(!m.operational()){m.dispatchAccident();if(m.live()){m.syncOutputGate();m.updateActive();}return;}
         m.frame();
         m.scramTick();   // 0.1.11.21
-        if(m.cycleRemaining==19)m.refreshStructure();
         if(!m.operational())return;
         if(m.fluidAvailable())m.fluid.processContainers();
         if(!m.operational())return;

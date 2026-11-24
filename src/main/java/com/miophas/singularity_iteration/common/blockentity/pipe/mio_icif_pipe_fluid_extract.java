@@ -38,8 +38,8 @@ public class mio_icif_pipe_fluid_extract extends mio_icif_pipe_fluid implements 
     private int currentTransferRate = BASE_TRANSFER_RATE;
     private long storedEnergy = 0;
     private boolean energyRegistered = false;
-    private final FluidTransferBuffer inputTransfer = new FluidTransferBuffer(this::setChanged);
-    private final FluidTransferBuffer outputTransfer = new FluidTransferBuffer(this::setChanged);
+    private final FluidTransferBuffer inputTransfer = new FluidTransferBuffer(this::markSaved);
+    private final FluidTransferBuffer outputTransfer = new FluidTransferBuffer(this::markSaved);
     private long retryAfter;
     private boolean transferring;
 
@@ -85,7 +85,6 @@ public class mio_icif_pipe_fluid_extract extends mio_icif_pipe_fluid implements 
         if (level.getGameTime() < retryAfter || inputTransfer.isBlocked() || outputTransfer.isBlocked()) return;
 
         syncFacingFromBlockState(getBlockState());
-        boolean wasEmpty = bufferFluid.isEmpty();
         transferring = true;
         try {
             updatePowerState();
@@ -101,12 +100,7 @@ public class mio_icif_pipe_fluid_extract extends mio_icif_pipe_fluid implements 
         }
 
         if (!liveOwner()) return;
-        boolean isEmptyNow = bufferFluid.isEmpty();
-        if (wasEmpty != isEmptyNow) {
-            updateBlockState();
-            setChanged();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        syncVisual();
     }
 
     private void deferRetryAfterFailure() {
@@ -181,7 +175,7 @@ public class mio_icif_pipe_fluid_extract extends mio_icif_pipe_fluid implements 
                 net.minecraft.world.level.chunk.LevelChunk.EntityCreationType.CHECK);
         if (adjacentEntity instanceof mio_icif_pipe_fluid_extract) return null;
         var adjacentState = chunk.getBlockState(adjacentPos);
-        IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, adjacentPos, direction.getOpposite());
+        IFluidHandler handler = neighbourFluid(direction);
         if (handler == null || !liveOwner()) return null;
         java.util.function.BooleanSupplier current = () -> {
             if (!liveOwner() || isDirectionBlocked(direction)) return false;

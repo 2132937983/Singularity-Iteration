@@ -34,7 +34,8 @@ public final class DeadReckoning {
     /** Block answers per cell, valid for one tick ({@link #clear} at the start of each tick). */
     public static final class Cache implements Blocks {
         private final Blocks world;
-        private final java.util.HashMap<Long, Cell> answers = new java.util.HashMap<>();
+        private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Cell> answers =
+            new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         private long queries;
 
         /** The answers known for one cell (bit set in {@code known} = asked). */
@@ -56,7 +57,9 @@ public final class DeadReckoning {
         }
 
         private Cell cell(int x, int y, int z, int bit) {
-            Cell c = answers.computeIfAbsent(key(x, y, z), k -> new Cell());
+            long k = key(x, y, z);
+            Cell c = answers.get(k);
+            if (c == null) { c = new Cell(); answers.put(k, c); }
             if ((c.known & bit) == 0) {
                 queries++;
                 c.known |= bit;

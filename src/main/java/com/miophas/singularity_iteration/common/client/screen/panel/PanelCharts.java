@@ -28,6 +28,24 @@ public final class PanelCharts {
         g.renderOutline(x, y, w, h, PANEL_LINE);
     }
 
+    private static void rect(com.mojang.blaze3d.vertex.VertexConsumer vc, org.joml.Matrix4f m,
+                             int x1, int y1, int x2, int y2, int color) {
+        if (x2 <= x1 || y2 <= y1) return;
+        vc.addVertex(m, x1, y1, 0).setColor(color);
+        vc.addVertex(m, x1, y2, 0).setColor(color);
+        vc.addVertex(m, x2, y2, 0).setColor(color);
+        vc.addVertex(m, x2, y1, 0).setColor(color);
+    }
+
+    private static void segmentBatched(com.mojang.blaze3d.vertex.VertexConsumer vc, org.joml.Matrix4f m,
+                                       int x0, int y0, int x1, int y1, int colour) {
+        int dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), steps = Math.max(1, Math.max(dx, dy));
+        for (int i = 0; i <= steps; i++) {
+            int px = x0 + (x1 - x0) * i / steps, py = y0 + (y1 - y0) * i / steps;
+            rect(vc, m, px, py, px + 1, py + 1, colour);
+        }
+    }
+
     /** Candles of {@code open/high/low/close} (oldest first) with volume bars in the lowest fifth of the box. */
     public static void candles(GuiGraphics g, int x, int y, int w, int h, long[] open, long[] high, long[] low, long[] close, long[] volume,
                                long overlayLow, long overlayHigh) {
@@ -39,7 +57,9 @@ public final class PanelCharts {
         if (overlayHigh > 0) max = Math.max(max, overlayHigh);
         if (max == min) { max++; min = Math.max(0, min - 1); }
         int priceH = h * 4 / 5 - 2, volTop = y + h * 4 / 5;
-        for (int k = 1; k < 4; k++) g.fill(x, y + priceH * k / 4, x + w, y + priceH * k / 4 + 1, GRID);
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
+        for (int k = 1; k < 4; k++) rect(vc, m, x, y + priceH * k / 4, x + w, y + priceH * k / 4 + 1, GRID);
         double step = w / (double) n;
         int body = Math.max(1, (int) (step * 0.6));
         for (int i = 0; i < n; i++) {
@@ -47,12 +67,13 @@ public final class PanelCharts {
             int colour = close[i] >= open[i] ? up() : down();
             int yh = yOf(high[i], min, max, y, priceH), yl = yOf(low[i], min, max, y, priceH);
             int yo = yOf(open[i], min, max, y, priceH), yc = yOf(close[i], min, max, y, priceH);
-            g.fill(cx, yh, cx + 1, yl + 1, colour);
-            g.fill(cx - body / 2, Math.min(yo, yc), cx - body / 2 + body, Math.max(yo, yc) + 1, colour);
+            rect(vc, m, cx, yh, cx + 1, yl + 1, colour);
+            rect(vc, m, cx - body / 2, Math.min(yo, yc), cx - body / 2 + body, Math.max(yo, yc) + 1, colour);
             int vh = (int) ((h / 5 - 2) * volume[i] / (double) vmax);
-            if (vh > 0) g.fill(cx - body / 2, y + h - vh, cx - body / 2 + body, y + h, (colour & 0x00FFFFFF) | 0x80000000);
+            if (vh > 0) rect(vc, m, cx - body / 2, y + h - vh, cx - body / 2 + body, y + h, (colour & 0x00FFFFFF) | 0x80000000);
         }
-        g.fill(x, volTop - 1, x + w, volTop, PANEL_LINE);
+        rect(vc, m, x, volTop - 1, x + w, volTop, PANEL_LINE);
+        g.flush();
     }
 
     /** A line over the candle box (same scale): the moving average, the fundamental value. */
@@ -60,13 +81,16 @@ public final class PanelCharts {
         int n = values.length, priceH = h * 4 / 5 - 2;
         if (n == 0 || max <= min) return;
         double step = w / (double) n;
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
         for (int i = 1; i < n; i++) {
             if (Double.isNaN(values[i - 1]) || Double.isNaN(values[i])) continue;
             if (dashed && i % 2 == 0) continue;
             int x0 = x + (int) (step * (i - 1) + step / 2), x1 = x + (int) (step * i + step / 2);
             int y0 = yOf(values[i - 1], min, max, y, priceH), y1 = yOf(values[i], min, max, y, priceH);
-            segment(g, x0, y0, x1, y1, colour);
+            segmentBatched(vc, m, x0, y0, x1, y1, colour);
         }
+        g.flush();
     }
 
     /** The scale the candles used, for {@link #line} and labels: {min, max} ({@link PanelStyle#scale}). */
@@ -83,9 +107,12 @@ public final class PanelCharts {
         if (max == min) { max++; min--; }
         int colour = values[n - 1] >= values[0] ? up() : down();
         double step = (w - 1) / (double) (n - 1);
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
         for (int i = 1; i < n; i++)
-            segment(g, x + (int) (step * (i - 1)), y + h - 1 - (int) ((h - 1) * (values[i - 1] - min) / (double) (max - min)),
+            segmentBatched(vc, m, x + (int) (step * (i - 1)), y + h - 1 - (int) ((h - 1) * (values[i - 1] - min) / (double) (max - min)),
                 x + (int) (step * i), y + h - 1 - (int) ((h - 1) * (values[i] - min) / (double) (max - min)), colour);
+        g.flush();
     }
 
     /** A horizontal bar of {@code fraction} (0..1) from the right ({@code right}) or the left. */
@@ -101,11 +128,10 @@ public final class PanelCharts {
 
     /** A one-pixel line (stepped). */
     public static void segment(GuiGraphics g, int x0, int y0, int x1, int y1, int colour) {
-        int dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), steps = Math.max(1, Math.max(dx, dy));
-        for (int i = 0; i <= steps; i++) {
-            int px = x0 + (x1 - x0) * i / steps, py = y0 + (y1 - y0) * i / steps;
-            g.fill(px, py, px + 1, py + 1, colour);
-        }
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
+        segmentBatched(vc, m, x0, y0, x1, y1, colour);
+        g.flush();
     }
 
     /** 12,345 / 1.2M style (0.1.10.33: {@link PanelStyle#number}). */

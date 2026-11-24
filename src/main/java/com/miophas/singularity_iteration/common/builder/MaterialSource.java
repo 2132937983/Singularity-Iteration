@@ -14,6 +14,9 @@ public interface MaterialSource {
     /** How many of {@code item} the drones can take here. */
     long count(Item item);
 
+    /** Whether at least one of {@code item} is available here (allows early exit without counting all slots). */
+    default boolean hasAny(Item item) { return count(item) > 0; }
+
     /** Takes up to {@code max} of {@code item} (empty when there is none). */
     ItemStack extract(Item item, int max);
 

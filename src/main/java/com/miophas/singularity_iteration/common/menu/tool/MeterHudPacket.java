@@ -49,7 +49,20 @@ public final class MeterHudPacket {
     }
 
     private static final Map<UUID, Long> LAST = new HashMap<>();
+    private static final Map<String, CachedWalk> WALK_CACHE = new HashMap<>();
     private static volatile Reply latest;
+
+    private record CachedWalk(long tick, NetworkWalker.Result result) {}
+
+    private static NetworkWalker.Result walkCached(ServerLevel level, BlockPos pos, long now) {
+        String key = level.dimension().location() + "@" + pos.asLong();
+        CachedWalk cached = WALK_CACHE.get(key);
+        if (cached != null && now >= cached.tick && now - cached.tick < 20) return cached.result;
+        if (WALK_CACHE.size() >= 64) WALK_CACHE.clear();
+        NetworkWalker.Result r = NetworkWalker.walk(level, pos, NetworkWalker.Scope.SYSTEM, 4096, 256);
+        WALK_CACHE.put(key, new CachedWalk(now, r));
+        return r;
+    }
 
     /** Client: last reply (null before the first). */
     public static Reply latest() { return latest; }
@@ -70,7 +83,7 @@ public final class MeterHudPacket {
             var be = level.getBlockEntity(pos);
             boolean network = NetworkWalker.isConductor(be) || NetworkWalker.isTransformer(be);
             if (be == null || (!network && NetworkWalker.categorize(be) == null)) return;
-            NetworkWalker.Result r = NetworkWalker.walk(level, pos, NetworkWalker.Scope.SYSTEM, 4096, 256);
+            NetworkWalker.Result r = walkCached(level, pos, now);
             var reading = NetworkWalker.read(level, r);
             // 0.1.11.30: a cable's own flow, from the engine's per-conductor samples of this tick
             float flow = -1, peak = -1;

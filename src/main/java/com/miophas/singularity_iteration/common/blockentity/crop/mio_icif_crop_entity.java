@@ -641,5 +641,19 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
         for (String key : SERVER_ONLY_KEYS) tag.remove(key);
         return tag;
     }
-    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) { loadAdditional(tag, registries); }
+    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        loadAdditional(tag, registries);
+        if (level != null && level.isClientSide()) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
+        }
+    }
+
+    @Override public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
+        super.onDataPacket(net, pkt, registries);
+        if (level != null && level.isClientSide()) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
+        }
+    }
 }

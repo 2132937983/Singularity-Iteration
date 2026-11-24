@@ -56,7 +56,7 @@ public class mio_icif_chestplate_quantum extends mio_icif_armor_elc implements I
         if (!(entity instanceof Player player)
                 || player.getItemBySlot(EquipmentSlot.CHEST) != stack) return;
         if (!level.isClientSide && !isEmpty(stack) && ArmorFeatureToggle.isEnabled(stack, "fire_resistance")) {
-            player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 2, 0, false, false, false));
+            mio_icif_armor_elc.renewEffect(player, MobEffects.FIRE_RESISTANCE, 40, 0, 20, false, false, false);
         }
         if (ArmorFeatureToggle.isEnabled(stack, "flight") && getMode(stack) != JetpackMode.OFF) {
             JetpackFlightController.tick(player, stack, this, HOVER_COST, 0.8D, 0.6D, -0.6D, true);
@@ -69,8 +69,10 @@ public class mio_icif_chestplate_quantum extends mio_icif_armor_elc implements I
     /** EN: Deep ion hum (0.1.8.1). ZH: 低沉离子嗡鸣（0.1.8.1）。JA: 低いイオン音（0.1.8.1）。 */
     /** 0.1.11.129 (armour and flight overhaul E6): the electromagnetic drive's field hum (was the ion hum). */
     @Override public String getThrusterSound() { return THRUSTER_ELECTROMAGNETIC; }
+    @SuppressWarnings("deprecation")
     @Override public JetpackMode getMode(ItemStack stack) {
-        int mode = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getInt(MODE_KEY);
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        int mode = data == null ? 0 : data.getUnsafe().getInt(MODE_KEY);
         return mode == 1 ? JetpackMode.HOVER : mode == 2 ? JetpackMode.OFF : JetpackMode.FLIGHT;
     }
     @Override public void setMode(ItemStack stack, JetpackMode mode) {

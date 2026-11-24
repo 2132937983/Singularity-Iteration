@@ -122,7 +122,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
      * 0.1.11.23: the pipe's moves only mark the chunk for saving (it has no comparator output); a full setChanged told every
      * neighbour up to four times per face per tick.
      */
-    private void markSaved() { com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this); }
+    protected void markSaved() { com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this); }
 
     /** 0.1.11.23: the empty / full look as last sent, and the earliest tick of the next change (null: not sent yet). */
     @org.jetbrains.annotations.Nullable private Boolean shownEmpty;
@@ -132,7 +132,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
      * 0.1.11.23: sends the empty / full look when it differs from what was sent, at most once per {@code VISUAL_TICKS}
      * (at a low flow the pipe went empty and full every few ticks, each time a block state change and an update packet).
      */
-    private void syncVisual() {
+    protected void syncVisual() {
         boolean empty = bufferFluid.isEmpty();
         if (shownEmpty == null) { shownEmpty = empty; return; }
         if (empty == shownEmpty.booleanValue() || level.getGameTime() < nextVisual) return;
@@ -147,7 +147,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
 
     /** 0.1.10.7: the fluid capability of the neighbour on {@code side}, through a capability cache. */
     @Nullable
-    private IFluidHandler neighbourFluid(Direction side) {
+    protected IFluidHandler neighbourFluid(Direction side) {
         BlockPos at = worldPosition.relative(side);
         if (!(level instanceof net.minecraft.server.level.ServerLevel server)) {
             return level.getCapability(Capabilities.FluidHandler.BLOCK, at, side.getOpposite());
@@ -224,6 +224,8 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
 
         List<AdjacentFluidHandler> adjacentHandlers = new ArrayList<>();
 
+        if (drainFromPipeInternal(Integer.MAX_VALUE, true).isEmpty()) return;
+
         // 收集相邻的流体体处理目
         var server = (net.minecraft.server.level.ServerLevel) level;
         for (Direction facing : Direction.values()) {
@@ -242,11 +244,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
 
             if (!liveOwner()) return;
 
-            if (handler == null) continue;
-
-            // 检查能否从本管道输出（模拟drain
-        FluidStack drainTest = drainFromPipeInternal(Integer.MAX_VALUE, true);
-            if (drainTest.isEmpty()) continue;
+            if (handler == null || bufferFluid.isEmpty()) continue;
 
             if (adjacentEntity instanceof mio_icif_pipe_fluid otherPipe) {
                 if (!otherPipe.bufferFluid.isEmpty() && !FluidStack.isSameFluidSameComponents(bufferFluid, otherPipe.bufferFluid)) continue;

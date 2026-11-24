@@ -77,12 +77,14 @@ public class mio_icif_events {
     @SubscribeEvent
     public static void onRadiationLevelTick(LevelTickEvent.Post event) {
         if (event.getLevel().isClientSide() || NUCLEAR_WEARERS.isEmpty()) return;
-        for (LivingEntity entity : java.util.List.copyOf(NUCLEAR_WEARERS)) {
+        java.util.Iterator<LivingEntity> it = NUCLEAR_WEARERS.iterator();
+        while (it.hasNext()) {
+            LivingEntity entity = it.next();
             if (entity.level() != event.getLevel()) continue;
-            if (entity.isRemoved() || !entity.isAlive()) { NUCLEAR_WEARERS.remove(entity); continue; }
+            if (entity.isRemoved() || !entity.isAlive()) { it.remove(); continue; }
             if (!radiationDue(entity)) continue;
             if (NuclearRadiationHandler.hasNuclearItem(entity)) NuclearRadiationHandler.applyRadiationEffect(entity);
-            else NUCLEAR_WEARERS.remove(entity);
+            else it.remove();
         }
     }
     
@@ -203,15 +205,12 @@ public class mio_icif_events {
         }
 
         boolean isRadiation = source.getMsgId().equals("mio_icif_killed_by_uranium");
-
-        boolean radiationProtected = RadiationProtectionUtil.isRadiationProtected(entity);
-
-        if (radiationProtected && isRadiation) {
+        if (isRadiation && RadiationProtectionUtil.isRadiationProtected(entity)) {
             event.setNewDamage(0);
             return;
         }
 
-        if (RadiationProtectionUtil.isWearingFullHazmat(entity) && hazmatAbsorbs(source)) {
+        if (hazmatAbsorbs(source) && RadiationProtectionUtil.isWearingFullHazmat(entity)) {
             event.setNewDamage(0);
             return;
         }

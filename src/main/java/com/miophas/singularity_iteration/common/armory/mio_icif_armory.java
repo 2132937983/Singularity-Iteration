@@ -267,6 +267,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         int next = (int) Math.max(0, Math.min(MANA_CAPACITY, (long) mana + amount));
         if (next != mana) {
             mana = next;
+            maintenance.markDirty();
             setChanged();
         }
     }
@@ -275,7 +276,15 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         mana = Math.max(0, mana - Math.max(0, amount));
     }
 
-    void markStorageChanged() { setChanged(); }
+    void markStorageChanged() {
+        setChanged();
+    }
+
+    @Override
+    public void setChanged() {
+        if (maintenance != null) maintenance.markDirty();
+        super.setChanged();
+    }
 
     public ArmoryMaintenance maintenance() { return maintenance; }
 

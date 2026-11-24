@@ -151,12 +151,17 @@ public final class QuantumSynergies {
      * ticks). 0.1.10.2: the sightings also flow with the data link of the quantum command (an active
      * entanglement relay and the data link setting on), without the mark.
      */
+    private static final java.util.Map<java.util.UUID, Integer> LAST_DATALINK_HASH =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
     static void tickDatalink(ServerPlayer player, QuantumCoreState s) {
+        if (player.tickCount % 5 != 0 && s.markedTarget == -1) return;
         boolean fdl = QuantumLinks.active(player, QuantumSynergy.FLEET_DATALINK);
         boolean on = fdl || com.miophas.singularity_iteration.common.armory.WingmanCommands.datalink(player);
         if (!fdl && s.markedTarget != -1) s.markedTarget = -1;
         if (!on) {
-            if (s.markedTarget != -1) {
+            Integer prev = LAST_DATALINK_HASH.remove(player.getUUID());
+            if (s.markedTarget != -1 || (prev != null && prev != -1)) {
                 s.markedTarget = -1;
                 SuitPackets.send(player, new QuantumPackets.DataLink(-1, new int[0]));
             }
@@ -168,15 +173,22 @@ public final class QuantumSynergies {
         }
         if (player.tickCount % 10 != 0) return;
         IntOpenHashSet seen = new IntOpenHashSet();
-        for (WingmanEntity w : WingmanService.of(player)) {
-            if (w.level() != player.level() || w.state() != WingmanEntity.ACTIVE) continue;
-            for (LivingEntity e : w.level().getEntitiesOfClass(LivingEntity.class, w.getBoundingBox().inflate(DATALINK_RANGE),
-                    e -> e instanceof Enemy && e.isAlive() && !e.isInvisible())) {
-                seen.add(e.getId());
-                if (seen.size() >= 64) break;
+        if (WingmanService.hasAny(player)) {
+            for (WingmanEntity w : WingmanService.of(player)) {
+                if (w.level() != player.level() || w.state() != WingmanEntity.ACTIVE) continue;
+                for (LivingEntity e : w.level().getEntitiesOfClass(LivingEntity.class, w.getBoundingBox().inflate(DATALINK_RANGE),
+                        e -> e instanceof Enemy && e.isAlive() && !e.isInvisible())) {
+                    seen.add(e.getId());
+                    if (seen.size() >= 64) break;
+                }
             }
         }
-        SuitPackets.send(player, new QuantumPackets.DataLink(s.markedTarget, seen.toIntArray()));
+        int[] ids = seen.toIntArray();
+        int hash = 31 * s.markedTarget + java.util.Arrays.hashCode(ids);
+        Integer prev = LAST_DATALINK_HASH.put(player.getUUID(), hash);
+        if (prev == null || prev.intValue() != hash) {
+            SuitPackets.send(player, new QuantumPackets.DataLink(s.markedTarget, ids));
+        }
     }
 
     /** The creature in the wearer's sights for the Fleet Datalink mark, or null. */

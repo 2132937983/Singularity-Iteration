@@ -22,7 +22,7 @@ import java.util.List;
  * 消耗一次电量提供5个吸收之心（10点吸收值），持续30秒
  */
 @SuppressWarnings("null")
-public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
+public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc implements PassiveDeviceRules.WornDevice, com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
 
     private static final int MAX_ENERGY = 1000000;
     private static final int TRANSFER_SPEED = 512;
@@ -41,6 +41,20 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
         super.inventoryTick(stack, level, entity, slotId, isSelected);
 
         if (level.isClientSide || !(entity instanceof Player player)) {
+            return;
+        }
+        // 0.1.11.201 (T5d, decision D7): with Curios the device works from an accessory slot only (PassiveDeviceCurios ticks
+        // it there); without Curios it still works from the inventory
+        if (!PassiveDeviceRules.fromInventory()) {
+            return;
+        }
+        tickWorn(stack, player);
+    }
+
+    /** One tick of the device for its wearer (an accessory slot, or the inventory without Curios). */
+    @Override
+    public void tickWorn(ItemStack stack, Player player) {
+        if (player.level().isClientSide) {
             return;
         }
 
@@ -87,6 +101,7 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        PassiveDeviceRules.appendWornHint(tooltipComponents, "necklace");   // 0.1.11.201 (T5d)
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.electric_force_field_generator.desc"));
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.electric_force_field_generator.mode",
             getAutoSupplement(stack)

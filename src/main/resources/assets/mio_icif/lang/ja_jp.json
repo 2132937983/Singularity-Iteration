@@ -6188,5 +6188,6 @@
   "item.mio_icif.item_tool_meter.probe.wind": "風力",
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "地磁気",
   "item.mio_icif.item_tool_meter.probe_switched": "プローブ：%s",
-  "item.mio_icif.item_tool_meter.tooltip_probe": "プローブ：%s（G で切替）"
+  "item.mio_icif.item_tool_meter.tooltip_probe": "プローブ：%s（G で切替）",
+  "tooltip.mio_icif.passive_device.worn": "アクセサリースロット（%s）に装備すると機能"
 }

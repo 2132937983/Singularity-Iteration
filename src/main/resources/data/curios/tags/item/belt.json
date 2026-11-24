@@ -11,6 +11,10 @@
     {
       "id": "mio_icif:normal/item_armory_remote",
       "required": false
+    },
+    {
+      "id": "mio_icif:item_electric_nutrition_supply",
+      "required": false
     }
   ]
 }

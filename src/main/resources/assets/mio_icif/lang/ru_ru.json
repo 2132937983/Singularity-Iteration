@@ -6188,5 +6188,6 @@
   "item.mio_icif.item_tool_meter.probe.wind": "Ветер",
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "Геомагнетизм",
   "item.mio_icif.item_tool_meter.probe_switched": "Зонд: %s",
-  "item.mio_icif.item_tool_meter.tooltip_probe": "Зонд: %s (G — сменить)"
+  "item.mio_icif.item_tool_meter.tooltip_probe": "Зонд: %s (G — сменить)",
+  "tooltip.mio_icif.passive_device.worn": "Работает в слоте аксессуара (%s)"
 }

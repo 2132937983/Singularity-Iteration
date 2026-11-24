@@ -6188,5 +6188,6 @@
   "item.mio_icif.item_tool_meter.probe.wind": "风力",
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "地磁",
   "item.mio_icif.item_tool_meter.probe_switched": "探头：%s",
-  "item.mio_icif.item_tool_meter.tooltip_probe": "探头：%s（G 键切换）"
+  "item.mio_icif.item_tool_meter.tooltip_probe": "探头：%s（G 键切换）",
+  "tooltip.mio_icif.passive_device.worn": "戴在饰品栏（%s）时生效"
 }

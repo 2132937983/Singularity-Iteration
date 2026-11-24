@@ -21,7 +21,7 @@ import java.util.List;
  * G键切换自动补充模式
  */
 @SuppressWarnings("null")
-public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
+public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implements PassiveDeviceRules.WornDevice, com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
 
     private static final int MAX_ENERGY = 10000;
     private static final int TRANSFER_SPEED = 32;
@@ -37,6 +37,20 @@ public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implem
         super.inventoryTick(stack, level, entity, slotId, isSelected);
 
         if (level.isClientSide || !(entity instanceof Player player)) {
+            return;
+        }
+        // 0.1.11.201 (T5d, decision D7): with Curios the device works from an accessory slot only (PassiveDeviceCurios ticks
+        // it there); without Curios it still works from the inventory
+        if (!PassiveDeviceRules.fromInventory()) {
+            return;
+        }
+        tickWorn(stack, player);
+    }
+
+    /** One tick of the device for its wearer (an accessory slot, or the inventory without Curios). */
+    @Override
+    public void tickWorn(ItemStack stack, Player player) {
+        if (player.level().isClientSide) {
             return;
         }
 
@@ -77,6 +91,7 @@ public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implem
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        PassiveDeviceRules.appendWornHint(tooltipComponents, "belt");   // 0.1.11.201 (T5d)
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.electric_nutrition_supply.mode",
             getAutoSupplement(stack)
                 ? Component.translatable("tooltip.mio_icif.electric_nutrition_supply.auto_on")

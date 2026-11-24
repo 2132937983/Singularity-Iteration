@@ -6188,5 +6188,6 @@
   "item.mio_icif.item_tool_meter.probe.wind": "Wind",
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "Geomagnetic",
   "item.mio_icif.item_tool_meter.probe_switched": "Probe: %s",
-  "item.mio_icif.item_tool_meter.tooltip_probe": "Probe: %s (G to switch)"
+  "item.mio_icif.item_tool_meter.tooltip_probe": "Probe: %s (G to switch)",
+  "tooltip.mio_icif.passive_device.worn": "Works when worn in an accessory slot (%s)"
 }

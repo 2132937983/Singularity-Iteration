@@ -64,6 +64,7 @@ public class CuriosIntegration {
         if (isCuriosLoaded()) {
             TRINKET_ITEMS.register(eventBus);
             com.miophas.singularity_iteration.common.integration.curios.JetpackCuriosAdapter.register(eventBus);
+            com.miophas.singularity_iteration.common.integration.curios.PassiveDeviceCurios.register(eventBus);   // 0.1.11.201 (T5d)
         }
     }
 }

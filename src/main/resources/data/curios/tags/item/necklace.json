@@ -3,6 +3,10 @@
     {
       "id": "mio_icif:item_trinket_fire_proof_necklace",
       "required": false
+    },
+    {
+      "id": "mio_icif:item_electric_force_field_generator",
+      "required": false
     }
   ]
 }

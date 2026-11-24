@@ -206,12 +206,24 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
             g.renderItem(suit, px + MOD_W - 21, py + 20);
 
             boolean nano = com.miophas.singularity_iteration.common.suit.SuitModules.isNanoPiece(suit);
+            boolean lined = !nano && com.miophas.singularity_iteration.common.suit.SuitModules.hasLivingLining(suit);
             int cap = nano ? com.miophas.singularity_iteration.common.suit.SuitModules.latticeCapacity(suit)
                 : com.miophas.singularity_iteration.common.suit.SuitModules.capacity(suit);
             int used = nano ? com.miophas.singularity_iteration.common.suit.SuitModules.latticeUsed(suit)
-                : com.miophas.singularity_iteration.common.suit.SuitModules.installed(suit).units().size();
-            Component capTxt = Component.translatable(nano ? "gui.mio_icif.station.lattice" : "gui.mio_icif.station.units", used, cap);
-            g.drawString(font, capTxt, px + 5, py + 41, nano ? 0xFF6FE6FF : 0xFF7CFFB2, false);
+                : com.miophas.singularity_iteration.common.suit.SuitModules.quantumUnitsUsed(suit);
+            Component capTxt = nano
+                ? Component.translatable("gui.mio_icif.station.lattice", used, cap)
+                : lined
+                    ? Component.translatable("gui.mio_icif.station.units_lined", used, cap,
+                        com.miophas.singularity_iteration.common.suit.SuitModules.liningLatticeUsed(suit),
+                        com.miophas.singularity_iteration.common.suit.SuitModules.LIVING_LINING_LP)
+                    : Component.translatable("gui.mio_icif.station.units", used, cap);
+            int capColor = nano ? 0xFF6FE6FF : lined ? 0xFF44EE98 : 0xFF7CFFB2;
+            if (font.width(capTxt) > MOD_W - 10) {
+                small(g, font.plainSubstrByWidth(capTxt.getString(), (int) ((MOD_W - 10) / 0.75F)), px + 5, py + 42, capColor);
+            } else {
+                g.drawString(font, capTxt, px + 5, py + 41, capColor, false);
+            }
 
             // Frame Core badge + eject button
             int listTop = py + 53;

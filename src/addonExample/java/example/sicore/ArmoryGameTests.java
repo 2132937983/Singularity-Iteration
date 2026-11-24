@@ -278,6 +278,35 @@ public final class ArmoryGameTests {
         h.succeed();
     }
 
+    @GameTest(template = "reactor_loop", batch = "armory", timeoutTicks = 40)
+    public static void integratedModificationBayInstallsLivingNanoLining(GameTestHelper h) {
+        var armory = armory(h, 10_000);
+        ServerPlayer p = player(h);
+        var inv = armory.getItemHandler();
+        final int CHEST_0 = 2, MOD_SLOT = 37;
+
+        inv.insertItem(CHEST_0, si("armor/item_armor_quantum_chestplate"), false);
+        ItemStack lining = si("module/item_living_nano_lining");
+        h.assertTrue(inv.isItemValid(MOD_SLOT, lining), "Armory mod slot must accept Living Nano Lining");
+        inv.insertItem(MOD_SLOT, lining, false);
+        long energyBefore = armory.getEnergyStorage().getAmount();
+        call(armory, "installMod", p, CHEST_0);
+        h.assertTrue(inv.getStackInSlot(MOD_SLOT).isEmpty(), "Living Nano Lining must be consumed after install");
+        h.assertTrue(armory.getEnergyStorage().getAmount() == energyBefore - 1_280L, "Lining install must consume 1,280 EU");
+        ItemStack chest = inv.getStackInSlot(CHEST_0);
+        h.assertTrue(chest.getComponents().keySet().stream()
+                .anyMatch(t -> String.valueOf(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(t)).equals("mio_icif:suit_living_lining")),
+            "Quantum Chestplate must carry mio_icif:suit_living_lining component");
+
+        // Awakened lining must now accept a nano-only chestplate module via the Armory
+        inv.insertItem(MOD_SLOT, si("module/item_module_thermoregulator"), false);
+        call(armory, "installMod", p, CHEST_0);
+        h.assertTrue(inv.getStackInSlot(MOD_SLOT).isEmpty(), "Nano-only module must install into awakened living nano lining");
+
+        p.discard();
+        h.succeed();
+    }
+
     /** Owner and suits survive the save/load path used on server restart. */
     private static final class CompoundTagCheck {
         static void roundTrip(GameTestHelper h, AbstractProcessingMachineBlockEntity armory, String key) {

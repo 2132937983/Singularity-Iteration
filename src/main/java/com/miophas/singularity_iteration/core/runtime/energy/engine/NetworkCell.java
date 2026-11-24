@@ -17,6 +17,7 @@ public final class NetworkCell {
     private final Thread owner = Thread.currentThread();
     private long amount;
     private long fraction;
+    private volatile EnergyAmount observed;
     private Object revision = new Object();
     private boolean retired;
     private Quote currentQuote;
@@ -50,10 +51,19 @@ public final class NetworkCell {
         this(EnergyAmount.of(initialAmount));
     }
     public NetworkCell(EnergyAmount initialAmount) {
-        amount = initialAmount.whole(); fraction = initialAmount.fraction();
+        Objects.requireNonNull(initialAmount, "initialAmount");
+        amount = initialAmount.whole(); fraction = initialAmount.fraction(); observed = initialAmount;
     }
     private void onOwner() {
         if (Thread.currentThread() != owner) throw new IllegalStateException("Wrong storage thread");
+    }
+    /**
+     * Thread-safe read-only balance snapshot for non-transactional observers
+     * (e.g. off-thread NBT inspection by client HUD mods in singleplayer).
+     * Cannot be used to construct a {@link Write} or participate in {@link #commit}.
+     */
+    public EnergyAmount observe() {
+        return observed;
     }
     public Quote quote() {
         onOwner();
@@ -70,7 +80,7 @@ public final class NetworkCell {
         if (retired) throw new IllegalStateException("Retired storage");
         Objects.requireNonNull(nextAmount, "nextAmount");
         Object nextRevision = new Object();
-        amount = nextAmount.whole(); fraction = nextAmount.fraction(); revision = nextRevision; currentQuote = null;
+        amount = nextAmount.whole(); fraction = nextAmount.fraction(); observed = nextAmount; revision = nextRevision; currentQuote = null;
     }
     /** Unload/removal permanently revokes this identity; reload creates a new cell. */
     public void retire() { onOwner(); retired = true; }
@@ -97,10 +107,14 @@ public final class NetworkCell {
                 .subtract(write.expected.exactAmount().units());
         }
         if (balance.signum() != 0) throw new IllegalArgumentException("Unbalanced transaction");
-        // Allocate all revisions before the guard or writes; no allocation is
-        // needed after validation has succeeded.
+        // Allocate all revisions and immutable observations before the guard or
+        // writes; no allocation is needed after validation has succeeded.
         Object[] revisions = new Object[writes.size()];
-        for (int i = 0; i < revisions.length; i++) revisions[i] = new Object();
+        EnergyAmount[] nextAmounts = new EnergyAmount[writes.size()];
+        for (int i = 0; i < revisions.length; i++) {
+            revisions[i] = new Object();
+            nextAmounts[i] = writes.get(i).exactNextAmount();
+        }
         if (!worldGuard.getAsBoolean()) return false;
         for (var write : writes) {
             var q = write.expected;
@@ -110,6 +124,7 @@ public final class NetworkCell {
             var write = writes.get(i);
             write.expected.cell.amount = write.nextAmount;
             write.expected.cell.fraction = write.nextFraction;
+            write.expected.cell.observed = nextAmounts[i];
             write.expected.cell.revision = revisions[i];
             write.expected.cell.currentQuote = null;
         }

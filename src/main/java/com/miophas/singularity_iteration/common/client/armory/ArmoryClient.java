@@ -38,6 +38,7 @@ public final class ArmoryClient {
         @SubscribeEvent
         static void setup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
             com.miophas.singularity_iteration.common.armory.ArmoryPieceEntity.CLIENT_EFFECTS = new ArmoryClientEffects();
+            com.miophas.singularity_iteration.common.armory.WingmanDeployFxPacket.HOOK = WingmanDeployFx::onPacket;
             // using the remote opens the Equipment Console on its Armory section
             com.miophas.singularity_iteration.common.armory.ArmoryRemoteItem.OPEN_CONSOLE = () -> net.minecraft.client.Minecraft.getInstance().setScreen(
                 new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features().tab(

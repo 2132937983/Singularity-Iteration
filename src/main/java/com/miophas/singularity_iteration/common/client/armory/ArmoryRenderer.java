@@ -68,6 +68,7 @@ public class ArmoryRenderer implements BlockEntityRenderer<mio_icif_armory> {
                 open = Math.max(open, ArmoryFxRules.hatch(piece.age(partial), piece.duration(), false));
             }
         }
+        open = Math.max(open, WingmanDeployFx.hatchOpen(armory.getBlockPos(), time));
         BlockState state = armory.getBlockState();
         boolean lit = state.hasProperty(ArmoryBlock.LIT) && state.getValue(ArmoryBlock.LIT);
         Direction facing = state.hasProperty(ArmoryBlock.FACING) ? state.getValue(ArmoryBlock.FACING) : Direction.NORTH;

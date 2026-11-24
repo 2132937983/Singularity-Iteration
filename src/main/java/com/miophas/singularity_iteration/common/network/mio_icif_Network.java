@@ -120,6 +120,7 @@ public class mio_icif_Network {
         final PayloadRegistrar registrar = event.registrar(protocolVersion());
         // Suit sensors and Special Maneuver Mode: six payloads, see SuitPackets.
         com.miophas.singularity_iteration.common.suit.SuitPackets.register(registrar);
+        com.miophas.singularity_iteration.common.armory.WingmanDeployFxPacket.register(registrar);
 
         // 0.1.10.21: the exchange panel of the futures machine (request / action C2S, view S2C).
         com.miophas.singularity_iteration.common.exchange.ExchangePackets.register(registrar);

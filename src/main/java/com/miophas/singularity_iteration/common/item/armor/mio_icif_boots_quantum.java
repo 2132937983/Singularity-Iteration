@@ -60,11 +60,11 @@ public class mio_icif_boots_quantum extends mio_icif_armor_elc {
 
         if (!level.isClientSide) {
             if (isEmpty(stack)) {
-                player.removeEffect(MobEffects.FIRE_RESISTANCE);
+                if (player.hasEffect(MobEffects.FIRE_RESISTANCE)) player.removeEffect(MobEffects.FIRE_RESISTANCE);
             } else if (ArmorFeatureToggle.isEnabled(stack, "fire_resistance")) {
-                player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, EFFECT_DURATION, 0, false, false, false));
+                mio_icif_armor_elc.renewEffect(player, MobEffects.FIRE_RESISTANCE, EFFECT_DURATION, 0, 40, false, false, false);
             } else {
-                player.removeEffect(MobEffects.FIRE_RESISTANCE);
+                if (player.hasEffect(MobEffects.FIRE_RESISTANCE)) player.removeEffect(MobEffects.FIRE_RESISTANCE);
             }
         }
 
@@ -77,28 +77,25 @@ public class mio_icif_boots_quantum extends mio_icif_armor_elc {
         }
     }
 
+    private static final java.util.Map<Player, Boolean> WAS_ON_GROUND =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
     private void handleQuantumJump(Player player, ItemStack stack, Level level) {
         if (!ArmorFeatureToggle.isEnabled(stack, "quantum_jump")) {
             return;
         }
 
         boolean isOnGround = player.onGround();
-        CompoundTag nbtData = getOrCreateNbtData(stack);
-        boolean wasOnGround = nbtData.contains(WAS_ON_GROUND_KEY) ? nbtData.getBoolean(WAS_ON_GROUND_KEY) : true;
-
         boolean isJumpKeyDown = JetpackKeyHandler.isJumpKeyDown(player);
         boolean isBoostKeyDown = JetpackKeyHandler.isBoostKeyDown(player);
 
         if (!level.isClientSide) {
+            Boolean prev = WAS_ON_GROUND.put(player, isOnGround);
+            boolean wasOnGround = prev == null || prev;
             if (wasOnGround && !isOnGround && isJumpKeyDown && isBoostKeyDown) {
                 if (hasEnoughEnergy(stack, GROUND_JUMP_ENERGY_COST)) {
                     consumeEnergy(stack, GROUND_JUMP_ENERGY_COST);
                 }
-            }
-
-            if (isOnGround != wasOnGround) {
-                nbtData.putBoolean(WAS_ON_GROUND_KEY, isOnGround);
-                saveNbtData(stack, nbtData);
             }
         } else {
             if (hasEnoughEnergy(stack, GROUND_JUMP_ENERGY_COST) && isOnGround) {

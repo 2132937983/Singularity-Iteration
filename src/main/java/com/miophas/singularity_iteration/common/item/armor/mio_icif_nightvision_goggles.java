@@ -54,7 +54,7 @@ public class mio_icif_nightvision_goggles extends mio_icif_armor_elc implements 
 
         // 有电时消耗能量并提供夜视效果
         if (consumeEnergy(stack)) {
-            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, EFFECT_DURATION, 0, false, false, false));
+            mio_icif_armor_elc.renewEffect(player, MobEffects.NIGHT_VISION, EFFECT_DURATION, 0, 240, false, false, false);
         }
         // IC2原版行为：能量不足时，不移除夜视效果，让效果自然过期
     }

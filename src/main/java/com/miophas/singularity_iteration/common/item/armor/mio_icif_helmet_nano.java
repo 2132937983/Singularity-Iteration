@@ -57,7 +57,7 @@ public class mio_icif_helmet_nano extends mio_icif_armor_elc {
 
         if (ArmorFeatureToggle.isEnabled(stack, "night_vision")) {
             if (consumeEnergy(stack, NIGHT_VISION_ENERGY_COST)) {
-                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, NIGHT_VISION_DURATION, 0, false, false, false));
+                mio_icif_armor_elc.renewEffect(player, MobEffects.NIGHT_VISION, NIGHT_VISION_DURATION, 0, 240, false, false, false);
             }
             // IC2原版行为：能量不足或夜视关闭时，不移除夜视效果，让效果自然过期
         }

@@ -96,24 +96,23 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
                     player.setAirSupply(Math.min(maxAir, airSupply + 200));
                 }
             }
-            player.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, EFFECT_DURATION, 0, false, false, false));
+            mio_icif_armor_elc.renewEffect(player, MobEffects.WATER_BREATHING, EFFECT_DURATION, 0, 40, false, false, false);
         }
         // IC2原版行为：水下呼吸功能关闭时，不移除效果，让效果自然过期
 
         if (ArmorFeatureToggle.isEnabled(stack, "night_vision")) {
             if (armor.consumeEnergy(stack, NIGHT_VISION_COST)) {
-                // 0.1.11.150: night vision in any light (the energy saving that applied it only at a light level of 8 or less is
-                // gone): in a bright spot the effect was not renewed, and below 10 s vanilla makes it flicker, all the time where
-                // the light changes often (the Nether). Renewed every tick at 15 s, it never gets near the flicker.
-                player.removeEffect(MobEffects.BLINDNESS);
-                player.removeEffect(MobEffects.CONFUSION);
-                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, true, true, false));
+                // 0.1.11.150: night vision in any light; threshold 240 keeps duration in [240..300] (well above vanilla's 200t flicker)
+                // without spamming ClientboundUpdateMobEffectPacket every tick.
+                if (player.hasEffect(MobEffects.BLINDNESS)) player.removeEffect(MobEffects.BLINDNESS);
+                if (player.hasEffect(MobEffects.CONFUSION)) player.removeEffect(MobEffects.CONFUSION);
+                mio_icif_armor_elc.renewEffect(player, MobEffects.NIGHT_VISION, 300, 0, 240, true, true, false);
             }
             // IC2原版行为：能量不足或夜视关闭时，不移除夜视效果，让效果自然过期
         }
 
         if (ArmorFeatureToggle.isEnabled(stack, "auto_food")) {
-            if (player.getFoodData().needsFood()) {
+            if (player.tickCount % 10 == 0 && player.getFoodData().needsFood()) {
                 // 查找背包中的食物
                 ItemStack foodStack = findFoodInInventory(player);
                 if (foodStack != null && !foodStack.isEmpty() && armor.consumeEnergy(stack, TIN_CAN_FOOD_COST)) {
@@ -132,19 +131,22 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
             }
         }
 
-        List<Holder<MobEffect>> toRemove = new ArrayList<>();
+        List<Holder<MobEffect>> toRemove = null;
         for (MobEffectInstance effect : player.getActiveEffects()) {
             Holder<MobEffect> potionHolder = effect.getEffect();
             Integer cost = POTION_REMOVAL_COST.get(potionHolder);
             if (cost != null) {
                 int totalCost = cost * (effect.getAmplifier() + 1);
                 if (armor.consumeEnergy(stack, totalCost)) {
+                    if (toRemove == null) toRemove = new ArrayList<>();
                     toRemove.add(potionHolder);
                 }
             }
         }
-        for (Holder<MobEffect> potionHolder : toRemove) {
-            player.removeEffect(potionHolder);
+        if (toRemove != null) {
+            for (Holder<MobEffect> potionHolder : toRemove) {
+                player.removeEffect(potionHolder);
+            }
         }
     }
 

@@ -122,6 +122,14 @@ public final class WingmanService {
         for (int i = 0; i < list.size(); i++) list.get(i).setSlot(i, list.size());
     }
 
+    /** Zero-allocation check whether {@code player} has any loaded live Wingman. */
+    public static boolean hasAny(ServerPlayer player) {
+        List<WingmanEntity> list = BY_OWNER.get(player.getUUID());
+        if (list == null || list.isEmpty()) return false;
+        for (WingmanEntity w : list) if (w.isAlive() && !w.isRemoved()) return true;
+        return false;
+    }
+
     /** The loaded Wingmen of {@code player}, in a stable order (a copy). */
     public static List<WingmanEntity> of(ServerPlayer player) {
         List<WingmanEntity> list = BY_OWNER.get(player.getUUID());

@@ -68,10 +68,8 @@ public class mio_icif_leggings_quantum extends mio_icif_armor_elc {
                 if (player.tickCount % SPEED_TICK_INTERVAL == 0) {
                     consumeEnergy(stack, SPEED_ENERGY_COST);
                 }
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, EFFECT_DURATION, 1, false, false, false));
-            } else {
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, EFFECT_DURATION, 1, false, false, false));
             }
+            mio_icif_armor_elc.renewEffect(player, MobEffects.MOVEMENT_SPEED, EFFECT_DURATION, 1, 40, false, false, false);
         } else {
             removeOwnSpeed(player);
         }

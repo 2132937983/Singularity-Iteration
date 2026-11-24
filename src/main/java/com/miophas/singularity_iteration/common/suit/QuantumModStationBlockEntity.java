@@ -120,7 +120,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         return switch (slot) {
             case BATTERY_SLOT -> isBattery(stack);
             case SUIT_SLOT -> SuitModules.isSuitPiece(stack) || com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(stack);
-            case MODULE_SLOT -> UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack) || isBayExpander(stack) || isLivingLining(stack);
+            case MODULE_SLOT -> acceptsInModuleSlot(stack);
             default -> false;
         };
     }
@@ -133,6 +133,14 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     @Override protected boolean canExtractItem(int slot, @Nullable Direction side) { return slot == SUIT_SLOT; }
     @Override protected boolean canWork() { return false; }
     @Override protected void doWork() { }
+
+    /**
+     * What the module slot takes: units, the lattice densifier, frame cores, the bay expander and the Living Nano Lining.
+     * 0.1.11.203: the one rule for the slot and its menu; the menu kept its own list and missed the lining.
+     */
+    public static boolean acceptsInModuleSlot(ItemStack stack) {
+        return UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack) || isBayExpander(stack) || isLivingLining(stack);
+    }
 
     /** 0.1.8.5: the nano lattice densifier goes into the unit slot too. */
     public static boolean isDensifier(ItemStack stack) {

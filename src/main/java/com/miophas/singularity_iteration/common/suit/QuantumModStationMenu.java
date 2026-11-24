@@ -41,10 +41,10 @@ public class QuantumModStationMenu extends mio_icif_machine_menu {
             @Override public int getMaxStackSize(ItemStack stack) { return 1; }
         }.setBackground(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE));
         addSlot(new SlotItemHandler(itemHandler, QuantumModStationBlockEntity.MODULE_SLOT, UNIT_X, UNIT_Y) {
-            // 0.1.8.5: addon units (public API) and the nano lattice densifier too
+            // 0.1.8.5: addon units (public API) and the nano lattice densifier too. 0.1.11.203: the slot follows the block
+            // entity's own rule, so the Living Nano Lining (left out here, accepted there) goes in as well
             @Override public boolean mayPlace(ItemStack stack) {
-                return UnitRef.ofItem(stack) != null || QuantumModStationBlockEntity.isDensifier(stack) || QuantumModStationBlockEntity.isCore(stack)
-                    || QuantumModStationBlockEntity.isBayExpander(stack);
+                return QuantumModStationBlockEntity.acceptsInModuleSlot(stack);
             }
         });
     }

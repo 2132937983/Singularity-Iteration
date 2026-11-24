@@ -29,7 +29,7 @@ public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implem
     private static final String TAG_AUTO_SUPPLEMENT = "AutoSupplement";
 
     public mio_icif_electric_nutrition_supply() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_electric_nutrition_supply", TRANSFER_SPEED, ENERGY_COST, 1);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_nutrition_supply", TRANSFER_SPEED, ENERGY_COST, 1);
     }
 
     @Override
@@ -44,12 +44,17 @@ public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implem
             return;
         }
 
-        if (player.getFoodData().needsFood()) {
-            if (getEnergy(stack) >= ENERGY_COST) {
-                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
-                player.getFoodData().eat(1, 0.2F);
-                player.containerMenu.broadcastChanges();
-            }
+        // 0.1.11.193 (T0): one food point every half second, from one copy only
+        if (!player.getFoodData().needsFood() || !PassiveDeviceRules.onInterval(player, PassiveDeviceRules.NUTRITION_INTERVAL)) {
+            return;
+        }
+        if (!PassiveDeviceRules.isActingCopy(player, stack, s -> getAutoSupplement(s) && getEnergy(s) >= ENERGY_COST)) {
+            return;
+        }
+        long cost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST);
+        if (getEnergy(stack) >= cost && extractEnergy(stack, cost) >= cost) {
+            player.getFoodData().eat(1, 0.2F);
+            player.containerMenu.broadcastChanges();
         }
     }
 

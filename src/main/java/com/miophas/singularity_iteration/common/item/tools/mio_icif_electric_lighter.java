@@ -31,7 +31,7 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
     private static final int ENERGY_COST = 500;
 
     public mio_icif_electric_lighter() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_electric_lighter", TRANSFER_SPEED, ENERGY_COST, 1);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_lighter", TRANSFER_SPEED, ENERGY_COST, 1);
     }
 
     @Override
@@ -57,24 +57,25 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
             return InteractionResult.SUCCESS;
         }
 
-        if (getEnergy(stack) < ENERGY_COST) {
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_lighter.no_energy"));
-            return InteractionResult.FAIL;
-        }
-
         BlockState clickedState = level.getBlockState(pos);
-        // clicking an existing electric light switches it off (removes it)
+        // clicking an existing electric light switches it off (removes it); 0.1.11.193 (T0, U-11): needs no charge,
+        // but needs the right to change the block
         if (clickedState.is(mio_icif_blocks.ELECTRIC_LIGHT.get())) {
+            if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, pos, context.getClickedFace(), stack)) return InteractionResult.FAIL;
             level.removeBlock(pos, false);
             level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.BLOCKS, 0.8F, 1.6F);
             return InteractionResult.SUCCESS;
+        }
+        if (getEnergy(stack) < ENERGY_COST) {
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_lighter.no_energy"), true);
+            return InteractionResult.FAIL;
         }
         BlockPos placePos = pos;
         if (!clickedState.canBeReplaced()) {
             placePos = pos.relative(context.getClickedFace());
         }
 
-        if (!player.mayUseItemAt(placePos, context.getClickedFace(), stack)) {
+        if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, placePos, context.getClickedFace(), stack)) {
             return InteractionResult.FAIL;
         }
 
@@ -90,7 +91,7 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
 
         if (level.setBlockAndUpdate(placePos, lightState)) {
             extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
-            level.playSound(player, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 0.5F);
+            level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 0.5F);   // 0.1.11.193: the user hears it too
             return InteractionResult.SUCCESS;
         }
 
@@ -113,7 +114,7 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
         int removed = 0;
         for (BlockPos p : BlockPos.betweenClosed(center.offset(-CLEAR_RADIUS, -CLEAR_RADIUS, -CLEAR_RADIUS),
                 center.offset(CLEAR_RADIUS, CLEAR_RADIUS, CLEAR_RADIUS))) {
-            if (level.getBlockState(p).is(mio_icif_blocks.ELECTRIC_LIGHT.get()) && player.mayUseItemAt(p, net.minecraft.core.Direction.UP, ItemStack.EMPTY)) {
+            if (level.getBlockState(p).is(mio_icif_blocks.ELECTRIC_LIGHT.get()) && com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, p, null, ItemStack.EMPTY)) {
                 level.removeBlock(p, false);
                 removed++;
             }

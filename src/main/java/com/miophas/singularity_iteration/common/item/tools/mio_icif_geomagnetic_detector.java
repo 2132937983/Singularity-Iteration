@@ -35,7 +35,7 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat implements com.m
     private static final int ENERGY_COST = 100;
 
     public mio_icif_geomagnetic_detector() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_geomagnetic_detector", TRANSFER_SPEED);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_geomagnetic_detector", TRANSFER_SPEED);
     }
 
     @Override

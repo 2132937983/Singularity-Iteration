@@ -33,7 +33,7 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     }
 
     public mio_icif_tachyon_disruptor(Properties properties) {
-        super(properties, MAX_ENERGY, MAX_ENERGY, "tachyon_disruptor", CHARGE_RATE, ENERGY_PER_SHOT, TIER);
+        super(properties, MAX_ENERGY, 0L, "tachyon_disruptor", CHARGE_RATE, ENERGY_PER_SHOT, TIER);
     }
 
     @Override

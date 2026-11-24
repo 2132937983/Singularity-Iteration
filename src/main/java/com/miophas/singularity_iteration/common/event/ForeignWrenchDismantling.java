@@ -47,9 +47,9 @@ public final class ForeignWrenchDismantling {
 
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
-        if (level.isClientSide || !(player instanceof ServerPlayer serverPlayer)) return;
-        if (!player.mayUseItemAt(pos, event.getFace(), wrench) || !level.mayInteract(player, pos)
-                || serverPlayer.blockActionRestricted(level, pos, serverPlayer.gameMode.getGameModeForPlayer())) return;
+        if (level.isClientSide || !(player instanceof ServerPlayer)) return;
+        // 0.1.11.193 (T0, U-02): the same check as SI's own wrenches, including the break event claim mods listen to
+        if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canBreak(player, level, pos, state, event.getFace(), wrench)) return;
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.MACHINE_DEMOLISH.get(),

@@ -26,7 +26,7 @@ public class mio_icif_steel_shield extends mio_icif_tool_elc implements net.mine
     public static final int BLOCK_COST = 100;
 
     public mio_icif_steel_shield(Properties properties) {
-        super(properties, STEEL_SHIELD_MAX_ENERGY, STEEL_SHIELD_MAX_ENERGY, "steel_shield", STEEL_SHIELD_CHARGE_RATE, STEEL_SHIELD_ENERGY_PER_USE, STEEL_SHIELD_TIER);
+        super(properties, STEEL_SHIELD_MAX_ENERGY, 0L, "steel_shield", STEEL_SHIELD_CHARGE_RATE, STEEL_SHIELD_ENERGY_PER_USE, STEEL_SHIELD_TIER);
     }
 
     @Override

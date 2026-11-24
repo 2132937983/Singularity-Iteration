@@ -29,7 +29,7 @@ public class mio_icif_electric_first_aid_life_support extends mio_icif_tool_elc 
     private static final String TAG_AUTO_SUPPLEMENT = "AutoSupplement";
 
     public mio_icif_electric_first_aid_life_support() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_electric_first_aid_life_support", TRANSFER_SPEED, ENERGY_COST, 3);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_first_aid_life_support", TRANSFER_SPEED, ENERGY_COST, 3);
     }
 
     @Override
@@ -48,13 +48,17 @@ public class mio_icif_electric_first_aid_life_support extends mio_icif_tool_elc 
             return;
         }
 
-        float currentHealth = player.getHealth();
-        if (currentHealth < player.getMaxHealth()) {
-            if (getEnergy(stack) >= ENERGY_COST) {
-                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
-                player.setHealth(currentHealth + 1.0F);
-                player.containerMenu.broadcastChanges();
-            }
+        // 0.1.11.193 (T0, U-01): one health point a second, from one copy only, through the normal heal path
+        if (player.getHealth() >= player.getMaxHealth() || !PassiveDeviceRules.onInterval(player, PassiveDeviceRules.FIRST_AID_INTERVAL)) {
+            return;
+        }
+        if (!PassiveDeviceRules.isActingCopy(player, stack, s -> getAutoSupplement(s) && getEnergy(s) >= ENERGY_COST)) {
+            return;
+        }
+        long cost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST);
+        if (getEnergy(stack) >= cost && extractEnergy(stack, cost) >= cost) {
+            player.heal(1.0F);
+            player.containerMenu.broadcastChanges();
         }
     }
 

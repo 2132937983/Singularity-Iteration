@@ -30,7 +30,7 @@ public class mio_icif_advanced_electric_rifle extends mio_icif_tool_elc implemen
     }
 
     public mio_icif_advanced_electric_rifle(Properties properties) {
-        super(properties, RIFLE_MAX_ENERGY, RIFLE_MAX_ENERGY, "advanced_electric_rifle", RIFLE_CHARGE_RATE, ENERGY_PER_SHOT, RIFLE_TIER);
+        super(properties, RIFLE_MAX_ENERGY, 0L, "advanced_electric_rifle", RIFLE_CHARGE_RATE, ENERGY_PER_SHOT, RIFLE_TIER);
     }
 
     @Override

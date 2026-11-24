@@ -16,6 +16,12 @@ import java.util.Set;
 
 @SuppressWarnings("null")
 public class mio_icif_energy_bullet extends ThrowableProjectile {
+    /** 0.1.11.193 (T0, W-13): passes through the shooter's allies and a Wingman's owner. */
+    @Override
+    protected boolean canHitEntity(net.minecraft.world.entity.Entity target) {
+        return super.canHitEntity(target) && !ProjectileFriendlyFire.spares(getOwner(), target);
+    }
+
     private float damage = 5.0F;
     private int maxLife = 200;
     private int life = 0;

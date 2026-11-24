@@ -21,13 +21,18 @@ import java.util.function.Predicate;
 
 @SuppressWarnings("null")
 public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
+    /** 0.1.11.193 (T0, W-05): persistent-data flag of an arrow shot by a nano bow. */
+    public static final String ARROW_TAG = "mio_icif_nano_arrow";
+    /** 0.1.11.193 (T0, W-05): a nano arrow is removed this many ticks (10 s, about 3,000 blocks of flight) after it was shot. */
+    public static final int ARROW_FLIGHT_TICKS = 200;
+
     public static final int MAX_ENERGY = 500000;
     public static final int ENERGY_PER_SHOT = 300;
     public static final int TIER = 3;
     public static final float MAX_VELOCITY = 5.0F;
 
     public mio_icif_nano_bow(Properties properties) {
-        super(properties, MAX_ENERGY, MAX_ENERGY, "nano_bow", MAX_ENERGY, 512, TIER);
+        super(properties, MAX_ENERGY, 0L, "nano_bow", MAX_ENERGY, 512, TIER);
     }
 
     @Override
@@ -134,6 +139,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
             ((net.minecraft.world.item.ArrowItem) ammo.getItem()).createArrow(level, ammo, shooter, weapon);
         abstractarrow.setCritArrow(true);
         abstractarrow.setNoGravity(true);
+        abstractarrow.getPersistentData().putBoolean(ARROW_TAG, true);   // 0.1.11.193 (W-05): flight time limit
         return customArrow(abstractarrow, ammo, weapon);
     }
 
@@ -270,6 +276,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
             ((net.minecraft.world.item.ArrowItem) net.minecraft.world.item.Items.ARROW).createArrow(shooter.level(), ammo, shooter, stack);
         arrow.setCritArrow(true);
         arrow.setNoGravity(true);
+        arrow.getPersistentData().putBoolean(ARROW_TAG, true);   // 0.1.11.193 (W-05): flight time limit
         arrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
         var d = direction.normalize();
         arrow.shoot(d.x, d.y, d.z, MAX_VELOCITY * 3.0F, 0.5F);

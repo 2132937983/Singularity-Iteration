@@ -48,7 +48,7 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
      * @param properties the item properties
      */
     public mio_icif_iron_driller(Properties properties) {
-        super(properties, IRON_DRILLER_MAX_ENERGY, IRON_DRILLER_MAX_ENERGY, "iron_driller", IRON_DRILLER_TRANSFER_LIMIT, IRON_DRILLER_ENERGY_PER_USE, 1);
+        super(properties, IRON_DRILLER_MAX_ENERGY, 0L, "iron_driller", IRON_DRILLER_TRANSFER_LIMIT, IRON_DRILLER_ENERGY_PER_USE, 1);
     }
 
     /**

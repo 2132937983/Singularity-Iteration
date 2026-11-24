@@ -45,7 +45,7 @@ public class mio_icif_od_scanner extends mio_icif_tool_elc implements IScannerIt
      * @param properties the item properties
      */
     public mio_icif_od_scanner(Properties properties) {
-        super(properties, OD_SCANNER_MAX_ENERGY, OD_SCANNER_MAX_ENERGY, "od_scanner", OD_SCANNER_MAX_ENERGY, OD_SCANNER_ENERGY_PER_USE, 1);
+        super(properties, OD_SCANNER_MAX_ENERGY, 0L, "od_scanner", OD_SCANNER_MAX_ENERGY, OD_SCANNER_ENERGY_PER_USE, 1);
     }
 
     /**

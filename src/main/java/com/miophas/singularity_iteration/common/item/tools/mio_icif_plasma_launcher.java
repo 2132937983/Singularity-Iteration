@@ -39,11 +39,13 @@ public class mio_icif_plasma_launcher extends mio_icif_tool_elc implements IWeap
     public static final float AI_HIT_DAMAGE = 24.0F;
     /** 0.1.10.4: ticks between two shots of an AI shooter. */
     public static final int AI_COOLDOWN = 20;
+    /** 0.1.11.193 (T0, W-01): ticks between two shots of a player; before, holding use fired every few ticks. */
+    public static final int PLAYER_COOLDOWN = 20;
 
     public static EntityType<mio_icif_plasma_bullet> PLASMA_BULLET_ENTITY;
 
     public mio_icif_plasma_launcher(Properties properties) {
-        super(properties, PLASMA_MAX_ENERGY, PLASMA_MAX_ENERGY, "plasma_launcher",
+        super(properties, PLASMA_MAX_ENERGY, 0L, "plasma_launcher",
             PLASMA_CHARGE_RATE, PLASMA_ENERGY_PER_USE, PLASMA_TIER);
     }
 
@@ -70,6 +72,7 @@ public class mio_icif_plasma_launcher extends mio_icif_tool_elc implements IWeap
             consumeEnergy(stack, PLASMA_ENERGY_PER_USE);
             // 0.1.10.4: straight along the view; shootFromRotation added the shooter's motion
             launch(level, player, player.getLookAngle());
+            player.getCooldowns().addCooldown(this, PLAYER_COOLDOWN);
             WeaponChargeFx.emit(player, hand, PLASMA_ENERGY_PER_USE * 40L, PLASMA_COLOR);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), SoundSource.PLAYERS, 1.1F, 0.75F + level.random.nextFloat() * 0.1F);

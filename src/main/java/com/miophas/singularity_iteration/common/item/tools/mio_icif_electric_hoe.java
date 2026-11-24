@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.item.tools;
 
+import com.miophas.singularity_iteration.common.util.BlockEditPermission;
 import com.miophas.singularity_iteration.core.api.crop.IPlanter;
 import com.miophas.singularity_iteration.core.api.crop.PlantType;
 import com.miophas.singularity_iteration.core.api.item.IEquipmentHudProvider;
@@ -102,6 +103,8 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
     // 连锁收获的工作量上限（防止超大农田一次点击造成卡顿；实际通常先被电量限制）
     private static final int MAX_CHAIN_VISITS = 4096;
     private static final int MAX_CHAIN_HARVESTS = 1024;
+    /** 0.1.11.193 (T0, M-02): the chain harvest reaches at most this many blocks from the clicked crop on each axis. */
+    private static final int MAX_CHAIN_RADIUS = 32;
 
     // 连锁收获的扩散方向（含上下，作物架竖直堆叠时也能连成一片）
     private static final Direction[] CHAIN_DIRECTIONS = Direction.values();
@@ -151,7 +154,7 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
     }
 
     public mio_icif_electric_hoe(Properties properties) {
-        super(properties, HOE_MAX_ENERGY, HOE_MAX_ENERGY, "iron_hoe",
+        super(properties, HOE_MAX_ENERGY, 0L, "iron_hoe",
                 HOE_TRANSFER_LIMIT, HOE_ENERGY_PER_USE, 1);
     }
 
@@ -255,6 +258,9 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
                 if (!hasEnoughEnergy(stack)) break;
                 if (!level.hasChunkAt(target)) continue;
                 BlockPos soilPos = soilFor(level, target, weedLayer);
+                // 0.1.11.193 (T0, M-02): every cell of the range is asked for, not only the clicked one
+                if (!BlockEditPermission.canEdit(player, level, target, context.getClickedFace(), stack)
+                        || !BlockEditPermission.canEdit(player, level, soilPos, context.getClickedFace(), stack)) continue;
                 if (tilling) {
                     // 除草：原版 HOE_TILL 要求土壤上方为空气，被杂草遮挡时先清除
                     for (BlockPos weed : weedsToClear(level, target, soilPos, weedLayer)) {
@@ -364,6 +370,9 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
             for (Direction direction : CHAIN_DIRECTIONS) {
                 BlockPos next = pos.relative(direction);
                 if (visited.contains(next) || !level.hasChunkAt(next)) continue;
+                // 0.1.11.193 (T0, M-02): the chain stays within a square round the clicked crop
+                if (Math.abs(next.getX() - start.getX()) > MAX_CHAIN_RADIUS || Math.abs(next.getZ() - start.getZ()) > MAX_CHAIN_RADIUS
+                        || Math.abs(next.getY() - start.getY()) > MAX_CHAIN_RADIUS) continue;
                 if (!isSameCropFamily(level, next, referenceBlock)) continue;
                 visited.add(next);
                 queue.add(next);
@@ -383,6 +392,12 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
     private boolean harvestOne(Level level, BlockPos pos, Player player, ItemStack stack) {
         BlockState state = level.getBlockState(pos);
         BlockState replanted = matureCropReplantState(state);
+        // 0.1.11.193 (T0, M-02): each harvested crop is asked for as a break, each crop stick as an edit
+        if (!level.isClientSide && (replanted != null
+                ? !BlockEditPermission.canBreak(player, level, pos, state, null, stack)
+                : !BlockEditPermission.canEdit(player, level, pos, null, stack))) {
+            return false;
+        }
         if (replanted != null) {
             if (level instanceof ServerLevel serverLevel) {
                 // Block.getDrops 会查询工具的时运等级，本工具通过 GetEnchantmentLevelEvent 自带时运 3
@@ -581,6 +596,8 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
      */
     private static boolean clearWeeds(Level level, BlockPos weedPos, Player player) {
         if (level.isClientSide) return true;
+        // 0.1.11.193 (T0, M-02): a weed is broken as a player breaks it (protection and break events)
+        if (!BlockEditPermission.canBreak(player, level, weedPos, level.getBlockState(weedPos), null, player.getMainHandItem())) return false;
         return level.destroyBlock(weedPos, true, player);
     }
 

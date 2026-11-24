@@ -24,6 +24,12 @@ import net.minecraft.world.phys.Vec3;
  * packets (both sides apply the same drag).
  */
 abstract class IndependentElectricProjectile extends ThrowableProjectile implements net.neoforged.neoforge.entity.IEntityWithComplexSpawn {
+    /** 0.1.11.193 (T0, W-13): passes through the shooter's allies and a Wingman's owner. */
+    @Override
+    protected boolean canHitEntity(net.minecraft.world.entity.Entity target) {
+        return super.canHitEntity(target) && !ProjectileFriendlyFire.spares(getOwner(), target);
+    }
+
     private int remainingTicks = 200;
     private double remainingRange = 64.0D;
     private Vec3 resumeAt;

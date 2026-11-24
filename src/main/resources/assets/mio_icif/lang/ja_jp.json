@@ -6158,5 +6158,9 @@
   "item.mio_icif.module.item_living_nano_lining.desc": "量子アーマー内部のナノ層を覚醒させ、独立した %s LP のナノ格子を解放します（量子スロット非消費）。",
   "item.mio_icif.module.item_living_nano_lining.bonus": "神経結合：内蔵ナノバーストは量子コヒーレンスで発動し、1部位ごとに回復 +10% と非戦闘時の微弱自己修復を付与。",
   "gui.mio_icif.station.status.lining_max": "生体ナノインナーは既に覚醒済みです",
-  "gui.mio_icif.station.units_lined": "量子 %s/%s · 生体 %s/%sLP"
+  "gui.mio_icif.station.units_lined": "量子 %s/%s · 生体 %s/%sLP",
+  "message.mio_icif.tool.no_permission": "ここではそのブロックを変更できません",
+  "message.mio_icif.tool.other_dimension": "対象は別のディメンションにあります",
+  "message.mio_icif.tool.target_unloaded": "最初のブロックが読み込まれていません。近づいてください",
+  "message.mio_icif.electric_wireless_manager.not_energy": "そのブロックは EU を蓄えません。機械か蓄電ブロックを選んでください"
 }

@@ -35,7 +35,7 @@ public class mio_icif_tactical_laser_rifle extends mio_icif_tool_elc implements 
     }
 
     public mio_icif_tactical_laser_rifle(Properties properties) {
-        super(properties, RIFLE_MAX_ENERGY, RIFLE_MAX_ENERGY, "tactical_laser_rifle", RIFLE_CHARGE_RATE, ENERGY_PER_SHOT, RIFLE_TIER);
+        super(properties, RIFLE_MAX_ENERGY, 0L, "tactical_laser_rifle", RIFLE_CHARGE_RATE, ENERGY_PER_SHOT, RIFLE_TIER);
     }
 
     @Override

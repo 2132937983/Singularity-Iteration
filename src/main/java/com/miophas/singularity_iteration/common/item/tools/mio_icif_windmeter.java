@@ -25,7 +25,7 @@ public class mio_icif_windmeter extends mio_icif_tool_elc implements IWindMeterI
     private static final int ENERGY_PER_USE = 50;
 
     public mio_icif_windmeter(Properties properties) {
-        super(properties, 10000, 10000, "item_tool_windmeter", 100, ENERGY_PER_USE, 1);
+        super(properties, 10000, 0L, "item_tool_windmeter", 100, ENERGY_PER_USE, 1);
     }
 
     /**

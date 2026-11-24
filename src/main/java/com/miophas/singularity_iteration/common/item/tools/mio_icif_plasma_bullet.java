@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.item.tools;
 
+import com.miophas.singularity_iteration.common.util.BlockEditPermission;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -144,7 +145,7 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
             return false;
         }
 
-        level.explode(this, level.damageSources().explosion(this, player), new HeatExplosionCalculator(),
+        level.explode(this, level.damageSources().explosion(this, player), new HeatExplosionCalculator(player),
             center.x, center.y, center.z, EXPLOSION_POWER, false, Level.ExplosionInteraction.TNT);
         return true;
     }
@@ -178,22 +179,24 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
     private void applyInfluence(ServerLevel level, BlockPos pos, Vec3 center, Vec3 closest) {
         BlockState state = level.getBlockState(pos);
         if (state.isAir()) return;
+        // 0.1.11.193 (T0, W-02): every changed block is asked for, as a normal break or placement is
+        if (!(getOwner() instanceof ServerPlayer player)) return;
 
         // 清除水与岩浆
         if (state.is(Blocks.WATER) || state.is(Blocks.LAVA)) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            if (BlockEditPermission.canEdit(player, level, pos, null, ItemStack.EMPTY)) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            }
             return;
         }
 
-        // 熔炼：仅当烧炼产物仍是方块时替换
-        ItemStack input = new ItemStack(state.getBlock());
-        var recipe = level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(input), level);
-        if (recipe.isPresent()) {
-            ItemStack output = recipe.get().value().assemble(new SingleRecipeInput(input), level.registryAccess());
-            if (!output.isEmpty() && output.getItem() instanceof BlockItem blockItem) {
-                level.setBlock(pos, blockItem.getBlock().defaultBlockState(), Block.UPDATE_ALL);
-                return;
+        // 熔炼：仅当烧炼产物仍是方块时替换（0.1.11.193 W-19: one recipe lookup per block type per bolt）
+        BlockState melted = smeltedState(level, state);
+        if (melted != null) {
+            if (BlockEditPermission.canBreak(player, level, pos, state, null, ItemStack.EMPTY)) {
+                level.setBlock(pos, melted, Block.UPDATE_ALL);
             }
+            return;
         }
 
         // 点燃易燃方块：在背向弹道的一侧生火
@@ -203,10 +206,31 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
                 ? Direction.UP
                 : Direction.getNearest(outward.x, outward.y, outward.z);
             BlockPos firePos = pos.relative(dir);
-            if (level.isLoaded(firePos) && level.getBlockState(firePos).isAir()) {
+            if (level.isLoaded(firePos) && level.getBlockState(firePos).isAir()
+                    && BlockEditPermission.canEdit(player, level, firePos, null, ItemStack.EMPTY)) {
                 level.setBlock(firePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL);
             }
         }
+    }
+
+    /** Smelting result per block type for this bolt; {@link #NOT_SMELTABLE} marks a block without one. */
+    private final java.util.Map<Block, BlockState> smeltCache = new java.util.IdentityHashMap<>();
+    private static final BlockState NOT_SMELTABLE = Blocks.AIR.defaultBlockState();
+
+    /** The block a smelting recipe turns {@code state} into, or null (0.1.11.193, W-19: cached). */
+    private BlockState smeltedState(ServerLevel level, BlockState state) {
+        BlockState cached = smeltCache.computeIfAbsent(state.getBlock(), block -> {
+            ItemStack input = new ItemStack(block);
+            var recipe = level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(input), level);
+            if (recipe.isPresent()) {
+                ItemStack output = recipe.get().value().assemble(new SingleRecipeInput(input), level.registryAccess());
+                if (!output.isEmpty() && output.getItem() instanceof BlockItem blockItem) {
+                    return blockItem.getBlock().defaultBlockState();
+                }
+            }
+            return NOT_SMELTABLE;
+        });
+        return cached == NOT_SMELTABLE ? null : cached;
     }
 
     private static Vec3 closestPointOnSegment(Vec3 point, Vec3 a, Vec3 b) {
@@ -219,7 +243,34 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
     }
 
     /** 复刻 IC2 {@code ExplosionIC2.getAbsorption} 的 Heat 抗性判定。 */
+    /**
+     * 0.1.11.193 (T0, W-01): most entity damage a heat blast deals, at its centre. The vanilla formula for a
+     * power-18 blast gives about 253 at the centre and reaches 36 blocks; the damage is scaled down so the
+     * centre deals this much and the fall-off keeps its shape. Equal to the burn hit of a bolt that may not blast.
+     */
+    public static final float ENTITY_DAMAGE_CAP = mio_icif_plasma_launcher.AI_HIT_DAMAGE;
+    /** Centre damage of a vanilla blast of {@link #EXPLOSION_POWER}: (1 + 1) / 2 * 7 * (2 * power) + 1. */
+    private static final float VANILLA_CENTRE_DAMAGE = 7.0F * 2.0F * EXPLOSION_POWER + 1.0F;
+
     private static final class HeatExplosionCalculator extends ExplosionDamageCalculator {
+        private final net.minecraft.world.entity.Entity shooter;
+
+        HeatExplosionCalculator(net.minecraft.world.entity.Entity shooter) {
+            this.shooter = shooter;
+        }
+
+        /** 0.1.11.193 (T0, W-01): the blast spares the one who fired it. */
+        @Override
+        public boolean shouldDamageEntity(Explosion explosion, net.minecraft.world.entity.Entity entity) {
+            return entity != shooter && super.shouldDamageEntity(explosion, entity);
+        }
+
+        /** 0.1.11.193 (T0, W-01): scaled so the centre deals {@link #ENTITY_DAMAGE_CAP}. */
+        @Override
+        public float getEntityDamageAmount(Explosion explosion, net.minecraft.world.entity.Entity entity) {
+            return super.getEntityDamageAmount(explosion, entity) * (ENTITY_DAMAGE_CAP / VANILLA_CENTRE_DAMAGE);
+        }
+
         /** 足以耗尽射线、使方块无法被破坏的抗性值。 */
         private static final float PROTECTED_RESISTANCE = 1000.0F;
         /** 原版 Heat 吸收公式系数：0.5 + (抗性 + 4) * 0.3 * 6。 */

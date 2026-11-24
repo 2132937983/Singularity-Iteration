@@ -28,9 +28,11 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
     private static final String TAG_TARGET_X = "WirelessTargetX";
     private static final String TAG_TARGET_Y = "WirelessTargetY";
     private static final String TAG_TARGET_Z = "WirelessTargetZ";
+    /** 0.1.11.193 (T0, U-03): dimension of the target; a copy without it is from before and counts as the node's own. */
+    private static final String TAG_TARGET_DIM = "WirelessTargetDim";
 
     public mio_icif_electric_wireless_manager() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_electric_wireless_manager", TRANSFER_SPEED);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_wireless_manager", TRANSFER_SPEED);
     }
 
     @Override
@@ -67,7 +69,13 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
         }
 
         if (player.isShiftKeyDown()) {
+            // 0.1.11.193 (T0, U-04): a target is a block that holds EU
+            if (!acceptsEnergy(level, pos)) {
+                player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.not_energy"), true);
+                return InteractionResult.SUCCESS;
+            }
             setTargetPosition(stack, pos.getX(), pos.getY(), pos.getZ());
+            setTargetDimension(stack, level.dimension().location().toString());
             extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
 
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_set",
@@ -77,7 +85,17 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof IWirelessPowerNode node) {
+            // 0.1.11.193 (T0, U-04): re-aiming a node is an edit of it, so a claimed node stays its owner's
+            if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, pos, context.getClickedFace(), stack)) {
+                player.displayClientMessage(Component.translatable("message.mio_icif.tool.no_permission"), true);
+                return InteractionResult.SUCCESS;
+            }
             CompoundTag tag = getTag(stack);
+            if (tag != null && tag.contains(TAG_TARGET_DIM) && !tag.getString(TAG_TARGET_DIM).equals(level.dimension().location().toString())) {
+                // 0.1.11.193 (T0, U-03): the node sends inside its own dimension only
+                player.displayClientMessage(Component.translatable("message.mio_icif.tool.other_dimension"), true);
+                return InteractionResult.SUCCESS;
+            }
             if (tag != null && tag.contains(TAG_TARGET_X)) {
                 int targetX = tag.getInt(TAG_TARGET_X);
                 int targetY = tag.getInt(TAG_TARGET_Y);
@@ -134,6 +152,18 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
         tag.putInt(TAG_TARGET_Y, y);
         tag.putInt(TAG_TARGET_Z, z);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+
+    private static void setTargetDimension(ItemStack stack, String dimension) {
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        tag.putString(TAG_TARGET_DIM, dimension);
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+
+    /** A block that stores EU: an SI energy block or anything with the EU capability. */
+    private static boolean acceptsEnergy(Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity
+            || level.getCapability(com.miophas.singularity_iteration.core.api.energy.storage.EUApi.SIDED, pos, null) != null;
     }
 
     private static CompoundTag getTag(ItemStack stack) {

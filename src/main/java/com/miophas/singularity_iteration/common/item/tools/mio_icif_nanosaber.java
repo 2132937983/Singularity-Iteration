@@ -90,7 +90,7 @@ public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas
     private static final String TAG_ACTIVE = "NanoSaberActive";
 
     public mio_icif_nanosaber(Properties properties) {
-        super(properties, NANOSABER_MAX_ENERGY, NANOSABER_MAX_ENERGY, "nanosaber", NANOSABER_CHARGE_RATE, NANOSABER_ENERGY_PER_USE, NANOSABER_TIER);
+        super(properties, NANOSABER_MAX_ENERGY, 0L, "nanosaber", NANOSABER_CHARGE_RATE, NANOSABER_ENERGY_PER_USE, NANOSABER_TIER);
     }
 
     public static boolean isActive(ItemStack stack) {

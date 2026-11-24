@@ -84,6 +84,11 @@ public enum PainterColor {
         if (level.isClientSide()) {
             return InteractionResult.sidedSuccess(true);
         }
+        // 0.1.11.193 (T0, M-13): repainting changes the block, so it is asked for as any edit is (claims, adventure mode)
+        if (player != null && !com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(
+                player, level, pos, context.getClickedFace(), context.getItemInHand())) {
+            return InteractionResult.FAIL;
+        }
 
         BlockState clickedState = level.getBlockState(pos);
         Block clickedBlock = clickedState.getBlock();

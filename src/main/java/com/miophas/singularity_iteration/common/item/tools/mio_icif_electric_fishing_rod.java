@@ -31,7 +31,7 @@ public class mio_icif_electric_fishing_rod extends mio_icif_tool_elc implements 
     private static final int ENERGY_COST = 100;
 
     public mio_icif_electric_fishing_rod() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_electric_fishing_rod", TRANSFER_SPEED, ENERGY_COST, 1);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_fishing_rod", TRANSFER_SPEED, ENERGY_COST, 1);
     }
 
     @Override

@@ -244,7 +244,14 @@ public final class Round1138GameTests {
         try {
             java.nio.file.Files.writeString(java.nio.file.Path.of("autocraft_ingredients.json"), out.toString());
         } catch (java.io.IOException e) { throw new AssertionError("cannot write autocraft_ingredients.json", e); }
-        h.assertTrue(items.values().stream().filter("electric_full"::equals).count() >= 30, "expected about 36 items charged by default");
+        // 0.1.11.193 (T0, M-01): electric tools start empty; only batteries may still start charged
+        h.assertTrue(items.values().stream().filter(v -> v.startsWith("electric")).count() >= 60, "expected about 80 electric items");
+        var fullTools = new java.util.ArrayList<String>();
+        for (var e : items.entrySet())
+            if (e.getValue().equals("electric_full")
+                    && BuiltInRegistries.ITEM.get(ResourceLocation.parse(e.getKey())) instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricTool)
+                fullTools.add(e.getKey());
+        h.assertTrue(fullTools.isEmpty(), "electric tools that start charged: " + fullTools);
         h.succeed();
     }
 
@@ -305,7 +312,7 @@ public final class Round1138GameTests {
         h.succeed();
     }
 
-    /** The chainsaw's power unit input takes a full and an empty power unit and shows the empty one (the default is full). */
+    /** The chainsaw's power unit input takes a full and an empty power unit and shows the empty one. */
     @GameTest(batch = "round1138_recipes", template = "empty", timeoutTicks = 20)
     public static void electricInputTakesAnyChargeAndShowsTheEmptyStack(GameTestHelper h) {
         var holder = h.getLevel().getRecipeManager().byKey(id("shaped_152_chainsaw")).orElseThrow();
@@ -315,7 +322,8 @@ public final class Round1138GameTests {
         h.assertTrue(electric(ingredient), "the chainsaw's power unit input is not mio_icif:electric");
         ItemStack full = new ItemStack(unit);
         var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) unit;
-        h.assertTrue(battery.getEnergy(full) > 0 && battery.getEnergy(full) >= battery.getMaxEnergy(full), "the default power unit is full");
+        h.assertTrue(battery.getEnergy(full) == 0, "0.1.11.193: a new power unit starts empty");
+        battery.setEnergy(full, battery.getMaxEnergy(full));
         ItemStack shown = ingredient.getItems()[0];
         h.assertTrue(battery.getEnergy(shown) == 0, "the input shows a charged power unit");
         h.assertTrue(ingredient.test(full) && ingredient.test(shown), "the input must take any charge");

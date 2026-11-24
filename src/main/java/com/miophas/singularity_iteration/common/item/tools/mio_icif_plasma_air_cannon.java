@@ -28,7 +28,7 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
     public static final int MIN_CHARGE = 10;
 
     public mio_icif_plasma_air_cannon(Properties properties) {
-        super(properties, MAX_ENERGY, MAX_ENERGY, "plasma_air_cannon", CHARGE_RATE, 100, TIER);
+        super(properties, MAX_ENERGY, 0L, "plasma_air_cannon", CHARGE_RATE, 100, TIER);
     }
 
     @Override
@@ -46,20 +46,38 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
         return InteractionResultHolder.consume(stack);
     }
 
+    /** 0.1.11.193 (T0, W-04): held as long as the player likes; the charge stops growing at {@link #MAX_CHARGE}. */
+    public static final int USE_DURATION = 72000;
+    /** 0.1.11.193 (T0, W-03): half-angle of the blast cone, in degrees. */
+    public static final double CONE_HALF_ANGLE = 15.0D;
+    /** 0.1.11.193 (T0, W-03): a target closer than this counts as this far for the damage (no 490-damage point-blank). */
+    public static final double MIN_DAMAGE_DISTANCE = 2.0D;
+
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
-        return MAX_CHARGE;
+        return USE_DURATION;
     }
 
     /** Compressor whine while charging, re-triggered every 8 ticks with rising pitch. */
     @Override
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
         int charged = getUseDuration(stack, entity) - remainingUseDuration;
-        if (!level.isClientSide && charged % 8 == 0 && charged <= 120) {
+        if (!level.isClientSide && charged % 8 == 0 && charged <= 120 && charged <= MAX_CHARGE) {
             float p = 0.7F + Math.min(1F, charged / 120F) * 0.9F;
             level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.AIR_CANNON_CHARGE.get(),
                 net.minecraft.sounds.SoundSource.PLAYERS, 0.45F, p);
         }
+    }
+
+    /** Is the centre of {@code target} within {@code range} along {@code dir} from {@code eye}, inside the cone? */
+    static boolean inCone(Vec3 eye, Vec3 dir, LivingEntity target, double range, double slope) {
+        Vec3 to = target.getBoundingBox().getCenter().subtract(eye);
+        Vec3 d = dir.normalize();
+        double along = to.dot(d);
+        if (along < 0 || along > range) return false;
+        double off = to.subtract(d.scale(along)).length();
+        // the cone starts one block wide at the muzzle and widens with the slope; half the target's width counts
+        return off <= 1.0D + along * slope + target.getBbWidth() * 0.5D;
     }
 
     @Override
@@ -71,7 +89,7 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
     public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeCharged) {
         if (!(entity instanceof Player player)) return;
 
-        int chargeTicks = getUseDuration(stack, entity) - timeCharged;
+        int chargeTicks = Math.min(MAX_CHARGE, getUseDuration(stack, entity) - timeCharged);
         if (chargeTicks < MIN_CHARGE) return;
 
         float expandSize = chargeTicks;
@@ -95,15 +113,22 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
             AABB area = new AABB(
                 currentPosition.x, currentPosition.y, currentPosition.z,
                 targetPosition.x, targetPosition.y, targetPosition.z
-            ).inflate(1.0f, 1.0f, 1.0f);
+            ).inflate(1.0D + expandSize * Math.tan(Math.toRadians(CONE_HALF_ANGLE)) + 1.0D);   // broad pass covering the whole cone
 
+            // 0.1.11.193 (T0, W-03): the box is only a broad pass; a target must sit inside the blast cone along the
+            // view, be in line of sight, and not be an ally (tamed pets, villagers, golems, the player's team)
+            Vec3 eye = player.getEyePosition();
+            double coneSlope = Math.tan(Math.toRadians(CONE_HALF_ANGLE));
             List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, area,
-                e -> e != player && e.isAlive() && e.isPickable());
+                e -> e != player && e.isAlive() && e.isPickable()
+                    && inCone(eye, lookDirection, e, expandSize, coneSlope)
+                    && player.hasLineOfSight(e)
+                    && !mio_icif_nanosaber.isAlly(e) && !e.isAlliedTo(player));
 
             double velocity = expandSize / 3.0;
             for (LivingEntity target : targets) {
-                double distance = currentPosition.distanceTo(target.position());
-                double damage = BASE_DAMAGE + expandSize / (distance == 0 ? 1.0 : distance);
+                double distance = Math.max(MIN_DAMAGE_DISTANCE, currentPosition.distanceTo(target.position()));
+                double damage = BASE_DAMAGE + expandSize / distance;
 
                 target.push(lookDirection.x * velocity, lookDirection.y * velocity, lookDirection.z * velocity);
                 target.hurt(level.damageSources().playerAttack(player), (float) damage);

@@ -235,6 +235,9 @@ public final class Round1153GameTests {
         AbstractBattery item = (AbstractBattery) kit.getItem();
         item.setEnergy(kit, item.getMaxEnergy(kit));
         call(item.getClass(), "setAutoSupplement", kit, true);
+        // 0.1.11.193: the kit acts from the player's inventory, once a second
+        p.setItemInHand(InteractionHand.MAIN_HAND, kit);
+        p.tickCount = 20;
         p.setHealth(10);
         kit.inventoryTick(h.getLevel(), p, 5, false);
         h.assertTrue(p.getHealth() == 11, "The kit heals a living player (health " + p.getHealth() + ")");

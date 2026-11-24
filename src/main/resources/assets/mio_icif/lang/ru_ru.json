@@ -6158,5 +6158,9 @@
   "item.mio_icif.module.item_living_nano_lining.desc": "Пробуждает внутренний нанослой квантовой брони, открывая %s независ. LP для наномодулей (не занимает квантовые слоты).",
   "item.mio_icif.module.item_living_nano_lining.bonus": "Нейросвязь: нано-импульсы тратят когерентность; +10% к её восст. за часть и мягкая регенерация вне боя.",
   "gui.mio_icif.station.status.lining_max": "Живая наноподкладка уже активирована",
-  "gui.mio_icif.station.units_lined": "Кв. %s/%s · Нано %s/%sLP"
+  "gui.mio_icif.station.units_lined": "Кв. %s/%s · Нано %s/%sLP",
+  "message.mio_icif.tool.no_permission": "Здесь нельзя изменять этот блок",
+  "message.mio_icif.tool.other_dimension": "Цель находится в другом измерении",
+  "message.mio_icif.tool.target_unloaded": "Первый блок не загружен; подойдите ближе",
+  "message.mio_icif.electric_wireless_manager.not_energy": "Этот блок не хранит EU; выберите машину или накопитель"
 }

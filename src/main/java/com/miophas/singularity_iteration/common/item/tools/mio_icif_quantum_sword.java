@@ -32,7 +32,7 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements com.mio
     private static final String TAG_HYPER = "QuantumSwordHyper";
 
     public mio_icif_quantum_sword(Properties properties) {
-        super(properties.attributes(attributes()), SWORD_MAX_ENERGY, SWORD_MAX_ENERGY, "quantum_sword", SWORD_CHARGE_RATE, ENERGY_PER_USE, SWORD_TIER);
+        super(properties.attributes(attributes()), SWORD_MAX_ENERGY, 0L, "quantum_sword", SWORD_CHARGE_RATE, ENERGY_PER_USE, SWORD_TIER);
     }
 
     /**

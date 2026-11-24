@@ -6158,5 +6158,9 @@
   "item.mio_icif.module.item_living_nano_lining.desc": "唤醒量子护甲内部的纳米内胆，解锁独立 %s LP 内层纳米晶格（不占用外层量子槽位）。",
   "item.mio_icif.module.item_living_nano_lining.bonus": "神经耦合：内衬纳米爆发改耗量子相干，每件 +10% 相干恢复并附带脱战温和自愈。",
   "gui.mio_icif.station.status.lining_max": "该量子护甲已活化活体纳米内衬",
-  "gui.mio_icif.station.units_lined": "量子 %s/%s · 活体 %s/%sLP"
+  "gui.mio_icif.station.units_lined": "量子 %s/%s · 活体 %s/%sLP",
+  "message.mio_icif.tool.no_permission": "你没有权限改动这个方块",
+  "message.mio_icif.tool.other_dimension": "目标在另一个维度",
+  "message.mio_icif.tool.target_unloaded": "第一个方块所在区块没有加载，请靠近它",
+  "message.mio_icif.electric_wireless_manager.not_energy": "这个方块不储存 EU，请选择机器或储电方块"
 }

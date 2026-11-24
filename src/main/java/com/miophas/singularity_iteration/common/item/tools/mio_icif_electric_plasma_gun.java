@@ -33,7 +33,7 @@ public class mio_icif_electric_plasma_gun extends mio_icif_tool_elc implements I
     }
 
     public mio_icif_electric_plasma_gun(Properties properties) {
-        super(properties, MAX_ENERGY, MAX_ENERGY, "electric_plasma_gun", CHARGE_RATE, ENERGY_PER_SHOT, TIER);
+        super(properties, MAX_ENERGY, 0L, "electric_plasma_gun", CHARGE_RATE, ENERGY_PER_SHOT, TIER);
     }
 
     @Override

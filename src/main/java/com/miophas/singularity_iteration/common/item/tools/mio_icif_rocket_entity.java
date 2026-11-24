@@ -18,6 +18,12 @@ import java.util.Set;
 
 @SuppressWarnings("null")
 public class mio_icif_rocket_entity extends ThrowableProjectile {
+    /** 0.1.11.193 (T0, W-13): passes through the shooter's allies and a Wingman's owner. */
+    @Override
+    protected boolean canHitEntity(net.minecraft.world.entity.Entity target) {
+        return super.canHitEntity(target) && !ProjectileFriendlyFire.spares(getOwner(), target);
+    }
+
     private float damage = 0.0F;
     private float explosionPower = 5.0F;
     private int maxLife = 200;
@@ -74,7 +80,7 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
 
             AABB searchBox = this.getBoundingBox().expandTowards(velocity).inflate(1.0D);
             List<Entity> entitiesInPath = this.level().getEntities(this, searchBox,
-                entity -> entity != this.getOwner() && entity.isPickable() && entity.isAlive()
+                entity -> entity != this.getOwner() && entity.isPickable() && entity.isAlive() && !ProjectileFriendlyFire.spares(this.getOwner(), entity)
             );
 
             Entity closestHitEntity = null;

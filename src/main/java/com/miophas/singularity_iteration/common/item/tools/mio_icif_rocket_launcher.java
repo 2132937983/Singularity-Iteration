@@ -34,7 +34,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
     }
 
     public mio_icif_rocket_launcher(Properties properties) {
-        super(properties, MAX_ENERGY, MAX_ENERGY, "rocket_launcher", CHARGE_RATE, 100, TIER);
+        super(properties, MAX_ENERGY, 0L, "rocket_launcher", CHARGE_RATE, 100, TIER);
     }
 
     @Override

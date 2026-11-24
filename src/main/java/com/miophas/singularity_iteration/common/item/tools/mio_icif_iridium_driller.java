@@ -68,7 +68,7 @@ private static final String MODE_KEY = "iridium_driller_mode";
  * @param properties the item properties
  */
     public mio_icif_iridium_driller(Properties properties) {
-        super(properties, IRIDIUM_DRILLER_MAX_ENERGY, IRIDIUM_DRILLER_MAX_ENERGY, "iridium_driller", IRIDIUM_DRILLER_TRANSFER_LIMIT, IRIDIUM_DRILLER_ENERGY_PER_USE, 3);
+        super(properties, IRIDIUM_DRILLER_MAX_ENERGY, 0L, "iridium_driller", IRIDIUM_DRILLER_TRANSFER_LIMIT, IRIDIUM_DRILLER_ENERGY_PER_USE, 3);
     }
 
     /**

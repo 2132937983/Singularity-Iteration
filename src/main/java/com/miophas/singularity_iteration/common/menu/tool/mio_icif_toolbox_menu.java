@@ -196,6 +196,7 @@ public class mio_icif_toolbox_menu extends AbstractContainerMenu {
             if (slot >= 0 && slot < inventory.length && inventory[slot] != null && !inventory[slot].isEmpty()) {
                 ItemStack result = inventory[slot].split(amount);
                 if (inventory[slot].isEmpty()) inventory[slot] = ItemStack.EMPTY;
+                setChanged();
                 return result;
             }
             return ItemStack.EMPTY;
@@ -206,6 +207,7 @@ public class mio_icif_toolbox_menu extends AbstractContainerMenu {
             if (slot >= 0 && slot < inventory.length) {
                 ItemStack result = inventory[slot];
                 inventory[slot] = ItemStack.EMPTY;
+                setChanged();
                 return result == null ? ItemStack.EMPTY : result;
             }
             return ItemStack.EMPTY;
@@ -215,15 +217,26 @@ public class mio_icif_toolbox_menu extends AbstractContainerMenu {
         public void setItem(int slot, ItemStack stack) {
             if (slot >= 0 && slot < inventory.length) {
                 inventory[slot] = stack;
+                setChanged();
+            }
+        }
+
+        /**
+         * 0.1.11.193 (T0, U-06): written back to the toolbox at every change, not only when the menu closes. A save of
+         * the player while the menu was open (autosave), then a crash, left the taken items both in the inventory and
+         * in the toolbox.
+         */
+        @Override
+        public void setChanged() {
+            if (player != null && !player.level().isClientSide && !containerStack.isEmpty()) {
+                AbstractElectricTool.saveHandHeldInventory(containerStack, inventory, player.level().registryAccess());
             }
         }
 
         @Override
-        public void setChanged() {}
-
-        @Override
         public void clearContent() {
             for (int i = 0; i < inventory.length; i++) inventory[i] = ItemStack.EMPTY;
+            setChanged();
         }
 
         @Override

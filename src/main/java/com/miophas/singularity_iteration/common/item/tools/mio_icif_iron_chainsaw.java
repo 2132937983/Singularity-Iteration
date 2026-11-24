@@ -56,7 +56,7 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
      * @param properties the item properties
      */
     public mio_icif_iron_chainsaw(Properties properties) {
-        super(properties, IRON_CHAINSAW_MAX_ENERGY, IRON_CHAINSAW_MAX_ENERGY, "iron_chainsaw", IRON_CHAINSAW_TRANSFER_LIMIT, IRON_CHAINSAW_ENERGY_PER_USE, 1);
+        super(properties, IRON_CHAINSAW_MAX_ENERGY, 0L, "iron_chainsaw", IRON_CHAINSAW_TRANSFER_LIMIT, IRON_CHAINSAW_ENERGY_PER_USE, 1);
     }
 
     /**

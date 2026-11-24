@@ -33,7 +33,7 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
     private static final String TAG_AUTO_SUPPLEMENT = "AutoSupplement";
 
     public mio_icif_electric_force_field_generator() {
-        super(new Item.Properties(), MAX_ENERGY, MAX_ENERGY, "item_electric_force_field_generator", TRANSFER_SPEED, ENERGY_COST, 2);
+        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_force_field_generator", TRANSFER_SPEED, ENERGY_COST, 2);
     }
 
     @Override

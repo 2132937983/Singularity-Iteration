@@ -20,7 +20,7 @@ public static final int POWER_UNIT_SMALL_ENERGY_PER_USE = 25;
      * @param properties 物品属性
  */
     public mio_icif_power_unit_small(Properties properties) {
-        super(properties, POWER_UNIT_SMALL_MAX_ENERGY, POWER_UNIT_SMALL_MAX_ENERGY, "power_unit_small", POWER_UNIT_SMALL_MAX_ENERGY, POWER_UNIT_SMALL_ENERGY_PER_USE, 1);
+        super(properties, POWER_UNIT_SMALL_MAX_ENERGY, 0L, "power_unit_small", POWER_UNIT_SMALL_MAX_ENERGY, POWER_UNIT_SMALL_ENERGY_PER_USE, 1);
     }
 
     /**

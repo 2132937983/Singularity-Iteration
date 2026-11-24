@@ -27,6 +27,8 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
     private static final String TAG_TARGET_X = "targetX";
     private static final String TAG_TARGET_Y = "targetY";
     private static final String TAG_TARGET_Z = "targetZ";
+    /** 0.1.11.193 (T0, U-03): the dimension of the first teleporter; a copy without it is from before and counts as this one. */
+    private static final String TAG_TARGET_DIM = "targetDim";
 
     public mio_icif_frequency_transmitter(Properties properties) {
         super(properties.stacksTo(1));
@@ -51,11 +53,19 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
             return InteractionResult.PASS;
         }
 
+        // 0.1.11.193 (T0, U-04): linking changes the teleporters, so it is asked for as any edit is (claims)
+        if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, pos, context.getClickedFace(), stack)) {
+            player.displayClientMessage(Component.translatable("message.mio_icif.tool.no_permission"), true);
+            return InteractionResult.FAIL;
+        }
+
         CompoundTag tag = getOrCreateTag(stack);
         boolean targetSet = tag.getBoolean(TAG_TARGET_SET);
+        String dimension = level.dimension().location().toString();
 
         if (!targetSet) {
             tag.putBoolean(TAG_TARGET_SET, true);
+            tag.putString(TAG_TARGET_DIM, dimension);
             tag.putInt(TAG_TARGET_X, pos.getX());
             tag.putInt(TAG_TARGET_Y, pos.getY());
             tag.putInt(TAG_TARGET_Z, pos.getZ());
@@ -71,6 +81,20 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
 
             if (firstPos.equals(pos)) {
                 player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.same_teleporter"));
+                return InteractionResult.CONSUME;
+            }
+            // 0.1.11.193 (T0, U-03): a link only joins two teleporters of one dimension
+            if (tag.contains(TAG_TARGET_DIM) && !tag.getString(TAG_TARGET_DIM).equals(dimension)) {
+                player.displayClientMessage(Component.translatable("message.mio_icif.tool.other_dimension"), true);
+                return InteractionResult.CONSUME;
+            }
+            // 0.1.11.193 (T0, U-05): reading a teleporter in an unloaded chunk loaded that chunk
+            if (!level.isLoaded(firstPos)) {
+                player.displayClientMessage(Component.translatable("message.mio_icif.tool.target_unloaded"), true);
+                return InteractionResult.CONSUME;
+            }
+            if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, firstPos, null, stack)) {
+                player.displayClientMessage(Component.translatable("message.mio_icif.tool.no_permission"), true);
                 return InteractionResult.CONSUME;
             }
 

@@ -52,8 +52,9 @@ public class TesuControllerBlockEntity extends MultiblockEnergyCore implements C
 
     public static final long CAPACITY = 227_000_000_000L;   // 0.1.11.158: 189 cells (was 200B with 81)
     public static final int CHARGE_SLOT = 0, DISCHARGE_SLOT = 1;
-    /** Ticks between structure checks. */
+    /** Ticks between structure checks (unformed vs formed). */
     public static final int CHECK_TICKS = 20;
+    public static final int CHECK_FORMED_TICKS = 100;
     private static final ICableTier MAX_TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("max");
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(2, ItemStack.EMPTY);
@@ -74,8 +75,8 @@ public class TesuControllerBlockEntity extends MultiblockEnergyCore implements C
         AbstractEnergyBlockEntity.tick(level, pos, state, be);
         be.tickItems();
         if (--be.checkIn <= 0) {
-            be.checkIn = CHECK_TICKS;
             be.check();
+            be.checkIn = be.isStructureComplete() ? CHECK_FORMED_TICKS : CHECK_TICKS;
         }
     }
 
@@ -96,24 +97,29 @@ public class TesuControllerBlockEntity extends MultiblockEnergyCore implements C
     }
 
     private void form(List<BlockPos> in, List<BlockPos> out, List<BlockPos> wl) {
-        List<BlockPos> gone = new ArrayList<>(inputs);
-        gone.addAll(outputs);
-        gone.addAll(wireless);
-        gone.removeAll(in);
-        gone.removeAll(out);
-        gone.removeAll(wl);
-        for (BlockPos p : gone) detach(p);
-        inputs.clear();
-        inputs.addAll(in);
-        outputs.clear();
-        outputs.addAll(out);
-        wireless.clear();
-        wireless.addAll(wl);
+        boolean same = isStructureComplete() && inputs.equals(in) && outputs.equals(out) && wireless.equals(wl);
+        if (!same) {
+            List<BlockPos> gone = new ArrayList<>(inputs);
+            gone.addAll(outputs);
+            gone.addAll(wireless);
+            gone.removeAll(in);
+            gone.removeAll(out);
+            gone.removeAll(wl);
+            for (BlockPos p : gone) detach(p);
+            inputs.clear();
+            inputs.addAll(in);
+            outputs.clear();
+            outputs.addAll(out);
+            wireless.clear();
+            wireless.addAll(wl);
+        }
         for (BlockPos p : inputs) bind(p);
         for (BlockPos p : outputs) bind(p);
         for (BlockPos p : wireless) bind(p);
-        setStructureComplete(true);
-        setChanged();
+        if (!same) {
+            setStructureComplete(true);
+            setChanged();
+        }
     }
 
     private void breakUp() {

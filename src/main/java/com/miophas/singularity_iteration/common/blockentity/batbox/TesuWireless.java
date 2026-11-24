@@ -1,6 +1,9 @@
 package com.miophas.singularity_iteration.common.blockentity.batbox;
 
 import com.miophas.singularity_iteration.core.api.energy.WirelessEnergySources;
+import com.miophas.singularity_iteration.core.runtime.TickMarks;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -8,8 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -31,14 +38,65 @@ public final class TesuWireless {
     public static final int MAX_LINKS = 256;
 
     private static final Map<ResourceKey<Level>, Set<BlockPos>> NODES = new ConcurrentHashMap<>();
+    private static final Map<ResourceKey<Level>, Long2ObjectOpenHashMap<Set<BlockPos>>> NODES_BY_CHUNK = new ConcurrentHashMap<>();
+    private static final Map<ResourceKey<Level>, TickFeedCache> FEED_CACHE = new ConcurrentHashMap<>();
+    private static volatile boolean eventsRegistered;
 
-    public static void install() { WirelessEnergySources.install(TesuWireless::draw); }
+    private static final class TickFeedCache {
+        long tick = Long.MIN_VALUE;
+        final Map<BlockPos, TesuControllerBlockEntity> byNode = new HashMap<>();
+    }
 
-    static void add(Level level, BlockPos pos) { NODES.computeIfAbsent(level.dimension(), k -> ConcurrentHashMap.newKeySet()).add(pos.immutable()); }
+    public static void install() {
+        WirelessEnergySources.install(TesuWireless::draw);
+        if (!eventsRegistered) {
+            eventsRegistered = true;
+            NeoForge.EVENT_BUS.addListener((ServerStoppedEvent e) -> clearAll());
+            NeoForge.EVENT_BUS.addListener((LevelEvent.Unload e) -> {
+                if (e.getLevel() instanceof Level level) clearDimension(level.dimension());
+            });
+        }
+    }
+
+    private static void clearAll() {
+        NODES.clear();
+        NODES_BY_CHUNK.clear();
+        FEED_CACHE.clear();
+    }
+
+    private static void clearDimension(ResourceKey<Level> dim) {
+        NODES.remove(dim);
+        NODES_BY_CHUNK.remove(dim);
+        FEED_CACHE.remove(dim);
+    }
+
+    static void add(Level level, BlockPos pos) {
+        BlockPos imm = pos.immutable();
+        ResourceKey<Level> dim = level.dimension();
+        NODES.computeIfAbsent(dim, k -> ConcurrentHashMap.newKeySet()).add(imm);
+        Long2ObjectOpenHashMap<Set<BlockPos>> byChunk = NODES_BY_CHUNK.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>());
+        synchronized (byChunk) {
+            byChunk.computeIfAbsent(ChunkPos.asLong(imm), k -> ConcurrentHashMap.newKeySet()).add(imm);
+        }
+        FEED_CACHE.remove(dim);
+    }
 
     static void remove(Level level, BlockPos pos) {
-        Set<BlockPos> set = NODES.get(level.dimension());
+        ResourceKey<Level> dim = level.dimension();
+        Set<BlockPos> set = NODES.get(dim);
         if (set != null) set.remove(pos);
+        Long2ObjectOpenHashMap<Set<BlockPos>> byChunk = NODES_BY_CHUNK.get(dim);
+        if (byChunk != null) {
+            synchronized (byChunk) {
+                long ck = ChunkPos.asLong(pos);
+                Set<BlockPos> bucket = byChunk.get(ck);
+                if (bucket != null) {
+                    bucket.remove(pos);
+                    if (bucket.isEmpty()) byChunk.remove(ck);
+                }
+            }
+        }
+        FEED_CACHE.remove(dim);
     }
 
     /** Whether the cube of a node at {@code node} holds {@code at}. */
@@ -83,17 +141,40 @@ public final class TesuWireless {
 
     /** EU for a machine at {@code at}: from the first node whose cube holds it and that a TESU feeds, at most {@code wanted}. */
     static long draw(ServerLevel level, BlockPos at, long wanted) {
-        Set<BlockPos> nodes = NODES.get(level.dimension());
-        if (nodes == null || nodes.isEmpty()) return 0L;
-        for (BlockPos node : nodes) {
-            if (!covers(node, at)) continue;
-            TesuControllerBlockEntity core = feed(level, node);
-            if (core == null || core.getStoredEnergy() <= 0) continue;
-            long taken = core.consumeEnergy(Math.min(wanted, core.getStoredEnergy()), false);
-            if (taken > 0) {
-                core.setChanged();
-                TesuWirelessBeams.fed(level, node, at);   // 0.1.11.188: the stream from the node to the machine
-                return taken;
+        ResourceKey<Level> dim = level.dimension();
+        Long2ObjectOpenHashMap<Set<BlockPos>> byChunk = NODES_BY_CHUNK.get(dim);
+        if (byChunk == null || byChunk.isEmpty()) return 0L;
+        TickFeedCache cache = FEED_CACHE.computeIfAbsent(dim, k -> new TickFeedCache());
+        long now = level.getGameTime();
+        if (cache.tick != now) {
+            cache.tick = now;
+            cache.byNode.clear();
+        }
+        int cx = at.getX() >> 4, cz = at.getZ() >> 4;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Set<BlockPos> bucket;
+                synchronized (byChunk) {
+                    bucket = byChunk.get(ChunkPos.asLong(cx + dx, cz + dz));
+                }
+                if (bucket == null || bucket.isEmpty()) continue;
+                for (BlockPos node : bucket) {
+                    if (!covers(node, at)) continue;
+                    TesuControllerBlockEntity core;
+                    if (cache.byNode.containsKey(node)) {
+                        core = cache.byNode.get(node);
+                    } else {
+                        core = feed(level, node);
+                        cache.byNode.put(node, core);
+                    }
+                    if (core == null || core.isRemoved() || core.getStoredEnergy() <= 0) continue;
+                    long taken = core.consumeEnergy(Math.min(wanted, core.getStoredEnergy()), false);
+                    if (taken > 0) {
+                        TickMarks.saved(core);
+                        TesuWirelessBeams.fed(level, node, at);   // 0.1.11.188: the stream from the node to the machine
+                        return taken;
+                    }
+                }
             }
         }
         return 0L;

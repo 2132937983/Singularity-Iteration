@@ -126,7 +126,8 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
 
     @Override
     public boolean canPerformAction(ItemStack stack, net.neoforged.neoforge.common.ItemAbility itemAbility) {
-        return true;
+        // 0.1.11.198 (T5, U-10): a fire starter only; it answered yes to every ability (shears, axe stripping, hoe tilling)
+        return net.neoforged.neoforge.common.ItemAbilities.DEFAULT_FLINT_ACTIONS.contains(itemAbility);
     }
 
     @Override

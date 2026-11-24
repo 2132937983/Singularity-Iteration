@@ -61,7 +61,8 @@ public class mio_icif_geomagnetic_detector extends com.miophas.singularity_itera
 
         // 检查生物群系
         Biome biome = level.getBiome(pos).value();
-        String biomeKey = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME).getKey(biome).toString();
+        // 0.1.11.198 (T5, U-16): from the holder's key; a biome missing from the registry gave null and a crash
+        String biomeKey = level.getBiome(pos).unwrapKey().map(k -> k.location().toString()).orElse("");
 
         // 特殊群系加成
         if (biomeKey.contains("nether") || biomeKey.contains("hell")) {

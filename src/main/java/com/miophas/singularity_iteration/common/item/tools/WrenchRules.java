@@ -52,6 +52,49 @@ public final class WrenchRules {
      * <p>Other mods' wrenches (Create's, for one) are not asked here: a sneaking click with one dismantles
      * ({@code ForeignWrenchDismantling}), their own mods' way.
      */
+    /**
+     * 0.1.11.198 (T5, D8): the block's own say through {@link com.miophas.singularity_iteration.core.api.tool.IWrenchable}
+     * (on the block or its block entity): a rotation it refuses ({@code canSetFacing}) and a removal it refuses
+     * ({@code wrenchCanRemove}) do nothing. Before, no wrench asked the interface, so an addon block could not refuse.
+     */
+    public static Action consult(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos, BlockState state,
+                                 net.minecraft.world.entity.player.Player player, Action action, Direction clicked) {
+        var wrenchable = wrenchable(level, pos, state);
+        if (wrenchable == null) return action;
+        return switch (action) {
+            case ROTATE -> wrenchable.canSetFacing(level, pos, clicked) ? action : Action.NONE;
+            case ROTATE_OPPOSITE -> wrenchable.canSetFacing(level, pos, clicked.getOpposite()) ? action : Action.NONE;
+            case DISMANTLE -> wrenchable.wrenchCanRemove(level, pos, player) ? action : Action.NONE;
+            case NONE -> action;
+        };
+    }
+
+    /** The block's {@code IWrenchable}, on the block or on its block entity, or null. */
+    @Nullable
+    public static com.miophas.singularity_iteration.core.api.tool.IWrenchable wrenchable(net.minecraft.world.level.Level level,
+            net.minecraft.core.BlockPos pos, BlockState state) {
+        if (state.getBlock() instanceof com.miophas.singularity_iteration.core.api.tool.IWrenchable w) return w;
+        return level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.core.api.tool.IWrenchable w ? w : null;
+    }
+
+    /**
+     * 0.1.11.198 (T5, D8): the drops of a block whose {@code IWrenchable} chooses them ({@code getWrenchDrops} overridden),
+     * or null for the usual loot. The default (the bare block) is not used: it would drop SI machines without their data.
+     */
+    @Nullable
+    public static java.util.Collection<net.minecraft.world.item.ItemStack> customDrops(net.minecraft.world.level.Level level,
+            net.minecraft.core.BlockPos pos, BlockState state) {
+        var wrenchable = wrenchable(level, pos, state);
+        if (wrenchable == null) return null;
+        try {
+            var m = wrenchable.getClass().getMethod("getWrenchDrops", net.minecraft.world.level.Level.class, net.minecraft.core.BlockPos.class, BlockState.class);
+            if (m.getDeclaringClass() == com.miophas.singularity_iteration.core.api.tool.IWrenchable.class) return null;
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+        return wrenchable.getWrenchDrops(level, pos, state);
+    }
+
     public static Action action(BlockState state, Direction clicked, boolean sneaking, boolean frontDismantle) {
         Direction facing = facing(state);
         if (!frontDismantle) {

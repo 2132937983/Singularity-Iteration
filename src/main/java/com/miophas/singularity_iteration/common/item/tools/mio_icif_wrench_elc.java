@@ -124,7 +124,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
             if (player.isShiftKeyDown()) {
                 boolean canBeDismantled = WrenchRules.dismantlable(state);
                 if (canBeDismantled) {
-                    if (!hasEnoughEnergy(stack)) {
+                    if (!ready(stack, player, getEnergyPerUse())) {
                         player.setItemInHand(hand, stack);
                         return;
                     }
@@ -133,7 +133,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
                     return;
                 }
             }
-            if (!hasEnoughEnergy(stack, WRENCH_ELC_PIPE_WIRE_ENERGY)) {
+            if (!ready(stack, player, WRENCH_ELC_PIPE_WIRE_ENERGY)) {
                 player.setItemInHand(hand, stack);
                 return;
             }
@@ -156,7 +156,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
 
         // 特殊处理：储物箱直接右键拆除（不判断朝向，不消耗旋转电量）
         if (blockEntity instanceof mio_icif_storage_box_entity) {
-            if (!hasEnoughEnergy(stack)) {
+            if (!ready(stack, player, getEnergyPerUse())) {
                 player.setItemInHand(hand, stack);
                 return;
             }
@@ -168,9 +168,9 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
         // 0.1.11.171: the rules every SI wrench shares (WrenchRules). This wrench never dismantled a block without a facing (it
         // tried to turn it), and with front dismantle off it dismantled nothing; off now means: only a sneaking click dismantles.
         boolean frontDismantle = com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(stack, FEATURE_FRONT_DISMANTLE);
-        switch (WrenchRules.action(state, clickedFace, player.isShiftKeyDown(), frontDismantle)) {
+        switch (WrenchRules.consult(level, pos, state, player, WrenchRules.action(state, clickedFace, player.isShiftKeyDown(), frontDismantle), clickedFace)) {
             case DISMANTLE -> {
-                if (hasEnoughEnergy(stack)) dismantleBlock(level, pos, state, player, stack, hand);
+                if (ready(stack, player, getEnergyPerUse())) dismantleBlock(level, pos, state, player, stack, hand);
             }
             case ROTATE -> rotateBlock(level, pos, state, player, stack, clickedFace);
             case ROTATE_OPPOSITE -> rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite());
@@ -233,7 +233,7 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
         }
 
         if (pipe instanceof com.miophas.singularity_iteration.common.blockentity.pipe.FluidPipeBlockEntity fluidPipe) {
-            if (!hasEnoughEnergy(stack, WRENCH_ELC_PIPE_WIRE_ENERGY)) return;
+            if (!ready(stack, player, WRENCH_ELC_PIPE_WIRE_ENERGY)) return;
             fluidPipe.toggleConnection(com.miophas.singularity_iteration.common.block.pipe.FluidPipeBlock.hitSide(state, pos, hitVec, clickedFace));
             consumeEnergy(stack, WRENCH_ELC_PIPE_WIRE_ENERGY);
             return;
@@ -267,8 +267,18 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
         }
     }
 
+    /**
+     * 0.1.11.198 (T5, U-12): may the wrench act for {@code amount} EU? Creative needs no charge; a flat wrench says so on the
+     * action bar (it did nothing without a word, the click was swallowed).
+     */
+    private boolean ready(ItemStack stack, Player player, long amount) {
+        if (player.isCreative() || hasEnoughEnergy(stack, amount)) return true;
+        if (!player.level().isClientSide) player.displayClientMessage(Component.translatable("message.mio_icif.tool.no_energy"), true);
+        return false;
+    }
+
     private InteractionResult rotateBlock(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, Direction targetFace) {
-        if (!hasEnoughEnergy(wrenchStack, WRENCH_ELC_ROTATE_ENERGY)) {
+        if (!ready(wrenchStack, player, WRENCH_ELC_ROTATE_ENERGY)) {
             return InteractionResult.SUCCESS;
         }
 

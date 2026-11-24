@@ -252,6 +252,8 @@ public class Singularity_Iteration {
         com.miophas.singularity_iteration.common.item.LargeStacks.selfCheck();
         NeoForge.EVENT_BUS.addListener(mio_icif_iridium_driller::onGetEnchantmentLevel);
         NeoForge.EVENT_BUS.addListener(com.miophas.singularity_iteration.common.item.tools.mio_icif_steel_shield::onShieldBlock);   // 0.1.11.197 (T4)
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppingEvent e) ->
+            com.miophas.singularity_iteration.common.item.tools.CropAnalyzerItem.flushAllBackground());   // 0.1.11.198 (T5, U-17)
         // 电动锄：自带时运 3（收获作物掉落受时运加成）
         NeoForge.EVENT_BUS.addListener(mio_icif_electric_hoe::onGetEnchantmentLevel);
 

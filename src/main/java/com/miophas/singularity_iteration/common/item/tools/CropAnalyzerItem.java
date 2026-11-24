@@ -103,6 +103,16 @@ public class CropAnalyzerItem extends mio_icif_tool_elc {
     private record Background(CropAnalyzerMenu menu, long[] lastTick) {}
     private static long lastSweep;
 
+    /**
+     * 0.1.11.198 (T5, U-17): saves and drops every background run when the server stops. The static map held the last
+     * world's players and levels after a single-player world was closed, until a scanner ticked again.
+     */
+    public static void flushAllBackground() {
+        BACKGROUND.values().forEach(bg -> bg.menu().flush());
+        BACKGROUND.clear();
+        lastSweep = 0;
+    }
+
     /** 0.1.11.174: saves and ends the background run of {@code stack} (its screen is opening). */
     public static void flushBackground(ItemStack stack) {
         Background bg = BACKGROUND.remove(stack);

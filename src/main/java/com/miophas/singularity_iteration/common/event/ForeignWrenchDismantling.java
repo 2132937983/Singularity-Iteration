@@ -51,12 +51,17 @@ public final class ForeignWrenchDismantling {
         // 0.1.11.193 (T0, U-02): the same check as SI's own wrenches, including the break event claim mods listen to
         if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canBreak(player, level, pos, state, event.getFace(), wrench)) return;
 
+        // 0.1.11.198 (T5, D8): a block that refuses removal through IWrenchable keeps its place; one that chooses its drops gives those
+        var wrenchable = com.miophas.singularity_iteration.common.item.tools.WrenchRules.wrenchable(level, pos, state);
+        if (wrenchable != null && !wrenchable.wrenchCanRemove(level, pos, player)) return;
+        var custom = com.miophas.singularity_iteration.common.item.tools.WrenchRules.customDrops(level, pos, state);
         BlockEntity blockEntity = level.getBlockEntity(pos);
         level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.MACHINE_DEMOLISH.get(),
             SoundSource.BLOCKS, 1.0F, 1.0F);
         state.getBlock().playerWillDestroy(level, pos, state, player);
         if (level.destroyBlock(pos, false, player) && !player.isCreative()) {
-            Block.dropResources(state, level, pos, blockEntity, player, wrench);
+            if (custom != null) custom.forEach(drop -> Block.popResource(level, pos, drop));
+            else Block.dropResources(state, level, pos, blockEntity, player, wrench);
         }
     }
 }

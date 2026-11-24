@@ -157,10 +157,10 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
 
         // 0.1.11.171: the rules every SI wrench shares (WrenchRules): no facing (such as the reactor chamber or a casing) or a
         // click on the front dismantles; sneaking turns the block away from the click; another face turns it toward the click
-        switch (WrenchRules.action(state, clickedFace, player.isShiftKeyDown(), true)) {
+        switch (WrenchRules.consult(level, pos, state, player, WrenchRules.action(state, clickedFace, player.isShiftKeyDown(), true), clickedFace)) {
             case DISMANTLE -> dismantleBlock(level, pos, state, player, stack, hand);
-            case ROTATE -> rotateBlock(level, pos, state, player, stack, clickedFace);
-            case ROTATE_OPPOSITE -> rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite());
+            case ROTATE -> rotateBlock(level, pos, state, player, stack, clickedFace, hand);
+            case ROTATE_OPPOSITE -> rotateBlock(level, pos, state, player, stack, clickedFace.getOpposite(), hand);
             case NONE -> { }
         }
     }
@@ -284,10 +284,12 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
             boolean carry = keepContents && block instanceof com.miophas.singularity_iteration.common.block.mio_icif_entity_block
                 && state.is(mio_icif_tags.MACHINE) && usesGenericMachineDrops(block);
             if (carry) com.miophas.singularity_iteration.common.block.MachineItemData.carryContents(blockEntity, level.registryAccess());
+            var custom = WrenchRules.customDrops(level, pos, state);   // 0.1.11.198 (T5, D8)
             try {
                 block.playerWillDestroy(level, pos, state, player);
                 level.destroyBlock(pos, false);
-                Block.dropResources(state, level, pos, blockEntity, player, wrenchStack);
+                if (custom != null) custom.forEach(drop -> Block.popResource(level, pos, drop));
+                else Block.dropResources(state, level, pos, blockEntity, player, wrenchStack);
             } finally {
                 com.miophas.singularity_iteration.common.block.MachineItemData.endCarry();
             }
@@ -306,14 +308,16 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
         }
     }
 
-    private InteractionResult rotateBlock(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, Direction targetFace) {
+    private InteractionResult rotateBlock(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, Direction targetFace,
+                                          InteractionHand hand) {
         BlockState newState = getRotatedState(state, targetFace);
 
         if (newState != null && newState != state) {
             level.setBlock(pos, newState, 3);
             level.playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 0.5F, 1.0F);
             if (!player.isCreative()) {
-                wrenchStack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                // 0.1.11.198 (T5, U-13): the hand that holds the wrench (it was always the main hand)
+                wrenchStack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
             }
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof AbstractEnergyBlockEntity energyBlock) {

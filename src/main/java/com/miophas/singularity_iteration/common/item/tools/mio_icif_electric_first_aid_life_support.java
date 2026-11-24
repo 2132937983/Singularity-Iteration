@@ -67,9 +67,9 @@ public class mio_icif_electric_first_aid_life_support extends mio_icif_tool_elc 
         setAutoSupplement(stack, autoSupplement);
 
         if (autoSupplement) {
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_first_aid_life_support.auto_on"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_first_aid_life_support.auto_on"), true);   // 0.1.11.198 (T5, U-20)
         } else {
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_first_aid_life_support.auto_off"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_first_aid_life_support.auto_off"), true);   // 0.1.11.198 (T5, U-20)
         }
     }
 

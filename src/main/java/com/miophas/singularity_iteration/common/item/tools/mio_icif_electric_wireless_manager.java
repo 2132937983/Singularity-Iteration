@@ -64,8 +64,8 @@ public class mio_icif_electric_wireless_manager extends com.miophas.singularity_
             setTargetDimension(stack, level.dimension().location().toString());
             consumeEnergy(stack, ENERGY_COST);   // 0.1.11.194 (T1, I-09)
 
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_set",
-                pos.getX(), pos.getY(), pos.getZ()));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_set",
+                pos.getX(), pos.getY(), pos.getZ()), true);
             return InteractionResult.SUCCESS;
         }
 
@@ -88,17 +88,17 @@ public class mio_icif_electric_wireless_manager extends com.miophas.singularity_
                 int targetZ = tag.getInt(TAG_TARGET_Z);
                 if (pos.equals(new BlockPos(targetX, targetY, targetZ))) {
                     // 0.1.11.3: a node linked to itself duplicated energy; the node refuses it too
-                    player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.self_target"));
+                    player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.self_target"), true);
                     return InteractionResult.SUCCESS;
                 }
 
                 node.setTargetPosition(new BlockPos(targetX, targetY, targetZ));
                 consumeEnergy(stack, ENERGY_COST);   // 0.1.11.194 (T1, I-09)
 
-                player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.node_set",
-                    targetX, targetY, targetZ, pos.getX(), pos.getY(), pos.getZ()));
+                player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.node_set",
+                    targetX, targetY, targetZ, pos.getX(), pos.getY(), pos.getZ()), true);
             } else {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.no_target"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.no_target"), true);
             }
             return InteractionResult.SUCCESS;
         }
@@ -109,11 +109,11 @@ public class mio_icif_electric_wireless_manager extends com.miophas.singularity_
             int targetY = tag.getInt(TAG_TARGET_Y);
             int targetZ = tag.getInt(TAG_TARGET_Z);
 
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_info",
-                targetX, targetY, targetZ));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_info",
+                targetX, targetY, targetZ), true);
             consumeEnergy(stack, ENERGY_COST);   // 0.1.11.194 (T1, I-09)
         } else {
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.no_target"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_wireless_manager.no_target"), true);
         }
 
         return InteractionResult.SUCCESS;

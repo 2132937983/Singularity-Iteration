@@ -70,8 +70,8 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
             tag.putInt(TAG_TARGET_Y, pos.getY());
             tag.putInt(TAG_TARGET_Z, pos.getZ());
             saveTag(stack, tag);
-            player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.linked_first",
-                pos.getX(), pos.getY(), pos.getZ()));
+            player.displayClientMessage(Component.translatable("item.mio_icif.normal.item_freq.linked_first",
+                pos.getX(), pos.getY(), pos.getZ()), true);
         } else {
             BlockPos firstPos = new BlockPos(
                 tag.getInt(TAG_TARGET_X),
@@ -80,7 +80,7 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
             );
 
             if (firstPos.equals(pos)) {
-                player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.same_teleporter"));
+                player.displayClientMessage(Component.translatable("item.mio_icif.normal.item_freq.same_teleporter"), true);
                 return InteractionResult.CONSUME;
             }
             // 0.1.11.193 (T0, U-03): a link only joins two teleporters of one dimension
@@ -100,7 +100,7 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
 
             BlockEntity firstBlockEntity = level.getBlockEntity(firstPos);
             if (!(firstBlockEntity instanceof mio_icif_teleporter_elc firstTeleporter)) {
-                player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.first_invalid"));
+                player.displayClientMessage(Component.translatable("item.mio_icif.normal.item_freq.first_invalid"), true);
                 tag.putBoolean(TAG_TARGET_SET, false);
                 saveTag(stack, tag);
                 return InteractionResult.CONSUME;
@@ -112,9 +112,9 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
             firstTeleporter.setChanged();
             teleporter.setChanged();
 
-            player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.link_established",
+            player.displayClientMessage(Component.translatable("item.mio_icif.normal.item_freq.link_established",
                 firstPos.getX(), firstPos.getY(), firstPos.getZ(),
-                pos.getX(), pos.getY(), pos.getZ()));
+                pos.getX(), pos.getY(), pos.getZ()), true);
 
             tag.putBoolean(TAG_TARGET_SET, false);
             saveTag(stack, tag);
@@ -137,9 +137,9 @@ public class mio_icif_frequency_transmitter extends Item implements IFrequencyTr
         if (targetSet) {
             tag.putBoolean(TAG_TARGET_SET, false);
             saveTag(stack, tag);
-            player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.cleared"));
+            player.displayClientMessage(Component.translatable("item.mio_icif.normal.item_freq.cleared"), true);
         } else {
-            player.sendSystemMessage(Component.translatable("item.mio_icif.normal.item_freq.help"));
+            player.displayClientMessage(Component.translatable("item.mio_icif.normal.item_freq.help"), true);
         }
 
         return InteractionResultHolder.success(stack);

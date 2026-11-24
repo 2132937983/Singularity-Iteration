@@ -48,21 +48,22 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
             return;
         }
 
+        // 0.1.11.198 (T5, U-09): once a second, from one copy, refill the shield when it is below its 10 points or the effect
+        // (which holds the absorption cap) runs out. Before, a shield shot away waited about 25 s for the effect to expire,
+        // and a refill cut a golden apple's larger absorption down to 10.
+        if (!PassiveDeviceRules.onInterval(player, PassiveDeviceRules.FIRST_AID_INTERVAL)) return;
         net.minecraft.world.effect.MobEffectInstance existingEffect = player.getEffect(net.minecraft.world.effect.MobEffects.ABSORPTION);
-        if (existingEffect != null && existingEffect.getDuration() > MIN_EFFECT_DURATION) {
-            return;
-        }
+        boolean effectHolds = existingEffect != null && existingEffect.getDuration() > MIN_EFFECT_DURATION;
+        if (effectHolds && player.getAbsorptionAmount() >= MAX_ABSORPTION) return;
+        if (!PassiveDeviceRules.isActingCopy(player, stack, s -> getAutoSupplement(s) && hasEnoughEnergy(s, ENERGY_COST))) return;
 
         if (consumeEnergy(stack, ENERGY_COST)) {   // 0.1.11.194 (T1, I-09): shared atomic debit
-            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                net.minecraft.world.effect.MobEffects.ABSORPTION,
-                EFFECT_DURATION,
-                2,
-                false,
-                false,
-                true
-            ));
-            player.setAbsorptionAmount(MAX_ABSORPTION);
+            float before = player.getAbsorptionAmount();
+            if (!effectHolds || existingEffect.getAmplifier() < 2) {
+                player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    net.minecraft.world.effect.MobEffects.ABSORPTION, EFFECT_DURATION, 2, false, false, true));
+            }
+            player.setAbsorptionAmount(Math.max(before, MAX_ABSORPTION));
         }
     }
 
@@ -72,9 +73,9 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
         setAutoSupplement(stack, autoSupplement);
 
         if (autoSupplement) {
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_force_field_generator.auto_on"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_force_field_generator.auto_on"), true);   // 0.1.11.198 (T5, U-20)
         } else {
-            player.sendSystemMessage(Component.translatable("message.mio_icif.electric_force_field_generator.auto_off"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.electric_force_field_generator.auto_off"), true);   // 0.1.11.198 (T5, U-20)
         }
     }
 

@@ -29,6 +29,16 @@ public class PortableFuturesTraderItem extends mio_icif_tool_elc {
         super(properties.stacksTo(1), MAX_ENERGY, 0L, CHARGE_RATE, Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.getDefault(), TIER);
     }
 
+    /** 0.1.11.198 (T5, U-21): the configured fee (the constructor only knows the default, before the config loads). */
+    @Override
+    public long getEnergyPerUse() {
+        try {
+            return Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get();
+        } catch (IllegalStateException notLoaded) {
+            return Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.getDefault();
+        }
+    }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);

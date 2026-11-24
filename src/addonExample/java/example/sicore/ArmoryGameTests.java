@@ -307,6 +307,44 @@ public final class ArmoryGameTests {
         h.succeed();
     }
 
+    @GameTest(template = "reactor_loop", batch = "armory", timeoutTicks = 40)
+    public static void wingmanSuitSynergyHealsAndFeedsWeapon(GameTestHelper h) {
+        ServerPlayer p = player(h);
+        ItemStack chest = si("armor/item_armor_quantum_chestplate");
+        Class<?> suitModules = Round33GameTests.common("suit.SuitModules");
+        Round33GameTests.call(suitModules, "installLivingLining", chest);
+        Object deflector = Round33GameTests.call(Round33GameTests.common("suit.UnitRef"), "of",
+            Round1102GameTests.constant("suit.SuitModuleType", "DEFLECTOR"));
+        Round33GameTests.call(suitModules, "install", chest, deflector, 1);
+
+        ItemStack[] items = new ItemStack[6];
+        for (int i = 0; i < 6; i++) items[i] = ItemStack.EMPTY;
+        items[1] = chest;                                      // CHEST
+        items[4] = si("tool/item_tool_mining_laser");          // MAINHAND (starts at 0 EU)
+
+        Class<?> wingmanCls = Round33GameTests.common("armory.WingmanEntity");
+        Object mode = Round1102GameTests.constant("armory.WingmanMode", "ESCORT");
+        var w = (net.minecraft.world.entity.LivingEntity) Round33GameTests.call(
+            wingmanCls, "create", h.getLevel(), p, null, 0, mode, items, h.absoluteVec(new Vec3(2.5, 3, 2.5)));
+        h.getLevel().addFreshEntity(w);
+        call(w, "setReserve", 20_000L);
+
+        Class<?> synergy = Round33GameTests.common("armory.WingmanSuitSynergy");
+        h.assertTrue(w.getMaxHealth() > 20.0F, "Living Nano Lining must raise Wingman max health above 20, got " + w.getMaxHealth());
+        double radius = (double) Round33GameTests.call(synergy, "interceptRadius", w);
+        h.assertTrue(radius >= 7.4, "Deflector must widen Escort intercept radius to 7.5, got " + radius);
+
+        w.setHealth(12.0F);
+        long reserveBefore = (long) call(w, "reserve");
+        Round33GameTests.call(synergy, "tickSecond", w, h.getLevel(), 120);
+        h.assertTrue(w.getHealth() > 12.0F, "Out-of-combat self-repair must heal Wingman, got " + w.getHealth());
+        h.assertTrue((long) call(w, "reserve") < reserveBefore, "Self-repair and weapon feed must draw from reserve");
+
+        w.discard();
+        p.discard();
+        h.succeed();
+    }
+
     /** Owner and suits survive the save/load path used on server restart. */
     private static final class CompoundTagCheck {
         static void roundTrip(GameTestHelper h, AbstractProcessingMachineBlockEntity armory, String key) {

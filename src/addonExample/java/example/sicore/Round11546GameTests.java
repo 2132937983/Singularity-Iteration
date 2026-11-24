@@ -108,6 +108,40 @@ public final class Round11546GameTests {
         h.succeed();
     }
 
+    /** 3-hit melee combo alternates forehand/backhand/cleave, shotKick peaks cleanly, and endoskeleton textures exist. */
+    @GameTest(template = "empty", batch = "round11546_combo", timeoutTicks = 20)
+    public static void meleeComboShotKickAndEndoskeletonTextures(GameTestHelper h) {
+        Class<?> pose = Round33GameTests.common(POSE);
+        float[] p0 = new float[6], p1 = new float[6], p2 = new float[6];
+        float t0 = (Float) Round33GameTests.call(pose, "cutCombo", p0, false, 0.45F, 1.0F, 0, false);
+        float t1 = (Float) Round33GameTests.call(pose, "cutCombo", p1, false, 0.45F, 1.0F, 1, false);
+        float t2 = (Float) Round33GameTests.call(pose, "cutCombo", p2, false, 0.45F, 1.0F, 2, true);
+        h.assertTrue(t0 > 0.2F, "forehand combo step 0 must twist positively, got " + t0);
+        h.assertTrue(t1 < -0.2F, "backhand combo step 1 must twist negatively, got " + t1);
+        h.assertTrue(t2 > 0.2F && p2[0] > 0.1F, "heavy cleave combo step 2 must slam down, got twist=" + t2 + " rx=" + p2[0]);
+
+        // Zero at boundaries
+        float[] zero = new float[6];
+        float tz = (Float) Round33GameTests.call(pose, "cutCombo", zero, false, 0.0F, 1.0F, 0, false);
+        h.assertTrue(tz == 0F && zero[0] == 0F, "cutCombo must be zero at a=0");
+
+        // Per-shot kick peaks inside 0..3.5 ticks and settles to 0 outside
+        float[] kick = new float[6];
+        Round33GameTests.call(pose, "shotKick", kick, false, 0.8F);
+        h.assertTrue(kick[0] < -0.20F && kick[3] < -0.10F, "shotKick must kick both arms up at peak");
+        float[] settled = new float[6];
+        Round33GameTests.call(pose, "shotKick", settled, false, 4.0F);
+        h.assertTrue(settled[0] == 0F && settled[3] == 0F, "shotKick must settle to 0 after 3.5 ticks");
+
+        // Both endoskeleton textures must be packaged in mod resources
+        var modFile = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
+        h.assertTrue(java.nio.file.Files.exists(modFile.findResource("assets/mio_icif/textures/entity/wingman_endoskeleton.png")),
+            "missing wingman_endoskeleton.png");
+        h.assertTrue(java.nio.file.Files.exists(modFile.findResource("assets/mio_icif/textures/entity/wingman_endoskeleton_glow.png")),
+            "missing wingman_endoskeleton_glow.png");
+        h.succeed();
+    }
+
     private static int intField(Object target, String name) {
         try {
             Field f = target.getClass().getDeclaredField(name);

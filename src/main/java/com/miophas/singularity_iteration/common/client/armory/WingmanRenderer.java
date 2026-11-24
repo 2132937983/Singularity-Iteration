@@ -41,10 +41,13 @@ import org.jetbrains.annotations.Nullable;
 public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanRenderer.Model> {
     /** Forward lean at full speed, degrees. */
     static final float MAX_LEAN = WingmanPose.MAX_LEAN;
-    private static final ResourceLocation UNUSED = ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+    private static final ResourceLocation ENDOSKELETON = ResourceLocation.fromNamespaceAndPath(
+        com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID, "textures/entity/wingman_endoskeleton.png");
 
     public WingmanRenderer(EntityRendererProvider.Context context) {
         super(context, new Model(context.bakeLayer(ModelLayers.PLAYER)), 0.3F);
+        // Emissive hard-light core, visor band, spine conduit, and joint nodes over the dark mechanical endoskeleton
+        addLayer(new WingmanCoreLayer(this));
         addLayer(new HumanoidArmorLayer<>(this, new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
             new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
         // 0.1.9.0: frame core attachments of the worn helmet and chestplate
@@ -55,14 +58,7 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
     }
 
     @Override
-    public ResourceLocation getTextureLocation(WingmanEntity entity) { return UNUSED; }
-
-    /** No body: the layers draw the suit. */
-    @Override
-    @Nullable
-    protected RenderType getRenderType(WingmanEntity entity, boolean bodyVisible, boolean translucent, boolean glowing) {
-        return null;
-    }
+    public ResourceLocation getTextureLocation(WingmanEntity entity) { return ENDOSKELETON; }
 
     @Override
     protected void setupRotations(WingmanEntity entity, PoseStack pose, float bob, float bodyYaw, float partialTick, float scale) {
@@ -112,6 +108,23 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
     public static final class Model extends HumanoidModel<WingmanEntity> {
         /** Smoothed arm pose per Wingman (6 angles and the time), see {@link WingmanPose#smooth}. */
         private final java.util.Map<WingmanEntity, float[]> poses = new java.util.WeakHashMap<>();
+        /** Client-side melee combo tracker per Wingman: [0] = last attackTime, [1] = combo step (0..2). */
+        private static final java.util.Map<WingmanEntity, float[]> COMBOS = new java.util.WeakHashMap<>();
+
+        /** Returns the active melee combo step (0 = forehand, 1 = backhand, 2 = heavy cleave) for {@code entity}. */
+        public static int comboOf(WingmanEntity entity) {
+            float[] c = COMBOS.get(entity);
+            return c == null ? 0 : ((int) c[1]) % 3;
+        }
+
+        private static int updateCombo(WingmanEntity entity, float attack) {
+            float[] c = COMBOS.computeIfAbsent(entity, e -> new float[]{-1F, 0F});
+            if (attack > 0.01F && (c[0] <= 0.01F || attack < c[0] - 0.35F)) {
+                c[1] = (c[1] + 1F) % 3F;
+            }
+            c[0] = attack;
+            return ((int) c[1]) % 3;
+        }
 
         public Model(ModelPart root) { super(root); }
 
@@ -145,22 +158,28 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             float twist = 0;
             float shotAge = entity.shotAge(partial);
             int cooldown = entity.shotCooldown();
+            int combo = updateCombo(entity, attack);
+            boolean heavy = entity.getMainHandItem().getItem() instanceof net.minecraft.world.item.AxeItem
+                || entity.getMainHandItem().getItem() instanceof net.minecraft.world.item.MaceItem;
             switch (hold) {
                 case BLADE -> WingmanPose.slash(pose, entity.slashKind(), entity.slashProgress(partial));
                 case RANGED -> {
                     WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
+                    WingmanPose.shotKick(pose, leftHanded, shotAge);
                     twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
                 }
                 case BOW -> {   // the release at the shot, then the draw over the cooldown
                     WingmanPose.draw(pose, leftHanded, Mth.clamp((shotAge - 2) / Math.max(1, cooldown - 4), 0, 1), combat);
                     WingmanPose.recoil(pose, leftHanded, entity.recoil(partial) * 0.4F);
+                    WingmanPose.shotKick(pose, leftHanded, shotAge);
                 }
                 case CROSSBOW -> {
                     WingmanPose.reload(pose, leftHanded, shotAge / cooldown, combat);
                     WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
+                    WingmanPose.shotKick(pose, leftHanded, shotAge);
                 }
                 case SPEAR -> WingmanPose.spearThrow(pose, leftHanded, shotAge, combat);
-                case HELD -> twist = WingmanPose.cut(pose, leftHanded, attack, windup);
+                case HELD -> twist = WingmanPose.cutCombo(pose, leftHanded, attack, windup, combo, heavy);
                 default -> twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
             }
             rightArm.xRot = pose[WingmanPose.RX]; rightArm.yRot = pose[WingmanPose.RY]; rightArm.zRot = pose[WingmanPose.RZ];

@@ -49,11 +49,39 @@ public class mio_icif_gui_od_scanner extends mio_icif_screen<mio_icif_od_scanner
         results.entrySet().stream()
             .sorted(Map.Entry.<String, Integer>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
             .forEach(e -> {
+                // 0.1.11.199 (T5b): "<name key>@dx,dy,dz" with the offset of the kind's nearest block
                 String key = e.getKey();
-                String name = (key.contains(".") ? Component.translatable(key) : Component.literal(key)).getString();
+                int at = key.lastIndexOf('@');
+                String nameKey = at < 0 ? key : key.substring(0, at);
+                String name = (nameKey.contains(".") ? Component.translatable(nameKey) : Component.literal(nameKey)).getString();
+                if (at >= 0) name = name + " · " + nearest(key.substring(at + 1));
                 lines.add(new Line(name, String.format("%,d", e.getValue())));
             });
         scroll = 0;
+    }
+
+    /** "dx,dy,dz" as a compass direction (or up / down when it is mostly vertical) and a distance in blocks. */
+    static String nearest(String offset) {
+        String[] p = offset.split(",");
+        if (p.length != 3) return "";
+        int dx, dy, dz;
+        try {
+            dx = Integer.parseInt(p[0]); dy = Integer.parseInt(p[1]); dz = Integer.parseInt(p[2]);
+        } catch (NumberFormatException e) {
+            return "";
+        }
+        int distance = (int) Math.round(Math.sqrt((double) dx * dx + dy * dy + dz * dz));
+        if (distance == 0) return Component.translatable("gui.mio_icif.od_scanner.here").getString();
+        String where;
+        if (Math.abs(dy) > Math.sqrt((double) dx * dx + dz * dz)) {
+            where = Component.translatable(dy > 0 ? "gui.mio_icif.od_scanner.up" : "gui.mio_icif.od_scanner.down").getString();
+        } else {
+            // 0 = south (+Z), clockwise in 45° steps, as Minecraft's yaw counts
+            int octant = Math.floorMod((int) Math.round(Math.toDegrees(Math.atan2(-dx, dz)) / 45.0), 8);
+            String[] names = {"s", "sw", "w", "nw", "n", "ne", "e", "se"};
+            where = Component.translatable("gui.mio_icif.od_scanner.dir." + names[octant]).getString();
+        }
+        return Component.translatable("gui.mio_icif.od_scanner.nearest", where, distance).getString();
     }
 
     private int maxScroll() {

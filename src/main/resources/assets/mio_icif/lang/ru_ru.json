@@ -6171,5 +6171,17 @@
   "message.mio_icif.drill.area": "Область бура: %s",
   "message.mio_icif.chainsaw.mode": "Бензопила: %s",
   "tooltip.mio_icif.chainsaw.single": "Один блок",
-  "tooltip.mio_icif.chainsaw.felling": "Валить дерево целиком"
+  "tooltip.mio_icif.chainsaw.felling": "Валить дерево целиком",
+  "gui.mio_icif.od_scanner.nearest": "ближайшая: %s, %s м",
+  "gui.mio_icif.od_scanner.here": "прямо здесь",
+  "gui.mio_icif.od_scanner.up": "выше",
+  "gui.mio_icif.od_scanner.down": "ниже",
+  "gui.mio_icif.od_scanner.dir.n": "север",
+  "gui.mio_icif.od_scanner.dir.ne": "северо-восток",
+  "gui.mio_icif.od_scanner.dir.e": "восток",
+  "gui.mio_icif.od_scanner.dir.se": "юго-восток",
+  "gui.mio_icif.od_scanner.dir.s": "юг",
+  "gui.mio_icif.od_scanner.dir.sw": "юго-запад",
+  "gui.mio_icif.od_scanner.dir.w": "запад",
+  "gui.mio_icif.od_scanner.dir.nw": "северо-запад"
 }

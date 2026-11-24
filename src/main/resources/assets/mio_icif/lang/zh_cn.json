@@ -6171,5 +6171,17 @@
   "message.mio_icif.drill.area": "钻头范围：%s",
   "message.mio_icif.chainsaw.mode": "链锯：%s",
   "tooltip.mio_icif.chainsaw.single": "单块",
-  "tooltip.mio_icif.chainsaw.felling": "整棵伐木"
+  "tooltip.mio_icif.chainsaw.felling": "整棵伐木",
+  "gui.mio_icif.od_scanner.nearest": "最近：%s %s 格",
+  "gui.mio_icif.od_scanner.here": "就在脚下",
+  "gui.mio_icif.od_scanner.up": "上方",
+  "gui.mio_icif.od_scanner.down": "下方",
+  "gui.mio_icif.od_scanner.dir.n": "北",
+  "gui.mio_icif.od_scanner.dir.ne": "东北",
+  "gui.mio_icif.od_scanner.dir.e": "东",
+  "gui.mio_icif.od_scanner.dir.se": "东南",
+  "gui.mio_icif.od_scanner.dir.s": "南",
+  "gui.mio_icif.od_scanner.dir.sw": "西南",
+  "gui.mio_icif.od_scanner.dir.w": "西",
+  "gui.mio_icif.od_scanner.dir.nw": "西北"
 }

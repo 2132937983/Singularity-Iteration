@@ -6171,5 +6171,17 @@
   "message.mio_icif.drill.area": "Drill area: %s",
   "message.mio_icif.chainsaw.mode": "Chainsaw: %s",
   "tooltip.mio_icif.chainsaw.single": "One block",
-  "tooltip.mio_icif.chainsaw.felling": "Fell the tree"
+  "tooltip.mio_icif.chainsaw.felling": "Fell the tree",
+  "gui.mio_icif.od_scanner.nearest": "nearest %s, %s m",
+  "gui.mio_icif.od_scanner.here": "right here",
+  "gui.mio_icif.od_scanner.up": "above",
+  "gui.mio_icif.od_scanner.down": "below",
+  "gui.mio_icif.od_scanner.dir.n": "north",
+  "gui.mio_icif.od_scanner.dir.ne": "north-east",
+  "gui.mio_icif.od_scanner.dir.e": "east",
+  "gui.mio_icif.od_scanner.dir.se": "south-east",
+  "gui.mio_icif.od_scanner.dir.s": "south",
+  "gui.mio_icif.od_scanner.dir.sw": "south-west",
+  "gui.mio_icif.od_scanner.dir.w": "west",
+  "gui.mio_icif.od_scanner.dir.nw": "north-west"
 }

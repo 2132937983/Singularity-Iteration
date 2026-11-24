@@ -6171,5 +6171,17 @@
   "message.mio_icif.drill.area": "ドリル範囲：%s",
   "message.mio_icif.chainsaw.mode": "チェーンソー：%s",
   "tooltip.mio_icif.chainsaw.single": "1 ブロック",
-  "tooltip.mio_icif.chainsaw.felling": "木を丸ごと伐採"
+  "tooltip.mio_icif.chainsaw.felling": "木を丸ごと伐採",
+  "gui.mio_icif.od_scanner.nearest": "最寄り：%s %s m",
+  "gui.mio_icif.od_scanner.here": "すぐここ",
+  "gui.mio_icif.od_scanner.up": "上",
+  "gui.mio_icif.od_scanner.down": "下",
+  "gui.mio_icif.od_scanner.dir.n": "北",
+  "gui.mio_icif.od_scanner.dir.ne": "北東",
+  "gui.mio_icif.od_scanner.dir.e": "東",
+  "gui.mio_icif.od_scanner.dir.se": "南東",
+  "gui.mio_icif.od_scanner.dir.s": "南",
+  "gui.mio_icif.od_scanner.dir.sw": "南西",
+  "gui.mio_icif.od_scanner.dir.w": "西",
+  "gui.mio_icif.od_scanner.dir.nw": "北西"
 }

@@ -1,31 +1,32 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
-import com.miophas.singularity_iteration.core.api.item.IWeaponItem;
+import java.util.List;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 
-import java.util.List;
-
-@SuppressWarnings("null")
-public class mio_icif_tactical_laser_rifle extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
+/**
+ * Tactical laser rifle (T5). 0.1.11.197 (T4, D5): 60 a bolt for 12,000 EU (it was 50 for 10,000): 120 damage a second on
+ * one target, 200 EU a point. Melee: +20 while a hit can be paid (1,000 EU a hit), a sword's attack speed; the +20 was
+ * a constant that needed no energy, at attack speed 4.
+ */
+public class mio_icif_tactical_laser_rifle extends AbstractEnergyGun {
     public static final int RIFLE_MAX_ENERGY = 100000000;
     public static final int RIFLE_CHARGE_RATE = 8192;
     public static final int RIFLE_TIER = 5;
-    public static final int ENERGY_PER_SHOT = 10000;
-    public static final float BULLET_DAMAGE = 50.0F;
+    public static final int ENERGY_PER_SHOT = 12000;
+    public static final float BULLET_DAMAGE = 60.0F;
     public static final float MELEE_DAMAGE = 20.0F;
+    public static final int MELEE_COST = 1000;
     public static final float BULLET_SPEED = 3.0F;
     public static final int BULLET_MAX_LIFE = 360;
     public static final int COOLDOWN_TICKS = 3;
+
+    private static final ItemAttributeModifiers MELEE = meleeAttributes(MELEE_DAMAGE);
+    private static final ItemAttributeModifiers MELEE_FLAT = meleeAttributes(0);
 
     public static EntityType<mio_icif_energy_bullet> RIFLE_BULLET_ENTITY;
 
@@ -34,60 +35,22 @@ public class mio_icif_tactical_laser_rifle extends mio_icif_tool_elc implements 
     }
 
     public mio_icif_tactical_laser_rifle(Properties properties) {
-        super(properties, RIFLE_MAX_ENERGY, 0L, "tactical_laser_rifle", RIFLE_CHARGE_RATE, ENERGY_PER_SHOT, RIFLE_TIER);
+        super(properties, RIFLE_MAX_ENERGY, RIFLE_CHARGE_RATE, RIFLE_TIER, ENERGY_PER_SHOT,
+            new Spec("tactical_laser_rifle", "T-LASER", 0xFF4D4D, BULLET_DAMAGE, BULLET_SPEED, BULLET_MAX_LIFE, COOLDOWN_TICKS,
+                () -> com.miophas.singularity_iteration.common.registry.mio_icif_sounds.RIFLE_SHOT.get(), 0.9F, 0.85F));
     }
 
+    @Override protected EntityType<mio_icif_energy_bullet> bulletType() { return RIFLE_BULLET_ENTITY; }
+
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-
-        if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT)) {
-            if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.tactical_laser_rifle.no_energy"));
-            }
-            return InteractionResultHolder.fail(stack);
-        }
-
-        if (!level.isClientSide) {
-            if (RIFLE_BULLET_ENTITY == null) {
-                return InteractionResultHolder.fail(stack);
-            }
-
-            consumeEnergy(stack, ENERGY_PER_SHOT);
-
-            mio_icif_energy_bullet bullet = new mio_icif_energy_bullet(RIFLE_BULLET_ENTITY, player, level);
-            bullet.setBeam(0xFF4D4D, getEnergyPerShot());   // 0.1.8.3 beam colour and width
-            bullet.setDamage(BULLET_DAMAGE);
-            bullet.setMaxLife(BULLET_MAX_LIFE);
-            bullet.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, BULLET_SPEED, 0.0F);
-            level.addFreshEntity(bullet);
-            WeaponChargeFx.emit(player, hand, getEnergyPerShot(), 0xFF4D4D);   // 0.1.8.0 charge / compression effect
-
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.RIFLE_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 0.85F + level.random.nextFloat() * 0.08F);
-        }
-
-        player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
-    }
-
-    /**
-     * 0.1.11.195 (T2, W-09): the melee bonus. It was multiplied by (Sharpness + 1), which survival could never reach (the
-     * rifle takes no sword enchantments) and a command made explode (Sharpness V gave 120 more). Whether the bonus should
-     * need energy is the weapon batch's question (T4).
-     */
-    @Override
-    public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        return MELEE_DAMAGE;
+    public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return hasEnoughEnergy(stack, MELEE_COST) ? MELEE : MELEE_FLAT;
     }
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (!attacker.level().isClientSide) {
-            int meleeCost = ENERGY_PER_SHOT / 5;
-            if (consumeEnergy(stack, meleeCost)) {
-                target.knockback(0.5F, attacker.getLookAngle().x, attacker.getLookAngle().z);
-            }
+        if (!attacker.level().isClientSide && consumeEnergy(stack, MELEE_COST)) {
+            target.knockback(0.5F, attacker.getLookAngle().x, attacker.getLookAngle().z);
         }
         return true;
     }
@@ -95,53 +58,9 @@ public class mio_icif_tactical_laser_rifle extends mio_icif_tool_elc implements 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.mio_icif.tactical_laser_rifle.damage", BULLET_DAMAGE));
-        tooltip.add(Component.translatable("tooltip.mio_icif.tactical_laser_rifle.melee", MELEE_DAMAGE));
+        tooltip.add(Component.translatable("tooltip.mio_icif.tactical_laser_rifle.melee", String.format("%.0f", MELEE_DAMAGE)));
     }
 
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 15;
-    }
-
-    @Override
-    public float getDamage() {
-        return BULLET_DAMAGE;
-    }
-
-    @Override
-    public float getRange() {
-        return BULLET_SPEED * 20;
-    }
-
-    @Override
-    public long getEnergyPerShot() {
-        return ENERGY_PER_SHOT;
-    }
-
-    @Override
-    public boolean isRanged() {
-        return true;
-    }
-
-    /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
-    @Override
-    public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
-        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.straight("LASER", BULLET_SPEED, 0.99, 0.8, canShoot(stack));
-    }
-
-    /** 0.1.8.4: shot of an AI shooter (Wingman), same bolt as {@link #use}. */
-    @Override
-    public int fireFrom(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, net.minecraft.world.phys.Vec3 direction, boolean mainHand) {
-        return MobWeaponFire.energyBolt(this, stack, shooter, direction, mainHand, RIFLE_BULLET_ENTITY, ENERGY_PER_SHOT, 0xFF4D4D, BULLET_DAMAGE, BULLET_MAX_LIFE, BULLET_SPEED,
-            bullet -> {  }, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.RIFLE_SHOT.get(), 0.9F, 0.85F, COOLDOWN_TICKS);
-    }
-
-    @Override
-    public double projectileSpeed() { return BULLET_SPEED; }
+    @Override public boolean isEnchantable(ItemStack stack) { return true; }
+    @Override public int getEnchantmentValue() { return 15; }
 }

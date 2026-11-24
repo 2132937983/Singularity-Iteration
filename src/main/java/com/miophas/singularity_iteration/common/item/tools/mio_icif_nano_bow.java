@@ -27,12 +27,18 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
     public static final int ARROW_FLIGHT_TICKS = 200;
 
     public static final int MAX_ENERGY = 500000;
-    public static final int ENERGY_PER_SHOT = 300;
+    /** 0.1.11.197 (T4, D5): 500 EU a shot (it was 300; the item's per-use figure said 512). */
+    public static final int ENERGY_PER_SHOT = 500;
+    /**
+     * 0.1.11.197 (T4, D5): base damage of a nano arrow. A full draw flies at 15 blocks a tick, so a hit deals 15 (about 20
+     * as a critical); with the vanilla 2.0 it dealt 30 to 46 and outdid the tier-5 rifles.
+     */
+    public static final double ARROW_BASE_DAMAGE = 1.0D;
     public static final int TIER = 3;
     public static final float MAX_VELOCITY = 5.0F;
 
     public mio_icif_nano_bow(Properties properties) {
-        super(properties, MAX_ENERGY, 0L, "nano_bow", standardChargeRate(TIER), 512, TIER);
+        super(properties, MAX_ENERGY, 0L, "nano_bow", standardChargeRate(TIER), ENERGY_PER_SHOT, TIER);
     }
 
     @Override
@@ -133,6 +139,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
             ((net.minecraft.world.item.ArrowItem) ammo.getItem()).createArrow(level, ammo, shooter, weapon);
         abstractarrow.setCritArrow(true);
         abstractarrow.setNoGravity(true);
+        abstractarrow.setBaseDamage(ARROW_BASE_DAMAGE);
         abstractarrow.getPersistentData().putBoolean(ARROW_TAG, true);   // 0.1.11.193 (W-05): flight time limit
         return customArrow(abstractarrow, ammo, weapon);
     }
@@ -289,6 +296,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
             ((net.minecraft.world.item.ArrowItem) net.minecraft.world.item.Items.ARROW).createArrow(shooter.level(), ammo, shooter, stack);
         arrow.setCritArrow(true);
         arrow.setNoGravity(true);
+        arrow.setBaseDamage(ARROW_BASE_DAMAGE);
         arrow.getPersistentData().putBoolean(ARROW_TAG, true);   // 0.1.11.193 (W-05): flight time limit
         arrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
         var d = direction.normalize();

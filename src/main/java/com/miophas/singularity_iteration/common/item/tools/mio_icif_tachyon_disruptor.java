@@ -15,7 +15,13 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon, com.miophas.singularity_iteration.common.item.tuning.ITunableItem {
+/**
+ * Tachyon disruptor (T5): the boss weapon. 120 a bolt, piercing, tunable (output, multi-hit, piercing, true damage) at a
+ * steeply rising cost per shot. 0.1.11.197 (T4): on {@link AbstractEnergyGun}, shot numbers unchanged (D5 keeps it the top
+ * weapon). Melee: +30 while a hit can be paid (1,500 EU a hit), a sword's attack speed; the +30 was a constant that needed
+ * no energy, at attack speed 4.
+ */
+public class mio_icif_tachyon_disruptor extends AbstractEnergyGun implements com.miophas.singularity_iteration.common.item.tuning.ITunableItem {
     public static final int MAX_ENERGY = 400000000;
     public static final int CHARGE_RATE = 8192;
     public static final int TIER = 5;
@@ -25,6 +31,11 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     public static final int BULLET_MAX_LIFE = 600;
     public static final int PIERCE_COUNT = 3;
     public static final int COOLDOWN_TICKS = 5;
+    public static final float MELEE_DAMAGE = 30.0F;
+    public static final int MELEE_COST = 1500;
+
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers MELEE = meleeAttributes(MELEE_DAMAGE);
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers MELEE_FLAT = meleeAttributes(0);
 
     public static EntityType<mio_icif_energy_bullet> RIFLE_BULLET_ENTITY;
 
@@ -33,66 +44,45 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     }
 
     public mio_icif_tachyon_disruptor(Properties properties) {
-        super(properties, MAX_ENERGY, 0L, "tachyon_disruptor", CHARGE_RATE, ENERGY_PER_SHOT, TIER);
+        super(properties, MAX_ENERGY, CHARGE_RATE, TIER, ENERGY_PER_SHOT,
+            new AbstractEnergyGun.Spec("tachyon_disruptor", "TACHYON", 0xC77DFF, BULLET_DAMAGE, BULLET_SPEED, BULLET_MAX_LIFE, COOLDOWN_TICKS,
+                () -> com.miophas.singularity_iteration.common.registry.mio_icif_sounds.TACHYON_SHOT.get(), 1.0F, 1.0F));
     }
 
+    @Override protected EntityType<mio_icif_energy_bullet> bulletType() { return RIFLE_BULLET_ENTITY; }
+
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        long cost = shotCost(stack);
+    protected void configure(mio_icif_energy_bullet bullet, ItemStack stack) {
+        bullet.setPierceCount(PIERCE_COUNT + 2 * tuning(stack, "pierce"));
+        bullet.setTachyon(tuning(stack, "multi"), 2 * tuning(stack, "pierce"), tuning(stack, "true_damage") / 100F);
+        bullet.setPotionEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 2));
+    }
 
-        if (!hasEnoughEnergy(stack, cost)) {
-            if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.tachyon_disruptor.no_energy"));
-            }
-            return InteractionResultHolder.fail(stack);
-        }
-
-        if (!level.isClientSide) {
-            if (RIFLE_BULLET_ENTITY == null) {
-                return InteractionResultHolder.fail(stack);
-            }
-
-            consumeEnergy(stack, cost);
-
-            mio_icif_energy_bullet bullet = new mio_icif_energy_bullet(RIFLE_BULLET_ENTITY, player, level);
-            bullet.setBeam(0xC77DFF, getEnergyPerShot());   // 0.1.8.3 beam colour and width
-            bullet.setDamage(damage(stack));
-            bullet.setMaxLife(BULLET_MAX_LIFE);
-            bullet.setPierceCount(PIERCE_COUNT + 2 * tuning(stack, "pierce"));
-            bullet.setTachyon(tuning(stack, "multi"), 2 * tuning(stack, "pierce"), tuning(stack, "true_damage") / 100F);
-            bullet.setPotionEffect(new net.minecraft.world.effect.MobEffectInstance(
-                net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 2));
-            bullet.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, BULLET_SPEED, 0.0F);
-            level.addFreshEntity(bullet);
-            WeaponChargeFx.emit(player, hand, getEnergyPerShot(), 0xC77DFF);   // 0.1.8.0 charge / compression effect
-
-            float load = (float) Math.min(1.0, Math.log10(cost / (double) ENERGY_PER_SHOT) / 3.0);
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.TACHYON_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS,
-                1.0F + load * 0.6F, 1.0F - load * 0.25F);
-        }
-
-        player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    /** A heavier (tuned) shot sounds louder and lower. */
+    @Override
+    protected void playShot(Level level, Player player, ItemStack stack, long cost) {
+        float load = (float) Math.min(1.0, Math.log10(cost / (double) ENERGY_PER_SHOT) / 3.0);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.TACHYON_SHOT.get(),
+            net.minecraft.sounds.SoundSource.PLAYERS, 1.0F + load * 0.6F, 1.0F - load * 0.25F);
     }
 
     // ---- tuning: baseline (100%) is the stock disruptor; every upgrade multiplies the EU per shot
-    private static final java.util.List<Spec> SPECS = java.util.List.of(
-        new Spec("output", 100, 300, 25, 100, "%"),
-        new Spec("multi", 0, 4, 1, 0, ""),
-        new Spec("pierce", 0, 5, 1, 0, ""),
-        new Spec("true_damage", 0, 100, 25, 0, "%"));
-
-    @Override public java.util.List<Spec> tuningSpecs(ItemStack stack) { return SPECS; }
+    private static final java.util.List<com.miophas.singularity_iteration.common.item.tuning.ITunableItem.Spec> SPECS = java.util.List.of(
+        new com.miophas.singularity_iteration.common.item.tuning.ITunableItem.Spec("output", 100, 300, 25, 100, "%"),
+        new com.miophas.singularity_iteration.common.item.tuning.ITunableItem.Spec("multi", 0, 4, 1, 0, ""),
+        new com.miophas.singularity_iteration.common.item.tuning.ITunableItem.Spec("pierce", 0, 5, 1, 0, ""),
+        new com.miophas.singularity_iteration.common.item.tuning.ITunableItem.Spec("true_damage", 0, 100, 25, 0, "%"));
+    @Override public java.util.List<com.miophas.singularity_iteration.common.item.tuning.ITunableItem.Spec> tuningSpecs(ItemStack stack) { return SPECS; }
 
     /** Damage of one hit: base x output. */
+    @Override
     public float damage(ItemStack stack) { return BULLET_DAMAGE * tuning(stack, "output") / 100F; }
 
     /**
      * EU per shot: 50k x output^2 x (1+multi)^1.4 x (1+pierce/2)^1.25 x (1+2 x true).
      * All maxed this is ~1,230x the stock cost (~61.5M EU, six shots per full charge).
      */
+    @Override
     public long shotCost(ItemStack stack) {
         double out = tuning(stack, "output") / 100.0;
         double c = ENERGY_PER_SHOT * out * out
@@ -116,17 +106,14 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     }
 
     @Override
-    public float getAttackDamageBonus(Entity target, float damage, net.minecraft.world.damagesource.DamageSource damageSource) {
-        return 30.0F;
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return hasEnoughEnergy(stack, MELEE_COST) ? MELEE : MELEE_FLAT;
     }
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (!attacker.level().isClientSide) {
-            int meleeCost = ENERGY_PER_SHOT / 5;
-            if (consumeEnergy(stack, meleeCost)) {
-                target.knockback(0.5F, attacker.getLookAngle().x, attacker.getLookAngle().z);
-            }
+        if (!attacker.level().isClientSide && consumeEnergy(stack, MELEE_COST)) {
+            target.knockback(0.5F, attacker.getLookAngle().x, attacker.getLookAngle().z);
         }
         return true;
     }
@@ -134,54 +121,10 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.mio_icif.tachyon_disruptor.damage", String.format("%.0f", damage(stack))));
         for (Component line : tuningSummary(stack)) tooltip.add(line.copy().withStyle(net.minecraft.ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.mio_icif.tuning_hint").withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
     }
 
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 15;
-    }
-
-    @Override
-    public float getDamage() {
-        return BULLET_DAMAGE;
-    }
-
-    @Override
-    public float getRange() {
-        return BULLET_SPEED * 20;
-    }
-
-    @Override
-    public long getEnergyPerShot() {
-        return ENERGY_PER_SHOT;
-    }
-
-    @Override
-    public boolean isRanged() {
-        return true;
-    }
-
-    /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
-    @Override
-    public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
-        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.straight("TACHYON", BULLET_SPEED, 0.99, 0.8, canShoot(stack));
-    }
-
-    /** 0.1.8.4: shot of an AI shooter (Wingman), same bolt as {@link #use}. */
-    @Override
-    public int fireFrom(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, net.minecraft.world.phys.Vec3 direction, boolean mainHand) {
-        return MobWeaponFire.energyBolt(this, stack, shooter, direction, mainHand, RIFLE_BULLET_ENTITY, shotCost(stack), 0xC77DFF, damage(stack), BULLET_MAX_LIFE, BULLET_SPEED,
-            bullet -> { bullet.setPierceCount(PIERCE_COUNT + 2 * tuning(stack, "pierce")); bullet.setTachyon(tuning(stack, "multi"), 2 * tuning(stack, "pierce"), tuning(stack, "true_damage") / 100F); bullet.setPotionEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 2)); }, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.TACHYON_SHOT.get(), 1.0F, 1.0F, COOLDOWN_TICKS);
-    }
-
-    @Override
-    public double projectileSpeed() { return BULLET_SPEED; }
+    @Override public boolean isEnchantable(ItemStack stack) { return true; }
+    @Override public int getEnchantmentValue() { return 15; }
 }

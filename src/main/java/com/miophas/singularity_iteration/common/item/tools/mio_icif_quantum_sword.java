@@ -24,7 +24,11 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements com.mio
     public static final int SWORD_TIER = 4;
     public static final int ENERGY_PER_USE = 100;
 
-    public static final int ATTACK_COST = 800;
+    /** 0.1.11.197 (T4, D5): a hyper-mode hit costs 1,500 EU (it was 800); a normal hit costs {@link #NORMAL_ATTACK_COST}. */
+    public static final int ATTACK_COST = 1500;
+    /** 0.1.11.197 (T4, D5): a normal hit costs 400 EU (it was free); with less, the sword hits for {@link #DAMAGE_FLAT}. */
+    public static final int NORMAL_ATTACK_COST = 400;
+    public static final float DAMAGE_FLAT = 5.0F;
     public static final int ACTIVATE_COST = 100;
     public static final float DAMAGE_NORMAL = 25.0F;
     public static final float DAMAGE_HYPER = 37.5F;
@@ -32,7 +36,7 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements com.mio
     private static final String TAG_HYPER = "QuantumSwordHyper";
 
     public mio_icif_quantum_sword(Properties properties) {
-        super(properties.attributes(attributes()), SWORD_MAX_ENERGY, 0L, "quantum_sword", SWORD_CHARGE_RATE, ENERGY_PER_USE, SWORD_TIER);
+        super(properties, SWORD_MAX_ENERGY, 0L, "quantum_sword", SWORD_CHARGE_RATE, ENERGY_PER_USE, SWORD_TIER);
     }
 
     /**
@@ -40,10 +44,19 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements com.mio
      * "Attack Speed" like a sword (player base 1 + 24 = 25). Hyper mode adds its extra on hit.
      * Sweeping ratio gives the quantum blade a strong sweep (50% of the hit).
      */
-    private static net.minecraft.world.item.component.ItemAttributeModifiers attributes() {
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers CHARGED = attributes(DAMAGE_NORMAL);
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers FLAT = attributes(DAMAGE_FLAT);
+
+    /** 0.1.11.197 (T4, D5): the full blade while a normal hit can be paid. */
+    @Override
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return hasEnoughEnergy(stack, NORMAL_ATTACK_COST) ? CHARGED : FLAT;
+    }
+
+    private static net.minecraft.world.item.component.ItemAttributeModifiers attributes(float damage) {
         return net.minecraft.world.item.component.ItemAttributeModifiers.builder()
             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
-                new net.minecraft.world.entity.ai.attributes.AttributeModifier(BASE_ATTACK_DAMAGE_ID, DAMAGE_NORMAL - 1.0,
+                new net.minecraft.world.entity.ai.attributes.AttributeModifier(BASE_ATTACK_DAMAGE_ID, damage - 1.0,
                     net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                 net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
@@ -86,13 +99,14 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements com.mio
         boolean current = isHyperState(stack);
         if (current) {
             setHyperState(stack, false);
-            player.sendSystemMessage(Component.translatable("message.mio_icif.quantum_sword.deactivated"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.quantum_sword.deactivated"), true);
         } else {
-            if (hasEnoughEnergy(stack, ACTIVATE_COST)) {
+            // 0.1.11.197 (T4, W-18): the activation fee is paid (it was only checked); messages on the action bar
+            if (!player.level().isClientSide && consumeEnergy(stack, ACTIVATE_COST)) {
                 setHyperState(stack, true);
-                player.sendSystemMessage(Component.translatable("message.mio_icif.quantum_sword.activated"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.quantum_sword.activated"), true);
             } else {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.quantum_sword.no_energy"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.quantum_sword.no_energy"), true);
             }
         }
     }
@@ -112,9 +126,11 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements com.mio
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (!attacker.level().isClientSide && isHyperState(stack)) {
-            if (!consumeEnergy(stack, ATTACK_COST)) {
-                setHyperState(stack, false);
+        if (!attacker.level().isClientSide) {
+            if (isHyperState(stack)) {
+                if (!consumeEnergy(stack, ATTACK_COST)) setHyperState(stack, false);
+            } else {
+                consumeEnergy(stack, NORMAL_ATTACK_COST);   // 0.1.11.197 (T4, D5): a normal hit is no longer free
             }
         }
         return true;

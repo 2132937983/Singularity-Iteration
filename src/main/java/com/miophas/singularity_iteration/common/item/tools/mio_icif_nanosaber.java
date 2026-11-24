@@ -119,19 +119,37 @@ public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas
         boolean currentActive = isActive(stack);
         if (currentActive) {
             setActive(stack, false);
-            player.sendSystemMessage(Component.translatable("message.mio_icif.nanosaber.deactivated"));
+            player.displayClientMessage(Component.translatable("message.mio_icif.nanosaber.deactivated"), true);
         } else {
-            if (hasEnoughEnergy(stack, ACTIVATE_COST)) {
+            // 0.1.11.197 (T4, W-18): the activation fee is paid (it was only checked); messages on the action bar
+            if (!player.level().isClientSide && consumeEnergy(stack, ACTIVATE_COST)) {
                 setActive(stack, true);
-                player.sendSystemMessage(Component.translatable("message.mio_icif.nanosaber.activated"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.nanosaber.activated"), true);
             } else {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.nanosaber.no_energy"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.nanosaber.no_energy"), true);
             }
         }
     }
 
-    private static final net.minecraft.world.item.component.ItemAttributeModifiers ACTIVE_DAMAGE = attackDamage(DAMAGE_ACTIVE);
-    private static final net.minecraft.world.item.component.ItemAttributeModifiers INACTIVE_DAMAGE = attackDamage(DAMAGE_INACTIVE);
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers ACTIVE_DAMAGE = swordAttributes(DAMAGE_ACTIVE);
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers INACTIVE_DAMAGE = swordAttributes(DAMAGE_INACTIVE);
+
+    /**
+     * 0.1.11.197 (T4, D5): damage with a sword's attack speed (1.6 a second). The saber had no speed penalty, so it hit
+     * 4 times a second (the hurt cooldown of a target still capped it at 2).
+     */
+    private static net.minecraft.world.item.component.ItemAttributeModifiers swordAttributes(double damage) {
+        return net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                new net.minecraft.world.entity.ai.attributes.AttributeModifier(BASE_ATTACK_DAMAGE_ID, damage,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                new net.minecraft.world.entity.ai.attributes.AttributeModifier(BASE_ATTACK_SPEED_ID, -2.4,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+            .build();
+    }
 
     /** IC2 {@code getAttributeModifiers}: 20 when on, 4 when off, as an attack damage attribute. */
     @Override

@@ -372,6 +372,30 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
     private static final ModConfigSpec.Builder NUCLEAR_POP = BUILDER.pop();
     // ==================== End of nuclear explosion settings ====================
 
+    // ==================== Weapons (0.1.11.197, tool overhaul T4, decision D6) ====================
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder WEAPONS_BUILDER = BUILDER.push("Weapons");
+
+    public static final ModConfigSpec.BooleanValue WEAPONS_DAMAGE_TERRAIN = WEAPONS_BUILDER
+            .comment("Whether the blasts of player weapons (electric plasma gun, rocket launcher, plasma launcher) break blocks,",
+                     "and whether the plasma launcher's bolt melts, clears and lights blocks along its path.",
+                     "Claims and other protection still apply when this is on. Off: the weapons only hurt entities.",
+                     "玩家武器（电力等离子枪、火箭发射器、等离子发射器）的爆炸是否破坏方块，等离子发射器的弹体是否熔化、清除、点燃沿途方块。",
+                     "开启时领地保护照样生效；关闭时这些武器只伤害实体。")
+            .define("weaponsDamageTerrain", true);
+
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder WEAPONS_POP = BUILDER.pop();
+
+    /** {@link #WEAPONS_DAMAGE_TERRAIN}, or its default (on) before the config is loaded. */
+    public static boolean weaponsDamageTerrain() {
+        try {
+            return WEAPONS_DAMAGE_TERRAIN.getAsBoolean();
+        } catch (IllegalStateException notLoaded) {
+            return true;
+        }
+    }
+
     // ==================== Terrain transformer settings ====================
     private static final ModConfigSpec.Builder TERRA_BUILDER = BUILDER.push("TerraELC");
 

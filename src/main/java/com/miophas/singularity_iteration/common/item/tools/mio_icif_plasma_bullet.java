@@ -64,7 +64,8 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
     @Override
     public void tick() {
         // 0.1.10.4: only a player who may build melts the path (a Wingman's bolt leaves the terrain)
-        if (!level().isClientSide && !isRemoved() && terrainAllowed()) {
+        if (!level().isClientSide && !isRemoved() && terrainAllowed()
+                && com.miophas.singularity_iteration.common.Singularity_Iteration_Config.weaponsDamageTerrain()) {   // 0.1.11.197 (D6)
             Vec3 start = position();
             Vec3 end = start.add(getDeltaMovement());
             meltAlongPath(start, end);
@@ -146,7 +147,9 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
         }
 
         level.explode(this, level.damageSources().explosion(this, player), new HeatExplosionCalculator(player),
-            center.x, center.y, center.z, EXPLOSION_POWER, false, Level.ExplosionInteraction.TNT);
+            center.x, center.y, center.z, EXPLOSION_POWER, false,
+            com.miophas.singularity_iteration.common.Singularity_Iteration_Config.weaponsDamageTerrain()
+                ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);   // 0.1.11.197 (D6)
         return true;
     }
 

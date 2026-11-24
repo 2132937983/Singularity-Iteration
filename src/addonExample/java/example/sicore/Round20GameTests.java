@@ -70,7 +70,10 @@ public final class Round20GameTests {
     @GameTest(batch = "round20", template = "empty")
     public static void quantumBladeSweepsAndShowsDamage(GameTestHelper h) {
         ItemStack sword = item("item_tool_quantum_sword");
-        var mods = sword.getOrDefault(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS, net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY);
+        // 0.1.11.197 (T4): the full blade needs energy for a hit, so the stack is charged; the modifiers are per stack now
+        var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) sword.getItem();
+        battery.setEnergy(sword, battery.getMaxEnergy(sword));
+        var mods = sword.getAttributeModifiers();
         double[] damage = {0};
         mods.forEach(EquipmentSlotGroup.MAINHAND, (attr, mod) -> { if (attr.value() == Attributes.ATTACK_DAMAGE.value()) damage[0] += mod.amount(); });
         h.assertTrue(damage[0] == 24.0, "Attack Damage modifier shown in tooltip (24 + 1 base), got " + damage[0]);

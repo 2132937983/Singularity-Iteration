@@ -1,26 +1,20 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
-import com.miophas.singularity_iteration.core.api.item.IWeaponItem;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 
-import java.util.List;
-
-@SuppressWarnings("null")
-public class mio_icif_electric_plasma_gun extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
+/**
+ * Electric plasma gun (T3): a slow green bolt that bursts on a block. 0.1.11.197 (T4, D5): 15 direct and 15 in a 3-block
+ * radius for 3,000 EU (it was 20 and 20 in 4 blocks for 5,000); the small blast follows the weapon terrain setting.
+ */
+public class mio_icif_electric_plasma_gun extends AbstractEnergyGun {
     public static final int MAX_ENERGY = 1000000;
     public static final int CHARGE_RATE = 512;
     public static final int TIER = 3;
-    public static final int ENERGY_PER_SHOT = 5000;
-    public static final float BULLET_DAMAGE = 20.0F;
-    public static final float AOE_RADIUS = 4.0F;
-    public static final float AOE_DAMAGE = 20.0F;
+    public static final int ENERGY_PER_SHOT = 3000;
+    public static final float BULLET_DAMAGE = 15.0F;
+    public static final float AOE_RADIUS = 3.0F;
+    public static final float AOE_DAMAGE = 15.0F;
     public static final float EXPLOSION_POWER = 2.0F;
     public static final float BULLET_SPEED = 1.5F;
     public static final int BULLET_MAX_LIFE = 500;
@@ -33,92 +27,18 @@ public class mio_icif_electric_plasma_gun extends mio_icif_tool_elc implements I
     }
 
     public mio_icif_electric_plasma_gun(Properties properties) {
-        super(properties, MAX_ENERGY, 0L, "electric_plasma_gun", CHARGE_RATE, ENERGY_PER_SHOT, TIER);
+        super(properties, MAX_ENERGY, CHARGE_RATE, TIER, ENERGY_PER_SHOT,
+            new Spec("electric_plasma_gun", "PLASMA", 0x7CFFB2, BULLET_DAMAGE, BULLET_SPEED, BULLET_MAX_LIFE, COOLDOWN_TICKS,
+                () -> com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), 1.0F, 1.0F));
     }
 
+    @Override protected EntityType<mio_icif_energy_bullet> bulletType() { return RIFLE_BULLET_ENTITY; }
+
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        
-
-        if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT)) {
-            if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.electric_plasma_gun.no_energy"));
-            }
-            return InteractionResultHolder.fail(stack);
-        }
-
-        if (!level.isClientSide) {
-            if (RIFLE_BULLET_ENTITY == null) {
-                com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("PlasmaGun: RIFLE_BULLET_ENTITY is null!");
-                return InteractionResultHolder.fail(stack);
-            }
-
-            consumeEnergy(stack, ENERGY_PER_SHOT);
-
-            mio_icif_energy_bullet bullet = new mio_icif_energy_bullet(RIFLE_BULLET_ENTITY, player, level);
-            bullet.setBeam(0x7CFFB2, getEnergyPerShot());   // 0.1.8.3 beam colour and width
-            bullet.setDamage(BULLET_DAMAGE);
-            bullet.setMaxLife(BULLET_MAX_LIFE);
-            bullet.setAoe(AOE_RADIUS, AOE_DAMAGE);
-            bullet.setExplosionPower(EXPLOSION_POWER);
-            bullet.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, BULLET_SPEED, 0.0F);
-            level.addFreshEntity(bullet);
-            WeaponChargeFx.emit(player, hand, getEnergyPerShot(), 0x7CFFB2);   // 0.1.8.0 charge / compression effect
-
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F + level.random.nextFloat() * 0.1F);
-            
-        }
-
-        player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    protected void configure(mio_icif_energy_bullet bullet, ItemStack stack) {
+        bullet.setAoe(AOE_RADIUS, AOE_DAMAGE);
+        bullet.setExplosionPower(EXPLOSION_POWER);
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.mio_icif.electric_plasma_gun.damage", BULLET_DAMAGE));
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return false;
-    }
-
-    @Override
-    public float getDamage() {
-        return BULLET_DAMAGE;
-    }
-
-    @Override
-    public float getRange() {
-        return BULLET_SPEED * 20;
-    }
-
-    @Override
-    public long getEnergyPerShot() {
-        return ENERGY_PER_SHOT;
-    }
-
-    @Override
-    public boolean isRanged() {
-        return true;
-    }
-
-    /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
-    @Override
-    public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
-        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.straight("PLASMA", BULLET_SPEED, 0.99, 0.8, canShoot(stack));
-    }
-
-    /** 0.1.8.4: shot of an AI shooter (Wingman), same bolt as {@link #use}. */
-    @Override
-    public int fireFrom(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, net.minecraft.world.phys.Vec3 direction, boolean mainHand) {
-        return MobWeaponFire.energyBolt(this, stack, shooter, direction, mainHand, RIFLE_BULLET_ENTITY, ENERGY_PER_SHOT, 0x7CFFB2, BULLET_DAMAGE, BULLET_MAX_LIFE, BULLET_SPEED,
-            bullet -> { bullet.setAoe(AOE_RADIUS, AOE_DAMAGE); bullet.setExplosionPower(EXPLOSION_POWER); }, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), 1.0F, 1.0F, COOLDOWN_TICKS);
-    }
-
-    @Override
-    public double projectileSpeed() { return BULLET_SPEED; }
+    @Override public boolean isEnchantable(ItemStack stack) { return false; }
 }

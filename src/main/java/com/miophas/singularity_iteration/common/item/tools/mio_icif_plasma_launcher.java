@@ -32,7 +32,8 @@ public class mio_icif_plasma_launcher extends mio_icif_tool_elc implements IWeap
     public static final int PLASMA_MAX_ENERGY = 40000;
     public static final int PLASMA_CHARGE_RATE = 128;
     public static final int PLASMA_TIER = 3;
-    public static final int PLASMA_ENERGY_PER_USE = 100;
+    /** 0.1.11.197 (T4, D5): 2,000 EU a shot (it was 100): a clearing tool, 20 shots a full charge. */
+    public static final int PLASMA_ENERGY_PER_USE = 2000;
     /** 0.1.10.4: colour of the charge flash and the bolt (violet plasma). */
     public static final int PLASMA_COLOR = 0xB45CFF;
     /** 0.1.10.4: damage of a bolt that may not blast (a Wingman's, or a player's where he may not build). */
@@ -59,7 +60,7 @@ public class mio_icif_plasma_launcher extends mio_icif_tool_elc implements IWeap
 
         if (!hasEnoughEnergy(stack, PLASMA_ENERGY_PER_USE)) {
             if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.plasma_launcher.no_energy"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.plasma_launcher.no_energy"), true);
             }
             return InteractionResultHolder.fail(stack);
         }
@@ -73,7 +74,7 @@ public class mio_icif_plasma_launcher extends mio_icif_tool_elc implements IWeap
             // 0.1.10.4: straight along the view; shootFromRotation added the shooter's motion
             launch(level, player, player.getLookAngle());
             player.getCooldowns().addCooldown(this, PLAYER_COOLDOWN);
-            WeaponChargeFx.emit(player, hand, PLASMA_ENERGY_PER_USE * 40L, PLASMA_COLOR);
+            WeaponChargeFx.emit(player, hand, PLASMA_ENERGY_PER_USE * 2L, PLASMA_COLOR);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), SoundSource.PLAYERS, 1.1F, 0.75F + level.random.nextFloat() * 0.1F);
         }

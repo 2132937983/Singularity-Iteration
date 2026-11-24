@@ -24,8 +24,11 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
     public static final int MAX_ENERGY = 1000000;
     public static final int CHARGE_RATE = 512;
     public static final int TIER = 3;
-    public static final int ENERGY_PER_SHOT = 50000;
-    public static final int COOLDOWN_TICKS = 10;
+    /** 0.1.11.197 (T4, D5): 20,000 EU a rocket (it was 50,000), one shot a second (it was two). */
+    public static final int ENERGY_PER_SHOT = 20000;
+    public static final int COOLDOWN_TICKS = 20;
+    /** 0.1.11.197 (T4, D5): blast power 3, about 43 at the centre (power 5 gave about 71, plus 10 more in a ring). */
+    public static final float EXPLOSION_POWER = 3.0F;
 
     public static EntityType<mio_icif_rocket_entity> ROCKET_ENTITY;
 
@@ -43,7 +46,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
 
         if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT)) {
             if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.rocket_launcher.no_energy"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.rocket_launcher.no_energy"), true);
             }
             return InteractionResultHolder.fail(stack);
         }
@@ -51,7 +54,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
         ItemStack ammo = findAmmo(player);
         if (ammo.isEmpty()) {
             if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.rocket_launcher.no_ammo"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.rocket_launcher.no_ammo"), true);
             }
             return InteractionResultHolder.fail(stack);
         }
@@ -61,12 +64,12 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
                 return InteractionResultHolder.fail(stack);
             }
 
-            consumeEnergy(stack, ENERGY_PER_SHOT);
-            ammo.shrink(1);
+            if (!consumeEnergy(stack, ENERGY_PER_SHOT)) return InteractionResultHolder.fail(stack);
+            if (!player.hasInfiniteMaterials()) ammo.shrink(1);   // 0.1.11.197 (T4, W-17): creative keeps its rockets
 
             mio_icif_rocket_entity rocket = new mio_icif_rocket_entity(ROCKET_ENTITY, player, level);
             rocket.setDamage(0);
-            rocket.setExplosionPower(5.0F);
+            rocket.setExplosionPower(EXPLOSION_POWER);
             rocket.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, ROCKET_SPEED, 0.0F);
             level.addFreshEntity(rocket);
 
@@ -110,7 +113,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
 
     @Override
     public float getRange() {
-        return 2.5F * 20;
+        return ROCKET_SPEED * 20;   // 0.1.11.197 (T4, W-15): the real launch speed (it was the old 2.5)
     }
 
     @Override
@@ -139,7 +142,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
         if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT) || !consumeEnergy(stack, ENERGY_PER_SHOT)) return -1;
         mio_icif_rocket_entity rocket = new mio_icif_rocket_entity(ROCKET_ENTITY, shooter, shooter.level());
         rocket.setDamage(0);
-        rocket.setExplosionPower(5.0F);
+        rocket.setExplosionPower(EXPLOSION_POWER);
         rocket.setTerrainDamage(false);
         var d = direction.normalize();
         rocket.shoot(d.x, d.y, d.z, ROCKET_SPEED, 0.0F);
@@ -150,7 +153,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
     }
 
     @Override
-    public double projectileSpeed() { return 2.5; }
+    public double projectileSpeed() { return ROCKET_SPEED; }   // 0.1.11.197 (T4, W-15): Wingmen led their aim at half speed
 
     @Override
     public double[] engagementRange() { return new double[]{12, 24}; }

@@ -150,7 +150,10 @@ public final class Round11579GameTests {
     public static void eventAdvancements(GameTestHelper h) {
         ServerPlayer player = playerAt(h, new BlockPos(1, 2, 1));
         // the Steel Riot Shield: a melee hit does not count, an arrow does
-        player.setItemInHand(InteractionHand.OFF_HAND, item("item_tool_steel_shield"));
+        ItemStack shield = item("item_tool_steel_shield");   // 0.1.11.197 (T4): a block costs energy, so the shield is charged
+        var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) shield.getItem();
+        battery.setEnergy(shield, battery.getMaxEnergy(shield));
+        player.setItemInHand(InteractionHand.OFF_HAND, shield);
         player.startUsingItem(InteractionHand.OFF_HAND);
         var zombie = EntityType.ZOMBIE.create(h.getLevel());
         NeoForge.EVENT_BUS.post(new LivingShieldBlockEvent(player, new DamageContainer(player.damageSources().mobAttack(zombie), 4), true));

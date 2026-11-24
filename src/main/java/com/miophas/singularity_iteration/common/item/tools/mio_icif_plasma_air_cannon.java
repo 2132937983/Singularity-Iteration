@@ -23,7 +23,11 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
     public static final int CHARGE_RATE = 128;
     public static final int TIER = 2;
     public static final int BASE_COST = 1000;
+    /** 0.1.11.197 (T4, D5): damage from {@link #MIN_DAMAGE} (a short charge) to this (a full charge), halved at the far end. */
     public static final float BASE_DAMAGE = 10.0F;
+    public static final float MIN_DAMAGE = 4.0F;
+    /** 0.1.11.197 (T4, D5): push of a full charge (blocks a tick); it was charge ÷ 3, up to 80. */
+    public static final double MAX_PUSH = 3.0D;
     public static final int MAX_CHARGE = 240;
     public static final int MIN_CHARGE = 10;
 
@@ -37,7 +41,7 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
 
         if (!hasEnoughEnergy(stack, BASE_COST)) {
             if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.plasma_air_cannon.no_energy"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.plasma_air_cannon.no_energy"), true);
             }
             return InteractionResultHolder.fail(stack);
         }
@@ -125,10 +129,12 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
                     && player.hasLineOfSight(e)
                     && !mio_icif_nanosaber.isAlly(e) && !e.isAlliedTo(player));
 
-            double velocity = expandSize / 3.0;
+            double charge = expandSize / MAX_CHARGE;
+            double velocity = 0.5D + (MAX_PUSH - 0.5D) * charge;
             for (LivingEntity target : targets) {
                 double distance = Math.max(MIN_DAMAGE_DISTANCE, currentPosition.distanceTo(target.position()));
-                double damage = BASE_DAMAGE + expandSize / distance;
+                // 0.1.11.197 (T4, D5): a knock-back weapon: 4 to 10 by charge, falling to half at the far end of the blast
+                double damage = (MIN_DAMAGE + (BASE_DAMAGE - MIN_DAMAGE) * charge) * (1.0D - 0.5D * Math.min(1.0D, distance / expandSize));
 
                 target.push(lookDirection.x * velocity, lookDirection.y * velocity, lookDirection.z * velocity);
                 target.hurt(level.damageSources().playerAttack(player), (float) damage);

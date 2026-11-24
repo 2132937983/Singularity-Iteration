@@ -193,6 +193,8 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
     @Override
     protected void onHit(HitResult result) {
         super.onHit(result);
+        // 0.1.11.197 (T4, W-10): hits are resolved on the server only; the client ran them too (a second blast, double knockback)
+        if (this.level().isClientSide) return;
 
         if (result.getType() == HitResult.Type.BLOCK) {
             onBlockHit((BlockHitResult) result);
@@ -207,6 +209,17 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
             return;
         }
         
+        if (!(entity instanceof LivingEntity)) {
+            // 0.1.11.197 (T4, W-11): an ender dragon part, an end crystal, a boat or a cart takes the hit too
+            LivingEntity owner = this.getOwner() instanceof LivingEntity livingOwner ? livingOwner : null;
+            entity.hurt(owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic(), this.damage);
+            this.hitEntities.add(entity);
+            if (--this.remainingPierces <= 0) {
+                spawnImpactParticles();
+                this.discard();
+            }
+            return;
+        }
         if (entity instanceof LivingEntity living) {
             LivingEntity owner = this.getOwner() instanceof LivingEntity livingOwner ? livingOwner : null;
             DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
@@ -228,7 +241,8 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
                     net.minecraft.sounds.SoundSource.PLAYERS, 0.7F, 1.0F + this.random.nextFloat() * 0.2F);
             }
             if (this.potionEffect != null) {
-                living.addEffect(this.potionEffect);
+                // 0.1.11.197 (T4, W-12): a copy per target; one shared instance counted down once per target each tick
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(this.potionEffect));
             }
             this.hitEntities.add(entity);
             this.remainingPierces--;
@@ -259,14 +273,15 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
             DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
             AABB area = AABB.ofSize(this.position(), this.aoeRadius * 2, this.aoeRadius * 2, this.aoeRadius * 2);
             for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, area,
-                e -> e != this.getOwner() && e.distanceTo(this) <= this.aoeRadius)) {
+                e -> e != this.getOwner() && e.distanceTo(this) <= this.aoeRadius && !ProjectileFriendlyFire.spares(this.getOwner(), e))) {
                 e.hurt(source, this.aoeDamage);
             }
         }
 
         if (this.explosionPower > 0.0F && owner != null) {
             this.level().explode(owner, this.getX(), this.getY(), this.getZ(),
-                this.explosionPower, terrainDamage ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+                this.explosionPower, terrainDamage && com.miophas.singularity_iteration.common.Singularity_Iteration_Config.weaponsDamageTerrain()
+                    ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);   // 0.1.11.197 (D6)
         }
 
         spawnImpactParticles();

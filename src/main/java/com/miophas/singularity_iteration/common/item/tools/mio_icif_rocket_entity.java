@@ -25,7 +25,7 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
     }
 
     private float damage = 0.0F;
-    private float explosionPower = 5.0F;
+    private float explosionPower = mio_icif_rocket_launcher.EXPLOSION_POWER;
     private int maxLife = 200;
     private int life = 0;
     private final Set<Entity> hitEntities = new HashSet<>();
@@ -176,13 +176,10 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
 
     private void explode(DamageSource source, LivingEntity owner) {
         if (this.explosionPower > 0.0F && owner != null) {
-            AABB area = AABB.ofSize(this.position(), this.explosionPower * 2, this.explosionPower * 2, this.explosionPower * 2);
-            for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, area,
-                e -> e != this.getOwner() && e.distanceTo(this) <= this.explosionPower)) {
-                e.hurt(source, this.explosionPower * 2);
-            }
-            this.level().explode(owner, this.getX(), this.getY(), this.getZ(),
-                this.explosionPower, terrainDamage ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+            // 0.1.11.197 (T4, D5): the blast alone (the extra ring of 2 × power damage is gone); D6: terrain by config
+            this.level().explode(owner, this.getX(), this.getY(), this.getZ(), this.explosionPower,
+                terrainDamage && com.miophas.singularity_iteration.common.Singularity_Iteration_Config.weaponsDamageTerrain()
+                    ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
         }
 
         spawnImpactParticles();

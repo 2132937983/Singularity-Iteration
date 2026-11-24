@@ -473,6 +473,71 @@ public final class WingmanPose {
     }
 
     /**
+     * Alternating 3-hit melee combo with off-hand counter-balance and heavy-weapon slam scaling:
+     * <ul>
+     *   <li>{@code combo == 0}: forehand high-to-low diagonal slash</li>
+     *   <li>{@code combo == 1}: reverse backhand horizontal sweep</li>
+     *   <li>{@code combo == 2}: overhead cleave (amplified for axes/maces)</li>
+     * </ul>
+     * Zero at {@code a <= 0} and {@code a >= 1}. Returns torso twist (radians).
+     */
+    public static float cutCombo(float[] pose, boolean leftHanded, float a, float windup, int combo, boolean heavy) {
+        a = clamp01(a);
+        if (a <= 0 || a >= 1) return 0;
+        int step = Math.floorMod(combo, 3);
+        float w = (0.60F + 0.40F * clamp01(windup)) * (heavy ? 1.18F : 1.0F);
+        int x = leftHanded ? LX : RX;
+        int o = leftHanded ? RX : LX;
+        float side = leftHanded ? -1 : 1;
+        // Fast strike (0..0.32), brief impact hold (0.32..0.64), smooth recovery (0.64..1.0)
+        float strikeEnd = heavy ? 0.38F : 0.30F;
+        float holdEnd = heavy ? 0.68F : 0.62F;
+        float k = a < strikeEnd ? ease(a / strikeEnd) : a < holdEnd ? 1F : 1F - ease((a - holdEnd) / (1F - holdEnd));
+        float twist;
+        switch (step) {
+            case 1 -> {   // backhand reverse sweep (inside-out)
+                pose[x] += (-0.75F - pose[x]) * k;
+                pose[x + 1] += side * 1.05F * w * k;
+                pose[x + 2] += side * 0.28F * k;
+                pose[o] += 0.24F * k;
+                pose[o + 2] += side * 0.16F * k;
+                twist = side * -0.40F * k;
+            }
+            case 2 -> {   // heavy overhead cleave
+                float cleaveTarget = heavy ? 0.22F : 0.05F;
+                pose[x] += (cleaveTarget - pose[x]) * k;
+                pose[x + 1] += side * -0.45F * w * k;
+                pose[x + 2] += side * -0.14F * k;
+                pose[o] += -0.45F * k;   // off-hand flares back for balance
+                pose[o + 1] += side * -0.25F * k;
+                twist = side * 0.46F * k;
+            }
+            default -> {  // forehand diagonal slash
+                pose[x] += (STRIKE_X - pose[x]) * k;
+                pose[x + 1] += side * -1.02F * w * k;
+                pose[x + 2] += side * -0.24F * k;
+                pose[o] += 0.26F * k;
+                pose[o + 2] += side * -0.14F * k;
+                twist = side * 0.42F * k;
+            }
+        }
+        pose[RY] += twist;
+        pose[LY] += twist;
+        return twist;
+    }
+
+    /** Crisp per-shot muzzle kick over 0..3.5 ticks so rapid-fire weapons show distinct recoil per round. */
+    public static void shotKick(float[] pose, boolean leftHanded, float shotAge) {
+        float t = finite(shotAge);
+        if (t <= 0 || t >= 3.5F) return;
+        float k = t < 0.8F ? ease(t / 0.8F) : 1F - ease((t - 0.8F) / 2.7F);
+        int main = leftHanded ? LX : RX;
+        int off = leftHanded ? RX : LX;
+        pose[main] -= 0.26F * k;
+        pose[off] -= 0.15F * k;
+    }
+
+    /**
      * The draw of a bow: the string hand comes back toward the chest as {@code draw} goes from 0 (just shot) to 1 (full
      * draw); the release is the drop of {@code draw} at the shot.
      */

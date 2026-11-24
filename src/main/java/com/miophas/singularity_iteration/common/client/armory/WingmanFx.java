@@ -148,11 +148,11 @@ public final class WingmanFx {
                     Vec3 ringAt = target.getPosition(partial).add(0, target.getBbHeight() * k, 0);
                     FxDraw.ring(vc, m, ringAt, new Vec3(0, 1, 0), target.getBbWidth() * 0.75F, 0.12F, col[0], col[1], col[2], 0.9F * a, 28);
                 } else {
-                    // faint tether with a pulse running to the target
-                    FxDraw.line(vc, m, eye, tc, cam, 0.012F, col[0], col[1], col[2], 0.14F);
+                    // subtle tether with a pulse running to the target
+                    FxDraw.line(vc, m, eye, tc, cam, 0.010F, col[0], col[1], col[2], 0.09F);
                     float u = (now * 0.06F) % 1F;
                     Vec3 dot = eye.add(tc.subtract(eye).scale(u));
-                    FxDraw.disc(vc, m, dot, tc.subtract(eye), 0.08F, col[0], col[1], col[2], 0.5F, 8);
+                    FxDraw.disc(vc, m, dot, tc.subtract(eye), 0.07F, col[0], col[1], col[2], 0.42F, 8);
                 }
                 marker(vc, m, target, tc, cam, left, up, col, lockAge, now, partial);
             }
@@ -289,15 +289,25 @@ public final class WingmanFx {
             }
         }
         float shotAge = now - s.shotTick;
-        if (shotAge < 4) {
+        if (shotAge < 5) {
             Vec3 mz = muzzle(w, partial).subtract(cam), look = w.getViewVector(partial);
-            float a = 1 - shotAge / 4F;
-            com.miophas.singularity_iteration.common.client.render.PhaseFx.blob(vc, mz, 0.35F, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, a);
-            com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, mz, look, 0.15F + shotAge * 0.12F, 0.04F,
+            float a = (1 - shotAge / 5F) * FcsClientConfig.flashScale();
+            float[] mc = modeColour(w.mode());
+            // High-impact muzzle flash: bright core blob + directional plasma cone + shock ring + short muzzle tracer
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.blob(vc, mz, 0.42F * a + 0.10F, mc, a);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, frame(mz, look), 0.85F * a + 0.25F, 0.14F,
+                seconds, rate * 2, 0.4F, 0.9F * a);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, mz, look, 0.16F + shotAge * 0.13F, 0.045F,
                 com.miophas.singularity_iteration.common.suit.PhaseRules.WHITE, a);
+            if (shotAge < 3) {
+                float ta = (1 - shotAge / 3F) * FcsClientConfig.flashScale();
+                Vec3 tip = mz.add(look.scale(2.8 + shotAge * 0.9));
+                Matrix4f id = new Matrix4f();
+                FxDraw.beam(vc, id, mz, tip, Vec3.ZERO, 0.032F * ta, mc[0], mc[1], mc[2], 0.85F * ta, 0.1F * ta);
+            }
         }
         float swing = w.getAttackAnim(partial);
-        if (swing > 0.02F && !isRanged(w)) slashLight(vc, pos.subtract(cam), yaw, swing);
+        if (swing > 0.02F && !isRanged(w)) slashLight(vc, w, pos.subtract(cam), yaw, swing);
     }
 
     /** A frame at {@code at} (camera-relative) with +y along {@code dir}. */
@@ -351,26 +361,66 @@ public final class WingmanFx {
             .rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) d.x, (float) d.y, (float) d.z));
     }
 
-    /** 0.1.11.74 (W4): the cut in light: an arc over the swept sweep, bright at its leading edge and fading behind it. */
-    private static void slashLight(VertexConsumer vc, Vec3 pos, double yaw, float swing) {
+    /** Weapon-specific {outerR, outerG, outerB, coreR, coreG, coreB} slash palette. */
+    private static float[] slashPalette(WingmanEntity w) {
+        var weapon = w.getMainHandItem();
+        if (com.miophas.singularity_iteration.common.armory.SlashBladeCombat.isBlade(weapon)) {
+            return new float[]{1.0F, 0.45F, 0.72F, 1.0F, 0.94F, 0.98F};
+        }
+        String path = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(weapon.getItem()).getPath();
+        if (path.contains("quantum")) {
+            return new float[]{0.72F, 0.42F, 1.0F, 1.0F, 0.95F, 1.0F};
+        }
+        if (path.contains("nano")) {
+            return new float[]{0.20F, 1.0F, 0.62F, 0.85F, 1.0F, 0.95F};
+        }
+        if (path.contains("fire") || path.contains("flame") || path.contains("blaze")) {
+            return new float[]{1.0F, 0.42F, 0.14F, 1.0F, 0.94F, 0.60F};
+        }
+        return new float[]{0.36F, 0.90F, 1.0F, 1.0F, 1.0F, 1.0F};
+    }
+
+    /** Dual-layer weapon-colored slash arc whose plane tilts/reverses with the active 3-hit melee combo. */
+    private static void slashLight(VertexConsumer vc, WingmanEntity w, Vec3 pos, double yaw, float swing) {
         Vec3 fwd = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)), right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
         Vec3 centre = pos.add(0, 1.15, 0);
         Matrix4f id = new Matrix4f();
-        float[] cyan = com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, white = com.miophas.singularity_iteration.common.suit.PhaseRules.WHITE;
-        int seg = 16;
+        float[] pal = slashPalette(w);
+        int combo = WingmanRenderer.Model.comboOf(w);
+        boolean reverse = combo == 1;
+        boolean cleave = combo == 2;
+        double outerR = cleave ? 1.85 : 1.72;
+        double innerR = cleave ? 0.92 : 0.95;
+        double coreInR = outerR - 0.22;
+        int seg = 18;
         for (int i = 0; i < seg; i++) {
             float k0 = i / (float) seg, k1 = (i + 1F) / seg;
             if (k1 > swing) break;
             float behind = swing - k1;
-            if (behind > 0.5F) continue;
-            float a = 1 - behind / 0.5F;
-            double a0 = Math.toRadians(-80 + 160 * k0), a1 = Math.toRadians(-80 + 160 * k1);
-            Vec3 d0 = fwd.scale(Math.cos(a0)).add(right.scale(Math.sin(a0))).add(0, -0.35 * Math.sin(a0), 0);
-            Vec3 d1 = fwd.scale(Math.cos(a1)).add(right.scale(Math.sin(a1))).add(0, -0.35 * Math.sin(a1), 0);
-            FxDraw.vertex(vc, id, centre.add(d0.scale(1.0)), cyan[0], cyan[1], cyan[2], 0F);
-            FxDraw.vertex(vc, id, centre.add(d0.scale(1.65)), white[0], white[1], white[2], 0.9F * a);
-            FxDraw.vertex(vc, id, centre.add(d1.scale(1.65)), white[0], white[1], white[2], 0.9F * a);
-            FxDraw.vertex(vc, id, centre.add(d1.scale(1.0)), cyan[0], cyan[1], cyan[2], 0F);
+            if (behind > 0.55F) continue;
+            float a = 1 - behind / 0.55F;
+            double a0 = Math.toRadians(reverse ? (85 - 170 * k0) : (-85 + 170 * k0));
+            double a1 = Math.toRadians(reverse ? (85 - 170 * k1) : (-85 + 170 * k1));
+            Vec3 d0, d1;
+            if (cleave) {
+                // Steep overhead cleave plane
+                d0 = fwd.scale(Math.cos(a0)).add(0, -Math.sin(a0) * 0.92, 0).add(right.scale(Math.sin(a0) * 0.25));
+                d1 = fwd.scale(Math.cos(a1)).add(0, -Math.sin(a1) * 0.92, 0).add(right.scale(Math.sin(a1) * 0.25));
+            } else {
+                double tilt = reverse ? 0.36 : -0.40;
+                d0 = fwd.scale(Math.cos(a0)).add(right.scale(Math.sin(a0))).add(0, tilt * Math.sin(a0), 0);
+                d1 = fwd.scale(Math.cos(a1)).add(right.scale(Math.sin(a1))).add(0, tilt * Math.sin(a1), 0);
+            }
+            // Outer energy ribbon
+            FxDraw.vertex(vc, id, centre.add(d0.scale(innerR)), pal[0], pal[1], pal[2], 0F);
+            FxDraw.vertex(vc, id, centre.add(d0.scale(outerR)), pal[0], pal[1], pal[2], 0.72F * a);
+            FxDraw.vertex(vc, id, centre.add(d1.scale(outerR)), pal[0], pal[1], pal[2], 0.72F * a);
+            FxDraw.vertex(vc, id, centre.add(d1.scale(innerR)), pal[0], pal[1], pal[2], 0F);
+            // White-hot leading razor edge
+            FxDraw.vertex(vc, id, centre.add(d0.scale(coreInR)), pal[3], pal[4], pal[5], 0.15F * a);
+            FxDraw.vertex(vc, id, centre.add(d0.scale(outerR + 0.06)), pal[3], pal[4], pal[5], 0.95F * a);
+            FxDraw.vertex(vc, id, centre.add(d1.scale(outerR + 0.06)), pal[3], pal[4], pal[5], 0.95F * a);
+            FxDraw.vertex(vc, id, centre.add(d1.scale(coreInR)), pal[3], pal[4], pal[5], 0.15F * a);
         }
     }
 
@@ -417,28 +467,31 @@ public final class WingmanFx {
         }
     }
 
-    /** Crescent across the front of the suit, swept by the swing progress. */
+    /** Crescent across the front of the suit, swept by the swing progress (classic FX mode). */
     private static void slashArc(VertexConsumer vc, Matrix4f m, WingmanEntity w, Vec3 pos, float swing, float partial) {
         double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
         Vec3 fwd = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)), right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
         Vec3 centre = pos.add(0, 1.15, 0);
-        boolean blade = com.miophas.singularity_iteration.common.armory.SlashBladeCombat.isBlade(w.getMainHandItem());
-        float r = blade ? 1.0F : 0.85F, g = blade ? 0.75F : 0.95F, b = 1.0F;
+        float[] pal = slashPalette(w);
+        int combo = WingmanRenderer.Model.comboOf(w);
+        boolean reverse = combo == 1;
         int seg = 18;
         float head = swing;                                   // 0..1 across the arc
         for (int i = 0; i < seg; i++) {
             float k0 = i / (float) seg, k1 = (i + 1F) / seg;
             if (k1 > head) break;
             float fade0 = Mth.clamp(1 - (head - k0) * 2.2F, 0, 1), fade1 = Mth.clamp(1 - (head - k1) * 2.2F, 0, 1);
-            double a0 = Math.toRadians(-80 + 160 * k0), a1 = Math.toRadians(-80 + 160 * k1);
-            Vec3 d0 = fwd.scale(Math.cos(a0)).add(right.scale(Math.sin(a0))).add(0, -0.35 * Math.sin(a0), 0);
-            Vec3 d1 = fwd.scale(Math.cos(a1)).add(right.scale(Math.sin(a1))).add(0, -0.35 * Math.sin(a1), 0);
-            Vec3 in0 = centre.add(d0.scale(0.7)), out0 = centre.add(d0.scale(1.9));
-            Vec3 in1 = centre.add(d1.scale(0.7)), out1 = centre.add(d1.scale(1.9));
-            FxDraw.vertex(vc, m, in0, r, g, b, 0);
-            FxDraw.vertex(vc, m, out0, r, g, b, 0.85F * fade0);
-            FxDraw.vertex(vc, m, out1, r, g, b, 0.85F * fade1);
-            FxDraw.vertex(vc, m, in1, r, g, b, 0);
+            double a0 = Math.toRadians(reverse ? (85 - 170 * k0) : (-85 + 170 * k0));
+            double a1 = Math.toRadians(reverse ? (85 - 170 * k1) : (-85 + 170 * k1));
+            double tilt = reverse ? 0.35 : -0.35;
+            Vec3 d0 = fwd.scale(Math.cos(a0)).add(right.scale(Math.sin(a0))).add(0, tilt * Math.sin(a0), 0);
+            Vec3 d1 = fwd.scale(Math.cos(a1)).add(right.scale(Math.sin(a1))).add(0, tilt * Math.sin(a1), 0);
+            Vec3 in0 = centre.add(d0.scale(0.75)), out0 = centre.add(d0.scale(1.9));
+            Vec3 in1 = centre.add(d1.scale(0.75)), out1 = centre.add(d1.scale(1.9));
+            FxDraw.vertex(vc, m, in0, pal[0], pal[1], pal[2], 0);
+            FxDraw.vertex(vc, m, out0, pal[3], pal[4], pal[5], 0.85F * fade0);
+            FxDraw.vertex(vc, m, out1, pal[3], pal[4], pal[5], 0.85F * fade1);
+            FxDraw.vertex(vc, m, in1, pal[0], pal[1], pal[2], 0);
         }
     }
 }

@@ -250,19 +250,19 @@ public final class NanoSuit {
         return out;
     }
 
-    /** Burst units on worn nano pieces only. */
+    /** Burst units on worn nano pieces or Living-Nano-lined quantum pieces. */
     private static List<UnitRef> nanoBursts(Player player) {
         List<UnitRef> out = new ArrayList<>(6);
         for (SuitModuleType type : BURST_PRIORITY) {
             ItemStack piece = SuitModules.wornPieceWith(player, type);
-            if (!piece.isEmpty() && SuitModules.isNanoPiece(piece)) out.add(UnitRef.of(type));
+            if (!piece.isEmpty() && (SuitModules.isNanoPiece(piece) || SuitModules.hasLivingLining(piece))) out.add(UnitRef.of(type));
         }
         if (!SuitModuleRegistry.isEmpty()) {
             for (var entry : SuitModuleRegistry.all()) {
                 if (entry.burst() == null || !entry.traits().allows(SuitClass.NANO)) continue;
                 UnitRef unit = UnitRef.of(entry.spec());
                 ItemStack piece = SuitModules.wornPieceWith(player, unit);
-                if (!piece.isEmpty() && SuitModules.isNanoPiece(piece)) out.add(unit);
+                if (!piece.isEmpty() && (SuitModules.isNanoPiece(piece) || SuitModules.hasLivingLining(piece))) out.add(unit);
             }
         }
         return out;

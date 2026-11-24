@@ -6115,5 +6115,10 @@
   "gui.mio_icif.process.slot.blade": "Сюда: режущий диск",
   "gui.mio_icif.process.slot.water": "Сюда: ведро или капсула воды для бака",
   "gui.mio_icif.process.slot.empty_bucket": "Сюда выходят опустевшие вёдра и капсулы",
-  "mio_icif.subtitle.suit.em_hum": "Электромагнитный привод гудит"
+  "mio_icif.subtitle.suit.em_hum": "Электромагнитный привод гудит",
+  "item.mio_icif.module.item_living_nano_lining": "Живая наноподкладка",
+  "item.mio_icif.module.item_living_nano_lining.desc": "Пробуждает внутренний нанослой квантовой брони, открывая %s независ. LP для наномодулей (не занимает квантовые слоты).",
+  "item.mio_icif.module.item_living_nano_lining.bonus": "Нейросвязь: нано-импульсы тратят когерентность; +10% к её восст. за часть и мягкая регенерация вне боя.",
+  "gui.mio_icif.station.status.lining_max": "Живая наноподкладка уже активирована",
+  "gui.mio_icif.station.units_lined": "Кв. %s/%s · Нано %s/%sLP"
 }

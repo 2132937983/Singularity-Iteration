@@ -6115,5 +6115,10 @@
   "gui.mio_icif.process.slot.blade": "放这里：切割刀片",
   "gui.mio_icif.process.slot.water": "放这里：水桶或水单元，给水箱加水",
   "gui.mio_icif.process.slot.empty_bucket": "倒空的桶和单元从这里取出",
-  "mio_icif.subtitle.suit.em_hum": "电磁推进：嗡鸣"
+  "mio_icif.subtitle.suit.em_hum": "电磁推进：嗡鸣",
+  "item.mio_icif.module.item_living_nano_lining": "活体纳米内衬",
+  "item.mio_icif.module.item_living_nano_lining.desc": "唤醒量子护甲内部的纳米内胆，解锁独立 %s LP 内层纳米晶格（不占用外层量子槽位）。",
+  "item.mio_icif.module.item_living_nano_lining.bonus": "神经耦合：内衬纳米爆发改耗量子相干，每件 +10% 相干恢复并附带脱战温和自愈。",
+  "gui.mio_icif.station.status.lining_max": "该量子护甲已活化活体纳米内衬",
+  "gui.mio_icif.station.units_lined": "量子 %s/%s · 活体 %s/%sLP"
 }

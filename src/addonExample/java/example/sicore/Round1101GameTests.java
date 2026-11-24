@@ -202,6 +202,36 @@ public final class Round1101GameTests {
         h.succeed();
     }
 
+    /** Living Nano Lining awakens an independent 4 LP nano layer inside a quantum piece without consuming outer quantum slots. */
+    @GameTest(template = "empty", batch = "round1101_lining", timeoutTicks = 20)
+    public static void livingNanoLiningDualLayer(GameTestHelper h) {
+        ServerPlayer p = Round33GameTests.survivalPlayer(h);
+        Class<?> modules = Round33GameTests.common("suit.SuitModules");
+        ItemStack legs = Round1100GameTests.charged("armor/item_armor_quantum_leggings");
+        // Plain quantum leggings reject nano-only Myofiber
+        h.assertTrue(!Round1100GameTests.install(legs, "MYOFIBER", 1), "plain quantum leggings accepted nano-only myofiber");
+        // Awaken Living Nano Lining (once only)
+        h.assertTrue((Boolean) Round33GameTests.call(modules, "installLivingLining", legs), "failed to awaken living nano lining");
+        h.assertTrue(!(Boolean) Round33GameTests.call(modules, "installLivingLining", legs), "living nano lining installed twice");
+        // Install nano-only modules into internal 4 LP lining (Myofiber 2 LP + Heat-Sink Fins 1 LP = 3/4 LP)
+        h.assertTrue(Round1100GameTests.install(legs, "MYOFIBER", 1), "lined quantum leggings refused myofiber");
+        h.assertTrue(Round1100GameTests.install(legs, "HEAT_SINK_FINS", 1), "lined quantum leggings refused heat-sink fins");
+        h.assertTrue((Integer) Round33GameTests.call(modules, "liningLatticeUsed", legs) == 3, "unexpected lining LP used");
+        h.assertTrue((Integer) Round33GameTests.call(modules, "quantumUnitsUsed", legs) == 0, "nano lining modules consumed outer quantum slots");
+        // Both outer quantum slots (2/2) remain completely free for quantum modules!
+        h.assertTrue(Round1100GameTests.install(legs, "PHASE_JUMP_DRIVE", 1), "outer quantum slot 1 blocked");
+        h.assertTrue(Round1100GameTests.install(legs, "GRID_TELEMETRY", 1), "outer quantum slot 2 blocked");
+        h.assertTrue((Integer) Round33GameTests.call(modules, "quantumUnitsUsed", legs) == 2, "unexpected outer quantum slots used");
+        p.setItemSlot(EquipmentSlot.LEGS, legs);
+        h.assertTrue((Integer) Round33GameTests.call(modules, "livingLiningCount", p) == 1, "living lining count");
+        h.assertTrue(Round33GameTests.call(Round33GameTests.common(CORE), "corePiece", p) != null, "quantum core not online for lined piece");
+        @SuppressWarnings("unchecked")
+        List<?> bursts = (List<?>) Round33GameTests.call(Round33GameTests.common("suit.nano.NanoSuit"), "availableBursts", p);
+        h.assertTrue(bursts.stream().anyMatch(u -> String.valueOf(Round33GameTests.call(u, "key")).equals("myofiber")),
+            "myofiber burst not available on lined quantum leggings");
+        h.succeed();
+    }
+
     private static boolean refused(Runnable r) {
         try {
             r.run();

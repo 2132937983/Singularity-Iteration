@@ -61,6 +61,58 @@ public final class SuitModules {
 
     /** 0.1.10.0: unit slots that one quantum bay expander adds, and the number of expanders a piece takes. */
     public static final int BAY_STEP = 1, BAY_MAX_LEVEL = 1;
+    /** Internal nano lattice points unlocked on a quantum piece once awakened with a Living Nano Lining. */
+    public static final int LIVING_LINING_LP = 4;
+
+    /** True when a quantum piece has its internal Living Nano Lining awakened. */
+    public static boolean hasLivingLining(ItemStack piece) {
+        return isQuantumPiece(piece) && Boolean.TRUE.equals(piece.get(mio_icif_data_components.SUIT_LIVING_LINING.get()));
+    }
+
+    /** True when a Living Nano Lining item can be applied to {@code piece}. */
+    public static boolean canInstallLivingLining(ItemStack piece) {
+        return isQuantumPiece(piece) && slotOf(piece) != null && !hasLivingLining(piece);
+    }
+
+    /** Permanently awakens the internal Living Nano Lining on a quantum piece. */
+    public static boolean installLivingLining(ItemStack piece) {
+        if (!canInstallLivingLining(piece)) return false;
+        piece.set(mio_icif_data_components.SUIT_LIVING_LINING.get(), true);
+        return true;
+    }
+
+    /** Number of worn quantum pieces that have an active Living Nano Lining (0..4). */
+    public static int livingLiningCount(Player player) {
+        int n = 0;
+        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            if (hasLivingLining(player.getItemBySlot(slot))) n++;
+        }
+        return n;
+    }
+
+    /** True when {@code unit} is a nano-only unit (routed to the inner Living Nano Lining on a quantum piece). */
+    public static boolean isNanoOnly(UnitRef unit) {
+        return unit.allows(SuitClass.NANO) && !unit.allows(SuitClass.QUANTUM);
+    }
+
+    /** Lattice points used inside a quantum piece's Living Nano Lining (nano-only modules). */
+    public static int liningLatticeUsed(ItemStack piece) {
+        if (!hasLivingLining(piece)) return 0;
+        int used = 0;
+        for (UnitRef unit : installed(piece).units()) {
+            if (isNanoOnly(unit)) used += unit.latticePoints();
+        }
+        return used;
+    }
+
+    /** Outer quantum unit slots used on a quantum piece (excludes nano-only modules housed in the Living Nano Lining). */
+    public static int quantumUnitsUsed(ItemStack piece) {
+        int used = 0;
+        for (UnitRef unit : installed(piece).units()) {
+            if (!isNanoOnly(unit)) used++;
+        }
+        return used;
+    }
 
     /**
      * 0.1.10.0: unit slots of a quantum piece: the base of its slot plus its expansion bays.
@@ -209,7 +261,8 @@ public final class SuitModules {
     public static InstallCheck check(ItemStack piece, UnitRef unit, int tier) {
         SuitClass suitClass = suitClass(piece);
         if (suitClass == null) return InstallCheck.NOT_A_SUIT_PIECE;
-        if (!unit.allows(suitClass)) return InstallCheck.WRONG_CLASS;
+        boolean liningNano = suitClass == SuitClass.QUANTUM && isNanoOnly(unit) && hasLivingLining(piece);
+        if (!unit.allows(suitClass) && !liningNano) return InstallCheck.WRONG_CLASS;
         EquipmentSlot slot = slotOf(piece);
         if (slot == null || !unit.fits(slot)) return InstallCheck.WRONG_SLOT;
         InstalledModules modules = installed(piece);
@@ -217,7 +270,10 @@ public final class SuitModules {
         if (suitClass == SuitClass.NANO) {
             // 0.1.8.5: a nano piece counts lattice points, not units
             if (latticeUsed(piece) + unit.latticePoints() > latticeCapacity(piece)) return InstallCheck.NO_LATTICE;
-        } else if (modules.units().size() >= capacity(piece)) {             // 0.1.10.0: + expansion bays
+        } else if (liningNano) {
+            // Living Nano Lining: independent internal nano LP budget (does not consume outer quantum slots)
+            if (liningLatticeUsed(piece) + unit.latticePoints() > LIVING_LINING_LP) return InstallCheck.NO_LATTICE;
+        } else if (quantumUnitsUsed(piece) >= capacity(piece)) {             // 0.1.10.0: + expansion bays
             return InstallCheck.FULL;
         }
         return InstallCheck.OK;
@@ -412,7 +468,7 @@ public final class SuitModules {
     /** 0.1.8.5: extra EU capacity of a nano piece from its micro-capacitor lattice. */
     static long capacityBonus(ItemStack stack) {
         if (!stack.has(mio_icif_data_components.SUIT_MODULES.get())) return 0;
-        if (!installed(stack).has(SuitModuleType.MICRO_CAPACITOR) || !isNanoPiece(stack)) return 0;
+        if (!installed(stack).has(SuitModuleType.MICRO_CAPACITOR) || (!isNanoPiece(stack) && !hasLivingLining(stack))) return 0;
         long bonus = com.miophas.singularity_iteration.common.suit.nano.NanoConfig.capacitorBonus();
         // 0.1.8.6 Mk.II: +400 000 EU at the default (bonus x 1.6)
         return tier(stack, SuitModuleType.MICRO_CAPACITOR.id()) >= 2 ? bonus * 8 / 5 : bonus;

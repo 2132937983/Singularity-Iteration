@@ -112,6 +112,11 @@ public final class SuitRegistry {
         ITEMS.register("module/item_quantum_bay_expander",
             () -> new com.miophas.singularity_iteration.common.suit.quantum.QuantumBayItem(new Item.Properties()));
 
+    /** Living nano lining: awakens a quantum piece's internal nano undersuit layer in the station. */
+    public static final DeferredItem<com.miophas.singularity_iteration.common.suit.quantum.LivingNanoLiningItem> LIVING_NANO_LINING =
+        ITEMS.register("module/item_living_nano_lining",
+            () -> new com.miophas.singularity_iteration.common.suit.quantum.LivingNanoLiningItem(new Item.Properties()));
+
     public static final DeferredRegister<net.minecraft.world.effect.MobEffect> EFFECTS =
         DeferredRegister.create(BuiltInRegistries.MOB_EFFECT, Singularity_Iteration.MOD_ID);
 

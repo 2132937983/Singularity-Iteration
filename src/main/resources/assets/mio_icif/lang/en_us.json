@@ -6115,5 +6115,10 @@
   "gui.mio_icif.process.slot.blade": "Put here: a cutting blade",
   "gui.mio_icif.process.slot.water": "Put here: a water bucket or cell to fill the tank",
   "gui.mio_icif.process.slot.empty_bucket": "Emptied buckets and cells come out here",
-  "mio_icif.subtitle.suit.em_hum": "Electromagnetic drive hums"
+  "mio_icif.subtitle.suit.em_hum": "Electromagnetic drive hums",
+  "item.mio_icif.module.item_living_nano_lining": "Living Nano Lining",
+  "item.mio_icif.module.item_living_nano_lining.desc": "Awakens a quantum armor piece's internal nano undersuit, adding %s independent internal nano LP (does not use outer quantum slots).",
+  "item.mio_icif.module.item_living_nano_lining.bonus": "Bio-neural coupling: lined nano bursts pay quantum coherence; +10% coherence regen per lined piece and gentle out-of-combat healing.",
+  "gui.mio_icif.station.status.lining_max": "Living Nano Lining already awakened",
+  "gui.mio_icif.station.units_lined": "Q %s/%s · Living %s/%sLP"
 }

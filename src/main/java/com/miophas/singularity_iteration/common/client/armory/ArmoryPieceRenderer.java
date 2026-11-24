@@ -66,8 +66,11 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         if (!renderPiece(entity, partialTick, pose, buffers, light)) return;
         Vec3 at = entity.flightPosition(partialTick);
         Vec3 origin = entity.getPosition(partialTick);
-        // 0.1.10.31 (A-6): ion trail and re-entry glow, in world axes around the render position
-        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.flight(entity, pose, buffers, origin, at, partialTick);
+        // 0.1.10.31 (A-6): ion trail, phase-shock/re-entry glow, and hover->snap magnetic tethers
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) {
+            PieceFx.flight(entity, pose, buffers, origin, at, partialTick);
+            PieceFx.tether(entity, pose, buffers, origin, at, partialTick);
+        }
         // 0.1.10.32 (A-4): afterimages of a piece that just left a transfer gate
         float age = entity.age(partialTick);
         if (!entity.isReturn() && age >= 0 && age < 10 && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.armoryFx()
@@ -182,7 +185,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
                 new SegmentClock(ret, age, flight), flash ? latch : -1F);
         }
         if (!drawn && isDrawnBlade(stack)) {
-            drawn = renderDrawnBlade(pose, buffers, light, stack, entity, k);
+            drawn = renderDrawnBlade(pose, buffers, light, stack, entity, k, Math.max(0F, age - flight));
         }
         if (!drawn) {
             float s = 0.55F + 0.2F * k;
@@ -317,19 +320,20 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             // 0.1.10.31 (A-6): the seam light of a locking segment (and of every segment at the final latch)
             float seamAge = latch >= 0 ? latch : clock.seatAge(j, n);
             if (seamAge >= 0 && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx())
-                drawSeams(pose, buffers, baked, geometry, seg, o, seamAge);
+                drawSeams(pose, buffers, baked, geometry, seg, o, seamAge,
+                    com.miophas.singularity_iteration.common.armory.SuitUpFxRules.coreColor(PieceFx.tierOf(stack)));
         }
     }
 
     /** 0.1.10.31: the seam light of one segment, with its parts displaced as {@link #drawSegment} draws them. */
     private static void drawSeams(PoseStack pose, MultiBufferSource buffers, com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked,
-                                  java.util.Map<String, float[][]> geometry, BakedSegment seg, float o, float age) {
+                                  java.util.Map<String, float[][]> geometry, BakedSegment seg, float o, float age, float[] col) {
         for (String name : seg.parts()) {
             var part = partFor(baked, name);
             float sx = part.x, sy = part.y, sz = part.z, rx = part.xRot, ry = part.yRot, rz = part.zRot;
             displaceBaked(part, seg.id(), o);
             PieceFx.seams(pose, buffers, part,
-                com.miophas.singularity_iteration.common.client.render.BakedArmorModel.segment(geometry.get(name), seg.filter()), age);
+                com.miophas.singularity_iteration.common.client.render.BakedArmorModel.segment(geometry.get(name), seg.filter()), age, col);
             part.x = sx; part.y = sy; part.z = sz; part.xRot = rx; part.yRot = ry; part.zRot = rz;
         }
     }
@@ -375,10 +379,13 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
      * 0.1.10.6: eased stance turn and a gentle glide (no thruster buffeting) for blades.
      */
     private boolean renderDrawnBlade(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack,
-                                     ArmoryPieceEntity entity, float k) {
+                                     ArmoryPieceEntity entity, float k, float hoverTicks) {
         pose.pushPose();
         float stance = k * k * (3 - 2 * k);                 // smoothstep: no snap at the start of the brake
         pose.mulPose(Axis.XP.rotationDegrees(READY_TILT * stance));
+        // 360-degree axial spin-to-grip flourish as the blade snaps cleanly into the wearer's palm
+        float spin = com.miophas.singularity_iteration.common.armory.SuitUpFxRules.bladeSpinDeg(hoverTicks);
+        if (spin > 0.01F && spin < 359.99F) pose.mulPose(Axis.ZP.rotationDegrees(spin));
         boolean drawn;
         if (SlashBladeResharpedBridge.isBlade(stack)) {
             // blade.obj: tip at -x, grip near x = GRIP_X; turn -x onto the path

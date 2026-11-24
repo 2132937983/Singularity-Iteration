@@ -60,12 +60,16 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
 
     // ------------------------------------------------------------------ delivery
     private void tickDeliver(ArmoryPieceEntity piece, float age) {
+        boolean blade = ArmoryPieceRenderer.isDrawnBlade(piece.item());
+        if (blade) {
+            tickDeliverBlade(piece, age);
+            return;
+        }
         int flight = piece.duration();
         if (age < 0) {
             if (age >= -ArmoryFlight.HATCH_TICKS) {
-                // pressurising in the hatch
+                // pressurising in the hatch (electromagnetic sparks instead of bulky white clouds)
                 Vec3 at = piece.flightPosition(0);
-                if (RANDOM.nextInt(2) == 0) spawn(piece, ParticleTypes.CLOUD, at.add(jitter(0.25)).add(0, -0.2, 0), new Vec3(0, 0.04, 0).add(jitter(0.03)));
                 if (RANDOM.nextInt(3) == 0) spawn(piece, ParticleTypes.ELECTRIC_SPARK, at.add(jitter(0.2)), jitter(0.08));
             }
             return;
@@ -75,10 +79,7 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
                 play(piece, mio_icif_sounds.ARMORY_LAUNCH.get(), 1.0F, 0.95F + RANDOM.nextFloat() * 0.1F);
                 Vec3 at = piece.flightPosition(0);
                 for (int i = 0; i < 6; i++) spawn(piece, ArmoryRegistry.CORE.get(), at.add(jitter(0.1)), jitter(0.05));
-                for (int i = 0; i < 14; i++) {
-                    double a = i / 14.0 * Math.PI * 2;
-                    spawn(piece, ParticleTypes.CLOUD, at.add(0, -0.3, 0), new Vec3(Math.cos(a) * 0.18, 0.01, Math.sin(a) * 0.18));
-                }
+                SuitUpFx.purgeRing(at, PieceFx.tierOf(piece.item()));
             });
             once(piece, JET, () -> {
                 Minecraft.getInstance().getSoundManager().play(new JetSound(piece, mio_icif_sounds.ARMORY_JET_LOOP.get(), 0.7F, false));
@@ -89,12 +90,12 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
             if (t >= ArmoryFlight.BRAKE_AT) {
                 once(piece, BRAKE, () -> {
                     play(piece, mio_icif_sounds.ARMORY_BRAKE.get(), 1.0F, 1.0F);
-                    retroBlast(piece, 14);
+                    retroBlast(piece, 10);
                 });
-                retroBlast(piece, 3);
+                retroBlast(piece, 2);
                 if (t > 0.9) once(piece, PULSE_A, () -> pulse(piece));
             } else {
-                exhaust(piece, t < 0.12 ? 2.0 : 1.0);
+                exhaust(piece, t < 0.12 ? 1.8 : 0.9);
             }
             return;
         }
@@ -125,14 +126,15 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
         float snap = hover - ArmoryFlight.HOVER_TICKS;
         if (snap < ArmoryFlight.SNAP_TICKS) {
             once(piece, SNAP, () -> play(piece, mio_icif_sounds.ARMORY_PULSE.get(), 0.8F, 0.75F));
-            exhaust(piece, 1.0);
+            exhaust(piece, 0.8);
             return;
         }
         float latch = snap - ArmoryFlight.SNAP_TICKS;
         once(piece, LATCH, () -> {
             play(piece, mio_icif_sounds.ARMORY_LATCH.get(), 1.0F, 0.95F + RANDOM.nextFloat() * 0.1F);
-            burst(piece, ParticleTypes.ELECTRIC_SPARK, 10, 0.3);
+            burst(piece, ParticleTypes.ELECTRIC_SPARK, 10, 0.28);
             burst(piece, ArmoryRegistry.CORE.get(), 4, 0.06);
+            SuitUpFx.lockRing(piece.flightPosition(0), PieceFx.tierOf(piece.item()));
         });
         if (latch >= 3) once(piece, LOCK, () -> {
             play(piece, mio_icif_sounds.ARMORY_LOCK.get(), 0.9F, 1.0F);
@@ -140,11 +142,49 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
         });
         if (latch >= ArmoryFlight.LATCH_TICKS - 1) once(piece, HISS, () -> {
             play(piece, mio_icif_sounds.ARMORY_HISS.get(), 0.7F, 1.0F);
-            burst(piece, ParticleTypes.CLOUD, 3, 0.05);
-            // 0.1.10.32 (A-5): the last piece of the suit-up locked: the suit boots
-            if (piece.target() instanceof net.minecraft.world.entity.LivingEntity wearer && lastToLock(piece))
+            // 0.1.10.32 (A-5): the last piece of the suit-up locked: the suit boots with 3-beat Core Ignition
+            if (piece.target() instanceof net.minecraft.world.entity.LivingEntity wearer && lastToLock(piece)) {
                 com.miophas.singularity_iteration.common.client.suit.SuitBoot.start(wearer);
+                SuitUpFx.fullBoot(wearer);
+            }
         });
+    }
+
+    /** Dedicated sword-gliding choreography for drawn blades: zero jet engines, zero smoke, pure sword-wind & steel chime. */
+    private void tickDeliverBlade(ArmoryPieceEntity piece, float age) {
+        int flight = piece.duration();
+        if (age < 0) return;
+        if (age < flight) {
+            once(piece, LAUNCH, () -> {
+                play(piece, mio_icif_sounds.ARMORY_FLYBY.get(), 0.85F, 1.28F);
+                burst(piece, ParticleTypes.ELECTRIC_SPARK, 5, 0.14);
+            });
+            if (flight - age <= 20) {
+                once(piece, FLYBY, () -> play(piece, mio_icif_sounds.ARMORY_FLYBY.get(), 0.60F, 1.38F));
+            }
+            return;
+        }
+        float hover = age - flight;
+        float snap = hover - ArmoryFlight.HOVER_TICKS;
+        if (snap >= 0 && snap < ArmoryFlight.SNAP_TICKS) {
+            once(piece, SNAP, () -> play(piece, net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_SWEEP, 0.55F, 1.35F));
+            return;
+        }
+        float latch = snap - ArmoryFlight.SNAP_TICKS;
+        if (latch >= 0) {
+            once(piece, LATCH, () -> {
+                play(piece, net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_SWEEP, 0.65F, 1.45F);
+                play(piece, net.minecraft.sounds.SoundEvents.AMETHYST_CLUSTER_HIT, 0.75F, 1.65F);
+                burst(piece, ParticleTypes.ELECTRIC_SPARK, 8, 0.22);
+                SuitUpFx.bladeCatch(piece.target(), piece.flightPosition(0), SlashBladeResharpedBridge.bladeColor(piece.item()));
+            });
+            if (latch >= ArmoryFlight.LATCH_TICKS - 1) once(piece, HISS, () -> {
+                if (piece.target() instanceof net.minecraft.world.entity.LivingEntity wearer && lastToLock(piece)) {
+                    com.miophas.singularity_iteration.common.client.suit.SuitBoot.start(wearer);
+                    SuitUpFx.fullBoot(wearer);
+                }
+            });
+        }
     }
 
     /** 0.1.10.32: true when no other delivery piece for the same wearer is still on its way (this one locks last). */
@@ -160,32 +200,31 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
 
     // ------------------------------------------------------------------ return
     private void tickReturn(ArmoryPieceEntity piece, float age) {
+        boolean blade = ArmoryPieceRenderer.isDrawnBlade(piece.item());
         once(piece, UNLOCK, () -> {
-            play(piece, mio_icif_sounds.ARMORY_UNLOCK.get(), 0.9F, 1.0F);
+            play(piece, blade ? net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_SWEEP : mio_icif_sounds.ARMORY_UNLOCK.get(),
+                blade ? 0.65F : 0.9F, blade ? 1.35F : 1.0F);
             burst(piece, ParticleTypes.ELECTRIC_SPARK, 6, 0.2);
         });
-        // every lock blows at once: a "whump" of vented pressure around each piece
+        // every lock blows at once: crisp electromagnetic decoupling ring instead of cloudy white smoke
         once(piece, POOF, () -> {
-            play(piece, mio_icif_sounds.ARMORY_PULSE.get(), 1.0F, 0.55F);
+            if (!blade) play(piece, mio_icif_sounds.ARMORY_PULSE.get(), 1.0F, 0.55F);
             Vec3 at = piece.flightPosition(0);
-            for (int i = 0; i < 16; i++) {
-                double a = i / 16.0 * Math.PI * 2;
-                spawn(piece, ParticleTypes.CLOUD, at, new Vec3(Math.cos(a) * 0.22, (RANDOM.nextDouble() - 0.3) * 0.12, Math.sin(a) * 0.22));
-            }
-            burst(piece, ParticleTypes.POOF, 6, 0.1);
+            SuitUpFx.purgeRing(at, PieceFx.tierOf(piece.item()));
             burst(piece, ArmoryRegistry.CORE.get(), 3, 0.08);
         });
-        if (age < ArmoryFlight.PURGE_TICKS) {
-            if (age < 4) burst(piece, ParticleTypes.CLOUD, 1, 0.03);
-            return;
-        }
+        if (age < ArmoryFlight.PURGE_TICKS) return;
         once(piece, PURGE, () -> {
-            play(piece, mio_icif_sounds.ARMORY_PURGE.get(), 1.0F, 1.05F);
-            Minecraft.getInstance().getSoundManager().play(new JetSound(piece, mio_icif_sounds.ARMORY_JET_LOOP.get(), 0.6F, false));
-            burst(piece, ArmoryRegistry.CORE.get(), 5, 0.08);
-            burst(piece, ArmoryRegistry.THRUST.get(), 8, 0.12);
+            if (blade) {
+                play(piece, mio_icif_sounds.ARMORY_FLYBY.get(), 0.75F, 1.35F);
+            } else {
+                play(piece, mio_icif_sounds.ARMORY_PURGE.get(), 1.0F, 1.05F);
+                Minecraft.getInstance().getSoundManager().play(new JetSound(piece, mio_icif_sounds.ARMORY_JET_LOOP.get(), 0.6F, false));
+                burst(piece, ArmoryRegistry.CORE.get(), 5, 0.08);
+                burst(piece, ArmoryRegistry.THRUST.get(), 8, 0.12);
+            }
         });
-        exhaust(piece, 1.6);
+        if (!blade) exhaust(piece, 1.4);
     }
 
     // ------------------------------------------------------------------ emitters

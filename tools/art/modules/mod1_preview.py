@@ -1,12 +1,17 @@
-"""Render the two MOD1 inventory contact sheets. Requires Pillow >= 10.1 and Git.
+"""Render the MOD1 inventory previews. Requires Pillow >= 10.1 and Git.
 
 From any directory, run this script after mod1_render.py. The old samples come
 from the brief's Git commit, so regenerating the sheets never changes the baseline.
+The Chinese guide uses an installed CJK font, optionally selected with --cjk-font.
 """
 
+import argparse
 import io
 import math
+import os
 import subprocess
+import sys
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -151,7 +156,78 @@ def pair_sheet(groups, icons):
     sheet.save(DESTINATION / "MOD1-pairs.png")
 
 
+GUIDE_LABELS = {
+    "ore_scanner": "扫描矿脉", "grid_telemetry": "测电压", "entity_esp": "标记生物",
+    "ballistic": "预览弹道", "behavior_predictor": "预判走位", "holomap": "全息地图",
+    "deflector": "护盾挡伤", "smart_guidance": "弹道追踪", "resonance_field": "行走碎块",
+    "phase_jump_drive": "向前瞬移", "phase_modulator": "攻击穿身",
+    "coherence_capacitor": "技能蓄能", "entanglement_relay": "僚机齐射", "compute_core": "扩充算力",
+    "myofiber": "疾跑冲刺", "thermoregulator": "抗寒防火", "emp_emitter": "电磁脉冲",
+    "optical_camo": "光学隐身", "micro_capacitor": "增加储电", "gecko_setae": "贴墙攀爬",
+    "shock_gel": "减摔反弹", "heat_sink_fins": "提升热容量", "thermal_camo": "潜行降温",
+    "jammer": "干扰锁定", "recon_cloud": "透墙侦察", "kinetic_mesh": "装甲减伤",
+    "solar_skin": "日光充电", "blast_warning": "爆炸倒计时", "threat_sensor": "危险警报",
+    "toxin_filter": "滤毒防辐射", "self_repair": "自动回血", "hydrophobic": "游泳加速",
+    "kinetic_generator": "行走充电", "core_graviton": "重力子壁垒", "core_propulsion": "推进核心",
+    "core_solar_array_1": "光伏阵列Ⅰ", "core_solar_array_2": "光伏阵列Ⅱ",
+    "core_solar_array_3": "光伏阵列Ⅲ", "quantum_bay_expander": "量子扩展槽",
+    "living_nano_lining": "活体内衬", "nano_lattice_densifier": "晶格致密剂",
+}
+
+
+def chinese_font(override):
+    windows_fonts = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+    candidates = [override] if override else [
+        windows_fonts / "msyh.ttc",
+        windows_fonts / "NotoSansSC-VF.ttf",
+        "/System/Library/Fonts/PingFang.ttc",
+        "/System/Library/Fonts/STHeiti Medium.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "NotoSansCJKsc-Regular.otf",
+    ]
+    for candidate in candidates:
+        try:
+            font = ImageFont.truetype(str(candidate), 15)
+        except OSError:
+            continue
+        # A Latin-only font generally renders these as identical missing glyphs.
+        if bytes(font.getmask("量")) != bytes(font.getmask("纳")):
+            return font
+    return None
+
+
+def player_guide(groups, icons, font):
+    columns, cell_width = 8, 92
+    margin, header, row_height, section_gap = 20, 30, 79, 4
+    names_by_group = [[name for name in names if not name.endswith("_mk2")] for names in groups]
+    rows_per_group = [math.ceil(len(names) / columns) for names in names_by_group]
+    width = margin * 2 + columns * cell_width
+    height = margin * 2 + len(groups) * header + sum(rows_per_group) * row_height + (len(groups) - 1) * section_gap
+    sheet = Image.new("RGB", (width, height), PAPER)
+    draw = ImageDraw.Draw(sheet)
+    heading_font = font.font_variant(size=20)
+    y = margin
+    for family, names, rows in zip(("量子模块", "纳米模块", "共用模块", "配件"), names_by_group, rows_per_group):
+        draw.text((margin, y), family, anchor="lt", font=heading_font, fill=INK)
+        line_x = margin + round(draw.textlength(family, font=heading_font)) + 12
+        draw.line((line_x, y + 10, width - margin - 1, y + 10), fill=RULE)
+        y += header
+        for i, name in enumerate(names):
+            cx = margin + (i % columns) * cell_width + cell_width // 2
+            top = y + (i // columns) * row_height
+            square = slot(icons[name], 3)
+            sheet.paste(square, (cx - square.width // 2, top))
+            key = name.removeprefix("item_").removeprefix("module_")
+            draw.text((cx, top + square.height + 5), GUIDE_LABELS[key], anchor="mt", font=font, fill=INK)
+        y += rows * row_height + section_gap
+    return sheet
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cjk-font", metavar="FILE", help="Chinese .ttf, .ttc or .otf font for MOD1-guide.png")
+    args = parser.parse_args()
     groups = batch_groups()
     icons = {}
     for names in groups:
@@ -161,6 +237,14 @@ def main():
     DESTINATION.mkdir(exist_ok=True)
     overview(groups, icons)
     pair_sheet(groups, icons)
+    font = chinese_font(args.cjk_font)
+    if font is None:
+        message = "MOD1-guide.png requires a Chinese font. Supply one with --cjk-font FILE."
+        if args.cjk_font:
+            parser.error(message)
+        print(message, file=sys.stderr)
+    else:
+        player_guide(groups, icons, font).save(DESTINATION / "MOD1-guide.png")
 
 
 if __name__ == "__main__":

@@ -39,6 +39,9 @@ public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuPro
         @Override public void setChanged() { super.setChanged(); MaterialInterfaceBlockEntity.this.setChanged(); }
     };
     private final IItemHandler handler = new InvWrapper(items);
+    @SuppressWarnings("unchecked")
+    private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<IItemHandler, Direction>[] neighbourCaches =
+        new net.neoforged.neoforge.capabilities.BlockCapabilityCache[6];
 
     public MaterialInterfaceBlockEntity(BlockPos pos, BlockState state) {
         super(BuilderRegistry.MATERIAL_INTERFACE_ENTITY.get(), pos, state);
@@ -46,6 +49,22 @@ public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuPro
 
     public IItemHandler handler() { return handler; }
     public SimpleContainer container() { return items; }
+
+    @Override
+    public boolean hasAny(Item item) {
+        for (int i = 0; i < items.getContainerSize(); i++) {
+            ItemStack st = items.getItem(i);
+            if (!st.isEmpty() && plain(st, item)) return true;
+        }
+        for (IItemHandler h : neighbours()) {
+            int slots = h.getSlots();
+            for (int s = 0; s < slots; s++) {
+                ItemStack st = h.getStackInSlot(s);
+                if (!st.isEmpty() && plain(st, item)) return true;
+            }
+        }
+        return false;
+    }
 
     /** Number of {@code item} in the own slots and the adjacent storages. */
     @Override
@@ -115,12 +134,24 @@ public class MaterialInterfaceBlockEntity extends BlockEntity implements MenuPro
     private java.util.List<IItemHandler> neighbours() {
         java.util.List<IItemHandler> out = new java.util.ArrayList<>(6);
         if (level == null) return out;
+        net.minecraft.server.level.ServerLevel server = level instanceof net.minecraft.server.level.ServerLevel sl ? sl : null;
         for (Direction d : Direction.values()) {
             BlockPos at = worldPosition.relative(d);
             if (!level.isLoaded(at)) continue;
             BlockEntity be = level.getBlockEntity(at);
             if (be instanceof MaterialInterfaceBlockEntity || be instanceof BlueprintBuilderBlockEntity) continue;
-            IItemHandler h = level.getCapability(Capabilities.ItemHandler.BLOCK, at, d.getOpposite());
+            IItemHandler h;
+            if (server != null) {
+                var cache = neighbourCaches[d.ordinal()];
+                if (cache == null || cache.level() != server) {
+                    cache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(
+                        Capabilities.ItemHandler.BLOCK, server, at, d.getOpposite());
+                    neighbourCaches[d.ordinal()] = cache;
+                }
+                h = cache.getCapability();
+            } else {
+                h = level.getCapability(Capabilities.ItemHandler.BLOCK, at, d.getOpposite());
+            }
             if (h != null) out.add(h);
         }
         return out;

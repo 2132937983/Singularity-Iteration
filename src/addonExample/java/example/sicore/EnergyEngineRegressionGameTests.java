@@ -5,14 +5,18 @@ import com.miophas.singularity_iteration.core.platform.neoforge.energy.PlatformT
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.ConductorRegistry;
+import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
+import com.miophas.singularity_iteration.core.runtime.energy.engine.NetworkCell;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -159,6 +163,71 @@ public final class EnergyEngineRegressionGameTests {
             h.setBlock(sourcePos, Blocks.AIR); h.setBlock(wirePos, Blocks.AIR); h.setBlock(sinkPos, Blocks.AIR);
         });
         h.runAfterDelay(42, h::succeed);
+    }
+
+    @GameTest(template = "empty", batch = "transformer_off_thread_save", timeoutTicks = 40)
+    public static void transformerOffThreadSaveAndReadMatchActiveCellBalance(GameTestHelper h) {
+        BlockPos pos = new BlockPos(1, 1, 1);
+        h.setBlock(pos, facing("wiring/transformer_hv_ev", Direction.EAST));
+        IndependentTransformerBlockEntity transformer = h.getBlockEntity(pos);
+        EnergyAmount initial = EnergyAmount.fromDouble(123.75);
+        CompoundTag seed = new CompoundTag();
+        seed.putDouble("buffer", initial.whole());
+        seed.putLong("scex_energy_fraction", initial.fraction());
+        seed.putInt("mode", 0);
+        transformer.loadWithComponents(seed, h.getLevel().registryAccess());
+
+        var snap = transformer.snapshot(true).orElseThrow();
+        EnergyAmount delta = EnergyAmount.fromDouble(50.5);
+        EnergyAmount expected = initial.add(delta);
+        var escrow = new NetworkCell(delta);
+        boolean committed = NetworkCell.commit(List.of(
+            new NetworkCell.Write(escrow.quote(), EnergyAmount.ZERO),
+            new NetworkCell.Write(snap.energy(), expected)
+        ), EnergyAmount.ZERO, () -> true);
+        h.assertTrue(committed, "Expected transformer cell commit to succeed");
+
+        var savedTag = new AtomicReference<CompoundTag>();
+        var readStored = new AtomicReference<Double>();
+        var quoteError = new AtomicReference<Throwable>();
+        var failure = new AtomicReference<Throwable>();
+        Thread offThread = new Thread(() -> {
+            try {
+                savedTag.set(transformer.saveWithFullMetadata(h.getLevel().registryAccess()));
+                readStored.set(transformer.storedEnergy());
+                try {
+                    escrow.quote();
+                } catch (Throwable t) {
+                    quoteError.set(t);
+                }
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        }, "issue41-render-thread-sim");
+        offThread.start();
+        try {
+            offThread.join(5_000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            h.fail("Interrupted while waiting for off-thread save simulation");
+            return;
+        } finally {
+            h.setBlock(pos, Blocks.AIR);
+        }
+
+        h.assertTrue(!offThread.isAlive(), "Off-thread save simulation timed out");
+        h.assertTrue(failure.get() == null, "Off-thread transformer save/read threw: " + failure.get());
+        CompoundTag out = savedTag.get();
+        h.assertTrue(out != null && out.getDouble("buffer") == (double) expected.whole()
+                && out.getLong("scex_energy_fraction") == expected.fraction()
+                && out.getInt("mode") == 0,
+            "Off-thread saved NBT mismatch: " + out);
+        h.assertTrue(readStored.get() != null && readStored.get() == (double) expected.whole(),
+            "Off-thread storedEnergy mismatch: " + readStored.get());
+        h.assertTrue(quoteError.get() instanceof IllegalStateException
+                && "Wrong storage thread".equals(quoteError.get().getMessage()),
+            "NetworkCell.quote() must still enforce owner thread: " + quoteError.get());
+        h.succeed();
     }
 
     private static ConductorRegistry.Position point(BlockPos p) { return new ConductorRegistry.Position(p.getX(), p.getY(), p.getZ()); }

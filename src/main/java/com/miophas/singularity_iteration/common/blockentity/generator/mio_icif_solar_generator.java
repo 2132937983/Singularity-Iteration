@@ -144,6 +144,12 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         };
     }
 
+    // Cached biome properties (refreshed periodically instead of every 20 ticks via 3D Voronoi lookup).
+    private boolean biomeCached;
+    private boolean cachedPrecipitation;
+    private float cachedBiomeTemp;
+    private int biomeRefreshIn;
+
     // ---- the environment ---------------------------------------------------------------------------------------------
 
     /** Reads the sun, the weather, the shade and the temperature, and sets the output for the next second. */
@@ -154,11 +160,17 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         if (!level.dimensionType().hasSkyLight()) exposure = NO_SKY;
         else if (level.canSeeSky(up)) exposure = OPEN;
         else exposure = (skyLight = level.getBrightness(LightLayer.SKY, up)) > 0 ? DIFFUSE : DARK;
-        var biome = level.getBiome(worldPosition).value();
-        boolean precipitation = biome.hasPrecipitation();
+        if (!biomeCached || biomeRefreshIn-- <= 0) {
+            var biome = level.getBiome(worldPosition).value();
+            cachedPrecipitation = biome.hasPrecipitation();
+            cachedBiomeTemp = biome.getBaseTemperature();
+            biomeCached = true;
+            biomeRefreshIn = 30; // 30 * REFRESH (20t) = 600 ticks
+        }
+        boolean precipitation = cachedPrecipitation;
         float rain = precipitation ? level.getRainLevel(1) : 0, thunder = precipitation ? level.getThunderLevel(1) : 0;
         Reading r = evaluate(profile, dayPower, corePower, dayTime, exposure, skyLight, precipitation, precipitation && level.isRaining(),
-            rain, thunder, biome.getBaseTemperature());
+            rain, thunder, cachedBiomeTemp);
         elevation = r.elevation();
         clearSky = r.clearSky();
         cloud = r.cloud();
@@ -221,8 +233,9 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         if (!network && be.shouldDirectlyDistributeEnergy()) be.distributeEnergy();
         else if (!network) be.distributeEnergyToCompatSinks();
         if (be.refreshIn-- <= 0) {
+            boolean first = !be.biomeCached;
             be.sense(level);
-            be.refreshIn = REFRESH - 1;
+            be.refreshIn = first ? Math.floorMod(pos.hashCode(), REFRESH) : REFRESH - 1;
         }
         boolean pooled = be.grid.size() > 1;
         // the basic panel's 2 EU buffer; in a grid it holds the grid's pool (0.1.11.155)
@@ -502,6 +515,7 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
             System.arraycopy(o, 0, recordOut, 0, SAMPLES);
         }
         today = tag.getDouble("SolarToday");
+        biomeCached = false;
         refreshIn = 0;   // read the world on the first tick, never a saved value
     }
 

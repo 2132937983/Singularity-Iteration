@@ -38,20 +38,17 @@ public record Blueprint(String name, List<Entry> entries, Vec3i size) {
         return rt.maxMemory() - (rt.totalMemory() - rt.freeMemory());
     }
 
-    /** Whether {@code bytes} more fit in the memory; before saying no it collects the garbage once and looks again. */
+    /** Whether {@code bytes} more fit in the current heap headroom (without forcing a stop-the-world GC). */
     public static boolean affordable(long bytes) {
-        if (bytes <= free()) return true;
-        System.gc();
         return bytes <= free();
     }
 
     /**
      * Counts the blocks of a blueprint being read and refuses it ({@link TooLarge}) when the memory free at the start cannot
-     * hold them, every 65,536 blocks. The garbage is collected at most once a read (a full collection pauses the game).
+     * hold them, every 65,536 blocks.
      */
     static final class Budget {
         private long blocks, free = free();
-        private boolean collected;
 
         void add() {
             if ((++blocks & 0xFFFF) == 0) check();
@@ -59,11 +56,8 @@ public record Blueprint(String name, List<Entry> entries, Vec3i size) {
 
         private void check() {
             if (blocks * BYTES_PER_BLOCK <= free) return;
-            if (!collected) {
-                collected = true;
-                System.gc();
-                free = free() + blocks * 64;   // what the blocks read so far take is in use now
-            }
+            // Re-sample live headroom once (without forcing System.gc() on the game thread).
+            free = Math.max(free, free() + blocks * 64);
             if (blocks * BYTES_PER_BLOCK > free)
                 throw new TooLarge(blocks + " blocks read, " + (free >> 20) + " MB free");
         }

@@ -124,9 +124,10 @@ public class mio_icif_chestplate_jetpack_elc extends mio_icif_armor_elc
         setModeInternal(stack, mode == JetpackMode.HOVER ? MODE_HOVER : MODE_JETPACK);
     }
 
+    @SuppressWarnings("deprecation")
     public int getModeInternal(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data != null && data.copyTag().getInt(MODE_KEY) == MODE_HOVER ? MODE_HOVER : MODE_JETPACK;
+        return data != null && data.getUnsafe().getInt(MODE_KEY) == MODE_HOVER ? MODE_HOVER : MODE_JETPACK;
     }
 
     public void setModeInternal(ItemStack stack, int mode) {

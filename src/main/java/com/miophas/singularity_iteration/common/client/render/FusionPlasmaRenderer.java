@@ -51,7 +51,8 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
     static final int BREAKDOWN_TICKS = 20, GROW_TICKS = 40, FLARE_TICKS = 6, COLLAPSE_TICKS = 24, FADE_TICKS = 20, ELM_TICKS = 12;
 
     /** The channel of one console: plasma cells relative to it, which are at the edge, the torus's centre and major radius. */
-    private record Channel(List<int[]> cells, Set<Integer> edge, double cx, double cy, double cz, double major, List<BlockPos> exhausts, Direction[] exhaustFacing) {}
+    private record Channel(List<int[]> cells, boolean[] edge, double cx, double cy, double cz, double major,
+                           List<BlockPos> exhausts, Direction[] exhaustFacing, long nextPortCheckTick) {}
 
     /** What one console's plasma is doing on this client. */
     private static final class Anim {
@@ -63,49 +64,64 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
 
     private final Map<BlockPos, Channel> channels = new HashMap<>();
     private final Map<BlockPos, Anim> anims = new HashMap<>();
+    private Level lastLevel;
 
     public FusionPlasmaRenderer(BlockEntityRendererProvider.Context context) {}
 
-    @Override public boolean shouldRenderOffScreen(FusionControllerBlockEntity be) { return true; }
+    @Override public boolean shouldRenderOffScreen(FusionControllerBlockEntity be) {
+        FusionControllerBlockEntity.Fx fx = be.fx();
+        return fx.plasma() || fx.state() == FusionPlasma.State.DISRUPTED.ordinal();
+    }
     @Override public int getViewDistance() { return 128; }
     @Override public AABB getRenderBoundingBox(FusionControllerBlockEntity be) { return new AABB(be.getBlockPos()).inflate(28); }
 
     private Channel channel(FusionControllerBlockEntity be) {
         BlockPos pos = be.getBlockPos();
+        Level level = be.getLevel();
+        long now = level == null ? 0L : level.getGameTime();
+        Channel c = channels.get(pos);
+        if (c != null && (!c.exhausts().isEmpty() || level == null || now < c.nextPortCheckTick())) return c;
         BlockState state = be.getBlockState();
         Direction facing = state.hasProperty(mio_icif_block_fusion_controller.FACING) ? state.getValue(mio_icif_block_fusion_controller.FACING) : Direction.EAST;
-        Channel c = channels.get(pos);
-        if (c != null) return c;
         FusionStructure s = FusionStructure.tokamak();
-        List<BlockPos> plasma = s.positions(pos, facing, FusionStructure.Part.PLASMA);
-        Set<Long> set = new HashSet<>();
-        for (BlockPos p : plasma) set.add(p.asLong());
-        List<int[]> cells = new ArrayList<>();
-        Set<Integer> edge = new HashSet<>();
-        double sx = 0, sy = 0, sz = 0;
-        for (BlockPos p : plasma) {
-            sx += p.getX() + 0.5; sy += p.getY() + 0.5; sz += p.getZ() + 0.5;
-            boolean isEdge = false;
-            for (Direction d : Direction.values()) if (!set.contains(p.relative(d).asLong())) isEdge = true;
-            if (isEdge) edge.add(cells.size());
-            cells.add(new int[]{p.getX() - pos.getX(), p.getY() - pos.getY(), p.getZ() - pos.getZ()});
+        List<int[]> cells;
+        boolean[] edge;
+        double cx, cy, cz, major;
+        if (c != null) {
+            cells = c.cells(); edge = c.edge(); cx = c.cx(); cy = c.cy(); cz = c.cz(); major = c.major();
+        } else {
+            List<BlockPos> plasma = s.positions(pos, facing, FusionStructure.Part.PLASMA);
+            it.unimi.dsi.fastutil.longs.LongOpenHashSet set = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(plasma.size());
+            for (BlockPos p : plasma) set.add(p.asLong());
+            cells = new ArrayList<>(plasma.size());
+            edge = new boolean[plasma.size()];
+            double sx = 0, sy = 0, sz = 0;
+            for (int idx = 0; idx < plasma.size(); idx++) {
+                BlockPos p = plasma.get(idx);
+                sx += p.getX() + 0.5; sy += p.getY() + 0.5; sz += p.getZ() + 0.5;
+                boolean isEdge = false;
+                for (Direction d : Direction.values()) if (!set.contains(p.relative(d).asLong())) { isEdge = true; break; }
+                edge[idx] = isEdge;
+                cells.add(new int[]{p.getX() - pos.getX(), p.getY() - pos.getY(), p.getZ() - pos.getZ()});
+            }
+            int n = Math.max(1, plasma.size());
+            double wcx = sx / n, wcy = sy / n, wcz = sz / n, mSum = 0;
+            for (BlockPos p : plasma) mSum += Math.hypot(p.getX() + 0.5 - wcx, p.getZ() + 0.5 - wcz);
+            major = mSum / n;
+            cx = wcx - pos.getX(); cy = wcy - pos.getY(); cz = wcz - pos.getZ();
         }
-        int n = Math.max(1, plasma.size());
-        double cx = sx / n, cy = sy / n, cz = sz / n, major = 0;
-        for (BlockPos p : plasma) major += Math.hypot(p.getX() + 0.5 - cx, p.getZ() + 0.5 - cz);
-        major /= n;
         List<BlockPos> exhausts = new ArrayList<>();
         List<Direction> faces = new ArrayList<>();
-        if (be.getLevel() != null)
+        if (level != null)
             for (BlockPos p : s.positions(pos, facing, FusionStructure.Part.PORT_SLOT)) {
-                BlockState ps = be.getLevel().getBlockState(p);
+                BlockState ps = level.getBlockState(p);
                 if (ps.is(mio_icif_blocks.FUSION_EXHAUST_PORT.get())) {
                     exhausts.add(p);
                     faces.add(ps.hasProperty(mio_icif_block_fusion_part.Facing.FACING) ? ps.getValue(mio_icif_block_fusion_part.Facing.FACING) : Direction.DOWN);
                 }
             }
-        c = new Channel(cells, edge, cx - pos.getX(), cy - pos.getY(), cz - pos.getZ(), major, exhausts, faces.toArray(new Direction[0]));
-        if (!exhausts.isEmpty() || be.getLevel() == null) channels.put(pos, c);   // the ports may not be loaded yet: look again later
+        c = new Channel(cells, edge, cx, cy, cz, major, exhausts, faces.toArray(new Direction[0]), exhausts.isEmpty() ? now + 40L : Long.MAX_VALUE);
+        channels.put(pos.immutable(), c);
         return c;
     }
 
@@ -119,6 +135,7 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
     public void render(FusionControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         Level level = be.getLevel();
         if (level == null) return;
+        if (level != lastLevel) { channels.clear(); anims.clear(); lastLevel = level; }
         FusionControllerBlockEntity.Fx fx = be.fx();
         double time = level.getGameTime() + partialTick;
         Anim a = anims.computeIfAbsent(be.getBlockPos().immutable(), p -> new Anim());
@@ -162,7 +179,7 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
             // the glow in every cell; the edge pink in H-mode, white at an ELM
             for (int i = 0; i < ch.cells().size(); i++) {
                 int[] p = ch.cells().get(i);
-                boolean isEdge = ch.edge().contains(i);
+                boolean isEdge = ch.edge()[i];
                 float r = c[0], g = c[1], b = c[2], al = (float) (0.16 * level01);
                 if (isEdge && fx.hMode()) { r = 0.7F * r + 0.3F; g = 0.7F * g + 0.3F * 0.55F; b = 0.7F * b + 0.3F * 0.75F; }   // the pedestal: a pink tint
                 if (isEdge && elm > 0) { r = 1F; g = 1F; b = 0.94F; al = Math.max(al, 0.35F * elm); }

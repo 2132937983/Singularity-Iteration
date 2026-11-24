@@ -50,10 +50,16 @@ public final class SlotSilhouettes {
         "mio_icif:normal/item_chargebat_", "battery",
         "mio_icif:rotors/", "rotor");
 
+    private static final java.util.EnumMap<SlotType, ItemStack> TYPE_STACK_CACHE = new java.util.EnumMap<>(SlotType.class);
+    private static final java.util.concurrent.ConcurrentHashMap<net.minecraft.world.item.Item, java.util.Optional<String>> NAME_CACHE =
+        new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, ResourceLocation> SPRITE_CACHE =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
     /** The item a typed machine slot takes (what its silhouette shows), or empty for a slot that takes anything (or gives). */
     public static ItemStack forType(@Nullable SlotType type) {
         if (type == null) return ItemStack.EMPTY;
-        return item(switch (type) {
+        return TYPE_STACK_CACHE.computeIfAbsent(type, t -> item(switch (t) {
             case BATTERY -> "mio_icif:normal/item_chargebat_lev0";
             case FLUID_INPUT -> "mio_icif:cell/item_cell_empty";
             case ROTOR -> "mio_icif:rotors/item_iron_rotor";
@@ -65,24 +71,26 @@ public final class SlotSilhouettes {
             case MEMORY -> "mio_icif:resource/item_crystal_memory";
             case RTG_PELLET -> "mio_icif:resource/item_rtg_pellet";
             default -> null;
-        });
+        }));
     }
 
     /** The silhouette sprite of an item (mio_icif:slot/<name>), or null when it has none. */
     public static @Nullable ResourceLocation sprite(ItemStack stack) {
         String name = name(stack);
-        return name == null ? null : ResourceLocation.fromNamespaceAndPath("mio_icif", "slot/" + name);
+        return name == null ? null : SPRITE_CACHE.computeIfAbsent(name, n -> ResourceLocation.fromNamespaceAndPath("mio_icif", "slot/" + n));
     }
 
     /** The silhouette name of an item, or null. */
     public static @Nullable String name(ItemStack stack) {
         if (stack.isEmpty()) return null;
-        String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-        String name = ITEMS.get(id);
-        if (name != null) return name;
-        if (id.endsWith("_cut_blade") && id.startsWith("mio_icif:")) return "cut_blade";
-        for (var entry : PREFIXES.entrySet()) if (id.startsWith(entry.getKey())) return entry.getValue();
-        return null;
+        return NAME_CACHE.computeIfAbsent(stack.getItem(), item -> {
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            String name = ITEMS.get(id);
+            if (name != null) return java.util.Optional.of(name);
+            if (id.endsWith("_cut_blade") && id.startsWith("mio_icif:")) return java.util.Optional.of("cut_blade");
+            for (var entry : PREFIXES.entrySet()) if (id.startsWith(entry.getKey())) return java.util.Optional.of(entry.getValue());
+            return java.util.Optional.empty();
+        }).orElse(null);
     }
 
     /** The item ids the table names (for the test). */

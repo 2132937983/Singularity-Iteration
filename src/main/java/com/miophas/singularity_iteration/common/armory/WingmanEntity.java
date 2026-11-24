@@ -206,6 +206,7 @@ public class WingmanEntity extends Mob {
             if (stack != null && !stack.isEmpty()) w.setItemSlot(p.slot, stack);   // first tick: no equip sound
         }
         w.moveTo(at.x, at.y, at.z, owner.getYRot(), 0);
+        WingmanSuitSynergy.syncSuitAttributes(w);
         WingmanSorties ledger = WingmanSorties.get(level.getServer());
         if (ledger != null) w.sortie = ledger.open(w.getUUID());
         return w;
@@ -452,7 +453,12 @@ public class WingmanEntity extends Mob {
         if (state() != RETURNING && !ownerHere && !(deathGuard && player != null && player.level() == world)) {
             startReturn(null);
         }
-        if (tickCount % 20 == 0 && state() != RETURNING) upkeep(world, player);
+        if (target != null) outOfCombatTicks = 0;
+        else if (outOfCombatTicks < WingmanSuitSynergy.SELF_REPAIR_DELAY_TICKS + 40) outOfCombatTicks++;
+        if (tickCount % 20 == 0 && state() != RETURNING) {
+            upkeep(world, player);
+            WingmanSuitSynergy.tickSecond(this, world, outOfCombatTicks);
+        }
         if (ownerHere) trackOwner(player);
         idleThisTick = false;
         try {
@@ -792,16 +798,25 @@ public class WingmanEntity extends Mob {
     }
 
     private void tickEscort(ServerLevel world, ServerPlayer player) {
-        // projectiles that fly at the owner are destroyed in flight
+        // Point-defense laser intercept: shoots down projectiles flying at the owner within intercept radius
         Projectile threat = deflectCooldown > 0 ? null : nearestThreat(player);
         if (threat != null) {
-            steer(threat.position(), COMBAT * 1.3, player);
-            if (distanceToSqr(threat) < 2.6 * 2.6) {
-                world.sendParticles(ParticleTypes.ELECTRIC_SPARK, threat.getX(), threat.getY(), threat.getZ(), 10, 0.15, 0.15, 0.15, 0.2);
-                world.playSound(null, threat.getX(), threat.getY(), threat.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.NEUTRAL, 0.8F, 1.3F);
+            double radius = WingmanSuitSynergy.interceptRadius(this);
+            faceSmooth(threat.position(), 60);
+            if (distanceToSqr(threat) <= radius * radius) {
+                Vec3 from = getEyePosition();
+                Vec3 to = threat.position();
+                for (int i = 1; i <= 5; i++) {
+                    Vec3 p = from.lerp(to, i / 5.0);
+                    world.sendParticles(ParticleTypes.ELECTRIC_SPARK, p.x, p.y, p.z, 2, 0.04, 0.04, 0.04, 0.02);
+                }
+                world.sendParticles(ParticleTypes.ELECTRIC_SPARK, to.x, to.y, to.z, 10, 0.15, 0.15, 0.15, 0.2);
+                world.playSound(null, to.x, to.y, to.z, SoundEvents.SHIELD_BLOCK, SoundSource.NEUTRAL, 0.8F, 1.3F);
                 threat.discard();
                 WingmanCallouts.say(this, WingmanCallouts.Kind.INTERCEPT);
-                deflectCooldown = 3;
+                deflectCooldown = WingmanSuitSynergy.interceptCooldown(this);
+            } else {
+                steer(threat.position(), COMBAT * 1.3, player);
             }
             return;
         }
@@ -1488,9 +1503,14 @@ public class WingmanEntity extends Mob {
                 Vec3 away = enemy.position().subtract(player.position());
                 enemy.knockback(1.6, -away.x, -away.z);
             }
-            // 0.1.9.1 hit and away: a thruster boost out of reach, then a new pass from the other side
-            hitPause = HIT_PAUSE;   // the boost away follows the pause (0.1.11.46; it was at once, in the tick of the hit)
-            retreatTicks = 10;
+            // 0.1.9.1 hit and away: if the target is already down, snap straight to the next hostile instead of circling
+            if (!enemy.isAlive()) {
+                hitPause = 0;
+                retreatTicks = 0;
+            } else {
+                hitPause = HIT_PAUSE;
+                retreatTicks = 8;
+            }
             strafeSign = -strafeSign;
         }
     }
@@ -1545,7 +1565,7 @@ public class WingmanEntity extends Mob {
     // ---- electric weapons (0.1.10.4)
 
     /** Ticks without a target; the nanosaber switches off after {@link #DISARM_TICKS}. */
-    private int idleTicks;
+    private int idleTicks, outOfCombatTicks;
     private static final int DISARM_TICKS = 60;
 
     /**
@@ -1851,8 +1871,12 @@ public class WingmanEntity extends Mob {
             toldEmpty = false;
             wear(weapon, EquipmentSlot.MAINHAND, 1);                // 0.1.11.42: a shot wears the weapon (arrows stay free)
         } else {
+            // Try feeding EU directly from the Wingman's suit battery / sortie reserve before falling back to melee
+            if (WingmanSuitSynergy.rechargeWeapon(this, 10_000L)) {
+                attackCooldown = 2;
+                return;
+            }
             // 0.1.11.42 (decision 2 C): could not fire (no charge): melee for 10 s, then try again; the owner is told once.
-            // Before, the Wingman hovered at its firing station and tried again every second without a word.
             attackCooldown = 10;
             dryUntil = tickCount + 200;
             tellEmpty(weapon);
@@ -2100,7 +2124,12 @@ public class WingmanEntity extends Mob {
     }
 
     private void catchUp(ServerPlayer player) {
-        Vec3 at = formation(player).add(0, 2, 0);
+        Vec3 at = formation(player).add(0, 1.5, 0);
+        if (!level().noCollision(getType().getDimensions().makeBoundingBox(at))) {
+            Vec3 safe = WingmanService.dropInPoint(player);
+            if (safe == null) return;
+            at = safe;
+        }
         teleportTo(at.x, at.y, at.z);
         setDeltaMovement(ownerVelocity);   // 0.1.11.50: it arrives at the owner's speed (it stopped dead before and fell behind again)
         stuckTicks = 0;
@@ -2260,7 +2289,9 @@ public class WingmanEntity extends Mob {
         Entity attacker = source.getEntity();
         if (attacker != null && owner != null && (owner.equals(attacker.getUUID())
                 || attacker instanceof WingmanEntity w && owner.equals(w.owner))) return false;
-        return super.hurt(source, amount);
+        outOfCombatTicks = 0;
+        float scaled = amount * WingmanSuitSynergy.damageMultiplier(this);
+        return super.hurt(source, scaled);
     }
 
     @Override

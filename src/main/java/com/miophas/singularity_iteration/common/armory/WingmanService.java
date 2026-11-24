@@ -364,6 +364,21 @@ public final class WingmanService {
      * unloaded chunks too (their chunk loads for a moment); before, their suits waited there until somebody came by.
      */
     @SubscribeEvent
+    static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        ServerLevel dest = player.serverLevel();
+        for (WingmanEntity w : of(player)) {
+            if (w.level() == dest || w.state() != WingmanEntity.ACTIVE || w.order().anchored() || w.pilot() != null) continue;
+            Vec3 at = dropInPoint(player);
+            if (at == null) continue;
+            untrack(w);
+            var moved = w.changeDimension(new net.minecraft.world.level.portal.DimensionTransition(
+                dest, at, Vec3.ZERO, player.getYRot(), 0F, net.minecraft.world.level.portal.DimensionTransition.DO_NOTHING));
+            if (moved == null && !w.isRemoved()) track(w);
+        }
+    }
+
+    @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         for (WingmanEntity w : of(player)) {

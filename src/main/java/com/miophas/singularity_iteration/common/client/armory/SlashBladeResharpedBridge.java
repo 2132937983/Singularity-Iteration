@@ -41,7 +41,7 @@ final class SlashBladeResharpedBridge {
     private static volatile int state = UNKNOWN;
 
     private static Class<?> bladeItem;
-    private static MethodHandle stateOf, getModel, getTexture, isBroken;
+    private static MethodHandle stateOf, getModel, getTexture, isBroken, getColorCode;
     private static MethodHandle modelManager, getObj, renderSolid, renderLuminous, resetCol;
     private static ResourceLocation defaultModel, defaultTexture;
 
@@ -50,6 +50,19 @@ final class SlashBladeResharpedBridge {
     /** True for a blade item of SlashBlade: Resharped (its addons included). */
     static boolean isBlade(ItemStack stack) {
         return !stack.isEmpty() && ready() && bladeItem.isInstance(stack.getItem());
+    }
+
+    /** Returns the SlashBlade's own aura color (0xRRGGBB), or {@link com.miophas.singularity_iteration.common.armory.SuitUpFxRules#DEFAULT_BLADE_RGB}. */
+    static int bladeColor(ItemStack stack) {
+        if (!isBlade(stack) || getColorCode == null) return com.miophas.singularity_iteration.common.armory.SuitUpFxRules.DEFAULT_BLADE_RGB;
+        try {
+            Object blade = ((Optional<?>) stateOf.invoke(stack)).orElse(null);
+            if (blade == null) return com.miophas.singularity_iteration.common.armory.SuitUpFxRules.DEFAULT_BLADE_RGB;
+            int rgb = (int) getColorCode.invoke(blade);
+            return rgb == 0 ? com.miophas.singularity_iteration.common.armory.SuitUpFxRules.DEFAULT_BLADE_RGB : (rgb & 0xFFFFFF);
+        } catch (Throwable ignored) {
+            return com.miophas.singularity_iteration.common.armory.SuitUpFxRules.DEFAULT_BLADE_RGB;
+        }
     }
 
     /**
@@ -106,6 +119,11 @@ final class SlashBladeResharpedBridge {
             getModel = lookup.findVirtual(bladeState, "getModel", MethodType.methodType(Optional.class));
             getTexture = lookup.findVirtual(bladeState, "getTexture", MethodType.methodType(Optional.class));
             isBroken = lookup.findVirtual(bladeState, "isBroken", MethodType.methodType(boolean.class));
+            try {
+                getColorCode = lookup.findVirtual(bladeState, "getColorCode", MethodType.methodType(int.class));
+            } catch (Throwable ignored) {
+                getColorCode = null;
+            }
             modelManager = lookup.findStatic(manager, "getInstance", MethodType.methodType(manager));
             getObj = lookup.findVirtual(manager, "getModel", MethodType.methodType(obj, ResourceLocation.class));
             MethodType part = MethodType.methodType(void.class, ItemStack.class, obj, String.class, ResourceLocation.class,

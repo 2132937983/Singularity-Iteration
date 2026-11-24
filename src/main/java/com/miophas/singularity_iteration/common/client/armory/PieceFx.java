@@ -3,7 +3,9 @@ package com.miophas.singularity_iteration.common.client.armory;
 
 import com.miophas.singularity_iteration.common.armory.ArmoryFlight;
 import com.miophas.singularity_iteration.common.armory.ArmoryPieceEntity;
+import com.miophas.singularity_iteration.common.armory.SuitUpFxRules;
 import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.suit.SuitModules;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.Map;
@@ -12,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -57,9 +60,18 @@ public final class PieceFx {
         }
     }
 
+    /** Determines visual technology tier of an armor stack. */
+    static SuitUpFxRules.Tier tierOf(ItemStack stack) {
+        if (stack.isEmpty()) return SuitUpFxRules.Tier.STANDARD;
+        return SuitUpFxRules.tierOf(
+            SuitModules.isQuantumPiece(stack),
+            SuitModules.isNanoPiece(stack),
+            SuitModules.hasLivingLining(stack));
+    }
+
     /**
-     * Trail and re-entry glow of {@code piece}, in the pose of its renderer before the piece transform: the origin is the
-     * render position of the entity ({@code origin}), axes of the world.
+     * Trail and re-entry / phase-shock glow of {@code piece}, in the pose of its renderer before the piece transform:
+     * the origin is the render position of the entity ({@code origin}), axes of the world.
      */
     static void flight(ArmoryPieceEntity piece, PoseStack pose, MultiBufferSource buffers, Vec3 origin, Vec3 at, float partial) {
         Trail t = TRAILS.get(piece);
@@ -72,27 +84,159 @@ public final class PieceFx {
         if (t != null) t.glow += (glow - t.glow) * 0.3F;
         float g = t == null ? glow : t.glow;
         // 0.1.10.32 (P-3): half the trail points beyond 24 blocks, no trail beyond 64; a simpler cap
-        int tier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(at);
-        boolean trail = t != null && t.n >= 1 && tier < com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR;
+        int tierLod = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(at);
+        boolean trail = t != null && t.n >= 1 && tierLod < com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR;
         if (!trail && g < 0.02F) return;
+
+        ItemStack stack = piece.item();
+        boolean blade = ArmoryPieceRenderer.isDrawnBlade(stack);
+        SuitUpFxRules.Tier tech = blade ? SuitUpFxRules.Tier.STANDARD : tierOf(stack);
+        boolean emReentry = SuitUpFxRules.isElectromagneticReentry(tech);
+
         Matrix4f m = pose.last().pose();
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         Vec3 here = at.subtract(origin);
         if (trail) {
-            // blue-white ion trail, orange while it burns in
-            float r = 0.55F + 0.45F * g, gr = 0.8F - 0.25F * g, b = 1F - 0.7F * g;
+            float r, gr, b, widthScale = 1F, alphaScale = 0.55F;
+            float[] coreCol = null;
+            if (blade) {
+                float[] bc = SuitUpFxRules.unpackRgb(SlashBladeResharpedBridge.bladeColor(stack));
+                r = bc[0]; gr = bc[1]; b = bc[2];
+                widthScale = 0.72F;
+                alphaScale = 0.78F;
+                coreCol = new float[]{1F, 0.98F, 1F};
+            } else if (emReentry) {
+                float[] p = SuitUpFxRules.primaryColor(tech), s = SuitUpFxRules.secondaryColor(tech);
+                r = p[0] + (s[0] - p[0]) * g;
+                gr = p[1] + (s[1] - p[1]) * g;
+                b = p[2] + (s[2] - p[2]) * g;
+                alphaScale = 0.68F;
+                coreCol = SuitUpFxRules.coreColor(tech);
+            } else {
+                // Classic metal armor: blue-white ion trail, shifting orange during atmospheric reentry
+                r = 0.55F + 0.45F * g; gr = 0.8F - 0.25F * g; b = 1F - 0.7F * g;
+            }
             int n = t.n + 1;
             double px = here.x, py = here.y, pz = here.z;
-            int step = tier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR ? 1 : 2;
+            int step = tierLod == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR ? 1 : 2;
             for (int i = step; i < n; i += step) {
                 double qx = t.xyz[(i - 1) * 3] - origin.x, qy = t.xyz[(i - 1) * 3 + 1] - origin.y, qz = t.xyz[(i - 1) * 3 + 2] - origin.z;
-                ribbon(vc, m, px, py, pz, qx, qy, qz, cam, PieceFxRules.trailHalfWidth(i - step, n), PieceFxRules.trailHalfWidth(i, n),
-                    r, gr, b, 0.55F * PieceFxRules.trailAlpha(i - step, n), 0.55F * PieceFxRules.trailAlpha(i, n));
+                float wa = PieceFxRules.trailHalfWidth(i - step, n) * widthScale;
+                float wb = PieceFxRules.trailHalfWidth(i, n) * widthScale;
+                float aa = alphaScale * PieceFxRules.trailAlpha(i - step, n);
+                float ab = alphaScale * PieceFxRules.trailAlpha(i, n);
+                ribbon(vc, m, px, py, pz, qx, qy, qz, cam, wa, wb, r, gr, b, aa, ab);
+                if (coreCol != null) {
+                    ribbon(vc, m, px, py, pz, qx, qy, qz, cam, wa * 0.36F, wb * 0.36F, coreCol[0], coreCol[1], coreCol[2], aa * 0.95F, ab * 0.95F);
+                }
                 px = qx; py = qy; pz = qz;
             }
         }
-        if (g >= 0.02F && speed > 1.0E-4) cap(vc, m, here, v.scale(1 / speed), cam, g,
-            tier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR ? CAP_RINGS : 2);
+        if (g >= 0.02F && speed > 1.0E-4) {
+            int rings = tierLod == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR ? CAP_RINGS : 2;
+            Vec3 dir = v.scale(1 / speed);
+            if (blade) {
+                bladeSpearCap(vc, m, here, dir, cam, g, SuitUpFxRules.unpackRgb(SlashBladeResharpedBridge.bladeColor(stack)), rings);
+            } else if (emReentry) {
+                phaseCap(vc, m, here, dir, cam, g, tech, rings);
+            } else {
+                cap(vc, m, here, dir, cam, g, rings);
+            }
+        }
+    }
+
+    /** Magnetic traction filaments pulling hovering/snapping armor pieces cleanly onto the wearer's body node. */
+    static void tether(ArmoryPieceEntity piece, PoseStack pose, MultiBufferSource buffers, Vec3 origin, Vec3 at, float partial) {
+        if (piece.isReturn() || ArmoryPieceRenderer.isDrawnBlade(piece.item())) return;
+        float age = piece.age(partial);
+        int flight = piece.duration();
+        float latch = piece.latchAge(partial);
+        if (age < flight || latch >= 0F) return;
+        Entity target = piece.target();
+        if (target == null) return;
+        int lod = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(at);
+        if (lod == com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR) return;
+
+        Vec3 dock = ArmoryFlight.dockPoint(target, partial, piece.piece()).subtract(origin);
+        Vec3 here = at.subtract(origin);
+        if (dock.distanceToSqr(here) < 0.01) return;
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().subtract(origin);
+
+        SuitUpFxRules.Tier tech = tierOf(piece.item());
+        float[] pri = SuitUpFxRules.primaryColor(tech);
+        float[] core = SuitUpFxRules.coreColor(tech);
+        float sinceHover = age - flight;
+        float snapBoost = sinceHover > ArmoryFlight.HOVER_TICKS
+            ? 0.45F + 0.55F * Math.min(1F, (sinceHover - ArmoryFlight.HOVER_TICKS) / ArmoryFlight.SNAP_TICKS)
+            : 0.45F * Math.min(1F, sinceHover / 4F);
+
+        Matrix4f m = pose.last().pose();
+        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        Vec3 dir = here.subtract(dock).normalize();
+        Vec3 side = Math.abs(dir.y) < 0.95 ? dir.cross(new Vec3(0, 1, 0)).normalize() : dir.cross(new Vec3(1, 0, 0)).normalize();
+        Vec3 up = side.cross(dir).normalize();
+
+        // 3 slim electromagnetic traction beams converging from the piece onto the body node
+        float spread = 0.22F * (1F - 0.55F * Math.max(0F, (sinceHover - ArmoryFlight.HOVER_TICKS) / ArmoryFlight.SNAP_TICKS));
+        for (int i = 0; i < 3; i++) {
+            double ang = i * (Math.PI * 2.0 / 3.0) + age * 0.22;
+            Vec3 pStart = here.add(side.scale(Math.cos(ang) * spread)).add(up.scale(Math.sin(ang) * spread));
+            ribbon(vc, m, pStart.x, pStart.y, pStart.z, dock.x, dock.y, dock.z, cam,
+                0.018F, 0.010F, pri[0], pri[1], pri[2], 0.55F * snapBoost, 0.85F * snapBoost);
+            ribbon(vc, m, pStart.x, pStart.y, pStart.z, dock.x, dock.y, dock.z, cam,
+                0.007F, 0.004F, core[0], core[1], core[2], 0.70F * snapBoost, 0.95F * snapBoost);
+        }
+    }
+
+    /** Electromagnetic cyan-violet phase shock cone for high-altitude Nano/Quantum armor delivery. */
+    private static void phaseCap(VertexConsumer vc, Matrix4f m, Vec3 at, Vec3 dir, Vec3 cam, float g, SuitUpFxRules.Tier tech, int rings) {
+        Vec3 side = Math.abs(dir.y) < 0.95 ? dir.cross(new Vec3(0, 1, 0)).normalize() : dir.cross(new Vec3(1, 0, 0)).normalize();
+        Vec3 up = side.cross(dir).normalize();
+        float[] pri = SuitUpFxRules.primaryColor(tech);
+        float[] sec = SuitUpFxRules.secondaryColor(tech);
+        float[] core = SuitUpFxRules.coreColor(tech);
+        double apex = 0.54, depth = 0.62, radius = 0.44;
+        for (int r = 0; r < rings; r++) {
+            double k0 = r / (double) rings, k1 = (r + 1) / (double) rings;
+            double d0 = apex - depth * k0, d1 = apex - depth * k1;
+            double r0 = radius * Math.sqrt(k0), r1 = radius * Math.sqrt(k1);
+            float a0 = g * 0.80F * (1F - (float) k0), a1 = g * 0.80F * (1F - (float) k1);
+            float c0 = (float) k0, c1 = (float) k1;
+            float r0c = core[0] * (1 - c0) + sec[0] * c0, g0c = core[1] * (1 - c0) + sec[1] * c0, b0c = core[2] * (1 - c0) + sec[2] * c0;
+            float r1c = pri[0] * (1 - c1) + sec[0] * c1, g1c = pri[1] * (1 - c1) + sec[1] * c1, b1c = pri[2] * (1 - c1) + sec[2] * c1;
+            for (int s = 0; s < CAP_SEGMENTS; s++) {
+                double t0 = s * Math.PI * 2 / CAP_SEGMENTS, t1 = (s + 1) * Math.PI * 2 / CAP_SEGMENTS;
+                vertex(vc, m, at, dir, side, up, d0, r0, t0, r0c, g0c, b0c, a0);
+                vertex(vc, m, at, dir, side, up, d0, r0, t1, r0c, g0c, b0c, a0);
+                vertex(vc, m, at, dir, side, up, d1, r1, t1, r1c, g1c, b1c, a1);
+                vertex(vc, m, at, dir, side, up, d1, r1, t0, r1c, g1c, b1c, a1);
+            }
+        }
+        Vec3 tail = at.subtract(dir.scale(1.8 + 1.3 * g));
+        ribbon(vc, m, at.x, at.y, at.z, tail.x, tail.y, tail.z, cam, 0.20F * g, 0.04F, sec[0], sec[1], sec[2], 0.58F * g, 0F);
+    }
+
+    /** Razor-sharp piercing sword-aura cone for high-altitude drawn blades (in the blade's own aura color). */
+    private static void bladeSpearCap(VertexConsumer vc, Matrix4f m, Vec3 at, Vec3 dir, Vec3 cam, float g, float[] col, int rings) {
+        Vec3 side = Math.abs(dir.y) < 0.95 ? dir.cross(new Vec3(0, 1, 0)).normalize() : dir.cross(new Vec3(1, 0, 0)).normalize();
+        Vec3 up = side.cross(dir).normalize();
+        double apex = 0.82, depth = 0.95, radius = 0.24;
+        for (int r = 0; r < rings; r++) {
+            double k0 = r / (double) rings, k1 = (r + 1) / (double) rings;
+            double d0 = apex - depth * k0, d1 = apex - depth * k1;
+            double r0 = radius * k0, r1 = radius * k1;
+            float a0 = g * 0.85F * (1F - (float) k0), a1 = g * 0.85F * (1F - (float) k1);
+            float w0 = 1F - (float) k0, w1 = 1F - (float) k1;
+            for (int s = 0; s < CAP_SEGMENTS; s++) {
+                double t0 = s * Math.PI * 2 / CAP_SEGMENTS, t1 = (s + 1) * Math.PI * 2 / CAP_SEGMENTS;
+                vertex(vc, m, at, dir, side, up, d0, r0, t0, col[0] + (1 - col[0]) * w0, col[1] + (1 - col[1]) * w0, col[2] + (1 - col[2]) * w0, a0);
+                vertex(vc, m, at, dir, side, up, d0, r0, t1, col[0] + (1 - col[0]) * w0, col[1] + (1 - col[1]) * w0, col[2] + (1 - col[2]) * w0, a0);
+                vertex(vc, m, at, dir, side, up, d1, r1, t1, col[0] + (1 - col[0]) * w1, col[1] + (1 - col[1]) * w1, col[2] + (1 - col[2]) * w1, a1);
+                vertex(vc, m, at, dir, side, up, d1, r1, t0, col[0] + (1 - col[0]) * w1, col[1] + (1 - col[1]) * w1, col[2] + (1 - col[2]) * w1, a1);
+            }
+        }
+        Vec3 tail = at.subtract(dir.scale(2.1 + 1.2 * g));
+        ribbon(vc, m, at.x, at.y, at.z, tail.x, tail.y, tail.z, cam, 0.12F * g, 0.02F, col[0], col[1], col[2], 0.72F * g, 0F);
     }
 
     /** Shock cap in front of the path (apex 0.5 ahead, opening backwards) and a plasma tail behind. */
@@ -147,6 +291,10 @@ public final class PieceFx {
      * space); {@code age}: ticks since the segment locked.
      */
     static void seams(PoseStack pose, MultiBufferSource buffers, ModelPart part, float[][] quads, float age) {
+        seams(pose, buffers, part, quads, age, new float[]{0.75F, 0.95F, 1F});
+    }
+
+    static void seams(PoseStack pose, MultiBufferSource buffers, ModelPart part, float[][] quads, float age, float[] col) {
         if (quads == null || quads.length == 0 || age < 0 || age >= PieceFxRules.SEAM_TICKS) return;
         float top = Float.MAX_VALUE, bottom = -Float.MAX_VALUE;
         for (float[] q : quads) {
@@ -170,10 +318,10 @@ public final class PieceFx {
                 float ax = q[a], ay = q[a + 1], az = q[a + 2], bx = q[b], by = q[b + 1], bz = q[b + 2];
                 // inner edge: 0.35 px towards the centre (clamped for small faces)
                 float ka = inset(ax, ay, az, cx, cy, cz), kb = inset(bx, by, bz, cx, cy, cz);
-                put(vc, m, ax + nx, ay + ny, az + nz, light);
-                put(vc, m, bx + nx, by + ny, bz + nz, light);
-                put(vc, m, bx + (cx - bx) * kb + nx, by + (cy - by) * kb + ny, bz + (cz - bz) * kb + nz, 0F);
-                put(vc, m, ax + (cx - ax) * ka + nx, ay + (cy - ay) * ka + ny, az + (cz - az) * ka + nz, 0F);
+                put(vc, m, ax + nx, ay + ny, az + nz, col, light);
+                put(vc, m, bx + nx, by + ny, bz + nz, col, light);
+                put(vc, m, bx + (cx - bx) * kb + nx, by + (cy - by) * kb + ny, bz + (cz - bz) * kb + nz, col, 0F);
+                put(vc, m, ax + (cx - ax) * ka + nx, ay + (cy - ay) * ka + ny, az + (cz - az) * ka + nz, col, 0F);
             }
         }
         pose.popPose();
@@ -184,8 +332,8 @@ public final class PieceFx {
         return d < 1.0E-4F ? 0F : Math.min(0.45F, 0.35F / d);
     }
 
-    private static void put(VertexConsumer vc, Matrix4f m, float x, float y, float z, float light) {
-        vc.addVertex(m, x / 16F, y / 16F, z / 16F).setColor(0.75F, 0.95F, 1F, Math.min(1F, light));
+    private static void put(VertexConsumer vc, Matrix4f m, float x, float y, float z, float[] col, float light) {
+        vc.addVertex(m, x / 16F, y / 16F, z / 16F).setColor(col[0], col[1], col[2], Math.min(1F, light));
     }
 
     static void clear() {

@@ -134,8 +134,10 @@ public final class LightTrails {
             RenderType curtainType = LightTrailRules.CURTAIN_ADDITIVE ? SiRenderTypes.FIELD_GLOW : SiRenderTypes.VAPOR;
             VertexConsumer vc = buffers.getBuffer(curtainType);
             for (Trail t : trails) curtain(vc, m, t);
-            buffers.endBatch(curtainType);
-            vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (curtainType != SiRenderTypes.FIELD_GLOW) {
+                buffers.endBatch(curtainType);
+                vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            }
             for (Trail t : trails) {
                 line(vc, m, t, LightTrailRules.LINE_HALF_WIDTH, LightTrailRules.LINE_RED, LightTrailRules.LINE_ALPHA);
                 line(vc, m, t, LightTrailRules.CORE_HALF_WIDTH, LightTrailRules.CORE_WHITE, LightTrailRules.CORE_ALPHA);

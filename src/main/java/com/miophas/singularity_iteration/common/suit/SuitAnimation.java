@@ -23,8 +23,24 @@ public final class SuitAnimation {
 
     public enum Loop { LOOP, HOLD }
 
-    /** One channel: key times (seconds, ascending) and per key three values, or three expressions where a value is one. */
-    public record Channel(float[] times, float[][] values, String[][] expressions) {
+    private static final byte OP_ZERO = 0, OP_CONST = 1, OP_GE = 2, OP_LE = 3, OP_GT = 4, OP_LT = 5;
+
+    /** Pre-compiled expression: avoids per-frame String ops and NumberFormatException throws. */
+    public record CompiledExpr(byte op, float value) {
+        public float eval(float time) {
+            return switch (op) {
+                case OP_CONST -> value;
+                case OP_GE -> time >= value ? 1F : 0F;
+                case OP_LE -> time <= value ? 1F : 0F;
+                case OP_GT -> time > value ? 1F : 0F;
+                case OP_LT -> time < value ? 1F : 0F;
+                default -> 0F;
+            };
+        }
+    }
+
+    /** One channel: key times (seconds, ascending) and per key three values, or three pre-compiled expressions. */
+    public record Channel(float[] times, float[][] values, CompiledExpr[][] expressions) {
         /** The value at {@code time} (the clip's own time, already looped or held). */
         public float[] at(float time) {
             int n = times.length;
@@ -34,13 +50,16 @@ public final class SuitAnimation {
             while (i + 1 < n && times[i + 1] <= time) i++;
             float k = (time - times[i]) / (times[i + 1] - times[i]);
             float[] a = eval(i, time), b = eval(i + 1, time);
-            return new float[]{a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k};
+            a[0] += (b[0] - a[0]) * k;
+            a[1] += (b[1] - a[1]) * k;
+            a[2] += (b[2] - a[2]) * k;
+            return a;
         }
 
         private float[] eval(int key, float time) {
             float[] v = values[key].clone();
-            String[] e = expressions[key];
-            if (e != null) for (int c = 0; c < 3; c++) if (e[c] != null) v[c] = expression(e[c], time);
+            CompiledExpr[] e = expressions[key];
+            if (e != null) for (int c = 0; c < 3; c++) if (e[c] != null) v[c] = e[c].eval(time);
             return v;
         }
     }
@@ -97,7 +116,7 @@ public final class SuitAnimation {
         int n = keys.size(), i = 0;
         float[] times = new float[n];
         float[][] values = new float[n][3];
-        String[][] expressions = new String[n][];
+        CompiledExpr[][] expressions = new CompiledExpr[n][];
         for (var k : keys.entrySet()) {
             times[i] = k.getKey();
             JsonArray arr = k.getValue();
@@ -105,8 +124,12 @@ public final class SuitAnimation {
                 JsonElement v = arr.get(Math.min(c, arr.size() - 1));
                 if (v.getAsJsonPrimitive().isNumber()) values[i][c] = v.getAsFloat();
                 else {
-                    if (expressions[i] == null) expressions[i] = new String[3];
-                    expressions[i][c] = v.getAsString();
+                    CompiledExpr compiled = compileExpression(v.getAsString());
+                    if (compiled.op() == OP_CONST) values[i][c] = compiled.value();
+                    else if (compiled.op() != OP_ZERO) {
+                        if (expressions[i] == null) expressions[i] = new CompiledExpr[3];
+                        expressions[i][c] = compiled;
+                    }
                 }
             }
             i++;
@@ -114,20 +137,27 @@ public final class SuitAnimation {
         return new Channel(times, values, expressions);
     }
 
+    private static CompiledExpr compileExpression(String e) {
+        String s = e.replace(" ", "");
+        if (!s.isEmpty() && !s.startsWith("query.")) {
+            try { return new CompiledExpr(OP_CONST, Float.parseFloat(s)); } catch (NumberFormatException ignored) { }
+        }
+        String q = "query.anim_time";
+        if (!s.startsWith(q)) return new CompiledExpr(OP_ZERO, 0F);
+        String rest = s.substring(q.length());
+        byte op;
+        int opLen;
+        if (rest.startsWith(">=")) { op = OP_GE; opLen = 2; }
+        else if (rest.startsWith("<=")) { op = OP_LE; opLen = 2; }
+        else if (rest.startsWith(">")) { op = OP_GT; opLen = 1; }
+        else if (rest.startsWith("<")) { op = OP_LT; opLen = 1; }
+        else return new CompiledExpr(OP_ZERO, 0F);
+        try { return new CompiledExpr(op, Float.parseFloat(rest.substring(opLen))); }
+        catch (NumberFormatException ex) { return new CompiledExpr(OP_ZERO, 0F); }
+    }
+
     /** A number, or {@code query.anim_time <op> number} as 1 or 0. Anything else is 0. */
     static float expression(String e, float time) {
-        String s = e.replace(" ", "");
-        try { return Float.parseFloat(s); } catch (NumberFormatException ignored) { }
-        String q = "query.anim_time";
-        if (!s.startsWith(q)) return 0F;
-        String rest = s.substring(q.length());
-        for (String op : new String[]{">=", "<=", ">", "<"}) {
-            if (!rest.startsWith(op)) continue;
-            float v;
-            try { v = Float.parseFloat(rest.substring(op.length())); } catch (NumberFormatException ex) { return 0F; }
-            boolean r = switch (op) { case ">=" -> time >= v; case "<=" -> time <= v; case ">" -> time > v; default -> time < v; };
-            return r ? 1F : 0F;
-        }
-        return 0F;
+        return compileExpression(e).eval(time);
     }
 }

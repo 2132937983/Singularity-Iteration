@@ -215,9 +215,8 @@ public final class WingmanCommands {
                 }
                 case A_FORM_UP -> w.clearOrder();
                 case A_MODE -> {
-                    // 0.1.11.39 (G-12): a squad mode leaves an individual mode alone, as the panel's squad mode does
-                    // (before, the wheel's "all" cleared it); "follow squad" ends an individual mode
-                    if (all && w.individual()) continue;
+                    // Setting a squad-wide stance unifies every Wingman (clears individual lock);
+                    // setting a single Wingman's stance only changes that unit.
                     w.setMode(WingmanMode.byId(c.arg()), !all);
                 }
                 case A_SQUAD -> {

@@ -31,27 +31,26 @@ import net.minecraft.util.Mth;
  */
 public final class CommandWheelScreen extends Screen {
     private static final float R_IN = 30, R_OUT = 86, R_SUB_IN = 93, R_SUB_OUT = 132, GAP = 0.035F;
-    private static final int SECTORS = 11;   // 0.1.11.65 (Q4): the suit entry
+    private static final int SECTORS = 8;   // streamlined 8-sector (45 deg) tactical wheel
     private static final float STEP = (float) (Math.PI * 2 / SECTORS);
     private static final int CYAN = 0x5CEBFF, VIOLET = 0xB98CFF;
 
     enum Entry {
-        MOVE(0x5CEBFF), HOLD(0xFFC24D), SUPPRESS(0xFF6A4D), FOCUS(0xFF4D6D), VOLLEY(0x6FF3D6),
-        FORM_UP(0xB8D8FF), CONTROL(0xB98CFF), SUIT(0xFF5A4A), DATALINK(0x6FF3D6), HOLO(0x4DE1C1), RECALL(0x9B7CFF);
+        MOVE(0x5CEBFF), SUPPRESS(0xFF6A4D), FOCUS(0xFF4D6D), FORM_UP(0xB8D8FF),
+        CONTROL(0xB98CFF), SUIT(0xFF5A4A), HOLO(0x4DE1C1), RECALL(0x9B7CFF);
         final int color;
         Entry(int color) { this.color = color; }
         String key() { return "gui.mio_icif.command.entry." + name().toLowerCase(Locale.ROOT); }
     }
 
     /**
-     * Squad control fan: the three modes (0.1.11.43: the Fulton mode is gone), follow squad, return home. 0.1.11.65 (hit
-     * feel and constructivist FX phase Q4): the suit actions (swap, send, pilot, Clean Slate), which had crowded this fan to
-     * nine items over more than 200 degrees, have their own entry and fan ({@link Entry#SUIT}).
+     * Squad stance fan: the three tactical stances + return to Armory.
+     * Setting a stance for ALL now applies uniformly to every Wingman (no hidden individual-lock toggle).
      */
-    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0x9B7CFF};
+    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0x9B7CFF};
     private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
-        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.return"};
-    private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_RETURN = SUB_SQUAD + 1;
+        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.return"};
+    private static final int SUB_RETURN = WingmanMode.VALUES.length;
     /** 0.1.11.65 (Q4): the suit fan: swap suits (P2), send the suit (P3), pilot (P8), Clean Slate (P7). */
     private static final int[] SUIT_COLORS = {0xFFD24D, 0xFF8A3D, 0x6FF3D6, 0xFF4D8A};
     private static final String[] SUIT_KEYS = {"gui.mio_icif.command.sub.suit_up", "gui.mio_icif.command.sub.eject",
@@ -128,12 +127,11 @@ public final class CommandWheelScreen extends Screen {
         List<Unit> sel = selection();
         boolean anyOrderable = !sel.isEmpty();
         return switch (e) {
-            case MOVE, HOLD, SUPPRESS -> anyOrderable;
+            case MOVE, SUPPRESS -> anyOrderable;
             case CONTROL -> anyOrderable;
-            case SUIT -> true;   // 0.1.11.65 (Q4): the suit fan holds the suit eject, which needs no Wingman (the others are refused without one)
+            case SUIT -> true;   // suit fan holds suit eject, which needs no Wingman
             case FOCUS -> anyOrderable && target.entityId() >= 0;
             case FORM_UP -> sel.stream().anyMatch(u -> SquadClient.order(u) != WingmanOrder.NONE);
-            case VOLLEY, DATALINK -> true;
             case HOLO -> HoloTable.available();
             case RECALL -> SquadClient.recallCooldown() <= 0 && !SquadClient.units().isEmpty();
         };
@@ -240,7 +238,6 @@ public final class CommandWheelScreen extends Screen {
         float lift = hot && on ? 5 : 0;
         int col = on ? e.color : 0x5A6670;
         float fill = (hot ? 0.42F : on ? 0.16F : 0.07F) * k;
-        if (e == Entry.DATALINK && !SquadClient.datalink()) col = 0x7A8A94;
         FcsDraw.sector(g, cx, cy, R_IN + lift, R_OUT + lift, a0, a1, FcsDraw.argb(col, fill));
         FcsDraw.arc(g, cx, cy, R_OUT + lift, a0, a1, hot ? 2.2F : 1.0F, FcsDraw.argb(col, (hot ? 0.95F : 0.5F) * k));
         FcsDraw.arc(g, cx, cy, R_IN + lift, a0, a1, 0.8F, FcsDraw.argb(col, 0.35F * k));
@@ -274,7 +271,7 @@ public final class CommandWheelScreen extends Screen {
             int col = colors[s];
             FcsDraw.sector(g, cx, cy, R_SUB_IN, R_SUB_OUT + (hot ? 4 : 0), a0, a1, FcsDraw.argb(col, hot ? 0.45F : 0.15F));
             FcsDraw.arc(g, cx, cy, R_SUB_OUT + (hot ? 4 : 0), a0, a1, hot ? 2F : 1F, FcsDraw.argb(col, hot ? 1F : 0.6F));
-            if (s < SUB_SQUAD && s == current) FcsDraw.arc(g, cx, cy, R_SUB_IN + 2, a0, a1, 2F, FcsDraw.argb(0xFFFFFF, 0.8F));
+            if (s < SUB_RETURN && s == current) FcsDraw.arc(g, cx, cy, R_SUB_IN + 2, a0, a1, 2F, FcsDraw.argb(0xFFFFFF, 0.8F));
             float am = (a0 + a1) / 2, rm = (R_SUB_IN + R_SUB_OUT) / 2;
             float x = cx + (float) Math.sin(am) * rm, y = cy - (float) Math.cos(am) * rm;
             String label = Component.translatable(keys[s]).getString();
@@ -345,15 +342,16 @@ public final class CommandWheelScreen extends Screen {
 
     private void footer(GuiGraphics g, float cx, float a) {
         float y = cy() + R_SUB_OUT + 12;
-        String dl = Component.translatable(SquadClient.datalink() ? "gui.mio_icif.command.datalink_on" : "gui.mio_icif.command.datalink_off").getString();
-        FcsDraw.textCentered(g, dl, cx, y, FcsDraw.argb(SquadClient.datalink() ? 0x6FF3D6 : 0x7A8A94, 0.85F * a), 0.45F);
+        String ping = Component.translatable("gui.mio_icif.command.ping_hint",
+            CommandWheelClient.KEY != null ? CommandWheelClient.KEY.getTranslatedKeyMessage() : Component.literal("X")).getString();
+        FcsDraw.textCentered(g, ping, cx, y, FcsDraw.argb(0x6FF3D6, 0.85F * a), 0.45F);
         int cd = SquadClient.recallCooldown();
         if (cd > 0) FcsDraw.textCentered(g, Component.translatable("gui.mio_icif.command.recall_cd", (cd + 19) / 20).getString(), cx, y + 8,
             FcsDraw.argb(0x9B7CFF, 0.85F * a), 0.45F);
     }
 
     static int modeColor(int mode) {
-        return mode >= 0 && mode < SUB_SQUAD ? SUB_COLORS[mode] : 0xDDDDDD;
+        return mode >= 0 && mode < SUB_RETURN ? SUB_COLORS[mode] : 0xDDDDDD;
     }
 
     // ------------------------------------------------------------------ icons (line drawings, s = half size)
@@ -365,11 +363,6 @@ public final class CommandWheelScreen extends Screen {
                 FcsDraw.line(g, x - s * 0.7F, y - s * 0.05F, x, y - s, 1.4F, c);
                 FcsDraw.line(g, x + s * 0.7F, y - s * 0.05F, x, y - s, 1.4F, c);
                 FcsDraw.circle(g, x, y + s, 1.6F, 1F, c);
-            }
-            case HOLD -> {
-                FcsDraw.line(g, x - s * 0.35F, y - s * 0.7F, x - s * 0.35F, y + s * 0.7F, 2F, c);
-                FcsDraw.line(g, x + s * 0.35F, y - s * 0.7F, x + s * 0.35F, y + s * 0.7F, 2F, c);
-                FcsDraw.circle(g, x, y, s, 0.8F, c);
             }
             case SUPPRESS -> {
                 FcsDraw.circle(g, x, y, s, 1.1F, c);
@@ -387,10 +380,6 @@ public final class CommandWheelScreen extends Screen {
                 FcsDraw.line(g, x, y - s, x, y - s * 0.35F, 1.2F, c);
                 FcsDraw.line(g, x, y + s, x, y + s * 0.35F, 1.2F, c);
                 FcsDraw.quad(g, x, y - 1.6F, x + 1.6F, y, x, y + 1.6F, x - 1.6F, y, c);
-            }
-            case VOLLEY -> {
-                for (int k = -1; k <= 1; k++) FcsDraw.line(g, x + k * s * 0.8F, y + s, x, y - s * 0.8F, 1.1F, c);
-                FcsDraw.disc(g, x, y - s * 0.8F, 1.8F, c);
             }
             case FORM_UP -> {
                 float[][] v = {{0, -s * 0.7F}, {-s * 0.7F, s * 0.1F}, {s * 0.7F, s * 0.1F}, {-s * 0.35F, s * 0.8F}, {s * 0.35F, s * 0.8F}};
@@ -412,14 +401,6 @@ public final class CommandWheelScreen extends Screen {
                 FcsDraw.line(g, x + s * 0.75F, y - s * 0.15F, x, y + s * 0.85F, 1.3F, c);
                 FcsDraw.line(g, x, y + s * 0.85F, x - s * 0.75F, y - s * 0.15F, 1.3F, c);
                 FcsDraw.line(g, x - s * 0.45F, y + s * 0.05F, x + s * 0.45F, y + s * 0.05F, 1.8F, c);   // the visor
-            }
-            case DATALINK -> {
-                FcsDraw.line(g, x, y + s, x, y - s * 0.1F, 1.2F, c);
-                FcsDraw.disc(g, x, y - s * 0.1F, 1.5F, c);
-                for (int k = 1; k <= 2; k++) {
-                    FcsDraw.arc(g, x, y - s * 0.1F, s * 0.4F * k, -0.9F, -0.25F, 1F, c);
-                    FcsDraw.arc(g, x, y - s * 0.1F, s * 0.4F * k, 0.25F, 0.9F, 1F, c);
-                }
             }
             case HOLO -> {
                 float h = s * 0.6F;
@@ -451,15 +432,12 @@ public final class CommandWheelScreen extends Screen {
         UUID unit = SquadClient.selected();
         switch (e) {
             case MOVE -> SquadClient.send(WingmanCommands.A_MOVE, unit, (byte) 0, target.point(), -1);
-            case HOLD -> SquadClient.send(WingmanCommands.A_HOLD, unit, (byte) 1, null, -1);
             case SUPPRESS -> SquadClient.send(WingmanCommands.A_SUPPRESS, unit, (byte) 0, target.point(), -1);
             case FOCUS -> SquadClient.send(WingmanCommands.A_FOCUS, unit, (byte) 0, null, target.entityId());
-            case VOLLEY -> SquadClient.send(WingmanCommands.A_VOLLEY, WingmanCommandPackets.ALL, (byte) 0, null, -1);
             case FORM_UP -> SquadClient.send(WingmanCommands.A_FORM_UP, unit, (byte) 0, null, -1);
             case CONTROL -> {
                 if (sub < 0) { done = false; return; }                     // the fan stays open until a choice
                 if (sub < WingmanMode.VALUES.length) SquadClient.send(WingmanCommands.A_MODE, unit, (byte) sub, null, -1);
-                else if (sub == SUB_SQUAD) SquadClient.send(WingmanCommands.A_SQUAD, unit, (byte) 0, null, -1);
                 else SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
             }
             case SUIT -> {
@@ -471,7 +449,6 @@ public final class CommandWheelScreen extends Screen {
                     default -> SquadClient.send(WingmanCommands.A_CLEAN_SLATE, WingmanCommandPackets.ALL, (byte) 0, null, -1);
                 }
             }
-            case DATALINK -> SquadClient.send(WingmanCommands.A_DATALINK, WingmanCommandPackets.ALL, (byte) (SquadClient.datalink() ? 0 : 1), null, -1);
             case HOLO -> {
                 onClose();
                 HoloTable.open();

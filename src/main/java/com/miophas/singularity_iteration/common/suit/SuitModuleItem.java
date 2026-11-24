@@ -49,7 +49,17 @@ public class SuitModuleItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable(type.descriptionKey()).withStyle(ChatFormatting.GRAY));
+        SuitModuleType.Category cat = type.category(tier);
+        ChatFormatting catFmt = switch (cat) {
+            case ACTIVE -> ChatFormatting.GOLD;
+            case SENSOR -> ChatFormatting.AQUA;
+            case PASSIVE -> ChatFormatting.GREEN;
+        };
+        tooltip.add(Component.literal("[").append(Component.translatable(cat.nameKey())).append("] ").withStyle(catFmt)
+            .append(Component.translatable(type.descriptionKey()).withStyle(ChatFormatting.GRAY)));
+        if (!type.switchable()) {
+            tooltip.add(Component.translatable("module.mio_icif.tooltip.always_on").withStyle(ChatFormatting.DARK_GREEN));
+        }
         if (tier >= 2) {
             tooltip.add(Component.translatable("module.mio_icif.tooltip.mk2").withStyle(ChatFormatting.LIGHT_PURPLE));
             tooltip.add(Component.translatable(type.descriptionKey() + ".mk2").withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -100,18 +110,14 @@ public class SuitModuleItem extends Item {
                     : Component.translatable("module.mio_icif.tooltip.action.single", name, spec.coherenceCost(), cd, keys)).withStyle(ChatFormatting.LIGHT_PURPLE));
             }
         }
-        // 0.1.10.1: compute bandwidth on a quantum piece, and the synergies the unit takes part in
-        int qb = com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.cost(UnitRef.of(type), tier);
-        if (quantum && qb > 0) tooltip.add(Component.translatable("module.mio_icif.tooltip.bandwidth", qb).withStyle(ChatFormatting.DARK_AQUA));
         if (type == SuitModuleType.COMPUTE_CORE) {
-            tooltip.add(Component.translatable("module.mio_icif.tooltip.compute_core",
-                com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.CORE_BONUS).withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("module.mio_icif.tooltip.compute_core_boost").withStyle(ChatFormatting.AQUA));
         }
         for (var syn : com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.VALUES) {
             SuitModuleType other = syn.a == type ? syn.b : syn.b == type ? syn.a : null;
             if (other == null) continue;
-            tooltip.add(Component.translatable("module.mio_icif.tooltip.synergy", Component.translatable(syn.nameKey()),
-                Component.translatable(other.nameKey())).withStyle(ChatFormatting.DARK_PURPLE));
+            tooltip.add(Component.translatable("module.mio_icif.tooltip.auto_synergy", Component.translatable(syn.nameKey()),
+                Component.translatable(other.nameKey())).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
         if (type == SuitModuleType.MYOFIBER) tooltip.add(Component.translatable("module.mio_icif.tooltip.hf_sync").withStyle(ChatFormatting.BLUE));
         if (type.needsVisor()) tooltip.add(Component.translatable("module.mio_icif.tooltip.visor").withStyle(ChatFormatting.DARK_GRAY));

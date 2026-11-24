@@ -6115,5 +6115,14 @@
   "gui.mio_icif.process.slot.blade": "放这里：切割刀片",
   "gui.mio_icif.process.slot.water": "放这里：水桶或水单元，给水箱加水",
   "gui.mio_icif.process.slot.empty_bucket": "倒空的桶和单元从这里取出",
-  "mio_icif.subtitle.suit.em_hum": "电磁推进：嗡鸣"
+  "mio_icif.subtitle.suit.em_hum": "电磁推进：嗡鸣",
+  "module.mio_icif.category.active": "主动技能",
+  "module.mio_icif.category.sensor": "面罩视野",
+  "module.mio_icif.category.passive": "常驻被动",
+  "module.mio_icif.tooltip.always_on": "装上即自动生效（无需手动开关）",
+  "module.mio_icif.tooltip.compute_core_boost": "算力增幅：量子相干恢复 +20%（可叠加）",
+  "module.mio_icif.tooltip.auto_synergy": "✦ 自动联动：%s（搭配 %s）",
+  "gui.mio_icif.station.hint_quantum": "可装：%s模块 · 剩余 %s 槽",
+  "gui.mio_icif.station.hint_nano": "可装：%s模块 · 剩余 %s LP",
+  "gui.mio_icif.station.synergy_preview": "✦ 将自动激活联动：%s"
 }

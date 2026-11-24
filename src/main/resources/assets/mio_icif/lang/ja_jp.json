@@ -6115,5 +6115,14 @@
   "gui.mio_icif.process.slot.blade": "ここに：切断ブレード",
   "gui.mio_icif.process.slot.water": "ここに：水バケツか水セル（タンクに給水）",
   "gui.mio_icif.process.slot.empty_bucket": "空になったバケツとセルはここから取り出します",
-  "mio_icif.subtitle.suit.em_hum": "電磁推進：うなり"
+  "mio_icif.subtitle.suit.em_hum": "電磁推進：うなり",
+  "module.mio_icif.category.active": "アクティブ",
+  "module.mio_icif.category.sensor": "バイザー",
+  "module.mio_icif.category.passive": "パッシブ",
+  "module.mio_icif.tooltip.always_on": "装着するだけで自動発動（スイッチ不要）",
+  "module.mio_icif.tooltip.compute_core_boost": "演算増幅：量子コヒーレンス回復 +20%（重複可）",
+  "module.mio_icif.tooltip.auto_synergy": "✦ 自動シナジー：%s（%s と併用）",
+  "gui.mio_icif.station.hint_quantum": "対応：%s · 空き %s スロット",
+  "gui.mio_icif.station.hint_nano": "対応：%s · 残り %s LP",
+  "gui.mio_icif.station.synergy_preview": "✦ 自動シナジー発動：%s"
 }

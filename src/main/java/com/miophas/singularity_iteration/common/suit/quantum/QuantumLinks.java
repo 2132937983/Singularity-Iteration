@@ -127,12 +127,17 @@ public final class QuantumLinks {
         return e == null ? null : new String[]{e.unitA(), e.unitB()};
     }
 
-    /** True when the synergy works for the wearer now. */
+    /**
+     * True when the synergy works for the wearer now.
+     *
+     * <p>Auto-synergy: installing and activating both modules of a synergy on worn quantum pieces
+     * activates the synergy automatically — no manual wiring in the Entanglement Matrix is required.
+     */
     public static boolean active(Player player, String key) {
         QuantumSynergy s = QuantumSynergy.byId(key);
         if (s != null && !QuantumConfig.enabled("synergy." + s.id)) return false;
         String[] u = units(key);
-        if (u == null || !linked(player, key)) return false;
+        if (u == null) return false;
         UnitRef a = UnitRef.byKey(u[0]), b = UnitRef.byKey(u[1]);
         return a != null && b != null && onQuantum(player, u[0]) && onQuantum(player, u[1])
             && SuitModules.isActive(player, a) && SuitModules.isActive(player, b);
@@ -142,7 +147,7 @@ public final class QuantumLinks {
         return active(player, s.id);
     }
 
-    /** True when both units of the synergy are installed on worn quantum pieces (it can be linked). */
+    /** True when both units of the synergy are installed on worn quantum pieces. */
     public static boolean available(Player player, String key) {
         String[] u = units(key);
         if (u == null) return false;
@@ -168,10 +173,10 @@ public final class QuantumLinks {
         return out;
     }
 
-    /** Synergies that work now (HUD). */
+    /** Synergies that work now (HUD): auto-collected from all active quantum module pairs. */
     public static List<String> activeKeys(Player player) {
         List<String> out = new ArrayList<>();
-        for (String key : links(hub(player))) if (active(player, key)) out.add(key);
+        for (String key : allKeys()) if (active(player, key)) out.add(key);
         return out;
     }
 

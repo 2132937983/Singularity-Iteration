@@ -86,7 +86,8 @@ public final class Round1101GameTests {
         p.setItemSlot(EquipmentSlot.CHEST, chest);
         h.assertTrue(capacity(p) == 3, "capacity with a compute core " + capacity(p));
         h.assertTrue(toggle(p, "threat_sight") == LINKED, "the third link did not fit with a compute core");
-        h.assertTrue(toggle(p, "predictive_guidance") == UNLINKED && !active(p, "predictive_guidance"), "unlink failed");
+        h.assertTrue(toggle(p, "predictive_guidance") == UNLINKED, "unlink failed");
+        h.assertTrue(active(p, "predictive_guidance"), "auto-synergy stays active while both modules are worn and enabled");
         h.succeed();
     }
 
@@ -114,16 +115,18 @@ public final class Round1101GameTests {
         h.succeed();
     }
 
-    /** Predictive Guidance: +2 locks and +4 degrees of turn; Mk.II guidance on top. */
+    /** Predictive Guidance auto-activates when both units are worn: +2 locks and +4 degrees of turn; Mk.II guidance on top. */
     @GameTest(template = "empty", batch = "round1101_synergies", timeoutTicks = 20)
     public static void predictiveGuidanceAddsLocks(GameTestHelper h) {
         ServerPlayer p = Round33GameTests.survivalPlayer(h);
-        ItemStack helmet = piece("helmet", "SMART_GUIDANCE", "BEHAVIOR_PREDICTOR");
+        ItemStack helmet = piece("helmet", "SMART_GUIDANCE");
         p.setItemSlot(EquipmentSlot.HEAD, helmet);
         p.setItemSlot(EquipmentSlot.CHEST, piece("chestplate"));
         Class<?> guidance = Round33GameTests.common("suit.SmartGuidance");
-        h.assertTrue((Integer) Round33GameTests.call(guidance, "maxLocks", p) == 6, "Mk.I locks");
-        h.assertTrue(toggle(p, "predictive_guidance") == LINKED, "link failed");
+        h.assertTrue((Integer) Round33GameTests.call(guidance, "maxLocks", p) == 6, "Mk.I locks without predictor");
+        Round1100GameTests.install(helmet, "BEHAVIOR_PREDICTOR", 1);
+        p.setItemSlot(EquipmentSlot.HEAD, helmet);
+        h.assertTrue(active(p, "predictive_guidance"), "auto-synergy did not activate with both units");
         h.assertTrue((Integer) Round33GameTests.call(guidance, "maxLocks", p) == 8, "locks with the synergy");
         h.assertTrue((Double) Round33GameTests.call(guidance, "turnDegrees", p) == 18.0, "turn with the synergy");
         Round1100GameTests.install(helmet, "SMART_GUIDANCE", 2);

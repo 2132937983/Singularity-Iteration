@@ -39,6 +39,12 @@ public final class StructureView {
     private final net.minecraft.resources.ResourceLocation id;
     private final int sizeX, sizeY, sizeZ;
     private final List<Shown> blocks = new ArrayList<>();
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Shown> byPos =
+        new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+    private List<Shown> cachedVisible;
+    private int cachedLayer = Integer.MIN_VALUE;
+    private int cachedAlt = Integer.MIN_VALUE;
+    private boolean hasAlternatives;
     private float yaw = -35F, pitch = 28F, zoom = 1F;
     private boolean spinning = true;
     private final long created = Util.getMillis();
@@ -53,8 +59,14 @@ public final class StructureView {
                 BlockState state = ref.resolve();
                 if (state != null) states.add(state);
             }
-            if (!states.isEmpty()) blocks.add(new Shown(p.pos(), states.toArray(new BlockState[0])));
+            if (!states.isEmpty()) addShown(new Shown(p.pos(), states.toArray(new BlockState[0])));
         }
+    }
+
+    private void addShown(Shown s) {
+        blocks.add(s);
+        byPos.put(s.pos().asLong(), s);
+        if (s.states().length > 1) hasAlternatives = true;
     }
 
     private StructureView(@org.jetbrains.annotations.Nullable StructureBlueprint blueprint, net.minecraft.resources.ResourceLocation id,
@@ -69,7 +81,7 @@ public final class StructureView {
     /** 0.1.11.189: a view of fixed blocks ({@code positions} from 0 to the size, each with its one state). */
     public static StructureView of(net.minecraft.resources.ResourceLocation id, int sizeX, int sizeY, int sizeZ, List<BlockPos> positions, List<BlockState> states) {
         StructureView view = new StructureView(null, id, sizeX, sizeY, sizeZ);
-        for (int i = 0; i < positions.size(); i++) view.blocks.add(new Shown(positions.get(i), new BlockState[]{states.get(i)}));
+        for (int i = 0; i < positions.size(); i++) view.addShown(new Shown(positions.get(i), new BlockState[]{states.get(i)}));
         return view;
     }
 
@@ -133,8 +145,8 @@ public final class StructureView {
         var dispatcher = Minecraft.getInstance().getBlockRenderer();
         var buffers = graphics.bufferSource();
         int alternative = (int) (Util.getMillis() / 1000L);
-        for (Shown shown : blocks) {
-            if (layer >= 0 && shown.pos().getY() != layer) continue;
+        List<Shown> visible = visibleFor(layer, alternative);
+        for (Shown shown : visible) {
             BlockState state = shown.states()[alternative % shown.states().length];
             pose.pushPose();
             pose.translate(shown.pos().getX(), shown.pos().getY(), shown.pos().getZ());
@@ -150,5 +162,35 @@ public final class StructureView {
         graphics.flush();
         pose.popPose();
         graphics.disableScissor();
+    }
+
+    private List<Shown> visibleFor(int currentLayer, int alt) {
+        int effectiveAlt = hasAlternatives ? alt : 0;
+        if (cachedVisible != null && cachedLayer == currentLayer && cachedAlt == effectiveAlt) return cachedVisible;
+        List<Shown> out = new ArrayList<>(blocks.size());
+        for (Shown s : blocks) {
+            int y = s.pos().getY();
+            if (currentLayer >= 0 && y != currentLayer) continue;
+            if (currentLayer < 0 && isFullyOccluded(s.pos(), effectiveAlt)) continue;
+            out.add(s);
+        }
+        cachedVisible = out;
+        cachedLayer = currentLayer;
+        cachedAlt = effectiveAlt;
+        return out;
+    }
+
+    private boolean isFullyOccluded(BlockPos pos, int alt) {
+        int x = pos.getX(), y = pos.getY(), z = pos.getZ();
+        return isOpaqueAt(x + 1, y, z, alt) && isOpaqueAt(x - 1, y, z, alt)
+            && isOpaqueAt(x, y + 1, z, alt) && isOpaqueAt(x, y - 1, z, alt)
+            && isOpaqueAt(x, y, z + 1, alt) && isOpaqueAt(x, y, z - 1, alt);
+    }
+
+    private boolean isOpaqueAt(int x, int y, int z, int alt) {
+        Shown n = byPos.get(BlockPos.asLong(x, y, z));
+        if (n == null) return false;
+        BlockState s = n.states()[alt % n.states().length];
+        return s.canOcclude() && s.isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
     }
 }

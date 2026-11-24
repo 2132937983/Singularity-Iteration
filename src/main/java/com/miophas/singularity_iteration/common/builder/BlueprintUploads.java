@@ -177,9 +177,11 @@ public final class BlueprintUploads {
             Files.write(part, bytes);
             ServerLevel level = player.server.getLevel(s.dimension);
             HolderGetter<Block> blocks = (level != null ? level : player.serverLevel()).holderLookup(Registries.BLOCK);
+            Blueprint parsed = null;
             boolean readable;
             try {
-                readable = BlueprintReader.read(part, s.name, blocks) != null;
+                parsed = BlueprintReader.read(part, s.name, blocks);
+                readable = parsed != null;
             } catch (Blueprint.TooLarge e) {
                 readable = true;   // 0.1.11.187: a sound file; the builder says it is too large for the memory when it reads it
             }
@@ -189,14 +191,13 @@ public final class BlueprintUploads {
             }
             Files.move(part, file, StandardCopyOption.REPLACE_EXISTING);
             prune(dir, file);
+            if (level != null && level.isLoaded(s.builder) && level.getBlockEntity(s.builder) instanceof BlueprintBuilderBlockEntity builder && !builder.running())
+                builder.selectUpload(player, player.getUUID() + "/" + s.name, parsed);
         } catch (IOException e) {
             Singularity_Iteration.LOGGER.warn("Blueprint upload of {} by {}: {}", s.name, player.getGameProfile().getName(), e.toString());
             try { Files.deleteIfExists(part); } catch (IOException ignored) { }
             return ERR_IO;
         }
-        ServerLevel level = player.server.getLevel(s.dimension);
-        if (level != null && level.isLoaded(s.builder) && level.getBlockEntity(s.builder) instanceof BlueprintBuilderBlockEntity builder && !builder.running())
-            select(player, builder, s.name);
         return DONE;
     }
 

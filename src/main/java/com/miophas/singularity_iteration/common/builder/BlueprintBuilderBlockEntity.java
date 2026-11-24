@@ -442,8 +442,18 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
      * settings of the screen; false (nothing changed) while the builder runs. The read error shows as for a file.
      */
     boolean selectUpload(Player player, String ref) {
+        return selectUpload(player, ref, null);
+    }
+
+    /** Overload accepting an already-parsed blueprint (avoids double-parsing on upload finish). */
+    boolean selectUpload(Player player, String ref, @Nullable Blueprint preloaded) {
         if (running || !(level instanceof ServerLevel)) return false;
-        keptKey = null;   // read it again
+        if (preloaded != null) {
+            kept = preloaded;
+            keptKey = "u:" + ref;
+        } else {
+            keptKey = null;   // read it again
+        }
         stop();
         useCreate = false;
         structure = "";

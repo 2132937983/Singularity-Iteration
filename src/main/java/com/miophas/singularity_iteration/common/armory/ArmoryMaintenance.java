@@ -55,14 +55,23 @@ public final class ArmoryMaintenance {
     /** Finished service sessions (each one sent a completion notice). */
     public int completedSessions() { return completedSessions; }
     private int completedSessions;
+    private boolean dirty = true;
+
+    void markDirty() { dirty = true; }
 
     /** Runs one tick of service. Returns a finished-session report, or null. */
     Report tick(long gameTime) {
         sampleIncome();
+        long curEnergy = armory.storedEnergy();
+        int curMana = armory.mana();
+        if (!dirty && state == IDLE && !session && pendingPieces == 0 && curEnergy == lastEnergy && curMana == lastMana) {
+            return null;
+        }
+        dirty = false;
         spentThisTick = 0;
         manaSpentThisTick = 0;
         repairedThisTick = false;
-        long budget = Math.min(EU_BUDGET_PER_TICK, Math.max(0, armory.storedEnergy() - SUMMON_RESERVE));
+        long budget = Math.min(EU_BUDGET_PER_TICK, Math.max(0, curEnergy - SUMMON_RESERVE));
         for (int set = 0; set < mio_icif_armory.SETS; set++) {
             for (ArmoryPiece piece : ArmoryPiece.COLUMNS) {
                 ItemStack stack = armory.piece(set, piece);

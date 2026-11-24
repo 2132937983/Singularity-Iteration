@@ -78,11 +78,20 @@ public final class PlayerReportGameTests {
 
     @GameTest(batch = "player_reports", template = "empty", timeoutTicks = 20)
     public static void chainsawAndDrillsShowTheirDamage(GameTestHelper h) {
-        h.assertTrue(attackDamage(new ItemStack(item("item_tool_iron_chainsaw"))) == 9.0, "chainsaw");
-        h.assertTrue(attackDamage(new ItemStack(item("item_tool_iron_driller"))) == 8.0, "mining drill");
-        h.assertTrue(attackDamage(new ItemStack(item("item_tool_diamond_driller"))) == 8.0, "diamond drill");
-        h.assertTrue(attackDamage(new ItemStack(item("item_tool_iridium_driller"))) == 20.0, "iridium drill");
+        // 0.1.11.196 (T3, D4): at most a sword of the tool's tier, and only while a hit can be paid
+        h.assertTrue(attackDamage(charged("item_tool_iron_chainsaw")) == 5.0, "chainsaw");
+        h.assertTrue(attackDamage(charged("item_tool_iron_driller")) == 5.0, "mining drill");
+        h.assertTrue(attackDamage(charged("item_tool_diamond_driller")) == 6.0, "diamond drill");
+        h.assertTrue(attackDamage(charged("item_tool_iridium_driller")) == 9.0, "iridium drill");
+        h.assertTrue(attackDamage(new ItemStack(item("item_tool_iridium_driller"))) == 0.0, "a flat drill has no attack damage");
         h.succeed();
+    }
+
+    private static ItemStack charged(String id) {
+        ItemStack stack = new ItemStack(item(id));
+        var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) stack.getItem();
+        battery.setEnergy(stack, battery.getMaxEnergy(stack));
+        return stack;
     }
 
     private static Fluid air() { return BuiltInRegistries.FLUID.get(si("air")); }

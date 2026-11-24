@@ -1210,7 +1210,7 @@
   "gui.mio_icif.od_scanner.ore_count_suffix": "个",
   "hud.mio_icif.driller.mode_fortune": "时运",
   "hud.mio_icif.driller.mode_silk": "精准采集",
-  "hud.mio_icif.driller.display": "铱钻头已切换至: %s 电池:%s/%s EU",
+  "hud.mio_icif.driller.display": "铱钻头：%s · %s / %s EU",
   "hud.mio_icif.iron_hoe.mode_1x1": "1x1 范围",
   "hud.mio_icif.iron_hoe.mode_3x3": "3x3 范围",
   "hud.mio_icif.iron_hoe.mode_5x5": "5x5 范围",
@@ -2303,7 +2303,7 @@
   "gui.mio_icif.water_kinetic.biome_other": "其他",
   "gui.mio_icif.water_kinetic.not_in_water": "不在天然水体中",
   "gui.mio_icif.water_kinetic.unknown": "未知",
-  "hud.mio_icif.driller.switch_mode": "模式：%s",
+  "hud.mio_icif.driller.switch_mode": "模式：%s（潜行 + G 切换）",
   "hud.mio_icif.laser_miner.disabled": "%s 模式已禁用",
   "jei.mio_icif.condenser": "冷凝机",
   "jei.mio_icif.solar_distiller": "太阳能蒸馏机",
@@ -6165,5 +6165,11 @@
   "message.mio_icif.electric_wireless_manager.not_energy": "这个方块不储存 EU，请选择机器或储电方块",
   "tooltip.mio_icif.tool.stats": "等级 %s · 每次 %s EU · 约可用 %s 次",
   "tooltip.mio_icif.tool.tier": "等级 %s",
-  "message.mio_icif.tool.no_energy": "电量不足"
+  "message.mio_icif.tool.no_energy": "电量不足",
+  "tooltip.mio_icif.drill.area": "%s×%s",
+  "tooltip.mio_icif.drill.area_line": "范围：%s（G 键切换）",
+  "message.mio_icif.drill.area": "钻头范围：%s",
+  "message.mio_icif.chainsaw.mode": "链锯：%s",
+  "tooltip.mio_icif.chainsaw.single": "单块",
+  "tooltip.mio_icif.chainsaw.felling": "整棵伐木"
 }

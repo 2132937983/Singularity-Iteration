@@ -1180,7 +1180,7 @@
   "gui.mio_icif.od_scanner.ore_count_suffix": "found",
   "hud.mio_icif.driller.mode_fortune": "Fortune",
   "hud.mio_icif.driller.mode_silk": "Silk Touch",
-  "hud.mio_icif.driller.display": "Iridium Drill switched to: %s Battery:%s/%s EU",
+  "hud.mio_icif.driller.display": "Iridium drill: %s · %s / %s EU",
   "hud.mio_icif.iron_hoe.mode_1x1": "1x1 Area",
   "hud.mio_icif.iron_hoe.mode_3x3": "3x3 Area",
   "hud.mio_icif.iron_hoe.mode_5x5": "5x5 Area",
@@ -2273,7 +2273,7 @@
   "gui.mio_icif.water_kinetic.biome_other": "Other",
   "gui.mio_icif.water_kinetic.not_in_water": "Not in natural water",
   "gui.mio_icif.water_kinetic.unknown": "Unknown",
-  "hud.mio_icif.driller.switch_mode": "Mode: %s",
+  "hud.mio_icif.driller.switch_mode": "Mode: %s (sneak + G to switch)",
   "hud.mio_icif.laser_miner.disabled": "%s mode is disabled",
   "jei.mio_icif.condenser": "Condenser",
   "jei.mio_icif.solar_distiller": "Solar Distiller",
@@ -6165,5 +6165,11 @@
   "message.mio_icif.electric_wireless_manager.not_energy": "That block stores no EU; pick a machine or a storage block",
   "tooltip.mio_icif.tool.stats": "Tier %s · %s EU per use · %s uses left",
   "tooltip.mio_icif.tool.tier": "Tier %s",
-  "message.mio_icif.tool.no_energy": "Not enough energy"
+  "message.mio_icif.tool.no_energy": "Not enough energy",
+  "tooltip.mio_icif.drill.area": "%s×%s",
+  "tooltip.mio_icif.drill.area_line": "Area: %s (G to switch)",
+  "message.mio_icif.drill.area": "Drill area: %s",
+  "message.mio_icif.chainsaw.mode": "Chainsaw: %s",
+  "tooltip.mio_icif.chainsaw.single": "One block",
+  "tooltip.mio_icif.chainsaw.felling": "Fell the tree"
 }

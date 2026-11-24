@@ -81,7 +81,7 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
         // 检查是否有杂草
         if (planter.getPlant() == null || !planter.getPlant().getTypeId().equals("weed")) {
             if (!level.isClientSide && player != null) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.weeding_trowel.no_weed"));
+                player.displayClientMessage(Component.translatable("message.mio_icif.weeding_trowel.no_weed"), true);
             }
             return InteractionResult.FAIL;
         }
@@ -121,12 +121,8 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
             // 更新方块状态以同步客户端
         planter.updateState();
 
-            // 消耗耐久（如果有耐久度）
-
-
-            if (player != null) {
-                player.sendSystemMessage(Component.translatable("message.mio_icif.weeding_trowel.success"));
-            }
+            // 0.1.11.196 (T3, M-09): the result on the action bar, not in chat. No durability, as in IC2.
+            player.displayClientMessage(Component.translatable("message.mio_icif.weeding_trowel.success"), true);
         }
 
         return InteractionResult.SUCCESS;

@@ -1232,7 +1232,7 @@
   "gui.mio_icif.od_scanner.ore_count_suffix": "найдено",
   "hud.mio_icif.driller.mode_fortune": "Удача",
   "hud.mio_icif.driller.mode_silk": "Шёлковое касание",
-  "hud.mio_icif.driller.display": "Иридиевый бур переключён на: %s Батарея:%s/%s EU",
+  "hud.mio_icif.driller.display": "Иридиевый бур: %s · %s / %s EU",
   "hud.mio_icif.iron_hoe.mode_1x1": "Область 1x1",
   "hud.mio_icif.iron_hoe.mode_3x3": "Область 3x3",
   "hud.mio_icif.iron_hoe.mode_5x5": "Область 5x5",
@@ -2290,7 +2290,7 @@
   "gui.mio_icif.water_kinetic.biome_other": "Другой",
   "gui.mio_icif.water_kinetic.not_in_water": "Не в природном водоёме",
   "gui.mio_icif.water_kinetic.unknown": "Неизвестно",
-  "hud.mio_icif.driller.switch_mode": "Режим: %s",
+  "hud.mio_icif.driller.switch_mode": "Режим: %s (присесть + G — сменить)",
   "hud.mio_icif.laser_miner.disabled": "Режим %s отключён",
   "message.mio_icif.terra_elc.has_template": "Шаблон вставлен",
   "message.mio_icif.terra_elc.status.energy": "Энергия: %s / %s EU",
@@ -6165,5 +6165,11 @@
   "message.mio_icif.electric_wireless_manager.not_energy": "Этот блок не хранит EU; выберите машину или накопитель",
   "tooltip.mio_icif.tool.stats": "Уровень %s · %s EU за раз · осталось ~%s раз",
   "tooltip.mio_icif.tool.tier": "Уровень %s",
-  "message.mio_icif.tool.no_energy": "Недостаточно энергии"
+  "message.mio_icif.tool.no_energy": "Недостаточно энергии",
+  "tooltip.mio_icif.drill.area": "%s×%s",
+  "tooltip.mio_icif.drill.area_line": "Область: %s (G — сменить)",
+  "message.mio_icif.drill.area": "Область бура: %s",
+  "message.mio_icif.chainsaw.mode": "Бензопила: %s",
+  "tooltip.mio_icif.chainsaw.single": "Один блок",
+  "tooltip.mio_icif.chainsaw.felling": "Валить дерево целиком"
 }

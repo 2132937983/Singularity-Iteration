@@ -286,7 +286,7 @@
   "gui.mio_icif.water_kinetic.biome_other": "その他",
   "gui.mio_icif.water_kinetic.not_in_water": "自然の水中にありません",
   "gui.mio_icif.water_kinetic.unknown": "不明",
-  "hud.mio_icif.driller.switch_mode": "モード: %s",
+  "hud.mio_icif.driller.switch_mode": "モード：%s（スニーク + G で切替）",
   "hud.mio_icif.laser_miner.disabled": "%s モードは無効です",
   "jei.mio_icif.condenser": "凝縮機",
   "jei.mio_icif.solar_distiller": "太陽熱蒸留器",
@@ -2679,7 +2679,7 @@
   "gui.mio_icif.wind_kinetic.status.weak_wind_detail": "今の風の強さではローターを回せません",
   "gui.mio_icif.wind_kinetic_generator.output": "出力: %s KU/t",
   "gui.mio_icif.wind_kinetic_generator.wind_strength": "風の強さ: %s MCU",
-  "hud.mio_icif.driller.display": "イリジウムドリルを切り替え: %s バッテリー: %s/%s EU",
+  "hud.mio_icif.driller.display": "イリジウムドリル：%s · %s / %s EU",
   "hud.mio_icif.driller.mode_fortune": "幸運",
   "hud.mio_icif.driller.mode_silk": "シルクタッチ",
   "hud.mio_icif.iron_hoe.display": "電動クワ 範囲: %s バッテリー: %s/%s EU",
@@ -6165,5 +6165,11 @@
   "message.mio_icif.electric_wireless_manager.not_energy": "そのブロックは EU を蓄えません。機械か蓄電ブロックを選んでください",
   "tooltip.mio_icif.tool.stats": "ティア %s · 1 回 %s EU · 残り約 %s 回",
   "tooltip.mio_icif.tool.tier": "ティア %s",
-  "message.mio_icif.tool.no_energy": "エネルギー不足"
+  "message.mio_icif.tool.no_energy": "エネルギー不足",
+  "tooltip.mio_icif.drill.area": "%s×%s",
+  "tooltip.mio_icif.drill.area_line": "範囲：%s（G で切替）",
+  "message.mio_icif.drill.area": "ドリル範囲：%s",
+  "message.mio_icif.chainsaw.mode": "チェーンソー：%s",
+  "tooltip.mio_icif.chainsaw.single": "1 ブロック",
+  "tooltip.mio_icif.chainsaw.felling": "木を丸ごと伐採"
 }

@@ -360,10 +360,12 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
         queue.add(start);
 
         int harvested = 0;
+        // 0.1.11.196 (T3, M-12): the drops of the whole chain are merged and land at the clicked crop, with one sound
+        List<ItemStack> drops = new java.util.ArrayList<>();
         while (!queue.isEmpty() && harvested < MAX_CHAIN_HARVESTS && visited.size() <= MAX_CHAIN_VISITS) {
             if (!hasEnoughEnergy(stack)) break;
             BlockPos pos = queue.poll();
-            if (harvestOne(level, pos, player, stack)) {
+            if (harvestOne(level, pos, player, stack, drops)) {
                 consumeEnergy(stack);
                 harvested++;
             }
@@ -378,6 +380,10 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
                 queue.add(next);
             }
         }
+        if (harvested > 0 && level instanceof ServerLevel) {
+            for (ItemStack drop : mergeDrops(drops)) Block.popResource(level, start, drop);
+            level.playSound(null, start, SoundEvents.CROP_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
     }
 
     /** 同一“作物家族”：同种作物方块；作物架的普通/升级款互相视为一族。 */
@@ -389,7 +395,25 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
         return state.is(referenceBlock);
     }
 
-    private boolean harvestOne(Level level, BlockPos pos, Player player, ItemStack stack) {
+    /** Merges equal stacks and splits them into full stacks, so a big field drops a few item entities, not hundreds. */
+    private static List<ItemStack> mergeDrops(List<ItemStack> drops) {
+        List<ItemStack> merged = new java.util.ArrayList<>();
+        for (ItemStack drop : drops) {
+            if (drop.isEmpty()) continue;
+            ItemStack into = null;
+            for (ItemStack m : merged) if (ItemStack.isSameItemSameComponents(m, drop)) { into = m; break; }
+            if (into == null) merged.add(drop.copy()); else into.grow(drop.getCount());
+        }
+        List<ItemStack> out = new java.util.ArrayList<>();
+        for (ItemStack m : merged) {
+            int max = Math.max(1, m.getMaxStackSize());
+            while (m.getCount() > max) out.add(m.split(max));
+            out.add(m);
+        }
+        return out;
+    }
+
+    private boolean harvestOne(Level level, BlockPos pos, Player player, ItemStack stack, List<ItemStack> sink) {
         BlockState state = level.getBlockState(pos);
         BlockState replanted = matureCropReplantState(state);
         // 0.1.11.193 (T0, M-02): each harvested crop is asked for as a break, each crop stick as an edit
@@ -401,12 +425,14 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
         if (replanted != null) {
             if (level instanceof ServerLevel serverLevel) {
                 // Block.getDrops 会查询工具的时运等级，本工具通过 GetEnchantmentLevelEvent 自带时运 3
-                List<ItemStack> drops = Block.getDrops(state, serverLevel, pos, null, player, stack);
+                List<ItemStack> drops = new java.util.ArrayList<>(Block.getDrops(state, serverLevel, pos, null, player, stack));
                 level.setBlock(pos, replanted, Block.UPDATE_ALL);
+                // 0.1.11.196 (T3, M-12): replanting takes one seed from the harvest, as a player replanting by hand does
+                net.minecraft.world.item.Item seed = state.getBlock().asItem();
                 for (ItemStack drop : drops) {
-                    Block.popResource(level, pos, drop);
+                    if (drop.is(seed)) { drop.shrink(1); break; }
                 }
-                level.playSound(null, pos, SoundEvents.CROP_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+                sink.addAll(drops);
             }
             return true;
         }
@@ -416,7 +442,6 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
             if (!level.isClientSide) {
                 // doHarvest 内部会扣除种子并重置生长阶段，等价于“收获后自动补种”
                 planter.doManualHarvest();
-                level.playSound(null, pos, SoundEvents.CROP_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
             }
             return true;
         }

@@ -442,6 +442,7 @@ public class WingmanEntity extends Mob {
         if (boostCooldown > 0) boostCooldown--;
         syncTarget(world);
         if (artsCooldown > 0) artsCooldown--;
+        if (rapidSlashCooldown > 0) rapidSlashCooldown--;
         if (state() == ACTIVE) SlashBladeCombat.tick(this);   // a blade's combo actions run on the wielder's tick
         disarmIdle();                                          // 0.1.10.4: the nanosaber goes off after a fight
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
@@ -578,7 +579,7 @@ public class WingmanEntity extends Mob {
         boolean wantLand = quietTicks >= LAND_DELAY && getPassengers().isEmpty() && (anchored || ownerStill >= LAND_DELAY);
         if (wantLand) {
             if (landSpot == null || landPost == null || landPost.distanceToSqr(post) > 1.0) {
-                landSpot = findLanding(post);
+                landSpot = findIdleLanding(post);
                 landPost = post;
                 landOwner = player.position();
             }
@@ -628,6 +629,32 @@ public class WingmanEntity extends Mob {
     /** Ground below {@code post} within 8 blocks with room for the suit, or null (water, lava, blocked, too deep). */
     @Nullable
     private Vec3 findLanding(Vec3 post) {
+        return findLandingColumn(post);
+    }
+
+    /** Idle landing search: tries {@code post} first, then 4 nearby horizontal offsets if the direct column was blocked (not over fluid). */
+    @Nullable
+    private Vec3 findIdleLanding(Vec3 post) {
+        Vec3 direct = findLandingColumn(post);
+        if (direct != null) return direct;
+        // Do not step off if directly above water/lava
+        Level level = level();
+        BlockPos start = BlockPos.containing(post);
+        for (int dy = 0; dy <= 8; dy++) {
+            BlockPos below = start.below(dy + 1);
+            if (!level.isLoaded(below)) break;
+            if (!level.getFluidState(below).isEmpty()) return null;
+            if (!level.getBlockState(below).getCollisionShape(level, below).isEmpty()) break;
+        }
+        for (double[] off : new double[][]{{1.2, 0}, {-1.2, 0}, {0, 1.2}, {0, -1.2}}) {
+            Vec3 alt = findLandingColumn(post.add(off[0], 0, off[1]));
+            if (alt != null) return alt;
+        }
+        return null;
+    }
+
+    @Nullable
+    private Vec3 findLandingColumn(Vec3 post) {
         Level level = level();
         BlockPos start = BlockPos.containing(post);
         for (int dy = 0; dy <= 8; dy++) {
@@ -677,8 +704,10 @@ public class WingmanEntity extends Mob {
         // for the same share; before, the saved EU counted as unpaid (the Armory paid it again, or
         // the Wingman flew home for low power).
         long base = WingmanConfig.upkeepEuPerSecond();
+        // Landed standby mode: thrusters off, only 25% base upkeep and zero speed cost
+        if (landed() && base > 0) base = Math.max(1, base / 4);
         // 0.1.11.50 (decision three B): the escort speed above cruise flown since the last upkeep is paid with it
-        long speed = (long) Math.ceil(speedDue);
+        long speed = landed() ? 0 : (long) Math.ceil(speedDue);
         speedDue = 0;
         if (base <= 0) { lowPowerSeconds = 0; speedStarved = false; return; }
         long due = base + speed;
@@ -1456,6 +1485,14 @@ public class WingmanEntity extends Mob {
 
     /** Melee: close in on the predicted position, strike, then peel off sideways and come back. */
     private void engageMelee(LivingEntity enemy, ServerPlayer player) {
+        // Emergency evade: thruster-boost clear of a fusing Creeper within 4.5 blocks
+        var fusing = WingmanTactics.fusingCreeper(this, 4.5);
+        if (fusing != null && boostCooldown == 0) {
+            boost(position().subtract(fusing.position()));
+            retreatTicks = 12;
+            hitPause = 0;
+            return;
+        }
         Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
         faceSmooth(enemy.getEyePosition(), 35);
         // 0.1.11.46 (M2): after a hit the Wingman stays a moment (the follow-through of the cut), then boosts away
@@ -1652,15 +1689,17 @@ public class WingmanEntity extends Mob {
     /** Chance that a chain against a target on the ground is played on the ground. */
     static final float GROUND_CHANCE = 0.6F;
     /** Ticks a Wingman tries to reach its ground spot or the cleave perch before it plays an aerial chain instead. */
-    static final int SETUP_TICKS = 40;
+    static final int SETUP_TICKS = 20;
     /** Ticks after the kick of aerial_rave_b3 in which the Wingman does not steer (the blade lifts it). */
     static final int KICK_TICKS = 6;
+    /** Cooldown between Rapid Slash gap-closers (ticks). */
+    static final int RAPID_SLASH_COOLDOWN = 40;
 
     private final BladeChain chain = new BladeChain();
     /** The chain chosen next and where it is set up (the ground spot or the cleave perch), and since when. */
     @Nullable private BladeChain.Kind planned;
     @Nullable private Vec3 setupAt;
-    private int setupTicks, kickTicks;
+    private int setupTicks, kickTicks, rapidSlashCooldown;
     private boolean aerialB, firstChain = true;
     @Nullable private LivingEntity chainTarget;
 
@@ -1668,6 +1707,13 @@ public class WingmanEntity extends Mob {
     BladeChain bladeChain() { return chain; }
 
     private void engageBlade(LivingEntity enemy, ServerPlayer player) {
+        // Evade fusing Creepers before committing to a grounded or close-range chain
+        var fusing = WingmanTactics.fusingCreeper(this, 4.5);
+        if (fusing != null && boostCooldown == 0) {
+            chain.end(level().getGameTime(), 0);
+            boost(position().subtract(fusing.position()));
+            return;
+        }
         faceSmooth(enemy.getEyePosition(), GAZE_TURN);
         long now = level().getGameTime();
         if (enemy != chainTarget) { chainTarget = enemy; firstChain = true; planned = null; chain.end(now, 0); }
@@ -1678,6 +1724,15 @@ public class WingmanEntity extends Mob {
             return;
         }
         if (!chain.free(now)) { holdAtBlade(enemy, player, false); return; }
+        // Rapid Slash gap-closer: dash straight into reach from 3.8..9.5 blocks with clear LOS
+        if (rapidSlashCooldown == 0 && d >= 3.8 && d <= 9.5 && hasLineOfSight(enemy)) {
+            if (SlashBladeCombat.attack(this, enemy, SlashBladeCombat.Command.FORWARD, SlashBladeCombat.Command.SPRINT) != null) {
+                slash(SLASH_DASH);
+                rapidSlashCooldown = RAPID_SLASH_COOLDOWN;
+                boost(enemy.position().subtract(position()));
+                return;
+            }
+        }
         // between chains: a Slash Art when it is ready
         if (artsCooldown == 0 && d < 7 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
@@ -1731,8 +1786,10 @@ public class WingmanEntity extends Mob {
         Vec3 spot = standsOnFloor(enemy) ? findLanding(enemy.position().add(side.scale(1.8)).add(0, 1.0, 0)) : null;
         if (spot != null && Math.abs(spot.y - enemy.getY()) > 1.1) spot = null;
         Vec3 perch = enemy.position().add(side.scale(1.2)).add(0, 4.0, 0);
-        if (firstChain && spot != null && level().noCollision(this, getBoundingBox().move(perch.subtract(position())).expandTowards(0, -3.0, 0))) {
-            planned = BladeChain.Kind.CLEAVE;   // the opener: up to the perch above the target, then the dive
+        // Only open with Aerial Cleave when already elevated above the target (avoids wasting 2s climbing from ground level)
+        if (firstChain && spot != null && getY() > enemy.getY() + 1.8
+                && level().noCollision(this, getBoundingBox().move(perch.subtract(position())).expandTowards(0, -3.0, 0))) {
+            planned = BladeChain.Kind.CLEAVE;
             setupAt = perch;
         } else if (spot != null && getRandom().nextFloat() < GROUND_CHANCE) {
             BladeChain.Kind[] ground = {BladeChain.Kind.GROUND_A, BladeChain.Kind.GROUND_C, BladeChain.Kind.GROUND_B};
@@ -1770,6 +1827,11 @@ public class WingmanEntity extends Mob {
 
     /** One tick of a running chain: stay at the target (on the ground, or in the air), click when due. */
     private void playChain(LivingEntity enemy, ServerPlayer player, BladeChain.Kind kind, long now, double d) {
+        // Smart finisher cancel: if the target died or fled out of reach during finisher rest, cut recovery short and pursue
+        if (chain.resting(now) && (!enemy.isAlive() || d > BLADE_REACH + 2.0)) {
+            chain.end(now, 0);
+            return;
+        }
         if (kind.grounded) {
             if (!onGround() && chain.clicks() > 0 && !chain.resting(now)) { chain.end(now, BladeChain.MISS_REST); return; }   // knocked off the ground: the chain is lost
             setDeltaMovement(0, -0.1, 0);   // stand (the suit flies without gravity)
@@ -2011,7 +2073,13 @@ public class WingmanEntity extends Mob {
     private Vec3 formation(ServerPlayer player) {
         // 0.1.8.4: tighter guard when the owner is below 40 % health
         double k = player.getHealth() < player.getMaxHealth() * 0.4F ? 0.6 : 1.0;
-        return WingmanFlight.place(player.position(), player.getYRot(), speedStarved ? Vec3.ZERO : ownerVelocity, slot, k);
+        Vec3 post = WingmanFlight.place(player.position(), player.getYRot(), speedStarved ? Vec3.ZERO : ownerVelocity, slot, k);
+        // Low-ceiling / doorway crouch: if the shoulder-height post hits a roof, drop smoothly to owner's level
+        if (!WingmanTactics.free(level(), post)) {
+            Vec3 low = new Vec3(post.x, player.getY() + 0.25, post.z);
+            if (WingmanTactics.free(level(), low)) return low;
+        }
+        return post;
     }
 
     /** Steers the velocity to {@code goal} with a limited acceleration; climbs over obstacles. */
@@ -2092,8 +2160,14 @@ public class WingmanEntity extends Mob {
         // 0.1.11.52 (P0, decision one A): a new lock starts with a stare: the Wingman stops, turns its head on the enemy and
         // holds it there for GLARE ticks before the first attack (at most once per GLARE_REST ticks, so a fight that
         // switches targets does not stall)
-        if (fresh) { glareTicks = GLARE; lastGlare = tickCount; }
-        if (id < 0) glareTicks = 0;
+        // Skip the 6-tick stare for urgent threats (fusing Creeper or mob actively hurting the owner)
+        boolean urgent = target instanceof net.minecraft.world.entity.monster.Creeper c && (c.isIgnited() || c.getSwellDir() > 0);
+        if (!urgent && target != null && owner != null) {
+            ServerPlayer op = world.getServer().getPlayerList().getPlayer(owner);
+            if (op != null && op.getLastHurtByMob() == target && op.tickCount - op.getLastHurtByMobTimestamp() < 40) urgent = true;
+        }
+        if (fresh && !urgent) { glareTicks = GLARE; lastGlare = tickCount; }
+        if (id < 0 || urgent) glareTicks = 0;
         station = null;
         hitPause = 0;   // 0.1.11.46: a new target starts without the pause of the last hit
         if (id >= 0) world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_LOCK.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);

@@ -117,4 +117,42 @@ public final class Round11553GameTests {
             "a broken chain rests 10 ticks");
         h.succeed();
     }
+
+    /** Landed standby pays 25% upkeep; fusing Creeper skips glare and triggers evasion detection. */
+    @GameTest(template = "empty", batch = "round11553_ai", timeoutTicks = 40)
+    public static void landedLowPowerAndFusingCreeperReaction(GameTestHelper h) {
+        var owner = Round33GameTests.survivalPlayer(h);
+        var w = (net.minecraft.world.entity.Mob) Round1102GameTests.wingman(h, owner, new net.minecraft.world.phys.Vec3(2.5, 2, 2.5));
+        Round33GameTests.call(w, "setReserve", 10_000L);
+        Round33GameTests.call(w, "touchDown");
+        h.assertTrue((Boolean) Round33GameTests.call(w, "landed"), "Wingman must be landed");
+        Round33GameTests.call(w, "upkeep", h.getLevel(), owner);
+        long left = (Long) Round33GameTests.call(w, "reserve");
+        h.assertTrue(left == 10_000L - 40L, "landed standby must pay 25% upkeep (40 EU), reserve left: " + left);
+
+        // Fusing Creeper detection + instant glare bypass
+        var creeper = net.minecraft.world.entity.EntityType.CREEPER.create(h.getLevel());
+        creeper.moveTo(w.getX() + 2.5, w.getY(), w.getZ());
+        creeper.setNoAi(true);
+        h.getLevel().addFreshEntity(creeper);
+        Class<?> tactics = Round33GameTests.common("armory.WingmanTactics");
+        h.assertTrue(Round33GameTests.call(tactics, "fusingCreeper", w, 4.5) == null, "calm Creeper must not trigger fusing evasion");
+        creeper.ignite();
+        h.assertTrue(Round33GameTests.call(tactics, "fusingCreeper", w, 4.5) == creeper, "ignited Creeper must trigger fusing evasion");
+
+        try {
+            var f = w.getClass().getDeclaredField("target");
+            f.setAccessible(true);
+            f.set(w, creeper);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+        Round33GameTests.call(w, "syncTarget", h.getLevel());
+        h.assertTrue((Integer) Round33GameTests.call(w, "glareTicks") == 0, "fusing Creeper must bypass 6-tick glare");
+
+        creeper.discard();
+        w.discard();
+        Round33GameTests.remove(owner);
+        h.succeed();
+    }
 }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MCM",
+    "IXI",
+    "MCM"
+  ],
+  "key": {
+    "M": {
+      "tag": "mio_icif:nano_living_metals"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_living_circuit"
+    },
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "X": {
+      "item": "mio_icif:module/item_nano_lattice_densifier"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_living_nano_lining",
+    "count": 1
+  }
+}

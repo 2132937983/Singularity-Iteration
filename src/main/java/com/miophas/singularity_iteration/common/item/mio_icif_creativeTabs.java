@@ -1141,7 +1141,10 @@ public class mio_icif_creativeTabs {
                 o.accept(SuitRegistry.unitItem(type));
                 if (type.hasMk2()) o.accept(SuitRegistry.unitItem(type, 2));
             }
-            if (group == 0) o.accept(SuitRegistry.BAY_EXPANDER.get());
+            if (group == 0) {
+                o.accept(SuitRegistry.BAY_EXPANDER.get());
+                o.accept(SuitRegistry.LIVING_NANO_LINING.get());
+            }
             if (group == 2) o.accept(SuitRegistry.LATTICE_DENSIFIER.get());
         }
         for (var core : SuitRegistry.cores()) o.accept(core.get());

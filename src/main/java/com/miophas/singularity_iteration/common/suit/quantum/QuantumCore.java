@@ -91,7 +91,7 @@ public final class QuantumCore {
      */
     @Nullable
     public static ItemStack corePiece(Player player) {
-        if (QuantumActions.available(player).isEmpty() && !capacitor(player)) return null;
+        if (QuantumActions.available(player).isEmpty() && !capacitor(player) && SuitModules.livingLiningCount(player) == 0) return null;
         for (EquipmentSlot slot : ARMOR) {
             ItemStack s = player.getItemBySlot(slot);
             if (SuitModules.isQuantumPiece(s)) return s;
@@ -205,11 +205,22 @@ public final class QuantumCore {
     }
 
     private static void regen(ServerPlayer player, QuantumCoreState s, @Nullable ItemStack core, float max) {
-        if (core == null || s.decoherentTicks > 0 || s.sustaining() || s.coherence >= max) return;
+        if (core == null) return;
+        int linings = SuitModules.livingLiningCount(player);
+        // Bio-neural gentle cellular regeneration when wearing Living-Nano-lined quantum pieces (out of combat)
+        if (linings > 0 && player.tickCount % 80 == 0 && player.getHealth() < player.getMaxHealth()
+                && player.tickCount - player.getLastHurtByMobTimestamp() > 100
+                && SuitModules.canPay(player, core, 1_000L)) {
+            SuitModules.extract(player, core, 1_000L);
+            player.heal(0.5F * Math.min(2, linings));
+        }
+        if (s.decoherentTicks > 0 || s.sustaining() || s.coherence >= max) return;
         if (player.level().getGameTime() - s.lastAction < QuantumConfig.regenDelay() || player.tickCount % 5 != 0) return;
         // Pure positive compute-core bonus (+20 % coherence regen per active core); no hidden saturation penalty
+        // Living Nano Lining bio-neural coupling: +10 % coherence regeneration per lined piece (up to +40 %)
         double coreBoost = 1.0 + 0.20 * QuantumLinks.activeComputeCores(player);
-        double rate = QuantumConfig.coherenceRegen() * (capacitor(player) ? 1.25 : 1.0) * coreBoost;
+        double rate = QuantumConfig.coherenceRegen() * (capacitor(player) ? 1.25 : 1.0) * coreBoost
+            * (1.0 + 0.10 * linings);
         float points = (float) Math.min(max - s.coherence, rate / 4.0);
         long cost = (long) Math.ceil(points * QuantumConfig.euPerCoherence());
         if (points <= 0 || cost > 0 && !SuitModules.canPay(player, core, cost)) return;

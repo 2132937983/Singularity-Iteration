@@ -6148,5 +6148,10 @@
   "module.mio_icif.tooltip.auto_synergy": "✦ Auto-Synergy: %s (with %s)",
   "gui.mio_icif.station.hint_quantum": "Accepts: %s · %s slot(s) free",
   "gui.mio_icif.station.hint_nano": "Accepts: %s · %s LP free",
-  "gui.mio_icif.station.synergy_preview": "✦ Auto-Synergy: %s"
+  "gui.mio_icif.station.synergy_preview": "✦ Auto-Synergy: %s",
+  "item.mio_icif.module.item_living_nano_lining": "Living Nano Lining",
+  "item.mio_icif.module.item_living_nano_lining.desc": "Awakens a quantum armor piece's internal nano undersuit, adding %s independent internal nano LP (does not use outer quantum slots).",
+  "item.mio_icif.module.item_living_nano_lining.bonus": "Bio-neural coupling: lined nano bursts pay quantum coherence; +10% coherence regen per lined piece and gentle out-of-combat healing.",
+  "gui.mio_icif.station.status.lining_max": "Living Nano Lining already awakened",
+  "gui.mio_icif.station.units_lined": "Q %s/%s · Living %s/%sLP"
 }

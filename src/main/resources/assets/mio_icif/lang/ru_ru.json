@@ -6148,5 +6148,10 @@
   "module.mio_icif.tooltip.auto_synergy": "✦ Авто-синергия: %s (с %s)",
   "gui.mio_icif.station.hint_quantum": "Слот: %s · свободно %s",
   "gui.mio_icif.station.hint_nano": "Слот: %s · свободно %s LP",
-  "gui.mio_icif.station.synergy_preview": "✦ Авто-синергия: %s"
+  "gui.mio_icif.station.synergy_preview": "✦ Авто-синергия: %s",
+  "item.mio_icif.module.item_living_nano_lining": "Живая наноподкладка",
+  "item.mio_icif.module.item_living_nano_lining.desc": "Пробуждает внутренний нанослой квантовой брони, открывая %s независ. LP для наномодулей (не занимает квантовые слоты).",
+  "item.mio_icif.module.item_living_nano_lining.bonus": "Нейросвязь: нано-импульсы тратят когерентность; +10% к её восст. за часть и мягкая регенерация вне боя.",
+  "gui.mio_icif.station.status.lining_max": "Живая наноподкладка уже активирована",
+  "gui.mio_icif.station.units_lined": "Кв. %s/%s · Нано %s/%sLP"
 }

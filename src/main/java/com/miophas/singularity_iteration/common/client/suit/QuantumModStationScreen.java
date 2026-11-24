@@ -136,7 +136,12 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
                 if (!fits) g.fill(bx + bw - 2, by - 1, bx + bw + 1, by + 5, 0xFFFF5A4C);
             }
         } else {
-            g.drawString(font, Component.translatable("gui.mio_icif.station.units", units.size(), cap), lx + 4, ly + 3, head, false);
+            int qUsed = SuitModules.quantumUnitsUsed(suit);
+            boolean lined = SuitModules.hasLivingLining(suit);
+            Component hdr = lined
+                ? Component.translatable("gui.mio_icif.station.units_lined", qUsed, cap, SuitModules.liningLatticeUsed(suit), SuitModules.LIVING_LINING_LP)
+                : Component.translatable("gui.mio_icif.station.units", qUsed, cap);
+            g.drawString(font, hdr, lx + 4, ly + 3, lined ? 0xFF44EE98 : head, false);
             // capacity pips; 0.1.10.0: the expansion bay slot is violet, and a bay expander in the unit slot previews it
             int base = cap - SuitModules.bayLevel(suit);
             boolean preview = QuantumModStationBlockEntity.isBayExpander(menu.unit()) && SuitModules.canExpand(suit);
@@ -146,7 +151,7 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
                 int px = lx + lw - 6 - (shown - 1 - i) * 7;
                 boolean bay = i >= base;
                 int c = i >= cap ? ((int) (0x50 + 0x80 * blink) << 24) | 0xB98CFF
-                    : bay ? (i < units.size() ? 0xFFB98CFF : 0x50B98CFF) : (i < units.size() ? 0xFF7CFFB2 : 0x407CFFB2);
+                    : bay ? (i < qUsed ? 0xFFB98CFF : 0x50B98CFF) : (i < qUsed ? 0xFF7CFFB2 : 0x407CFFB2);
                 g.fill(px, ly + 4, px + 5, ly + 9, c);
             }
         }

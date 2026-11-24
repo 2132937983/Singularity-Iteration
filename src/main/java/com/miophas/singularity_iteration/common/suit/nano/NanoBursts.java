@@ -64,12 +64,21 @@ public final class NanoBursts {
         if (builtin == SuitModuleType.OPTICAL_CAMO && s.camoActive()) { endCamo(player, s, 0); return; }
         ItemStack piece = SuitModules.wornPieceWith(player, unit);
         boolean on = builtin != null ? NanoSuit.active(player, builtin) : SuitModules.isActive(player, unit);
-        if (piece.isEmpty() || !SuitModules.isNanoPiece(piece) || !on) { deny(player, DENY_OFF); return; }
+        boolean linedQuantum = SuitModules.hasLivingLining(piece);
+        if (piece.isEmpty() || (!SuitModules.isNanoPiece(piece) && !linedQuantum) || !on) { deny(player, DENY_OFF); return; }
         SuitBurstSpec spec = NanoSuit.burstSpec(unit);
         if (spec == null) { deny(player, DENY_NONE); return; }
-        if (s.overheated) { deny(player, DENY_OVERHEAT); return; }
         if (s.cooldown(unit.key()) > 0) { deny(player, DENY_COOLDOWN); return; }
-        if (s.reserve < spec.reserveCost()) { deny(player, DENY_RESERVE); return; }
+        float cohCost = Math.max(8F, Math.round(spec.reserveCost() * 0.8F));
+        if (linedQuantum) {
+            // Living Nano Lining on Quantum armor: unified single-resource payment via Quantum Coherence (no Nano heat)
+            var qs = com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.state(player);
+            if (qs.decoherentTicks > 0) { deny(player, com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_DECOHERENT); return; }
+            if (qs.coherence < cohCost) { deny(player, com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_COHERENCE); return; }
+        } else {
+            if (s.overheated) { deny(player, DENY_OVERHEAT); return; }
+            if (s.reserve < spec.reserveCost()) { deny(player, DENY_RESERVE); return; }
+        }
         // 0.1.8.6: the kinetic armor mesh and the optical camouflage never run together
         if (builtin == SuitModuleType.OPTICAL_CAMO && s.meshTicks > 0 || builtin == SuitModuleType.KINETIC_MESH && s.camoActive()) {
             deny(player, DENY_CONFLICT);
@@ -95,11 +104,17 @@ public final class NanoBursts {
             }
         }
         if (!fired) return;
-        if (!spec.sustained()) {
-            s.reserve = Math.max(0, s.reserve - spec.reserveCost());
-            if (spec.cooldownTicks() > 0) s.cooldown.put(unit.key(), spec.cooldownTicks());
+        if (linedQuantum) {
+            com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.spend(
+                player, com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.state(player), cohCost);
+            if (!spec.sustained() && spec.cooldownTicks() > 0) s.cooldown.put(unit.key(), spec.cooldownTicks());
+        } else {
+            if (!spec.sustained()) {
+                s.reserve = Math.max(0, s.reserve - spec.reserveCost());
+                if (spec.cooldownTicks() > 0) s.cooldown.put(unit.key(), spec.cooldownTicks());
+            }
+            NanoSuit.addHeat(player, s, spec.heat());
         }
-        NanoSuit.addHeat(player, s, spec.heat());
         s.sentHash = 0;
     }
 

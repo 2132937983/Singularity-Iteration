@@ -57,6 +57,12 @@ public class mio_icif_data_components {
             builder -> builder.persistent(com.mojang.serialization.Codec.intRange(0, 4))
                 .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT));
 
+    /** Living Nano Lining on a quantum suit piece: awakens its internal nano undersuit layer (independent nano LP + bio-neural coupling). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> SUIT_LIVING_LINING =
+        DATA_COMPONENTS.registerComponentType("suit_living_lining",
+            builder -> builder.persistent(com.mojang.serialization.Codec.BOOL)
+                .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.BOOL));
+
     /**
      * Entanglement links of a quantum chestplate (0.1.10.1): the ids of the linked synergies (a built-in
      * id such as "predictive_guidance", or an addon "namespace:path"). Absent = no link.

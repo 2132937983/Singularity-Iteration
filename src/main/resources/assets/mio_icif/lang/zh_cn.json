@@ -6148,5 +6148,10 @@
   "module.mio_icif.tooltip.auto_synergy": "✦ 自动联动：%s（搭配 %s）",
   "gui.mio_icif.station.hint_quantum": "可装：%s模块 · 剩余 %s 槽",
   "gui.mio_icif.station.hint_nano": "可装：%s模块 · 剩余 %s LP",
-  "gui.mio_icif.station.synergy_preview": "✦ 将自动激活联动：%s"
+  "gui.mio_icif.station.synergy_preview": "✦ 将自动激活联动：%s",
+  "item.mio_icif.module.item_living_nano_lining": "活体纳米内衬",
+  "item.mio_icif.module.item_living_nano_lining.desc": "唤醒量子护甲内部的纳米内胆，解锁独立 %s LP 内层纳米晶格（不占用外层量子槽位）。",
+  "item.mio_icif.module.item_living_nano_lining.bonus": "神经耦合：内衬纳米爆发改耗量子相干，每件 +10% 相干恢复并附带脱战温和自愈。",
+  "gui.mio_icif.station.status.lining_max": "该量子护甲已活化活体纳米内衬",
+  "gui.mio_icif.station.units_lined": "量子 %s/%s · 活体 %s/%sLP"
 }

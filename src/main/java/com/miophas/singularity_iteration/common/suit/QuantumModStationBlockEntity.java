@@ -49,7 +49,9 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         /** 0.1.9.0: the core that a swap replaced waits in the unit slot until the player takes it out. */
         CORE_RETURNED,
         /** 0.1.10.0: the quantum piece already has its expansion bay. */
-        BAY_MAX }
+        BAY_MAX,
+        /** The quantum piece already has its Living Nano Lining awakened. */
+        LINING_MAX }
 
     private static final SlotLayout LAYOUT = SlotLayout.builder().battery().extra(2).build();
 
@@ -118,7 +120,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         return switch (slot) {
             case BATTERY_SLOT -> isBattery(stack);
             case SUIT_SLOT -> SuitModules.isSuitPiece(stack) || com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(stack);
-            case MODULE_SLOT -> UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack) || isBayExpander(stack);
+            case MODULE_SLOT -> UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack) || isBayExpander(stack) || isLivingLining(stack);
             default -> false;
         };
     }
@@ -140,6 +142,11 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     /** 0.1.10.0: the quantum bay expander goes into the unit slot too. */
     public static boolean isBayExpander(ItemStack stack) {
         return !stack.isEmpty() && stack.is(SuitRegistry.BAY_EXPANDER.get());
+    }
+
+    /** Living Nano Lining activator goes into the unit slot for quantum pieces. */
+    public static boolean isLivingLining(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(SuitRegistry.LIVING_NANO_LINING.get());
     }
 
     /** 0.1.9.0: frame core items go into the unit slot. */
@@ -169,6 +176,10 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         if (!suit().isEmpty() && isBayExpander(unit)) {
             if (!SuitModules.isQuantumPiece(suit())) return SuitModules.isSuitPiece(suit()) ? Status.WRONG_CLASS : Status.NOT_A_SUIT_PIECE;
             return SuitModules.canExpand(suit()) ? Status.WORKING : Status.BAY_MAX;
+        }
+        if (!suit().isEmpty() && isLivingLining(unit)) {
+            if (!SuitModules.isQuantumPiece(suit())) return SuitModules.isSuitPiece(suit()) ? Status.WRONG_CLASS : Status.NOT_A_SUIT_PIECE;
+            return SuitModules.canInstallLivingLining(suit()) ? Status.WORKING : Status.LINING_MAX;
         }
         UnitRef type = unitType(unit);
         if (suit().isEmpty() || type == null) return Status.NO_UNIT;
@@ -237,6 +248,8 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
             if (!SuitModules.densify(suit)) return;
         } else if (isBayExpander(unit())) {
             if (!SuitModules.expand(suit)) return;               // 0.1.10.0: +1 unit slot
+        } else if (isLivingLining(unit())) {
+            if (!SuitModules.installLivingLining(suit)) return;  // awakens internal living nano undersuit layer
         } else {
             UnitRef type = unitType(unit());
             int tier = SuitModuleItem.tierOf(unit());

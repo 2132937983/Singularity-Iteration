@@ -211,6 +211,7 @@ public final class Round111193GameTests {
         Vec3 at = h.absoluteVec(new Vec3(1, 8, 1));
         arrow.moveTo(at.x, at.y, at.z);
         arrow.setNoGravity(true);
+        arrow.setDeltaMovement(0, 0.5, 0);   // 0.1.11.195: only an arrow in flight is removed
         arrow.getPersistentData().putBoolean("mio_icif_nano_arrow", true);
         arrow.tickCount = 400;
         h.getLevel().addFreshEntity(arrow);

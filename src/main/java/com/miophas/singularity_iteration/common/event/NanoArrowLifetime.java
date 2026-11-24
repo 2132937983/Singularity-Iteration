@@ -21,6 +21,8 @@ public final class NanoArrowLifetime {
     public static void onArrowTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof AbstractArrow arrow && !arrow.level().isClientSide
                 && arrow.tickCount > mio_icif_nano_bow.ARROW_FLIGHT_TICKS && arrow.isNoGravity()
+                // 0.1.11.195: only an arrow still in flight; one stuck in a block stands still and can be picked up
+                && arrow.getDeltaMovement().lengthSqr() > 1.0E-4
                 && arrow.getPersistentData().getBoolean(mio_icif_nano_bow.ARROW_TAG)) {
             arrow.discard();
         }

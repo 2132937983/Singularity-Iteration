@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mio_icif:item_tool_nanosaber",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_quantum_sword",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_bronze_sword",
+      "required": false
+    }
+  ]
+}

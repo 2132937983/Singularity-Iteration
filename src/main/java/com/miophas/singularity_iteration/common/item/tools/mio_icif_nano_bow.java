@@ -72,13 +72,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
                 this.shoot(serverlevel, player, player.getUsedItemHand(), stack, list, arrowVelocity * 3.0F, 1.0F, true, null);
             }
 
-            // 如果不是创造模式，消耗箭矢
-            if (!player.hasInfiniteMaterials()) {
-                arrowStack.shrink(1);
-                if (arrowStack.isEmpty()) {
-                    player.getInventory().removeItem(arrowStack);
-                }
-            }
+            // 0.1.11.195 (T2, W-06): the arrow is taken in useAmmo, as a vanilla bow takes it (Infinity and creative keep it)
         }
 
         level.playSound(
@@ -162,15 +156,34 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
         }
     }
 
+    /**
+     * 0.1.11.195 (T2, W-06): vanilla {@code ProjectileWeaponItem.useAmmo}. Before, every arrow was marked intangible (it could
+     * never be picked up) and one was taken anyway, and Infinity did nothing. Now an arrow that is taken can be picked up
+     * again, and Infinity or creative shoots an arrow that is neither taken nor picked up.
+     */
     protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangible) {
-        if (!intangible && shooter.level() instanceof ServerLevel && 
-            !(shooter.hasInfiniteMaterials() || (ammo.getItem() instanceof net.minecraft.world.item.ArrowItem ai && ai.isInfinite(ammo, weapon, shooter)))) {
-            // 原版附魔处理
+        int taken = !intangible && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel server
+            ? net.minecraft.world.item.enchantment.EnchantmentHelper.processAmmoUse(server, weapon, ammo, 1) : 0;
+        if (taken > ammo.getCount()) return ItemStack.EMPTY;
+        if (taken == 0) {
+            ItemStack free = ammo.copyWithCount(1);
+            free.set(net.minecraft.core.component.DataComponents.INTANGIBLE_PROJECTILE, net.minecraft.util.Unit.INSTANCE);
+            return free;
         }
-        
-        ItemStack itemstack1 = ammo.copyWithCount(1);
-        itemstack1.set(net.minecraft.core.component.DataComponents.INTANGIBLE_PROJECTILE, net.minecraft.util.Unit.INSTANCE);
-        return itemstack1;
+        ItemStack shot = ammo.split(taken);
+        if (ammo.isEmpty() && shooter instanceof Player player) player.getInventory().removeItem(ammo);
+        return shot;
+    }
+
+    /** 0.1.11.195 (T2, D2): takes the bow enchantments (Power, Punch, Flame, Infinity) and Energy Saving. */
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public int getEnchantmentValue() {
+        return 1;
     }
 
     public net.minecraft.world.entity.projectile.AbstractArrow customArrow(

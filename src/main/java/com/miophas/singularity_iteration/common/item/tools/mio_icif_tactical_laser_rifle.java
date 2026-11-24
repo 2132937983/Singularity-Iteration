@@ -11,7 +11,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -72,23 +71,13 @@ public class mio_icif_tactical_laser_rifle extends mio_icif_tool_elc implements 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 
+    /**
+     * 0.1.11.195 (T2, W-09): the melee bonus. It was multiplied by (Sharpness + 1), which survival could never reach (the
+     * rifle takes no sword enchantments) and a command made explode (Sharpness V gave 120 more). Whether the bonus should
+     * need energy is the weapon batch's question (T4).
+     */
     @Override
     public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        Entity directEntity = damageSource.getDirectEntity();
-        if (directEntity instanceof LivingEntity living) {
-            ItemStack mainHand = living.getMainHandItem();
-            if (!mainHand.isEmpty() && mainHand.getItem() == this) {
-                int sharpness = 0;
-                net.minecraft.world.item.enchantment.ItemEnchantments itemenchantments = mainHand.getOrDefault(net.minecraft.core.component.DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
-                for (var entry : itemenchantments.entrySet()) {
-                    if (entry.getKey().is(Enchantments.SHARPNESS)) {
-                        sharpness = entry.getIntValue();
-                        break;
-                    }
-                }
-                return MELEE_DAMAGE * (sharpness > 0 ? sharpness + 1 : 1.0F);
-            }
-        }
         return MELEE_DAMAGE;
     }
 

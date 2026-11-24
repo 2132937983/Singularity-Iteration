@@ -28,6 +28,14 @@
     {
       "id": "mio_icif:item_tool_rocket_launcher",
       "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_nano_bow",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_tachyon_disruptor",
+      "required": false
     }
   ]
 }

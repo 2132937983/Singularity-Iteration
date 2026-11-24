@@ -186,7 +186,8 @@ public final class WingmanTactics {
         Vec3 c = target.position().add(0, target.getBbHeight() * 0.6, 0);
         double mid = (band[0] + band[1]) * 0.5;
         double[] radii = {band[0] + 1.0, mid, band[1] - 1.0};
-        double[] heights = {2.5, 4.5, 7.0};
+        // Indoor-friendly heights (0.8, 2.2, 4.5) so ranged Wingmen find clear firing stations in 3-4 block caves/rooms too
+        double[] heights = {0.8, 2.2, 4.5};
         Vec3 fromOwner = new Vec3(c.x - owner.getX(), 0, c.z - owner.getZ());
         Vec3 flank = fromOwner.lengthSqr() < 1.0E-4 ? Vec3.ZERO : fromOwner.normalize();
         Vec3[] points = new Vec3[36], dirs = new Vec3[36];
@@ -342,9 +343,22 @@ public final class WingmanTactics {
         return best;
     }
 
+    /** Nearest fusing Creeper within {@code radius} (so Wingmen can thruster-boost clear of the blast), or null. */
+    @Nullable
+    static Creeper fusingCreeper(WingmanEntity self, double radius) {
+        Creeper best = null;
+        double bestD = radius * radius;
+        for (Creeper c : self.level().getEntitiesOfClass(Creeper.class, self.getBoundingBox().inflate(radius),
+                cr -> cr.isAlive() && (cr.isIgnited() || cr.getSwellDir() > 0))) {
+            double d = c.distanceToSqr(self);
+            if (d < bestD) { bestD = d; best = c; }
+        }
+        return best;
+    }
+
     /**
-     * Adds an avoidance term to a wanted velocity: probes the path 4 blocks ahead; a wall makes the
-     * Wingman climb, else slide along it (whichever side is free).
+     * Adds an avoidance term to a wanted velocity: probes the path ahead; a wall makes the Wingman
+     * climb, duck under a low lintel/ceiling, or slide laterally (whichever way is clear).
      */
     static Vec3 avoid(WingmanEntity self, Vec3 want) {
         if (want.lengthSqr() < 1.0E-4) return want;
@@ -359,10 +373,13 @@ public final class WingmanTactics {
         if (clear(level, from, ahead, self)) return want;
         Vec3 up = from.add(0, 2.5 * k, 0).add(dir.scale(2.5 * k));
         if (clear(level, from, up, self)) return want.add(0, 0.35 * k, 0);
+        // Indoor / doorway duck: if climbing is blocked by a ceiling or lintel, probe downward before sliding
+        Vec3 down = from.add(0, -1.6, 0).add(dir.scale(2.0 * k));
+        if (clear(level, from, down, self) && free(level, self.position().add(0, -0.8, 0))) return want.add(0, -0.32 * k, 0);
         Vec3 side = new Vec3(-dir.z, 0, dir.x);
         Vec3 left = from.add(side.scale(2.5 * k)).add(dir.scale(1.5 * k)), right = from.add(side.scale(-2.5 * k)).add(dir.scale(1.5 * k));
         if (clear(level, from, left, self)) return want.add(side.scale(0.35 * k));
         if (clear(level, from, right, self)) return want.add(side.scale(-0.35 * k));
-        return want.add(0, 0.3, 0).scale(0.5);
+        return want.add(0, 0.15, 0).scale(0.5);
     }
 }

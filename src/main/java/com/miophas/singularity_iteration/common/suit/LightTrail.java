@@ -10,14 +10,33 @@ import net.minecraft.world.phys.Vec3;
  * with the partial tick ({@code gameTime + partial}).
  */
 public final class LightTrail {
-    private final Vec3[] points = new Vec3[LightTrailRules.MAX_POINTS];
-    private final double[] times = new double[LightTrailRules.MAX_POINTS];
-    private final float[] levels = new float[LightTrailRules.MAX_POINTS];
+    private final float maxAgeTicks;
+    private final int maxPoints;
+    private final Vec3[] points;
+    private final double[] times;
+    private final float[] levels;
     private int count;
     private long lastTick = Long.MIN_VALUE;
     private Vec3 head;
     private double headTime;
     private float headLevel;
+
+    /** Default trail using {@link LightTrailRules#MAX_AGE_TICKS}. */
+    public LightTrail() {
+        this(LightTrailRules.MAX_AGE_TICKS);
+    }
+
+    /** Trail with a custom persistence window in ticks (e.g. {@link LightTrailRules#RIBBON_AGE_TICKS}). */
+    public LightTrail(float maxAgeTicks) {
+        this.maxAgeTicks = Math.max(0.5F, maxAgeTicks);
+        this.maxPoints = (int) Math.ceil(this.maxAgeTicks) + 2;
+        this.points = new Vec3[this.maxPoints];
+        this.times = new double[this.maxPoints];
+        this.levels = new float[this.maxPoints];
+    }
+
+    /** Persistence window of this trail in ticks. */
+    public float maxAgeTicks() { return maxAgeTicks; }
 
     /** Takes the nozzle at {@code pos} at time {@code time} with the trail's strength {@code level} then. */
     public void sample(double time, Vec3 pos, float level) {
@@ -28,16 +47,16 @@ public final class LightTrail {
         long tick = (long) Math.floor(time);
         if (tick != lastTick) {
             lastTick = tick;
-            System.arraycopy(points, 0, points, 1, LightTrailRules.MAX_POINTS - 1);
-            System.arraycopy(times, 0, times, 1, LightTrailRules.MAX_POINTS - 1);
-            System.arraycopy(levels, 0, levels, 1, LightTrailRules.MAX_POINTS - 1);
+            System.arraycopy(points, 0, points, 1, maxPoints - 1);
+            System.arraycopy(times, 0, times, 1, maxPoints - 1);
+            System.arraycopy(levels, 0, levels, 1, maxPoints - 1);
             points[0] = pos;
             times[0] = time;
             levels[0] = level;
-            count = Math.min(count + 1, LightTrailRules.MAX_POINTS);
+            count = Math.min(count + 1, maxPoints);
         }
         // drop the points the trail has left behind (one stays past the end so the fade reaches zero between samples)
-        while (count > 1 && time - times[count - 2] > LightTrailRules.MAX_AGE_TICKS) count--;
+        while (count > 1 && time - times[count - 2] > maxAgeTicks) count--;
     }
 
     /** Forgets the path. */

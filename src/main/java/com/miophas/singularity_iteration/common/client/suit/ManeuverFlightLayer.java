@@ -58,6 +58,8 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         }
         HoverField.drawSoles(pose, buffers, model, player, partial);   // 0.1.11.126 (E3): the electromagnetic hover
         ArcNet.draw(pose, buffers, model, player);                       // 0.1.11.128 (E5): the ionised sheath past the barrier
+        PhaseEnergyWings.drawWings(pose, buffers, model, player, partial);       // High-speed dorsal Phase Energy Wings
+        PhaseEnergyWings.drawBrakePalms(pose, buffers, model, player, partial);  // Air-Brake palm reverse-thrust rings
         // a graviton core has no nozzles: its field rings stay (a field, not an exhaust)
         java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player, partial);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);

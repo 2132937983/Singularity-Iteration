@@ -155,7 +155,7 @@ public final class ManeuverModeClient {
      * frame.
      */
     static final class Visual {
-        float pitch, roll, turnSpeed, lastYaw, heave, transition, lean;
+        float pitch, roll, turnSpeed, lastYaw, heave, transition, lean, brakeFlare;
         boolean wasShock;
         /** 0.1.11.5: measured speed in blocks per tick, smoothed. */
         double speed;
@@ -860,10 +860,13 @@ public final class ManeuverModeClient {
         float leanTarget = 7.0F + 9.0F * stick[0];
         vis.lean += (leanTarget - vis.lean) * Math.min(1, dt * 5);
         float hoverPitch = vis.lean, hoverRoll = -stick[1] * 10.0F;
-        // cruise: body along the view axis, banked into the turn
+        // cruise: body along the view axis, fighter-jet banking into turns, and Air-Brake Flare nose-up when braking hard
         float lookPitch = Mth.lerp(partial, p.xRotO, p.getXRot());
-        float cruisePitch = 90.0F + lookPitch;
-        float cruiseRoll = Mth.clamp(-vis.turnSpeed * 0.28F, -38, 38);
+        float brakeTarget = Mth.clamp((vis.brake - 0.15F) / 0.65F, 0F, 1F) * cruise;
+        float brakeRate = brakeTarget > vis.brakeFlare ? 12.0F : 6.0F;
+        vis.brakeFlare += (brakeTarget - vis.brakeFlare) * Math.min(1F, dt * brakeRate);
+        float cruisePitch = 90.0F + lookPitch - 22.0F * vis.brakeFlare;
+        float cruiseRoll = Mth.clamp(-vis.turnSpeed * 0.36F, -58, 58);
         float targetPitch = Mth.lerp(cruise, hoverPitch, cruisePitch) * vis.transition;
         float targetRoll = Mth.lerp(cruise, hoverRoll, cruiseRoll) * vis.transition;
         float k = 1 - (float) Math.exp(-5.0 * dt);
@@ -939,25 +942,38 @@ public final class ManeuverModeClient {
         float hoverLeftZ = -(0.30F + 0.45F * Math.max(-s, 0) - 0.15F * Math.max(s, 0)) * open;
         float hoverLegX = 0.06F + 0.25F * Math.max(f, 0);
 
-        // ---- cruise: arms along the body; the inside arm opens in a turn
+        // ---- cruise: arms along the body; the inside arm opens in a turn; supersonic tuck past Mach 1.0
         float turn = Mth.clamp(vis.turnSpeed / 120F, -1, 1);     // + = turning right
-        float tight = Mth.lerp(burn, 0.14F, 0.06F);
+        float sup = Mth.clamp((float) ((machOf(p) - 0.95) / 0.25), 0F, 1F) * cruise * (1F - vis.brakeFlare);
+        float tight = Mth.lerp(sup, Mth.lerp(burn, 0.14F, 0.06F), 0.02F);
         float cruiseRightZ = tight + 0.85F * Math.max(turn, 0) + 0.3F * Math.max(s, 0);
         float cruiseLeftZ = -(tight + 0.85F * Math.max(-turn, 0) + 0.3F * Math.max(-s, 0));
-        float cruiseArmX = Mth.lerp(burn, 0.0F, 0.12F);
-        float cruiseLegZ = Mth.lerp(burn, 0.03F, 0.0F);
+        float cruiseArmX = Mth.lerp(sup, Mth.lerp(burn, 0.0F, 0.12F), 0.22F);
+        float cruiseLegZ = Mth.lerp(sup, Mth.lerp(burn, 0.03F, 0.0F), 0.0F);
 
         float rightX = Mth.lerp(cruise, hoverArmX + jx, cruiseArmX + jx * 0.4F);
         float leftX = Mth.lerp(cruise, hoverArmX - jx, cruiseArmX - jx * 0.4F);
         float rightZ = Mth.lerp(cruise, hoverRightZ + jz, cruiseRightZ);
         float leftZ = Mth.lerp(cruise, hoverLeftZ - jz, cruiseLeftZ);
+
+        // ---- Air-Brake Flare: extend both arms forward palms-out & slightly tuck knees into the airstream
+        float flare = vis.brakeFlare;
+        if (flare > 0.005F) {
+            rightX = Mth.lerp(flare, rightX, -1.35F);
+            leftX = Mth.lerp(flare, leftX, -1.35F);
+            rightZ = Mth.lerp(flare, rightZ, 0.28F);
+            leftZ = Mth.lerp(flare, leftZ, -0.28F);
+        }
+
         mix(model.rightArm, rightX, 0.10F, rightZ, t);
         mix(model.leftArm, leftX, -0.10F, leftZ, t);
         float legX = Mth.lerp(cruise, hoverLegX, 0.02F);
         float legZ = Mth.lerp(cruise, 0.03F, cruiseLegZ);
-        mix(model.rightLeg, legX, 0.0F, legZ, t);
-        mix(model.leftLeg, legX + Mth.lerp(cruise, 0.04F, 0.02F), 0.0F, -legZ, t);
-        model.head.xRot = Mth.lerp(cruise * t, model.head.xRot, -1.25F);
+        float rightLegX = Mth.lerp(flare, legX + 0.08F * sup, -0.28F);
+        float leftLegX = Mth.lerp(flare, legX + Mth.lerp(cruise, 0.04F, 0.02F) - 0.06F * sup, -0.18F);
+        mix(model.rightLeg, rightLegX, 0.0F, legZ, t);
+        mix(model.leftLeg, leftLegX, 0.0F, -legZ, t);
+        model.head.xRot = Mth.lerp(cruise * t, model.head.xRot, -1.25F + 0.35F * flare);
         model.hat.copyFrom(model.head);
     }
 
@@ -1038,6 +1054,18 @@ public final class ManeuverModeClient {
         return vis == null ? 0 : vis.heave;
     }
 
+    /** Current maneuver transition blend (0..1) for a flyer (for {@link PhaseEnergyWings}). */
+    static float transitionOf(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis == null ? 0 : vis.transition;
+    }
+
+    /** Current smoothed air-brake intensity (0..1) for a flyer (for {@link PhaseEnergyWings}). */
+    static float brakeOf(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis == null ? 0 : vis.brakeFlare;
+    }
+
     /** Blends the rotation of a model part to (x, y, z) radians by the weight w (0 = no change, 1 = full). */
     private static void mix(net.minecraft.client.model.geom.ModelPart part, float x, float y, float z, float w) {
         part.xRot = Mth.lerp(w, part.xRot, x);
@@ -1057,6 +1085,8 @@ public final class ManeuverModeClient {
     static void renderWorld(RenderLevelStageEvent event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
+        boolean vapour = FcsClientConfig.vaporEffects() && FcsClientConfig.classicFlightFx();
+        if (!vapour && BOOMS.isEmpty()) return;   // skip empty legacy buffer flushes in modern electromagnetic mode
         long now = System.currentTimeMillis();
         Vec3 cam = event.getCamera().getPosition();
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
@@ -1066,16 +1096,27 @@ public final class ManeuverModeClient {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
-        // 0.1.11.63 (Q2), 0.1.11.74 (W4): outside the classic style the wake ribbons, the vapour cone, the Mach shell and the
-        // vapour shock rings are not drawn (the star streams and the phase warp stand for them); the booms list is still kept
-        // for the HUD flash
-        boolean vapour = FcsClientConfig.vaporEffects() && FcsClientConfig.classicFlightFx();
         alphaScale = FcsClientConfig.vaporIntensity();
+
+        if (!vapour) {
+            // Modern electromagnetic flight mode: Mach 1.0 dual-ring Phase Boom (cyan inner + violet outer + 6 radial spikes)
+            VertexConsumer phase = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            for (Iterator<Boom> it = BOOMS.iterator(); it.hasNext(); ) {
+                Boom b = it.next();
+                float age = (now - b.start) / (float) PHASE_BOOM_LIFE_MS;
+                if (age >= 1F) { it.remove(); continue; }
+                if (b.own && firstPerson) continue;
+                phaseBoom(phase, m, b, age, boomCentre(mc, b, age, partial));
+            }
+            buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+            pose.popPose();
+            return;
+        }
 
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.VAPOR);
         for (Player p : mc.level.players()) {
             Visual vis = VISUALS.get(p.getId());
-            if (vis == null || !vapour) continue;
+            if (vis == null) continue;
             if (!vis.trail.isEmpty() && com.miophas.singularity_iteration.common.client.render.FxBudget.tier(p) != com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR) wake(vc, m, vis, cam);     // 0.1.10.32 (P-3)
         }
         buffers.endBatch(SiRenderTypes.VAPOR);
@@ -1086,7 +1127,7 @@ public final class ManeuverModeClient {
         VertexConsumer veil = buffers.getBuffer(SiRenderTypes.VAPOR);
         for (Player p : mc.level.players()) {
             Visual vis = VISUALS.get(p.getId());
-            if (!vapour || vis == null) continue;
+            if (vis == null) continue;
             float age = coneAge(vis, now);
             if (age < 1F && !(p == mc.player && firstPerson)) cone(veil, m, p, age, partial, now, null);   // 0.1.11.5: not over the own camera
         }
@@ -1094,14 +1135,13 @@ public final class ManeuverModeClient {
         // supersonic shock shell (additive) and the first-person rim of the deflection field
         VertexConsumer glowCone = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         for (Player p : mc.level.players()) {
-            if (!vapour || !VISUALS.containsKey(p.getId()) || p == mc.player && firstPerson) continue;
+            if (!VISUALS.containsKey(p.getId()) || p == mc.player && firstPerson) continue;
             if (supersonic(p)) machShell(glowCone, m, p, machOf(p), partial, now);
         }
         // 0.1.11.5: no first-person rim of the deflection field any more (a disc 1.5 blocks ahead of the eye that sat in the
         // middle of the view for the whole cruise); the field shows on the body in third person and for other players
         buffers.endBatch(SiRenderTypes.FIELD_GLOW);
 
-        if (!vapour) BOOMS.clear();
         if (!BOOMS.isEmpty()) {
             // 0.1.11.5: the own boom is not drawn in the world in first person (the camera sits in the disc); the HUD
             // gives it a short edge flash instead
@@ -1307,6 +1347,7 @@ public final class ManeuverModeClient {
 
     /** Life of a boom (condensation disc and pressure wave) in milliseconds. */
     private static final long BOOM_LIFE_MS = 700;
+    private static final long PHASE_BOOM_LIFE_MS = 600;
 
     /**
      * 0.1.11.5: centre of a boom at {@code age}. The disc rides on the body of the flyer and slips back along the axis
@@ -1373,6 +1414,76 @@ public final class ManeuverModeClient {
             put(vc, m, c.add(d1.scale(r)), 0.9F, 0.97F, 1, a);
             put(vc, m, c.add(d1.scale(r + 0.04F)), 1, 1, 1, 0);
             put(vc, m, c.add(d0.scale(r + 0.04F)), 1, 1, 1, 0);
+        }
+    }
+
+    /**
+     * Mach 1.0 Dual-Ring Electromagnetic Phase Boom (additive): a crisp quantum cyan inner shock ring with a white-hot
+     * leading edge, a trailing electric violet-magenta outer phase ring, and 6 radial ionization spikes expanding over 0.6 s.
+     */
+    private static void phaseBoom(VertexConsumer vc, Matrix4f m, Boom b, float age, Vec3 c) {
+        Vec3 t = perp(b.axis), bn = b.axis.cross(t).normalize();
+        float ease = 1F - (1F - age) * (1F - age) * (1F - age);
+        float fade = (1F - age) * (1F - age);
+
+        // 1. Inner quantum cyan shock ring (white-hot crest -> cyan inner wake)
+        float rIn = 0.85F + 2.55F * ease;
+        float wIn = 0.14F + 0.20F * age;
+        drawPhaseRing(vc, m, c, t, bn, rIn, wIn, 0.24F, 0.91F, 1.0F, 0.88F, 0.98F, 1.0F, fade * 0.72F, 48);
+
+        // 2. Trailing electric violet-magenta outer phase ring
+        float outerAge = Mth.clamp((age - 0.05F) / 0.95F, 0F, 1F);
+        if (outerAge > 0F) {
+            float oEase = 1F - (1F - outerAge) * (1F - outerAge);
+            float oFade = (1F - outerAge) * (1F - outerAge);
+            Vec3 cOuter = c.subtract(b.axis.scale(0.22 + 0.35 * outerAge));
+            float rOut = 1.15F + 3.65F * oEase;
+            float wOut = 0.18F + 0.26F * outerAge;
+            drawPhaseRing(vc, m, cOuter, t, bn, rOut, wOut, 0.66F, 0.36F, 1.0F, 0.88F, 0.34F, 1.0F, oFade * 0.62F, 48);
+        }
+
+        // 3. Six radial ionization spikes bursting outward across the phase plane
+        if (age < 0.78F) {
+            float spikeAge = age / 0.78F;
+            float sFade = (1F - spikeAge) * (1F - spikeAge) * 0.85F;
+            double rot0 = (b.start % 360L) * Math.PI / 180.0;
+            float baseR = rIn * 0.72F;
+            float tipR = rIn + 0.95F + 1.45F * ease;
+            float halfW = 0.055F * (1F - 0.5F * spikeAge);
+            for (int i = 0; i < 6; i++) {
+                double ang = rot0 + i * (Math.PI / 3.0);
+                Vec3 dir = t.scale(Math.cos(ang)).add(bn.scale(Math.sin(ang)));
+                Vec3 side = t.scale(-Math.sin(ang)).add(bn.scale(Math.cos(ang))).scale(halfW);
+                Vec3 pBase = c.add(dir.scale(baseR));
+                Vec3 pMid = c.add(dir.scale(rIn));
+                Vec3 pTip = c.add(dir.scale(tipR));
+                put(vc, m, pBase, 0.24F, 0.91F, 1.0F, 0F);
+                put(vc, m, pMid.add(side), 0.85F, 0.98F, 1.0F, sFade);
+                put(vc, m, pTip, 0.66F, 0.42F, 1.0F, 0F);
+                put(vc, m, pMid.subtract(side), 0.85F, 0.98F, 1.0F, sFade);
+            }
+        }
+    }
+
+    /** Helper for a crisp two-band additive electromagnetic ring (soft inner wake -> bright crest -> sharp outer falloff). */
+    private static void drawPhaseRing(VertexConsumer vc, Matrix4f m, Vec3 c, Vec3 t, Vec3 bn,
+                                      float r, float w, float rCol, float gCol, float bCol,
+                                      float cR, float cG, float cB, float alpha, int steps) {
+        if (alpha <= 0.004F) return;
+        float rInner = Math.max(0.05F, r - w);
+        float rOuter = r + 0.07F;
+        for (int i = 0; i < steps; i++) {
+            double a0 = i * Math.PI * 2 / steps, a1 = (i + 1) * Math.PI * 2 / steps;
+            Vec3 d0 = t.scale(Math.cos(a0)).add(bn.scale(Math.sin(a0)));
+            Vec3 d1 = t.scale(Math.cos(a1)).add(bn.scale(Math.sin(a1)));
+            put(vc, m, c.add(d0.scale(rInner)), rCol, gCol, bCol, 0F);
+            put(vc, m, c.add(d1.scale(rInner)), rCol, gCol, bCol, 0F);
+            put(vc, m, c.add(d1.scale(r)), cR, cG, cB, alpha);
+            put(vc, m, c.add(d0.scale(r)), cR, cG, cB, alpha);
+            put(vc, m, c.add(d0.scale(r)), cR, cG, cB, alpha);
+            put(vc, m, c.add(d1.scale(r)), cR, cG, cB, alpha);
+            put(vc, m, c.add(d1.scale(rOuter)), rCol, gCol, bCol, 0F);
+            put(vc, m, c.add(d0.scale(rOuter)), rCol, gCol, bCol, 0F);
         }
     }
 

@@ -18,30 +18,45 @@ public final class VanillaFrame {
     /** RGB of the vanilla container title. */
     public static final int TITLE = 0x404040;
 
+    private static void rect(com.mojang.blaze3d.vertex.VertexConsumer vc, org.joml.Matrix4f m,
+                             int x1, int y1, int x2, int y2, int color) {
+        if (x2 <= x1 || y2 <= y1) return;
+        vc.addVertex(m, x1, y1, 0).setColor(color);
+        vc.addVertex(m, x1, y2, 0).setColor(color);
+        vc.addVertex(m, x2, y2, 0).setColor(color);
+        vc.addVertex(m, x2, y1, 0).setColor(color);
+    }
+
     public static void panel(GuiGraphics g, int x, int y, int w, int h) {
-        g.fill(x + 2, y, x + w - 2, y + 1, OUTLINE);
-        g.fill(x + 2, y + h - 1, x + w - 2, y + h, OUTLINE);
-        g.fill(x, y + 2, x + 1, y + h - 2, OUTLINE);
-        g.fill(x + w - 1, y + 2, x + w, y + h - 2, OUTLINE);
-        g.fill(x + 1, y + 1, x + 2, y + 2, OUTLINE);
-        g.fill(x + w - 2, y + 1, x + w - 1, y + 2, OUTLINE);
-        g.fill(x + 1, y + h - 2, x + 2, y + h - 1, OUTLINE);
-        g.fill(x + w - 2, y + h - 2, x + w - 1, y + h - 1, OUTLINE);
-        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, PANEL);
-        g.fill(x + 2, y + 1, x + w - 3, y + 3, LIGHT);
-        g.fill(x + 1, y + 2, x + 3, y + h - 3, LIGHT);
-        g.fill(x + 3, y + h - 3, x + w - 2, y + h - 1, SHADOW);
-        g.fill(x + w - 3, y + 3, x + w - 1, y + h - 2, SHADOW);
-        g.fill(x + 3, y + 3, x + w - 3, y + h - 3, PANEL);
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
+        rect(vc, m, x + 2, y, x + w - 2, y + 1, OUTLINE);
+        rect(vc, m, x + 2, y + h - 1, x + w - 2, y + h, OUTLINE);
+        rect(vc, m, x, y + 2, x + 1, y + h - 2, OUTLINE);
+        rect(vc, m, x + w - 1, y + 2, x + w, y + h - 2, OUTLINE);
+        rect(vc, m, x + 1, y + 1, x + 2, y + 2, OUTLINE);
+        rect(vc, m, x + w - 2, y + 1, x + w - 1, y + 2, OUTLINE);
+        rect(vc, m, x + 1, y + h - 2, x + 2, y + h - 1, OUTLINE);
+        rect(vc, m, x + w - 2, y + h - 2, x + w - 1, y + h - 1, OUTLINE);
+        rect(vc, m, x + 1, y + 1, x + w - 1, y + h - 1, PANEL);
+        rect(vc, m, x + 2, y + 1, x + w - 3, y + 3, LIGHT);
+        rect(vc, m, x + 1, y + 2, x + 3, y + h - 3, LIGHT);
+        rect(vc, m, x + 3, y + h - 3, x + w - 2, y + h - 1, SHADOW);
+        rect(vc, m, x + w - 3, y + 3, x + w - 1, y + h - 2, SHADOW);
+        rect(vc, m, x + 3, y + 3, x + w - 3, y + h - 3, PANEL);
+        g.flush();
     }
 
     /** A window sunk into the panel, filled with {@code fill}; (x, y, w, h) is its outer edge. */
     public static void inset(GuiGraphics g, int x, int y, int w, int h, int fill) {
-        g.fill(x, y, x + w - 1, y + 1, SLOT_DARK);
-        g.fill(x, y, x + 1, y + h - 1, SLOT_DARK);
-        g.fill(x + 1, y + h - 1, x + w, y + h, LIGHT);
-        g.fill(x + w - 1, y + 1, x + w, y + h, LIGHT);
-        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
+        rect(vc, m, x, y, x + w - 1, y + 1, SLOT_DARK);
+        rect(vc, m, x, y, x + 1, y + h - 1, SLOT_DARK);
+        rect(vc, m, x + 1, y + h - 1, x + w, y + h, LIGHT);
+        rect(vc, m, x + w - 1, y + 1, x + w, y + h, LIGHT);
+        rect(vc, m, x + 1, y + 1, x + w - 1, y + h - 1, fill);
+        g.flush();
     }
 
     /** An 18 x 18 slot whose item sits at (x + 1, y + 1). */
@@ -52,15 +67,18 @@ public final class VanillaFrame {
     /** The furnace arrow (22 x 15) at (x, y), filled white from the left by {@code fraction}. */
     public static void arrow(GuiGraphics g, int x, int y, double fraction) {
         int fill = (int) Math.round(22 * Math.max(0, Math.min(1, fraction)));
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
         for (int j = 0; j < 15; j++) {
             int d = Math.abs(j - 7);
             int x1 = 15 + 8 - d;                       // the head narrows to the tip
             int x0 = j >= 4 && j <= 10 ? 0 : 15;       // the shaft
             if (x1 <= x0) continue;
             int split = Math.max(x0, Math.min(x1, fill));
-            if (split > x0) g.fill(x + x0, y + j, x + split, y + j + 1, LIGHT);
-            if (x1 > split) g.fill(x + split, y + j, x + x1, y + j + 1, SLOT);
+            if (split > x0) rect(vc, m, x + x0, y + j, x + split, y + j + 1, LIGHT);
+            if (x1 > split) rect(vc, m, x + split, y + j, x + x1, y + j + 1, SLOT);
         }
+        g.flush();
     }
 
     // 0.1.11.141: an even slope (one pixel a row) above and below the cross bar; the old middle rows were out of step
@@ -71,16 +89,19 @@ public final class VanillaFrame {
     /** The energy bolt (9 x 13) at (x, y), filled yellow from the bottom by {@code fraction}. */
     public static void bolt(GuiGraphics g, int x, int y, double fraction) {
         int h = BOLT_ROWS.length, filledFrom = h - (int) Math.round(h * Math.max(0, Math.min(1, fraction)));
+        var m = g.pose().last().pose();
+        var vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
         for (int j = 0; j < h; j++) {
             String row = BOLT_ROWS[j];
             int c = j >= filledFrom ? BOLT : SLOT;
             for (int i = 0; i < row.length(); i++) if (row.charAt(i) == '#') {
                 int e = i;
                 while (e < row.length() && row.charAt(e) == '#') e++;
-                g.fill(x + i, y + j, x + e, y + j + 1, c);
+                rect(vc, m, x + i, y + j, x + e, y + j + 1, c);
                 i = e - 1;
             }
         }
+        g.flush();
     }
 
     /**

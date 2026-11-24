@@ -82,6 +82,8 @@ public final class ConnectedModel {
 
     /** The 18 neighbours: the 6 faces (bits 0-5, in {@link Direction} order), then the 12 edges. */
     static final int[][] OFFSETS;
+    /** For each edge index i in [6..17], bitmask of its two constituent faces in [0..5]. */
+    static final int[] EDGE_FACE_MASKS;
 
     static {
         List<int[]> list = new ArrayList<>();
@@ -91,6 +93,19 @@ public final class ConnectedModel {
                 for (int z = -1; z <= 1; z++)
                     if (Math.abs(x) + Math.abs(y) + Math.abs(z) == 2) list.add(new int[] {x, y, z});
         OFFSETS = list.toArray(new int[0][]);
+        EDGE_FACE_MASKS = new int[OFFSETS.length];
+        for (int i = 6; i < OFFSETS.length; i++) {
+            int[] o = OFFSETS[i];
+            int fm = 0;
+            for (Direction d : Direction.values()) {
+                if ((o[0] != 0 && d.getStepX() == o[0])
+                        || (o[1] != 0 && d.getStepY() == o[1])
+                        || (o[2] != 0 && d.getStepZ() == o[2])) {
+                    fm |= 1 << d.ordinal();
+                }
+            }
+            EDGE_FACE_MASKS[i] = fm;
+        }
     }
 
     /** The bit of a neighbour offset (a face or an edge), or -1. */
@@ -190,6 +205,8 @@ public final class ConnectedModel {
         private final ItemTransforms transforms;
         private final boolean ao, gui3d, blockLight;
         private final RenderTypeGroup group;
+        private final ChunkRenderTypeSet blockRenderTypes;
+        private final boolean hasCtm;
         /** The world offset of each of the 18 neighbours, in this model's (rotated) placement. */
         private final int[][] worldOffsets = new int[OFFSETS.length][];
         private final Map<Integer, List<BakedQuad>[]> cache = new ConcurrentHashMap<>();
@@ -206,6 +223,8 @@ public final class ConnectedModel {
             this.gui3d = gui3d;
             this.blockLight = blockLight;
             this.group = group;
+            this.blockRenderTypes = group.isEmpty() ? ChunkRenderTypeSet.of(RenderType.solid()) : ChunkRenderTypeSet.of(group.block());
+            this.hasCtm = !geometry.ctm().isEmpty();
             for (int i = 0; i < OFFSETS.length; i++) {
                 Vector3f v = rotation.transformDirection(new Vector3f(OFFSETS[i][0], OFFSETS[i][1], OFFSETS[i][2]));
                 worldOffsets[i] = new int[] {Math.round(v.x()), Math.round(v.y()), Math.round(v.z())};
@@ -215,8 +234,12 @@ public final class ConnectedModel {
         private boolean joins(BlockState self, BlockState other) {
             if (!other.is(self.getBlock())) return false;
             if (!geometry.sameFacing()) return true;
-            for (var facing : List.of(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.FACING))
-                if (self.hasProperty(facing)) return other.hasProperty(facing) && self.getValue(facing) == other.getValue(facing);
+            if (self.hasProperty(BlockStateProperties.HORIZONTAL_FACING))
+                return other.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
+                    && self.getValue(BlockStateProperties.HORIZONTAL_FACING) == other.getValue(BlockStateProperties.HORIZONTAL_FACING);
+            if (self.hasProperty(BlockStateProperties.FACING))
+                return other.hasProperty(BlockStateProperties.FACING)
+                    && self.getValue(BlockStateProperties.FACING) == other.getValue(BlockStateProperties.FACING);
             return true;
         }
 
@@ -224,9 +247,17 @@ public final class ConnectedModel {
         public ModelData getModelData(BlockAndTintGetter level, BlockPos pos, BlockState state, ModelData data) {
             int mask = 0;
             BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
-            for (int i = 0; i < worldOffsets.length; i++) {
+            for (int i = 0; i < 6; i++) {
                 at.setWithOffset(pos, worldOffsets[i][0], worldOffsets[i][1], worldOffsets[i][2]);
                 if (joins(state, level.getBlockState(at))) mask |= 1 << i;
+            }
+            if (hasCtm && mask != 0) {
+                for (int i = 6; i < worldOffsets.length; i++) {
+                    int req = EDGE_FACE_MASKS[i];
+                    if ((mask & req) != req) continue;
+                    at.setWithOffset(pos, worldOffsets[i][0], worldOffsets[i][1], worldOffsets[i][2]);
+                    if (joins(state, level.getBlockState(at))) mask |= 1 << i;
+                }
             }
             return data.derive().with(MASK, mask).build();
         }
@@ -302,7 +333,7 @@ public final class ConnectedModel {
 
         @Override
         public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-            return group.isEmpty() ? ChunkRenderTypeSet.of(RenderType.solid()) : ChunkRenderTypeSet.of(group.block());
+            return blockRenderTypes;
         }
 
         @Override

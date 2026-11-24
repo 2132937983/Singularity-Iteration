@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.armory;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -37,7 +38,8 @@ public class ArmoryRemoteItem extends Item {
         Player player = context.getPlayer();
         if (player == null || !player.isShiftKeyDown()) return InteractionResult.PASS;
         Level level = context.getLevel();
-        if (!(level.getBlockEntity(context.getClickedPos()) instanceof mio_icif_armory armory)) return InteractionResult.PASS;
+        BlockPos base = ArmoryBlock.basePos(level.getBlockState(context.getClickedPos()), context.getClickedPos());
+        if (!(level.getBlockEntity(base) instanceof mio_icif_armory armory)) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
         if (armory.owner() == null) {
             Component bind = armory.tryBind(player);
@@ -48,9 +50,9 @@ public class ArmoryRemoteItem extends Item {
             player.displayClientMessage(Component.translatable("message.mio_icif.armory.owned", armory.ownerName()), true);
             return InteractionResult.CONSUME;
         }
-        context.getItemInHand().set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), context.getClickedPos().immutable()));
+        context.getItemInHand().set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), base.immutable()));
         player.displayClientMessage(Component.translatable("message.mio_icif.armory_remote.paired",
-            context.getClickedPos().toShortString()), true);
+            base.toShortString()), true);
         return InteractionResult.CONSUME;
     }
 

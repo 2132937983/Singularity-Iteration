@@ -52,7 +52,14 @@ public final class TesuStructure {
 
     private final List<Cell> cells;
 
-    private TesuStructure(List<Cell> cells) { this.cells = List.copyOf(cells); }
+    private final it.unimi.dsi.fastutil.longs.LongOpenHashSet localOffsets;
+
+    private TesuStructure(List<Cell> cells) {
+        this.cells = List.copyOf(cells);
+        var set = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(this.cells.size());
+        for (Cell c : this.cells) set.add(BlockPos.asLong(c.x(), c.y(), c.z()));
+        this.localOffsets = set;
+    }
 
     public static TesuStructure get() {
         TesuStructure s = instance;
@@ -129,14 +136,26 @@ public final class TesuStructure {
         };
     }
 
+    private static void setRotated(BlockPos.MutableBlockPos out, BlockPos controller, Direction facing, int x, int y, int z) {
+        int rx, rz;
+        switch (facing) {
+            case EAST -> { rx = -z; rz = x; }
+            case SOUTH -> { rx = -x; rz = -z; }
+            case WEST -> { rx = z; rz = -x; }
+            default -> { rx = x; rz = z; }
+        }
+        out.set(controller.getX() + rx, controller.getY() + y, controller.getZ() + rz);
+    }
+
     /** Checks the structure of a controller at {@code controller} facing {@code facing}; stops at the first wrong cell. */
     public Check check(Level level, BlockPos controller, Direction facing) {
         List<BlockPos> inputs = new ArrayList<>(), outputs = new ArrayList<>(), wireless = new ArrayList<>();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (Cell cell : cells) {
-            BlockPos pos = at(controller, facing, cell);
-            if (!level.isLoaded(pos)) return new Check(false, true, pos, cell.part(), List.of(), List.of(), List.of());
+            setRotated(pos, controller, facing, cell.x(), cell.y(), cell.z());
+            if (!level.isLoaded(pos)) return new Check(false, true, pos.immutable(), cell.part(), List.of(), List.of(), List.of());
             BlockState state = level.getBlockState(pos);
-            if (!fits(cell.part(), state)) return new Check(false, false, pos, cell.part(), List.of(), List.of(), List.of());
+            if (!fits(cell.part(), state)) return new Check(false, false, pos.immutable(), cell.part(), List.of(), List.of(), List.of());
             if (cell.part() == Part.PORT_SLOT) {
                 if (state.is(mio_icif_blocks.TESU_INPUT.get())) inputs.add(pos.immutable());
                 else if (state.is(mio_icif_blocks.TESU_OUTPUT.get())) outputs.add(pos.immutable());
@@ -148,8 +167,17 @@ public final class TesuStructure {
 
     /** Whether {@code pos} is one of the structure's cells for this controller (a block change there means a check). */
     public boolean contains(BlockPos controller, Direction facing, BlockPos pos) {
-        for (Cell cell : cells) if (at(controller, facing, cell).equals(pos)) return true;
-        return false;
+        int dx = pos.getX() - controller.getX();
+        int dy = pos.getY() - controller.getY();
+        int dz = pos.getZ() - controller.getZ();
+        int lx, lz;
+        switch (facing) {
+            case EAST -> { lx = dz; lz = -dx; }
+            case SOUTH -> { lx = -dx; lz = -dz; }
+            case WEST -> { lx = -dz; lz = dx; }
+            default -> { lx = dx; lz = dz; }
+        }
+        return localOffsets.contains(BlockPos.asLong(lx, dy, lz));
     }
 
     /** The plan symbol of a part (the JEI and manual plan, {@code BuiltinStructureBlueprints}); air is '.'. */

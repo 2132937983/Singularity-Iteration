@@ -105,11 +105,14 @@ public class BlueprintBuilderRenderer implements BlockEntityRenderer<BlueprintBu
         for (int i = 3; i >= 0; i--) vc.addVertex(m, q[i][0], q[i][1], q[i][2]).setColor(70, 190, 255, a);
     }
 
-    @Override public boolean shouldRenderOffScreen(BlueprintBuilderBlockEntity be) { return true; }
+    @Override public boolean shouldRenderOffScreen(BlueprintBuilderBlockEntity be) {
+        return be.preview() || be.running();
+    }
     @Override public int getViewDistance() { return 512; }   // 0.1.11.186: a plan may be very large (was 128)
 
     @Override
     public AABB getRenderBoundingBox(BlueprintBuilderBlockEntity be) {
+        if (!be.preview() && !be.running()) return new AABB(be.getBlockPos());
         return AABB.INFINITE;   // 0.1.11.186: the box and the drones go as far as the plan (no range any more)
     }
 

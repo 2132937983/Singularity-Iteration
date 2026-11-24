@@ -1,0 +1,7105 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "armory_1x2",
+  "model_identifier": "mio_icif:producer/block_armory",
+  "visible_box": [
+    1,
+    2,
+    1
+  ],
+  "variable_placeholders": "",
+  "variable_placeholder_buttons": [],
+  "timeline_setups": [],
+  "unhandled_root_fields": {},
+  "resolution": {
+    "width": 16,
+    "height": 16
+  },
+  "elements": [
+    {
+      "name": "lower_silo_00",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0,
+        0.0,
+        0
+      ],
+      "to": [
+        16,
+        2.5,
+        16
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            13.5,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0.0,
+            13.5,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.0,
+            13.5,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0.0,
+            13.5,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "8aaa9071-b3cc-594b-a7af-23db6c87cfd9"
+    },
+    {
+      "name": "lower_silo_01",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.5,
+        2.5,
+        0.5
+      ],
+      "to": [
+        15.5,
+        3.5,
+        15.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            12.5,
+            15.5,
+            13.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0.5,
+            12.5,
+            15.5,
+            13.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.5,
+            12.5,
+            15.5,
+            13.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0.5,
+            12.5,
+            15.5,
+            13.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.5,
+            0.5,
+            15.5,
+            15.5
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.5,
+            0.5,
+            15.5,
+            15.5
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "8e8988de-a11a-583c-99ca-f09150cb1216"
+    },
+    {
+      "name": "lower_silo_02",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0,
+        0.0,
+        0
+      ],
+      "to": [
+        3.2,
+        3.6,
+        3.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            3.2,
+            3.2
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            3.2,
+            3.2
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "30bc82a2-ef6c-5e4e-aae3-1492828602f3"
+    },
+    {
+      "name": "lower_silo_03",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0,
+        0.0,
+        12.8
+      ],
+      "to": [
+        3.2,
+        3.6,
+        16
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.0,
+            12.8,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.0,
+            12.8,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "967a40f7-9fe2-5df6-9f5d-d9a46e634779"
+    },
+    {
+      "name": "lower_silo_04",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.8,
+        0.0,
+        0
+      ],
+      "to": [
+        16,
+        3.6,
+        3.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0.0,
+            12.4,
+            3.2,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.8,
+            0.0,
+            16.0,
+            3.2
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.8,
+            0.0,
+            16.0,
+            3.2
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "c9cd7d47-c1cb-5a50-8815-b9c2e495c57d"
+    },
+    {
+      "name": "lower_silo_05",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.8,
+        0.0,
+        12.8
+      ],
+      "to": [
+        16,
+        3.6,
+        16
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            12.8,
+            12.4,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.8,
+            12.8,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.8,
+            12.8,
+            16.0,
+            16.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "a2b1f469-6a61-52f2-a5c6-4a051e58cfc8"
+    },
+    {
+      "name": "lower_silo_06",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        1.2,
+        3.5,
+        1.2
+      ],
+      "to": [
+        14.8,
+        11.2,
+        14.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.2,
+            4.8,
+            14.8,
+            12.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            1.2,
+            4.8,
+            14.8,
+            12.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            1.2,
+            4.8,
+            14.8,
+            12.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            1.2,
+            4.8,
+            14.8,
+            12.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            1.2,
+            1.2,
+            14.8,
+            14.8
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            1.2,
+            1.2,
+            14.8,
+            14.8
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "015e5c90-5afe-5587-a2e1-ae0e6dfa7718"
+    },
+    {
+      "name": "lower_silo_07",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.8,
+        5.2,
+        4.0
+      ],
+      "to": [
+        1.4,
+        10.4,
+        12.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.8,
+            5.6,
+            1.4,
+            10.8
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            0.8,
+            5.6,
+            1.4,
+            10.8
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.0,
+            5.6,
+            12.0,
+            10.8
+          ],
+          "texture": 2
+        },
+        "up": {
+          "uv": [
+            0.8,
+            4.0,
+            1.4,
+            12.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.8,
+            4.0,
+            1.4,
+            12.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "a4c50efd-cddc-5c6e-8035-f101c0a8d796"
+    },
+    {
+      "name": "lower_silo_08",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.6,
+        5.2,
+        4.0
+      ],
+      "to": [
+        15.2,
+        10.4,
+        12.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.6,
+            5.6,
+            15.2,
+            10.8
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.0,
+            5.6,
+            12.0,
+            10.8
+          ],
+          "texture": 2
+        },
+        "south": {
+          "uv": [
+            14.6,
+            5.6,
+            15.2,
+            10.8
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            14.6,
+            4.0,
+            15.2,
+            12.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            14.6,
+            4.0,
+            15.2,
+            12.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "8be2d281-802a-59a5-b6f3-55d83e0afeae"
+    },
+    {
+      "name": "lower_silo_09",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        3.8,
+        4.2,
+        14.6
+      ],
+      "to": [
+        12.2,
+        10.8,
+        15.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "east": {
+          "uv": [
+            14.6,
+            5.2,
+            15.3,
+            11.8
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            3.8,
+            5.2,
+            12.2,
+            11.8
+          ],
+          "texture": 2
+        },
+        "west": {
+          "uv": [
+            14.6,
+            5.2,
+            15.3,
+            11.8
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            3.8,
+            14.6,
+            12.2,
+            15.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            3.8,
+            14.6,
+            12.2,
+            15.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "9799a6b2-b546-5a2b-8bf9-f5b7b8936f81"
+    },
+    {
+      "name": "lower_silo_10",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        3.5,
+        0.2
+      ],
+      "to": [
+        3.4,
+        15.5,
+        3.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.2,
+            0.2,
+            3.4,
+            3.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.2,
+            0.2,
+            3.4,
+            3.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "782495fb-d004-5960-b116-0a93a9797d03"
+    },
+    {
+      "name": "lower_silo_11",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        3.5,
+        12.6
+      ],
+      "to": [
+        3.4,
+        15.5,
+        15.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.2,
+            12.6,
+            3.4,
+            15.8
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.2,
+            12.6,
+            3.4,
+            15.8
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "0dce3278-995a-5c6b-b0b0-d9afd8029b6e"
+    },
+    {
+      "name": "lower_silo_12",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.6,
+        3.5,
+        0.2
+      ],
+      "to": [
+        15.8,
+        15.5,
+        3.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0.2,
+            0.5,
+            3.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            12.6,
+            0.2,
+            15.8,
+            3.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            12.6,
+            0.2,
+            15.8,
+            3.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "a6f7fecb-2d05-53f1-88f2-82ec8a6a9a3c"
+    },
+    {
+      "name": "lower_silo_13",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.6,
+        3.5,
+        12.6
+      ],
+      "to": [
+        15.8,
+        15.5,
+        15.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            12.6,
+            0.5,
+            15.8,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            12.6,
+            12.6,
+            15.8,
+            15.8
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            12.6,
+            12.6,
+            15.8,
+            15.8
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "bdb72b22-cf10-553c-9fa8-6a9439e965d4"
+    },
+    {
+      "name": "lower_silo_14",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        11.4,
+        3.4
+      ],
+      "to": [
+        2.4,
+        16.0,
+        12.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            0.0,
+            2.4,
+            4.6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            3.4,
+            0.0,
+            12.6,
+            4.6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.2,
+            0.0,
+            2.4,
+            4.6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            3.4,
+            0.0,
+            12.6,
+            4.6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.2,
+            3.4,
+            2.4,
+            12.6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.2,
+            3.4,
+            2.4,
+            12.6
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "c647fe47-cb9a-54f9-a0f6-1758169cda28"
+    },
+    {
+      "name": "lower_silo_15",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        13.6,
+        11.4,
+        3.4
+      ],
+      "to": [
+        15.8,
+        16.0,
+        12.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.6,
+            0.0,
+            15.8,
+            4.6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            3.4,
+            0.0,
+            12.6,
+            4.6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13.6,
+            0.0,
+            15.8,
+            4.6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            3.4,
+            0.0,
+            12.6,
+            4.6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            13.6,
+            3.4,
+            15.8,
+            12.6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            13.6,
+            3.4,
+            15.8,
+            12.6
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "b7849d20-a4e7-59ab-9e0d-8955d0ebbefe"
+    },
+    {
+      "name": "lower_silo_16",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        3.4,
+        12.4,
+        0.2
+      ],
+      "to": [
+        12.6,
+        15.5,
+        2.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.4,
+            0.5,
+            12.6,
+            3.6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0.2,
+            0.5,
+            2.4,
+            3.6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            3.4,
+            0.5,
+            12.6,
+            3.6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0.2,
+            0.5,
+            2.4,
+            3.6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            3.4,
+            0.2,
+            12.6,
+            2.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            3.4,
+            0.2,
+            12.6,
+            2.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "4baedb2a-695b-5e0c-83eb-80a123991567"
+    },
+    {
+      "name": "lower_silo_17",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        3.4,
+        11.8,
+        13.6
+      ],
+      "to": [
+        12.6,
+        15.5,
+        15.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.4,
+            0.5,
+            12.6,
+            4.2
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            13.6,
+            0.5,
+            15.8,
+            4.2
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            3.4,
+            0.5,
+            12.6,
+            4.2
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            13.6,
+            0.5,
+            15.8,
+            4.2
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            3.4,
+            13.6,
+            12.6,
+            15.8
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            3.4,
+            13.6,
+            12.6,
+            15.8
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "c6128dd2-0d96-501a-a6fb-3724cbc8cef3"
+    },
+    {
+      "name": "lower_silo_18",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        3.4,
+        3.5,
+        0.3
+      ],
+      "to": [
+        12.6,
+        5.0,
+        1.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.4,
+            11.0,
+            12.6,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0.3,
+            11.0,
+            1.5,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            3.4,
+            11.0,
+            12.6,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0.3,
+            11.0,
+            1.5,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            3.4,
+            0.3,
+            12.6,
+            1.5
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            3.4,
+            0.3,
+            12.6,
+            1.5
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "3d751d4a-8118-561b-be1e-6021492c5dd5"
+    },
+    {
+      "name": "lower_silo_19",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.3,
+        3.5,
+        3.6
+      ],
+      "to": [
+        1.3,
+        5.1,
+        12.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.3,
+            10.9,
+            1.3,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            3.6,
+            10.9,
+            12.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.3,
+            10.9,
+            1.3,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            3.6,
+            10.9,
+            12.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.3,
+            3.6,
+            1.3,
+            12.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.3,
+            3.6,
+            1.3,
+            12.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "e29be3ad-2575-59c0-a1c3-1f3010b7e280"
+    },
+    {
+      "name": "lower_silo_20",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.7,
+        3.5,
+        3.6
+      ],
+      "to": [
+        15.7,
+        5.1,
+        12.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.7,
+            10.9,
+            15.7,
+            12.5
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            3.6,
+            10.9,
+            12.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14.7,
+            10.9,
+            15.7,
+            12.5
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            3.6,
+            10.9,
+            12.4,
+            12.5
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            14.7,
+            3.6,
+            15.7,
+            12.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            14.7,
+            3.6,
+            15.7,
+            12.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "dfcc2515-8997-5931-9df5-bd59c5bdf1e2"
+    },
+    {
+      "name": "lower_silo_21",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        3.8,
+        5.0,
+        0.6
+      ],
+      "to": [
+        12.2,
+        12.4,
+        1.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.8,
+            3.6,
+            12.2,
+            11.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0.6,
+            3.6,
+            1.4,
+            11.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            3.8,
+            3.6,
+            12.2,
+            11.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0.6,
+            3.6,
+            1.4,
+            11.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            3.8,
+            0.6,
+            12.2,
+            1.4
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            3.8,
+            0.6,
+            12.2,
+            1.4
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "ab4aec09-a132-59cc-bb59-48df34ab25c9"
+    },
+    {
+      "name": "lower_silo_22",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        4.5,
+        5.8,
+        0.45
+      ],
+      "to": [
+        11.5,
+        11.6,
+        0.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 3
+        },
+        "east": {
+          "uv": [
+            0.45,
+            4.4,
+            0.7,
+            10.2
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            0.45,
+            4.4,
+            0.7,
+            10.2
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            4.5,
+            0.45,
+            11.5,
+            0.7
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            4.5,
+            0.45,
+            11.5,
+            0.7
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "adbc03a7-ee55-58ca-b024-43cede6ea5fb"
+    },
+    {
+      "name": "lower_silo_23",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        3.25,
+        5.2,
+        0.15
+      ],
+      "to": [
+        3.75,
+        12.2,
+        0.55
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.25,
+            3.8,
+            3.75,
+            10.8
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            0.15,
+            3.8,
+            0.55,
+            10.8
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            3.25,
+            3.8,
+            3.75,
+            10.8
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            0.15,
+            3.8,
+            0.55,
+            10.8
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            3.25,
+            0.15,
+            3.75,
+            0.55
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            3.25,
+            0.15,
+            3.75,
+            0.55
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "46048861-7d22-5e9a-81b0-320b9ced2ac2"
+    },
+    {
+      "name": "lower_silo_24",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        12.25,
+        5.2,
+        0.15
+      ],
+      "to": [
+        12.75,
+        12.2,
+        0.55
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.25,
+            3.8,
+            12.75,
+            10.8
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            0.15,
+            3.8,
+            0.55,
+            10.8
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            12.25,
+            3.8,
+            12.75,
+            10.8
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            0.15,
+            3.8,
+            0.55,
+            10.8
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            12.25,
+            0.15,
+            12.75,
+            0.55
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            12.25,
+            0.15,
+            12.75,
+            0.55
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "9fff9e59-2ad9-5238-baae-c36351221bb4"
+    },
+    {
+      "name": "lower_silo_25",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        0.15,
+        10.6,
+        4.0
+      ],
+      "to": [
+        0.75,
+        11.25,
+        12.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.15,
+            4.75,
+            0.75,
+            5.4
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            4.0,
+            4.75,
+            12.0,
+            5.4
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            0.15,
+            4.75,
+            0.75,
+            5.4
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            4.0,
+            4.75,
+            12.0,
+            5.4
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            0.15,
+            4.0,
+            0.75,
+            12.0
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            0.15,
+            4.0,
+            0.75,
+            12.0
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "dd3c37c0-cca2-59d7-8b0d-d2437aed7fb1"
+    },
+    {
+      "name": "lower_silo_26",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        15.25,
+        10.6,
+        4.0
+      ],
+      "to": [
+        15.85,
+        11.25,
+        12.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            15.25,
+            4.75,
+            15.85,
+            5.4
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            4.0,
+            4.75,
+            12.0,
+            5.4
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            15.25,
+            4.75,
+            15.85,
+            5.4
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            4.0,
+            4.75,
+            12.0,
+            5.4
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            15.25,
+            4.0,
+            15.85,
+            12.0
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            15.25,
+            4.0,
+            15.85,
+            12.0
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "cd55e1dc-91ac-59d1-8c94-42912862ed13"
+    },
+    {
+      "name": "lower_silo_27",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        4.2,
+        11.0,
+        15.4
+      ],
+      "to": [
+        11.8,
+        11.65,
+        15.85
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.2,
+            4.35,
+            11.8,
+            5.0
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            15.4,
+            4.35,
+            15.85,
+            5.0
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            4.2,
+            4.35,
+            11.8,
+            5.0
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            15.4,
+            4.35,
+            15.85,
+            5.0
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            4.2,
+            15.4,
+            11.8,
+            15.85
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            4.2,
+            15.4,
+            11.8,
+            15.85
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "2ce0c6bd-7a93-59c1-b61b-697f0fb2d1fc"
+    },
+    {
+      "name": "lower_silo_28",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        2.4,
+        11.0,
+        2.4
+      ],
+      "to": [
+        13.6,
+        11.5,
+        13.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 5
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        }
+      },
+      "type": "cube",
+      "uuid": "15e8cd21-7e00-51db-8d74-a202f62a5858"
+    },
+    {
+      "name": "lower_silo_29",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        2.4,
+        11.5,
+        2.2
+      ],
+      "to": [
+        13.6,
+        15.6,
+        2.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.4,
+            0.4,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            2.2,
+            0.4,
+            2.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            2.4,
+            0.4,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            2.2,
+            0.4,
+            2.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            2.4,
+            2.2,
+            13.6,
+            2.8
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            2.4,
+            2.2,
+            13.6,
+            2.8
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "05540b82-5252-55a4-ab65-2a3749d7c951"
+    },
+    {
+      "name": "lower_silo_30",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        2.4,
+        11.5,
+        13.2
+      ],
+      "to": [
+        13.6,
+        15.6,
+        13.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.4,
+            0.4,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            13.2,
+            0.4,
+            13.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            2.4,
+            0.4,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            13.2,
+            0.4,
+            13.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            2.4,
+            13.2,
+            13.6,
+            13.8
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            2.4,
+            13.2,
+            13.6,
+            13.8
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "0ab7482c-5319-5359-b057-b3fe3092e227"
+    },
+    {
+      "name": "lower_silo_31",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        2.2,
+        11.5,
+        2.8
+      ],
+      "to": [
+        2.8,
+        15.6,
+        13.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.2,
+            0.4,
+            2.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            2.8,
+            0.4,
+            13.2,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            2.2,
+            0.4,
+            2.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            2.8,
+            0.4,
+            13.2,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            2.2,
+            2.8,
+            2.8,
+            13.2
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            2.2,
+            2.8,
+            2.8,
+            13.2
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "af697f83-4e26-547a-8d24-d6d72a089a3f"
+    },
+    {
+      "name": "lower_silo_32",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        13.2,
+        11.5,
+        2.8
+      ],
+      "to": [
+        13.8,
+        15.6,
+        13.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        8.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.2,
+            0.4,
+            13.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            2.8,
+            0.4,
+            13.2,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            13.2,
+            0.4,
+            13.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            2.8,
+            0.4,
+            13.2,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            13.2,
+            2.8,
+            13.8,
+            13.2
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            13.2,
+            2.8,
+            13.8,
+            13.2
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "0560ad82-67ac-5c4a-91a3-0242cb40ad15"
+    },
+    {
+      "name": "lower_silo_33",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        2.4,
+        11.5,
+        3.1
+      ],
+      "to": [
+        4.8,
+        15.5,
+        4.1
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        3.6,
+        13.5,
+        3.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.4,
+            0.5,
+            4.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            3.1,
+            0.5,
+            4.1,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            2.4,
+            0.5,
+            4.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            3.1,
+            0.5,
+            4.1,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            2.4,
+            3.1,
+            4.8,
+            4.1
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            2.4,
+            3.1,
+            4.8,
+            4.1
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "a957308d-e01c-5115-b99e-4079d8b68985",
+      "rotation": [
+        0,
+        45,
+        0
+      ]
+    },
+    {
+      "name": "lower_silo_34",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        11.2,
+        11.5,
+        3.1
+      ],
+      "to": [
+        13.6,
+        15.5,
+        4.1
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        12.4,
+        13.5,
+        3.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.2,
+            0.5,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            3.1,
+            0.5,
+            4.1,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            11.2,
+            0.5,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            3.1,
+            0.5,
+            4.1,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            11.2,
+            3.1,
+            13.6,
+            4.1
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            11.2,
+            3.1,
+            13.6,
+            4.1
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "b56f28b4-4f09-5fd4-a9a9-a909e3421b40",
+      "rotation": [
+        0,
+        -45,
+        0
+      ]
+    },
+    {
+      "name": "lower_silo_35",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        2.4,
+        11.5,
+        11.9
+      ],
+      "to": [
+        4.8,
+        15.5,
+        12.9
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        3.6,
+        13.5,
+        12.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.4,
+            0.5,
+            4.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            11.9,
+            0.5,
+            12.9,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            2.4,
+            0.5,
+            4.8,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            11.9,
+            0.5,
+            12.9,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            2.4,
+            11.9,
+            4.8,
+            12.9
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            2.4,
+            11.9,
+            4.8,
+            12.9
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "47a74e2d-a982-55a1-919e-5cc655fc2266",
+      "rotation": [
+        0,
+        -45,
+        0
+      ]
+    },
+    {
+      "name": "lower_silo_36",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        11.2,
+        11.5,
+        11.9
+      ],
+      "to": [
+        13.6,
+        15.5,
+        12.9
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        12.4,
+        13.5,
+        12.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.2,
+            0.5,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            11.9,
+            0.5,
+            12.9,
+            4.5
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            11.2,
+            0.5,
+            13.6,
+            4.5
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            11.9,
+            0.5,
+            12.9,
+            4.5
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            11.2,
+            11.9,
+            13.6,
+            12.9
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            11.2,
+            11.9,
+            13.6,
+            12.9
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "f2bed8f3-93ae-50dd-b8a8-d02db6686ce3",
+      "rotation": [
+        0,
+        45,
+        0
+      ]
+    },
+    {
+      "name": "upper_railgun_00",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        16.0,
+        4.0
+      ],
+      "to": [
+        3.3,
+        19.6,
+        12.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            12.4,
+            3.3,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.0,
+            12.4,
+            12.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.2,
+            12.4,
+            3.3,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.0,
+            12.4,
+            12.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.2,
+            4.0,
+            3.3,
+            12.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.2,
+            4.0,
+            3.3,
+            12.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "b104f5a9-6444-54d9-89dd-6fb55852b5f9"
+    },
+    {
+      "name": "upper_railgun_01",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.0,
+        16.0,
+        4.8
+      ],
+      "to": [
+        1.4,
+        20.6,
+        11.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            11.4,
+            1.4,
+            16.0
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            4.8,
+            11.4,
+            11.2,
+            16.0
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.0,
+            11.4,
+            1.4,
+            16.0
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            4.8,
+            11.4,
+            11.2,
+            16.0
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.0,
+            4.8,
+            1.4,
+            11.2
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.0,
+            4.8,
+            1.4,
+            11.2
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "0b619be9-b2c1-5f6d-ab28-1d03585592ab"
+    },
+    {
+      "name": "upper_railgun_02",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.3,
+        16.4,
+        5.6
+      ],
+      "to": [
+        1.6,
+        20.4,
+        10.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        1.0,
+        16.4,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.3,
+            11.6,
+            1.6,
+            15.6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.6,
+            11.6,
+            10.4,
+            15.6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.3,
+            11.6,
+            1.6,
+            15.6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.6,
+            11.6,
+            10.4,
+            15.6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.3,
+            5.6,
+            1.6,
+            10.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.3,
+            5.6,
+            1.6,
+            10.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "ca681978-f785-5b04-86e2-2be853a8f5d3",
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
+    },
+    {
+      "name": "upper_railgun_03",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.7,
+        16.0,
+        4.0
+      ],
+      "to": [
+        15.8,
+        19.6,
+        12.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.7,
+            12.4,
+            15.8,
+            16.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.0,
+            12.4,
+            12.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.7,
+            12.4,
+            15.8,
+            16.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.0,
+            12.4,
+            12.0,
+            16.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.7,
+            4.0,
+            15.8,
+            12.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.7,
+            4.0,
+            15.8,
+            12.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "fe39cbe6-aa21-501d-9adc-a278590b0bd2"
+    },
+    {
+      "name": "upper_railgun_04",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.6,
+        16.0,
+        4.8
+      ],
+      "to": [
+        16.0,
+        20.6,
+        11.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.6,
+            11.4,
+            16.0,
+            16.0
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            4.8,
+            11.4,
+            11.2,
+            16.0
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14.6,
+            11.4,
+            16.0,
+            16.0
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            4.8,
+            11.4,
+            11.2,
+            16.0
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            14.6,
+            4.8,
+            16.0,
+            11.2
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            14.6,
+            4.8,
+            16.0,
+            11.2
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "9689ba78-d443-5bf2-aab7-75f6bb52bbf2"
+    },
+    {
+      "name": "upper_railgun_05",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.4,
+        16.4,
+        5.6
+      ],
+      "to": [
+        15.7,
+        20.4,
+        10.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        15.0,
+        16.4,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.4,
+            11.6,
+            15.7,
+            15.6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.6,
+            11.6,
+            10.4,
+            15.6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14.4,
+            11.6,
+            15.7,
+            15.6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.6,
+            11.6,
+            10.4,
+            15.6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            14.4,
+            5.6,
+            15.7,
+            10.4
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            14.4,
+            5.6,
+            15.7,
+            10.4
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "b22dbb37-89d4-51d0-8326-37f49d987f76",
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    },
+    {
+      "name": "upper_railgun_06",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.4,
+        20.2,
+        5.2
+      ],
+      "to": [
+        2.1,
+        29.4,
+        10.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.4,
+            2.6,
+            2.1,
+            11.8
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.2,
+            2.6,
+            10.8,
+            11.8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.4,
+            2.6,
+            2.1,
+            11.8
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.2,
+            2.6,
+            10.8,
+            11.8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.4,
+            5.2,
+            2.1,
+            10.8
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.4,
+            5.2,
+            2.1,
+            10.8
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "f6e6e664-e1f0-5765-a286-ad5eb0481a05"
+    },
+    {
+      "name": "upper_railgun_07",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.25,
+        21.4,
+        6.2
+      ],
+      "to": [
+        0.6,
+        27.6,
+        9.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.25,
+            4.4,
+            0.6,
+            10.6
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            0.25,
+            4.4,
+            0.6,
+            10.6
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            6.2,
+            4.4,
+            9.8,
+            10.6
+          ],
+          "texture": 2
+        },
+        "up": {
+          "uv": [
+            0.25,
+            6.2,
+            0.6,
+            9.8
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.25,
+            6.2,
+            0.6,
+            9.8
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "5ce8b93f-b47a-5ff6-9c59-11a8d5dc1685"
+    },
+    {
+      "name": "upper_railgun_08",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        1.8,
+        19.6,
+        5.0
+      ],
+      "to": [
+        3.1,
+        29.2,
+        6.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.8,
+            2.8,
+            3.1,
+            12.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            5.0,
+            2.8,
+            6.3,
+            12.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            1.8,
+            2.8,
+            3.1,
+            12.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            5.0,
+            2.8,
+            6.3,
+            12.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            1.8,
+            5.0,
+            3.1,
+            6.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            1.8,
+            5.0,
+            3.1,
+            6.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "1b3dfaae-b7c1-5be3-a3d6-6bb78a3dabaa"
+    },
+    {
+      "name": "upper_railgun_09",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        1.8,
+        19.6,
+        9.7
+      ],
+      "to": [
+        3.1,
+        29.2,
+        11.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.8,
+            2.8,
+            3.1,
+            12.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            9.7,
+            2.8,
+            11.0,
+            12.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            1.8,
+            2.8,
+            3.1,
+            12.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            9.7,
+            2.8,
+            11.0,
+            12.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            1.8,
+            9.7,
+            3.1,
+            11.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            1.8,
+            9.7,
+            3.1,
+            11.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "8ad7f3ae-472b-5944-a885-6df07e70615b"
+    },
+    {
+      "name": "upper_railgun_10",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        2.0,
+        19.6,
+        6.3
+      ],
+      "to": [
+        2.9,
+        29.4,
+        9.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.0,
+            2.6,
+            2.9,
+            12.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            6.3,
+            2.6,
+            9.7,
+            12.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            2.0,
+            2.6,
+            2.9,
+            12.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            6.3,
+            2.6,
+            9.7,
+            12.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            2.0,
+            6.3,
+            2.9,
+            9.7
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            2.0,
+            6.3,
+            2.9,
+            9.7
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "f44ab0b0-26f0-579d-a6f7-bf2cb6d20ee0"
+    },
+    {
+      "name": "upper_railgun_11",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        2.85,
+        19.8,
+        7.4
+      ],
+      "to": [
+        3.15,
+        29.0,
+        8.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.85,
+            3.0,
+            3.15,
+            12.2
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            7.4,
+            3.0,
+            8.6,
+            12.2
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            2.85,
+            3.0,
+            3.15,
+            12.2
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            7.4,
+            3.0,
+            8.6,
+            12.2
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            2.85,
+            7.4,
+            3.15,
+            8.6
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            2.85,
+            7.4,
+            3.15,
+            8.6
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "30af8f2d-b2c2-55c7-8e50-8d787807980a"
+    },
+    {
+      "name": "upper_railgun_12",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        13.9,
+        20.2,
+        5.2
+      ],
+      "to": [
+        15.6,
+        29.4,
+        10.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.9,
+            2.6,
+            15.6,
+            11.8
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.2,
+            2.6,
+            10.8,
+            11.8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13.9,
+            2.6,
+            15.6,
+            11.8
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.2,
+            2.6,
+            10.8,
+            11.8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            13.9,
+            5.2,
+            15.6,
+            10.8
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            13.9,
+            5.2,
+            15.6,
+            10.8
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "46ef56df-6031-58dc-93a3-96c1ace0c277"
+    },
+    {
+      "name": "upper_railgun_13",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        15.4,
+        21.4,
+        6.2
+      ],
+      "to": [
+        15.75,
+        27.6,
+        9.8
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            15.4,
+            4.4,
+            15.75,
+            10.6
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            6.2,
+            4.4,
+            9.8,
+            10.6
+          ],
+          "texture": 2
+        },
+        "south": {
+          "uv": [
+            15.4,
+            4.4,
+            15.75,
+            10.6
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            15.4,
+            6.2,
+            15.75,
+            9.8
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            15.4,
+            6.2,
+            15.75,
+            9.8
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "64395adb-82c3-545c-b86a-595749bcb20f"
+    },
+    {
+      "name": "upper_railgun_14",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.9,
+        19.6,
+        5.0
+      ],
+      "to": [
+        14.2,
+        29.2,
+        6.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.9,
+            2.8,
+            14.2,
+            12.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            5.0,
+            2.8,
+            6.3,
+            12.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.9,
+            2.8,
+            14.2,
+            12.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            5.0,
+            2.8,
+            6.3,
+            12.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.9,
+            5.0,
+            14.2,
+            6.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.9,
+            5.0,
+            14.2,
+            6.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "74d7f518-0ce3-557b-aba9-e69d868d4fb3"
+    },
+    {
+      "name": "upper_railgun_15",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.9,
+        19.6,
+        9.7
+      ],
+      "to": [
+        14.2,
+        29.2,
+        11.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.9,
+            2.8,
+            14.2,
+            12.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            9.7,
+            2.8,
+            11.0,
+            12.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.9,
+            2.8,
+            14.2,
+            12.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            9.7,
+            2.8,
+            11.0,
+            12.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.9,
+            9.7,
+            14.2,
+            11.0
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.9,
+            9.7,
+            14.2,
+            11.0
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "5d0892a4-b014-58d0-a37a-d53a930d31f9"
+    },
+    {
+      "name": "upper_railgun_16",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        13.1,
+        19.6,
+        6.3
+      ],
+      "to": [
+        14.0,
+        29.4,
+        9.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.1,
+            2.6,
+            14.0,
+            12.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            6.3,
+            2.6,
+            9.7,
+            12.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            13.1,
+            2.6,
+            14.0,
+            12.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            6.3,
+            2.6,
+            9.7,
+            12.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            13.1,
+            6.3,
+            14.0,
+            9.7
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            13.1,
+            6.3,
+            14.0,
+            9.7
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "df92f483-21be-59a2-b4a3-0b68aa0bdf57"
+    },
+    {
+      "name": "upper_railgun_17",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        12.85,
+        19.8,
+        7.4
+      ],
+      "to": [
+        13.15,
+        29.0,
+        8.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.85,
+            3.0,
+            13.15,
+            12.2
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            7.4,
+            3.0,
+            8.6,
+            12.2
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            12.85,
+            3.0,
+            13.15,
+            12.2
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            7.4,
+            3.0,
+            8.6,
+            12.2
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            12.85,
+            7.4,
+            13.15,
+            8.6
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            12.85,
+            7.4,
+            13.15,
+            8.6
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "0e0c434b-4836-50d3-9eb7-b68d73249871"
+    },
+    {
+      "name": "upper_railgun_18",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        20.4,
+        4.7
+      ],
+      "to": [
+        3.4,
+        21.5,
+        11.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            10.5,
+            3.4,
+            11.6
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.7,
+            10.5,
+            11.3,
+            11.6
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.2,
+            10.5,
+            3.4,
+            11.6
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.7,
+            10.5,
+            11.3,
+            11.6
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.2,
+            4.7,
+            3.4,
+            11.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.2,
+            4.7,
+            3.4,
+            11.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "960bf6c0-6d50-5864-bf7b-065b1390d973"
+    },
+    {
+      "name": "upper_railgun_19",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.1,
+        20.55,
+        5.3
+      ],
+      "to": [
+        1.6,
+        21.35,
+        10.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.1,
+            10.65,
+            1.6,
+            11.45
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.3,
+            10.65,
+            10.7,
+            11.45
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.1,
+            10.65,
+            1.6,
+            11.45
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.3,
+            10.65,
+            10.7,
+            11.45
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.1,
+            5.3,
+            1.6,
+            10.7
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.1,
+            5.3,
+            1.6,
+            10.7
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "e1d6b46f-c58a-5c25-98dd-fb9a3d9b0ed9"
+    },
+    {
+      "name": "upper_railgun_20",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        3.25,
+        20.6,
+        6.5
+      ],
+      "to": [
+        3.65,
+        21.3,
+        9.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.25,
+            10.7,
+            3.65,
+            11.4
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            6.5,
+            10.7,
+            9.5,
+            11.4
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            3.25,
+            10.7,
+            3.65,
+            11.4
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            6.5,
+            10.7,
+            9.5,
+            11.4
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            3.25,
+            6.5,
+            3.65,
+            9.5
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            3.25,
+            6.5,
+            3.65,
+            9.5
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "f4b05ae3-ad92-58b1-86ba-1d59695c6f29"
+    },
+    {
+      "name": "upper_railgun_21",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.6,
+        20.4,
+        4.7
+      ],
+      "to": [
+        15.8,
+        21.5,
+        11.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.6,
+            10.5,
+            15.8,
+            11.6
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.7,
+            10.5,
+            11.3,
+            11.6
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.6,
+            10.5,
+            15.8,
+            11.6
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.7,
+            10.5,
+            11.3,
+            11.6
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.6,
+            4.7,
+            15.8,
+            11.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.6,
+            4.7,
+            15.8,
+            11.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "7978297a-a1f1-5338-9506-31ab256d19aa"
+    },
+    {
+      "name": "upper_railgun_22",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.4,
+        20.55,
+        5.3
+      ],
+      "to": [
+        15.9,
+        21.35,
+        10.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.4,
+            10.65,
+            15.9,
+            11.45
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.3,
+            10.65,
+            10.7,
+            11.45
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14.4,
+            10.65,
+            15.9,
+            11.45
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.3,
+            10.65,
+            10.7,
+            11.45
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            14.4,
+            5.3,
+            15.9,
+            10.7
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            14.4,
+            5.3,
+            15.9,
+            10.7
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "1c32ff9c-bb3a-5ea4-b1c8-0ec43c42af8e"
+    },
+    {
+      "name": "upper_railgun_23",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        12.35,
+        20.6,
+        6.5
+      ],
+      "to": [
+        12.75,
+        21.3,
+        9.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.35,
+            10.7,
+            12.75,
+            11.4
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            6.5,
+            10.7,
+            9.5,
+            11.4
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            12.35,
+            10.7,
+            12.75,
+            11.4
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            6.5,
+            10.7,
+            9.5,
+            11.4
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            12.35,
+            6.5,
+            12.75,
+            9.5
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            12.35,
+            6.5,
+            12.75,
+            9.5
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "9d1386ca-3b11-5d51-b379-8c443a08f3a8"
+    },
+    {
+      "name": "upper_railgun_24",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        24.0,
+        4.7
+      ],
+      "to": [
+        3.4,
+        25.1,
+        11.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            6.9,
+            3.4,
+            8.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.7,
+            6.9,
+            11.3,
+            8.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.2,
+            6.9,
+            3.4,
+            8.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.7,
+            6.9,
+            11.3,
+            8.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.2,
+            4.7,
+            3.4,
+            11.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.2,
+            4.7,
+            3.4,
+            11.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "aedb88dd-fa0c-5f29-92cc-eece6ec1c732"
+    },
+    {
+      "name": "upper_railgun_25",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.1,
+        24.15,
+        5.3
+      ],
+      "to": [
+        1.6,
+        24.95,
+        10.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.1,
+            7.05,
+            1.6,
+            7.85
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.3,
+            7.05,
+            10.7,
+            7.85
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.1,
+            7.05,
+            1.6,
+            7.85
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.3,
+            7.05,
+            10.7,
+            7.85
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.1,
+            5.3,
+            1.6,
+            10.7
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.1,
+            5.3,
+            1.6,
+            10.7
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "e100ef9e-bfa8-517c-a105-b2a56f0fc166"
+    },
+    {
+      "name": "upper_railgun_26",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        3.25,
+        24.2,
+        6.5
+      ],
+      "to": [
+        3.65,
+        24.9,
+        9.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.25,
+            7.1,
+            3.65,
+            7.8
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            6.5,
+            7.1,
+            9.5,
+            7.8
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            3.25,
+            7.1,
+            3.65,
+            7.8
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            6.5,
+            7.1,
+            9.5,
+            7.8
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            3.25,
+            6.5,
+            3.65,
+            9.5
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            3.25,
+            6.5,
+            3.65,
+            9.5
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "9ee70f2f-fa8a-5bb4-9e22-de2fb8083e6e"
+    },
+    {
+      "name": "upper_railgun_27",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.6,
+        24.0,
+        4.7
+      ],
+      "to": [
+        15.8,
+        25.1,
+        11.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.6,
+            6.9,
+            15.8,
+            8.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.7,
+            6.9,
+            11.3,
+            8.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.6,
+            6.9,
+            15.8,
+            8.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.7,
+            6.9,
+            11.3,
+            8.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.6,
+            4.7,
+            15.8,
+            11.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.6,
+            4.7,
+            15.8,
+            11.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "8fcf3a8f-23c4-533a-aafb-cf92f6889bfe"
+    },
+    {
+      "name": "upper_railgun_28",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.4,
+        24.15,
+        5.3
+      ],
+      "to": [
+        15.9,
+        24.95,
+        10.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.4,
+            7.05,
+            15.9,
+            7.85
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.3,
+            7.05,
+            10.7,
+            7.85
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14.4,
+            7.05,
+            15.9,
+            7.85
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.3,
+            7.05,
+            10.7,
+            7.85
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            14.4,
+            5.3,
+            15.9,
+            10.7
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            14.4,
+            5.3,
+            15.9,
+            10.7
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "c9a61900-d460-5c5b-b473-cc56ab10787e"
+    },
+    {
+      "name": "upper_railgun_29",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        12.35,
+        24.2,
+        6.5
+      ],
+      "to": [
+        12.75,
+        24.9,
+        9.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.35,
+            7.1,
+            12.75,
+            7.8
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            6.5,
+            7.1,
+            9.5,
+            7.8
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            12.35,
+            7.1,
+            12.75,
+            7.8
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            6.5,
+            7.1,
+            9.5,
+            7.8
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            12.35,
+            6.5,
+            12.75,
+            9.5
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            12.35,
+            6.5,
+            12.75,
+            9.5
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "1806ab9e-0a35-5a60-9ee3-ecbd223f6e04"
+    },
+    {
+      "name": "upper_railgun_30",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.2,
+        27.6,
+        4.7
+      ],
+      "to": [
+        3.4,
+        28.7,
+        11.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.2,
+            3.3,
+            3.4,
+            4.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.7,
+            3.3,
+            11.3,
+            4.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.2,
+            3.3,
+            3.4,
+            4.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.7,
+            3.3,
+            11.3,
+            4.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.2,
+            4.7,
+            3.4,
+            11.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.2,
+            4.7,
+            3.4,
+            11.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "b823396d-ad3c-5208-b0ef-d216c6e2e53c"
+    },
+    {
+      "name": "upper_railgun_31",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.1,
+        27.75,
+        5.3
+      ],
+      "to": [
+        1.6,
+        28.55,
+        10.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.1,
+            3.45,
+            1.6,
+            4.25
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.3,
+            3.45,
+            10.7,
+            4.25
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.1,
+            3.45,
+            1.6,
+            4.25
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.3,
+            3.45,
+            10.7,
+            4.25
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.1,
+            5.3,
+            1.6,
+            10.7
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.1,
+            5.3,
+            1.6,
+            10.7
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "a167f88f-aaf5-5061-b200-5e2bacbcdd2f"
+    },
+    {
+      "name": "upper_railgun_32",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        3.25,
+        27.8,
+        6.5
+      ],
+      "to": [
+        3.65,
+        28.5,
+        9.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.25,
+            3.5,
+            3.65,
+            4.2
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            6.5,
+            3.5,
+            9.5,
+            4.2
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            3.25,
+            3.5,
+            3.65,
+            4.2
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            6.5,
+            3.5,
+            9.5,
+            4.2
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            3.25,
+            6.5,
+            3.65,
+            9.5
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            3.25,
+            6.5,
+            3.65,
+            9.5
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "af51e461-90f9-5adf-b3fc-c03a00c9efe5"
+    },
+    {
+      "name": "upper_railgun_33",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.6,
+        27.6,
+        4.7
+      ],
+      "to": [
+        15.8,
+        28.7,
+        11.3
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.6,
+            3.3,
+            15.8,
+            4.4
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            4.7,
+            3.3,
+            11.3,
+            4.4
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.6,
+            3.3,
+            15.8,
+            4.4
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            4.7,
+            3.3,
+            11.3,
+            4.4
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.6,
+            4.7,
+            15.8,
+            11.3
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.6,
+            4.7,
+            15.8,
+            11.3
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "db065ed5-7e2e-5cef-a787-047425166f60"
+    },
+    {
+      "name": "upper_railgun_34",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        14.4,
+        27.75,
+        5.3
+      ],
+      "to": [
+        15.9,
+        28.55,
+        10.7
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.4,
+            3.45,
+            15.9,
+            4.25
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            5.3,
+            3.45,
+            10.7,
+            4.25
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            14.4,
+            3.45,
+            15.9,
+            4.25
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            5.3,
+            3.45,
+            10.7,
+            4.25
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            14.4,
+            5.3,
+            15.9,
+            10.7
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            14.4,
+            5.3,
+            15.9,
+            10.7
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "75c5235f-5964-59fb-88ff-912570bf4738"
+    },
+    {
+      "name": "upper_railgun_35",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        12.35,
+        27.8,
+        6.5
+      ],
+      "to": [
+        12.75,
+        28.5,
+        9.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.35,
+            3.5,
+            12.75,
+            4.2
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            6.5,
+            3.5,
+            9.5,
+            4.2
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            12.35,
+            3.5,
+            12.75,
+            4.2
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            6.5,
+            3.5,
+            9.5,
+            4.2
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            12.35,
+            6.5,
+            12.75,
+            9.5
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            12.35,
+            6.5,
+            12.75,
+            9.5
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "89c8e835-5972-54e3-a4af-a93a4695e16a"
+    },
+    {
+      "name": "upper_railgun_36",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        3.0,
+        22.1,
+        6.8
+      ],
+      "to": [
+        3.85,
+        23.4,
+        9.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.0,
+            8.6,
+            3.85,
+            9.9
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            6.8,
+            8.6,
+            9.2,
+            9.9
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            3.0,
+            8.6,
+            3.85,
+            9.9
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            6.8,
+            8.6,
+            9.2,
+            9.9
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            3.0,
+            6.8,
+            3.85,
+            9.2
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            3.0,
+            6.8,
+            3.85,
+            9.2
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "7f5a8683-f731-532a-a649-fa6fa0812aa1"
+    },
+    {
+      "name": "upper_railgun_37",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        3.75,
+        22.4,
+        7.4
+      ],
+      "to": [
+        4.0,
+        23.1,
+        8.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.75,
+            8.9,
+            4.0,
+            9.6
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            7.4,
+            8.9,
+            8.6,
+            9.6
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            3.75,
+            8.9,
+            4.0,
+            9.6
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            7.4,
+            8.9,
+            8.6,
+            9.6
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            3.75,
+            7.4,
+            4.0,
+            8.6
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            3.75,
+            7.4,
+            4.0,
+            8.6
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "8a1f967b-32b3-5a34-8ac2-5102ec492a90"
+    },
+    {
+      "name": "upper_railgun_38",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        12.15,
+        22.1,
+        6.8
+      ],
+      "to": [
+        13.0,
+        23.4,
+        9.2
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.15,
+            8.6,
+            13.0,
+            9.9
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            6.8,
+            8.6,
+            9.2,
+            9.9
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            12.15,
+            8.6,
+            13.0,
+            9.9
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            6.8,
+            8.6,
+            9.2,
+            9.9
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            12.15,
+            6.8,
+            13.0,
+            9.2
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            12.15,
+            6.8,
+            13.0,
+            9.2
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "b9fa9616-8a25-5acb-a05b-6e9aeb14b600"
+    },
+    {
+      "name": "upper_railgun_39",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        12.0,
+        22.4,
+        7.4
+      ],
+      "to": [
+        12.25,
+        23.1,
+        8.6
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.0,
+            8.9,
+            12.25,
+            9.6
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            7.4,
+            8.9,
+            8.6,
+            9.6
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            12.0,
+            8.9,
+            12.25,
+            9.6
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            7.4,
+            8.9,
+            8.6,
+            9.6
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            12.0,
+            7.4,
+            12.25,
+            8.6
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            12.0,
+            7.4,
+            12.25,
+            8.6
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "d8c58eb1-4eeb-5bd8-8b97-4468474c0a47"
+    },
+    {
+      "name": "upper_railgun_40",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.7,
+        29.0,
+        5.6
+      ],
+      "to": [
+        2.8,
+        30.2,
+        10.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.7,
+            1.8,
+            2.8,
+            3.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            5.6,
+            1.8,
+            10.4,
+            3.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            0.7,
+            1.8,
+            2.8,
+            3.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            5.6,
+            1.8,
+            10.4,
+            3.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            0.7,
+            5.6,
+            2.8,
+            10.4
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            0.7,
+            5.6,
+            2.8,
+            10.4
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "6f7b3c20-54bf-5e2f-89a8-ee3deec67caf"
+    },
+    {
+      "name": "upper_railgun_41",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        0.7,
+        29.6,
+        6.0
+      ],
+      "to": [
+        2.2,
+        31.9,
+        10.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        1.6,
+        29.6,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.7,
+            0.1,
+            2.2,
+            2.4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            6.0,
+            0.1,
+            10.0,
+            2.4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.7,
+            0.1,
+            2.2,
+            2.4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            6.0,
+            0.1,
+            10.0,
+            2.4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.7,
+            6.0,
+            2.2,
+            10.0
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.7,
+            6.0,
+            2.2,
+            10.0
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "0b367e3e-ecc8-562b-bfc4-69a93a164ba5",
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    },
+    {
+      "name": "upper_railgun_42",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        2.2,
+        29.6,
+        7.1
+      ],
+      "to": [
+        2.9,
+        31.4,
+        8.9
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        2.2,
+        29.6,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.2,
+            0.6,
+            2.9,
+            2.4
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            7.1,
+            0.6,
+            8.9,
+            2.4
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            2.2,
+            0.6,
+            2.9,
+            2.4
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            7.1,
+            0.6,
+            8.9,
+            2.4
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            2.2,
+            7.1,
+            2.9,
+            8.9
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            2.2,
+            7.1,
+            2.9,
+            8.9
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "da8c3bc0-8fe8-5770-9071-a5a25e139d51",
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    },
+    {
+      "name": "upper_railgun_43",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        13.2,
+        29.0,
+        5.6
+      ],
+      "to": [
+        15.3,
+        30.2,
+        10.4
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        8,
+        24.0,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.2,
+            1.8,
+            15.3,
+            3.0
+          ],
+          "texture": 1
+        },
+        "east": {
+          "uv": [
+            5.6,
+            1.8,
+            10.4,
+            3.0
+          ],
+          "texture": 1
+        },
+        "south": {
+          "uv": [
+            13.2,
+            1.8,
+            15.3,
+            3.0
+          ],
+          "texture": 1
+        },
+        "west": {
+          "uv": [
+            5.6,
+            1.8,
+            10.4,
+            3.0
+          ],
+          "texture": 1
+        },
+        "up": {
+          "uv": [
+            13.2,
+            5.6,
+            15.3,
+            10.4
+          ],
+          "texture": 1
+        },
+        "down": {
+          "uv": [
+            13.2,
+            5.6,
+            15.3,
+            10.4
+          ],
+          "texture": 1
+        }
+      },
+      "type": "cube",
+      "uuid": "8bb1f44a-6e44-5372-80af-e47054212dd5"
+    },
+    {
+      "name": "upper_railgun_44",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "from": [
+        13.8,
+        29.6,
+        6.0
+      ],
+      "to": [
+        15.3,
+        31.9,
+        10.0
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        14.4,
+        29.6,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.8,
+            0.1,
+            15.3,
+            2.4
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            6.0,
+            0.1,
+            10.0,
+            2.4
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            13.8,
+            0.1,
+            15.3,
+            2.4
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            6.0,
+            0.1,
+            10.0,
+            2.4
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            13.8,
+            6.0,
+            15.3,
+            10.0
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            13.8,
+            6.0,
+            15.3,
+            10.0
+          ],
+          "texture": 0
+        }
+      },
+      "type": "cube",
+      "uuid": "11074ab7-030e-55fd-8bda-6c875f455e60",
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
+    },
+    {
+      "name": "upper_railgun_45",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 15,
+      "from": [
+        13.1,
+        29.6,
+        7.1
+      ],
+      "to": [
+        13.8,
+        31.4,
+        8.9
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        13.8,
+        29.6,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.1,
+            0.6,
+            13.8,
+            2.4
+          ],
+          "texture": 4
+        },
+        "east": {
+          "uv": [
+            7.1,
+            0.6,
+            8.9,
+            2.4
+          ],
+          "texture": 4
+        },
+        "south": {
+          "uv": [
+            13.1,
+            0.6,
+            13.8,
+            2.4
+          ],
+          "texture": 4
+        },
+        "west": {
+          "uv": [
+            7.1,
+            0.6,
+            8.9,
+            2.4
+          ],
+          "texture": 4
+        },
+        "up": {
+          "uv": [
+            13.1,
+            7.1,
+            13.8,
+            8.9
+          ],
+          "texture": 4
+        },
+        "down": {
+          "uv": [
+            13.1,
+            7.1,
+            13.8,
+            8.9
+          ],
+          "texture": 4
+        }
+      },
+      "type": "cube",
+      "uuid": "c24a9e87-0acb-5ac1-af3b-99dcf423aece",
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
+    }
+  ],
+  "outliner": [
+    {
+      "name": "lower_silo",
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "color": 0,
+      "uuid": "0412f446-cc33-5e94-bebc-f7732cc199bd",
+      "export": true,
+      "mirror_uv": false,
+      "isOpen": true,
+      "locked": false,
+      "visibility": true,
+      "autouv": 0,
+      "children": [
+        "8aaa9071-b3cc-594b-a7af-23db6c87cfd9",
+        "8e8988de-a11a-583c-99ca-f09150cb1216",
+        "30bc82a2-ef6c-5e4e-aae3-1492828602f3",
+        "967a40f7-9fe2-5df6-9f5d-d9a46e634779",
+        "c9cd7d47-c1cb-5a50-8815-b9c2e495c57d",
+        "a2b1f469-6a61-52f2-a5c6-4a051e58cfc8",
+        "015e5c90-5afe-5587-a2e1-ae0e6dfa7718",
+        "a4c50efd-cddc-5c6e-8035-f101c0a8d796",
+        "8be2d281-802a-59a5-b6f3-55d83e0afeae",
+        "9799a6b2-b546-5a2b-8bf9-f5b7b8936f81",
+        "782495fb-d004-5960-b116-0a93a9797d03",
+        "0dce3278-995a-5c6b-b0b0-d9afd8029b6e",
+        "a6f7fecb-2d05-53f1-88f2-82ec8a6a9a3c",
+        "bdb72b22-cf10-553c-9fa8-6a9439e965d4",
+        "c647fe47-cb9a-54f9-a0f6-1758169cda28",
+        "b7849d20-a4e7-59ab-9e0d-8955d0ebbefe",
+        "4baedb2a-695b-5e0c-83eb-80a123991567",
+        "c6128dd2-0d96-501a-a6fb-3724cbc8cef3",
+        "3d751d4a-8118-561b-be1e-6021492c5dd5",
+        "e29be3ad-2575-59c0-a1c3-1f3010b7e280",
+        "dfcc2515-8997-5931-9df5-bd59c5bdf1e2",
+        "ab4aec09-a132-59cc-bb59-48df34ab25c9",
+        "adbc03a7-ee55-58ca-b024-43cede6ea5fb",
+        "46048861-7d22-5e9a-81b0-320b9ced2ac2",
+        "9fff9e59-2ad9-5238-baae-c36351221bb4",
+        "dd3c37c0-cca2-59d7-8b0d-d2437aed7fb1",
+        "cd55e1dc-91ac-59d1-8c94-42912862ed13",
+        "2ce0c6bd-7a93-59c1-b61b-697f0fb2d1fc",
+        "15e8cd21-7e00-51db-8d74-a202f62a5858",
+        "05540b82-5252-55a4-ab65-2a3749d7c951",
+        "0ab7482c-5319-5359-b057-b3fe3092e227",
+        "af697f83-4e26-547a-8d24-d6d72a089a3f",
+        "0560ad82-67ac-5c4a-91a3-0242cb40ad15",
+        "a957308d-e01c-5115-b99e-4079d8b68985",
+        "b56f28b4-4f09-5fd4-a9a9-a909e3421b40",
+        "47a74e2d-a982-55a1-919e-5cc655fc2266",
+        "f2bed8f3-93ae-50dd-b8a8-d02db6686ce3"
+      ]
+    },
+    {
+      "name": "upper_railgun_pylons",
+      "origin": [
+        8,
+        24,
+        8
+      ],
+      "color": 1,
+      "uuid": "a321edf1-bcfe-5ca9-accf-47cc00de6b93",
+      "export": true,
+      "mirror_uv": false,
+      "isOpen": true,
+      "locked": false,
+      "visibility": true,
+      "autouv": 0,
+      "children": [
+        "b104f5a9-6444-54d9-89dd-6fb55852b5f9",
+        "0b619be9-b2c1-5f6d-ab28-1d03585592ab",
+        "ca681978-f785-5b04-86e2-2be853a8f5d3",
+        "fe39cbe6-aa21-501d-9adc-a278590b0bd2",
+        "9689ba78-d443-5bf2-aab7-75f6bb52bbf2",
+        "b22dbb37-89d4-51d0-8326-37f49d987f76",
+        "f6e6e664-e1f0-5765-a286-ad5eb0481a05",
+        "5ce8b93f-b47a-5ff6-9c59-11a8d5dc1685",
+        "1b3dfaae-b7c1-5be3-a3d6-6bb78a3dabaa",
+        "8ad7f3ae-472b-5944-a885-6df07e70615b",
+        "f44ab0b0-26f0-579d-a6f7-bf2cb6d20ee0",
+        "30af8f2d-b2c2-55c7-8e50-8d787807980a",
+        "46ef56df-6031-58dc-93a3-96c1ace0c277",
+        "64395adb-82c3-545c-b86a-595749bcb20f",
+        "74d7f518-0ce3-557b-aba9-e69d868d4fb3",
+        "5d0892a4-b014-58d0-a37a-d53a930d31f9",
+        "df92f483-21be-59a2-b4a3-0b68aa0bdf57",
+        "0e0c434b-4836-50d3-9eb7-b68d73249871",
+        "960bf6c0-6d50-5864-bf7b-065b1390d973",
+        "e1d6b46f-c58a-5c25-98dd-fb9a3d9b0ed9",
+        "f4b05ae3-ad92-58b1-86ba-1d59695c6f29",
+        "7978297a-a1f1-5338-9506-31ab256d19aa",
+        "1c32ff9c-bb3a-5ea4-b1c8-0ec43c42af8e",
+        "9d1386ca-3b11-5d51-b379-8c443a08f3a8",
+        "aedb88dd-fa0c-5f29-92cc-eece6ec1c732",
+        "e100ef9e-bfa8-517c-a105-b2a56f0fc166",
+        "9ee70f2f-fa8a-5bb4-9e22-de2fb8083e6e",
+        "8fcf3a8f-23c4-533a-aafb-cf92f6889bfe",
+        "c9a61900-d460-5c5b-b473-cc56ab10787e",
+        "1806ab9e-0a35-5a60-9ee3-ecbd223f6e04",
+        "b823396d-ad3c-5208-b0ef-d216c6e2e53c",
+        "a167f88f-aaf5-5061-b200-5e2bacbcdd2f",
+        "af51e461-90f9-5adf-b3fc-c03a00c9efe5",
+        "db065ed5-7e2e-5cef-a787-047425166f60",
+        "75c5235f-5964-59fb-88ff-912570bf4738",
+        "89c8e835-5972-54e3-a4af-a93a4695e16a",
+        "7f5a8683-f731-532a-a649-fa6fa0812aa1",
+        "8a1f967b-32b3-5a34-8ac2-5102ec492a90",
+        "b9fa9616-8a25-5acb-a05b-6e9aeb14b600",
+        "d8c58eb1-4eeb-5bd8-8b97-4468474c0a47",
+        "6f7b3c20-54bf-5e2f-89a8-ee3deec67caf",
+        "0b367e3e-ecc8-562b-bfc4-69a93a164ba5",
+        "da8c3bc0-8fe8-5770-9071-a5a25e139d51",
+        "8bb1f44a-6e44-5372-80af-e47054212dd5",
+        "11074ab7-030e-55fd-8bda-6c875f455e60",
+        "c24a9e87-0acb-5ac1-af3b-99dcf423aece"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "path": "src/main/resources/assets/mio_icif/textures/block/armory/armory_white_panel.png",
+      "name": "armory_white_panel.png",
+      "folder": "block/armory",
+      "namespace": "mio_icif",
+      "id": "0",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "particle": true,
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "026a3691-d48d-53f3-8ec1-f3e1f9111b7b",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVR4nGN89+nbfzZWFgZyAQuI+PztJ1mab99/ysAEYvz//58hISWb4emLN0RhkFqQHhBgBHnh+8/fZLng7sPnEC/ATCMHsAwTA06cu06WZklxEUgsMDKCY5NkcPnmA4gL3n/8xDB0A5EJZkB2fhnD91//iMIgtShJ+c27D2TZ/uLNJ4gX7j1+RZYBXJwcDAAUyYZ+ODr2KQAAAABJRU5ErkJggg=="
+    },
+    {
+      "path": "src/main/resources/assets/mio_icif/textures/block/armory/armory_gunmetal.png",
+      "name": "armory_gunmetal.png",
+      "folder": "block/armory",
+      "namespace": "mio_icif",
+      "id": "1",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "particle": false,
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "8c57d2e5-0eff-5c3c-921c-f0e356b4e6d3",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA3ElEQVR4nGO0cPD+z8rGzkAuYAERr54/YWBhYQHjX79+odD4xL5/+8LABDKAjY2NQVPfjOHPnz9gNjKNTUxV2wjMhrvgz58/DDcvnwHTMANBNsBodLHLZ4+BXQECTDBJQrZiE0NxwaeP70kKPCFhUYafP74hDJBX1iDJgPdvXiJcwMbGxvD21XOSYgKk5/s3JC/gCjB8YlQJRCZkF5BqCEosfHj/lqRA5OMXRA1EHl5+kpMzKBDhXtA1tiLa6bBkDwKMoNz4/etnkjIRjIYnpLevX5DkfxhgYWVjAADudgFAYK7LDgAAAABJRU5ErkJggg=="
+    },
+    {
+      "path": "src/main/resources/assets/mio_icif/textures/block/armory/armory_side_vent.png",
+      "name": "armory_side_vent.png",
+      "folder": "block/armory",
+      "namespace": "mio_icif",
+      "id": "2",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "particle": false,
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "ffc7cab6-ad44-5546-a3a6-5cfa649a21e1",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAa0lEQVR4nGO0dPL7z0ABYAERr18+I0uzqLgUxAAQEBKVxFDw88d3hu9fPzMICIthyL17/RzhAhC4e/08AzqQUdTAKScoIoFqgLKmIVYX4JIbdQHDaBgw0CIMYALI4OvnDzjlYABsAChXkQsAoWZUuKhZ7yEAAAAASUVORK5CYII="
+    },
+    {
+      "path": "src/main/resources/assets/mio_icif/textures/block/armory/armory_front_screen_on.png",
+      "name": "armory_front_screen_on.png",
+      "folder": "block/armory",
+      "namespace": "mio_icif",
+      "id": "3",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "particle": false,
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "68422fbb-26a5-51e4-96e8-0d35e861d0f9",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA70lEQVR4nGNU1TH7z0ABYAERz589hnAkFBn+vLhPNFtSShZiAAhIHXuG16YX03rB9D8GBgYmEL0EwmcEeeH1P7g5JAFRpj8QF6A7z+zaM4ZzTtZwcYFtN1E0lujxMtTISDEwSMlCXIAcBkb7jsIVntKSIi4MWCQUwQIwzX0iDAxFbxjgLuGZtwPF9gYTayjvD5VcQAgguwAlDGDpgAXqBRgAORvkEpj4lyQPFPkGuB4ssYDMR48FmP9h4gzEeuFLkgdYUw0W1zISk5BwxQIoIcFjgaNsIjGOAYOMnFCGCXJS4FjAiEZSMxPYAKKtxgIAVjqP6fPRPOoAAAAASUVORK5CYII="
+    },
+    {
+      "path": "src/main/resources/assets/mio_icif/textures/block/armory/armory_light_on.png",
+      "name": "armory_light_on.png",
+      "folder": "block/armory",
+      "namespace": "mio_icif",
+      "id": "4",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "particle": false,
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "e2883592-2e62-5196-a43f-0e9398244901",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAARklEQVR4nGMUmnHkPwMFgAVEyHlZk6X50bajEAOQQYYYfk0zXqHymciyetQAFMDEQCFgGjWAgeIwwMgL6GmdKANAuYpcAAD+pgt0tJFmRQAAAABJRU5ErkJggg=="
+    },
+    {
+      "path": "src/main/resources/assets/mio_icif/textures/block/armory/armory_well_on.png",
+      "name": "armory_well_on.png",
+      "folder": "block/armory",
+      "namespace": "mio_icif",
+      "id": "5",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "particle": false,
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "dcc3c1c2-761f-5bc6-a1e6-70ae471919af",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuElEQVR4nGOUUtD4z4ADCItJgem3r57hUsLAxEAhYMFq6rwDYPo9mi3/khww1DKiewGmGaQY2QvI4ji9wISm6PuivWCMLAZTg+ECJiTNXDuuY/XvNw9NDEtYkBUgO69FCVVzzT2EGmRXMIH8CfMriMZlOwiA5JDVgjATA4WABZZIQCaB2R6aeMPgG7Ja9DBgmncAHg4wP6MDnLEAAughDHMJyGZs8lRJSIzYMhO6M2GAqKSMDOiSGwFc0WMmdpkTywAAAABJRU5ErkJggg=="
+    }
+  ]
+}

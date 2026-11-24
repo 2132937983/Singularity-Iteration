@@ -118,7 +118,7 @@ public final class WingmanRescue {
     @SubscribeEvent
     static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer p)) return;
-        if (WingmanService.of(p).isEmpty()) { LAST.remove(p.getUUID()); MOVED_Y.remove(p.getUUID()); return; }
+        if (!WingmanService.hasAny(p)) { LAST.remove(p.getUUID()); MOVED_Y.remove(p.getUUID()); return; }
         Vec3 now = p.position(), last = LAST.put(p.getUUID(), now);
         double dy = last == null ? 0 : now.y - last.y;
         MOVED_Y.put(p.getUUID(), Math.abs(dy) > 12 ? 0 : dy);   // a teleport is no fall
@@ -129,5 +129,11 @@ public final class WingmanRescue {
     static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
         LAST.remove(event.getEntity().getUUID());
         MOVED_Y.remove(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        LAST.clear();
+        MOVED_Y.clear();
     }
 }

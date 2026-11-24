@@ -24,9 +24,20 @@ public final class ArmoryFxRules {
     public static final float HATCH_LEAD = 10F, HATCH_HOLD = 4F, HATCH_SHUT = 8F;
     public static final float GATE_RADIUS = 0.85F;
     public static final float GATE_OPEN = 8F, GATE_HOLD = 6F, GATE_SHUT = 8F;
-    public static final float ICON_RADIUS = 0.62F, ICON_HEIGHT = 1.5F;
+    public static final float ICON_RADIUS = 0.24F, ICON_HEIGHT = 1.38F;
     /** Icons show within this many blocks of the camera. */
-    public static final double ICON_RANGE = 8;
+    public static final double ICON_RANGE = 10;
+    /** Height of the upper gantry's magnetic launch ring center (in blocks above lower base). */
+    public static final float RING_HEIGHT = 28.15F / 16F;
+    /** Distance (blocks) at which proximity wake-up glow activates on a lit Armory. */
+    public static final double WAKE_RANGE = 5.5;
+
+    /** Smooth 0..1 proximity wake-up intensity from squared camera distance. */
+    public static float wake(double distSqr) {
+        if (distSqr >= WAKE_RANGE * WAKE_RANGE) return 0F;
+        double d = Math.sqrt(Math.max(0.0, distSqr));
+        return 1F - smooth((float) ((d - 2.2) / (WAKE_RANGE - 2.2)));
+    }
 
     static float smooth(float x) {
         float t = Math.max(0F, Math.min(1F, x));

@@ -203,6 +203,43 @@ public final class ArmoryGameTests {
     }
 
     @GameTest(template = "reactor_loop", batch = "armory", timeoutTicks = 40)
+    public static void doubleHeightGantrySyncAndCleanup(GameTestHelper h) {
+        var armory = armory(h, 5_000);
+        ServerPlayer owner = player(h);
+        call(armory, "tryBind", owner);
+        BlockPos abs = h.absolutePos(ARMORY);
+        BlockPos above = abs.above();
+        h.runAfterDelay(3, () -> {
+            var lower = h.getLevel().getBlockState(abs);
+            var upper = h.getLevel().getBlockState(above);
+            h.assertTrue(upper.is(lower.getBlock())
+                && upper.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF)
+                    == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER,
+                "Upper gantry half must auto-place above a legacy/direct lower Armory");
+            h.assertTrue(h.getLevel().getBlockEntity(above) == null, "Upper gantry half must not have a BlockEntity");
+            var litProp = (net.minecraft.world.level.block.state.properties.BooleanProperty) lower.getBlock().getStateDefinition().getProperty("lit");
+            h.assertTrue(litProp != null && lower.getValue(litProp) && upper.getValue(litProp),
+                "Upper gantry half must sync lit state with lower base");
+
+            // Sneak-clicking the upper half with an Armory Remote pairs with the lower base pos
+            ItemStack remote = si("normal/item_armory_remote");
+            owner.setItemInHand(InteractionHand.MAIN_HAND, remote);
+            owner.setShiftKeyDown(true);
+            remote.useOn(new UseOnContext(owner, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(above), Direction.NORTH, above, false)));
+            var targetKey = remote.getComponents().keySet().stream()
+                .filter(t -> String.valueOf(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(t)).equals("mio_icif:armory_target")).findFirst();
+            h.assertTrue(targetKey.isPresent() && String.valueOf(remote.get(targetKey.get())).contains(abs.toString()),
+                "Remote paired via upper half must point to lower base pos");
+
+            // Breaking lower removes upper cleanly
+            h.getLevel().destroyBlock(abs, false);
+            h.assertTrue(h.getLevel().getBlockState(above).isAir(), "Breaking lower Armory must clear upper gantry half");
+            owner.discard();
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = "reactor_loop", batch = "armory", timeoutTicks = 40)
     public static void integratedModificationBayInstallsAndEjects(GameTestHelper h) {
         var armory = armory(h, 10_000);
         ServerPlayer p = player(h);

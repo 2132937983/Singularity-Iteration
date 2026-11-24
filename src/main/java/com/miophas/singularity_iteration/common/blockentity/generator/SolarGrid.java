@@ -47,6 +47,9 @@ public final class SolarGrid {
     /** What each panel was last drawn of (EU), and when. */
     private double[] lastDraw;
     private long lastDrawAt = Long.MIN_VALUE;
+    // Scratch buffers reused across balance() ticks to avoid per-tick array churn.
+    private BigInteger[] scratchHave, scratchRoom, scratchTarget, scratchWeight;
+    private double[] scratchDrawA, scratchDrawB;
 
     private SolarGrid(List<mio_icif_solar_generator> panels) {
         this.panels = panels;
@@ -76,6 +79,7 @@ public final class SolarGrid {
                     BlockPos next = at.getBlockPos().relative(side);
                     if (found.containsKey(next) || !level.isLoaded(next)) continue;
                     if (!(level.getBlockEntity(next) instanceof mio_icif_solar_generator other) || other.isRemoved()) continue;
+                    if (other.grid != null && other.grid.valid()) continue;
                     if (!SolarFootprint.joins(state, side, other.getBlockState())) continue;
                     found.put(next, other);
                     queue.add(other);
@@ -136,30 +140,52 @@ public final class SolarGrid {
         }
         // in units of 2^-52 EU when every panel keeps exact balances (the independent network), else whole EU
         int shift = exact ? EnergyAmount.FRACTION_BITS : 0;
-        BigInteger[] have = new BigInteger[n], room = new BigInteger[n], target = new BigInteger[n];
-        BigInteger total = BigInteger.ZERO, roomTotal = BigInteger.ZERO;
-        double[] draw = new double[n];
+        if (scratchHave == null) {
+            scratchHave = new BigInteger[n];
+            scratchRoom = new BigInteger[n];
+            scratchTarget = new BigInteger[n];
+            scratchWeight = new BigInteger[n];
+            scratchDrawA = new double[n];
+            scratchDrawB = new double[n];
+        }
+        BigInteger[] have = scratchHave, room = scratchRoom, target = scratchTarget, weight = scratchWeight;
+        double[] draw = (lastDraw == scratchDrawA) ? scratchDrawB : scratchDrawA;
+        BigInteger total = BigInteger.ZERO;
         boolean drawn = false;
         for (int i = 0; i < n; i++) {
             var panel = panels.get(i);
             CustomEUEnergyStorage s = panel.gridStorage();
-            EnergyAmount amount = exact ? s.scexExactAmount() : EnergyAmount.of(s.getAmount());
-            have[i] = exact ? amount.units() : BigInteger.valueOf(s.getAmount());
-            room[i] = BigInteger.valueOf(s.getCapacity()).shiftLeft(shift);
-            total = total.add(have[i]);
-            roomTotal = roomTotal.add(room[i]);
+            double heldDouble;
+            if (exact) {
+                EnergyAmount amount = s.scexExactAmount();
+                have[i] = amount.isZero() ? BigInteger.ZERO : amount.units();
+                heldDouble = amount.toDouble();
+            } else {
+                long whole = s.getAmount();
+                have[i] = whole == 0L ? BigInteger.ZERO : BigInteger.valueOf(whole);
+                heldDouble = whole;
+            }
+            if (have[i].signum() > 0) total = total.add(have[i]);
             // what left the panel since the last balance: what it held then, plus what it made, less what it holds now
-            draw[i] = Math.max(0, panel.gridAfter + panel.gridMade - amount.toDouble());
+            draw[i] = Math.max(0, panel.gridAfter + panel.gridMade - heldDouble);
             if (draw[i] > 1e-6) drawn = true;
             panel.gridMade = 0;
         }
-        storedNow = total.doubleValue() / Math.scalb(1.0, shift);
+        storedNow = total.signum() == 0 ? 0.0 : total.doubleValue() / Math.scalb(1.0, shift);
         if (drawn) { lastDraw = draw; lastDrawAt = gameTime; }
         else if (lastDraw != null && gameTime - lastDrawAt <= FOLLOW_TICKS) draw = lastDraw;
         else draw = null;
+        if (total.signum() == 0) {
+            for (int i = 0; i < n; i++) panels.get(i).gridAfter = 0.0;
+            return;
+        }
+        BigInteger roomTotal = BigInteger.ZERO;
+        for (int i = 0; i < n; i++) {
+            room[i] = BigInteger.valueOf(panels.get(i).gridStorage().getCapacity()).shiftLeft(shift);
+            roomTotal = roomTotal.add(room[i]);
+        }
         if (roomTotal.signum() <= 0 || total.compareTo(roomTotal) > 0) { remember(have, shift); return; }
         // the weights: what each panel gave (to the panels drawn from), else each panel's own capacity
-        BigInteger[] weight = new BigInteger[n];
         BigInteger weights = BigInteger.ZERO;
         for (int i = 0; i < n; i++) {
             weight[i] = draw != null ? BigInteger.valueOf(draw[i] > 1e-6 ? Math.max(1, Math.round(draw[i] * 1024)) : 0)

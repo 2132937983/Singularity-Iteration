@@ -25,11 +25,12 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class IndependentTransformerBlockEntity extends BlockEntity {
     private final long lowPacket;
-    private double savedBuffer;
-    private long savedFraction;
-    private int savedMode;
-    private NetworkCell cell;
-    private boolean modeObserved, observedStepUp;
+    private volatile double savedBuffer;
+    private volatile long savedFraction;
+    private volatile int savedMode;
+    private volatile NetworkCell cell;
+    private boolean modeObserved;
+    private volatile boolean observedStepUp;
 
     public record Snapshot(NetworkCell.Quote energy, BlockState state, int mode,
                            boolean stepUp, TransformerAccounting.Configuration limits) { }
@@ -86,7 +87,10 @@ public final class IndependentTransformerBlockEntity extends BlockEntity {
     public double bufferCapacity() { return lowPacket * 8.0d; }
 
     /** Current buffered energy (EU, integer part). */
-    public double storedEnergy() { return cell == null ? savedBuffer : cell.quote().amount(); }
+    public double storedEnergy() {
+        NetworkCell current = this.cell;
+        return current == null ? savedBuffer : current.observe().whole();
+    }
 
     public boolean hasNeighborRedstoneSignal() {
         return level != null && level.hasNeighborSignal(worldPosition);
@@ -189,8 +193,15 @@ public final class IndependentTransformerBlockEntity extends BlockEntity {
 
     @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putDouble("buffer", cell == null ? savedBuffer : cell.quote().amount());
-        tag.putLong("scex_energy_fraction", cell == null ? savedFraction : cell.quote().fraction());
+        NetworkCell current = this.cell;
+        if (current != null) {
+            EnergyAmount energy = current.observe();
+            tag.putDouble("buffer", energy.whole());
+            tag.putLong("scex_energy_fraction", energy.fraction());
+        } else {
+            tag.putDouble("buffer", savedBuffer);
+            tag.putLong("scex_energy_fraction", savedFraction);
+        }
         tag.putInt("mode", savedMode);
         tag.putBoolean("active", observedStepUp);
     }

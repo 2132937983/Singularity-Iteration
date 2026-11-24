@@ -172,6 +172,13 @@ public final class DisguiseModels {
             if (renderType != null && !model.getRenderTypes(disguise, rand, ModelData.EMPTY).contains(renderType)) return own;
             List<BakedQuad> shown = model.getQuads(disguise, side, rand, ModelData.EMPTY, renderType);
             if (shown.isEmpty()) return own;
+            if (own.isEmpty()) {
+                boolean anyTinted = false;
+                for (int i = 0, n = shown.size(); i < n; i++) {
+                    if (shown.get(i).isTinted()) { anyTinted = true; break; }
+                }
+                if (!anyTinted) return shown;
+            }
             List<BakedQuad> out = new ArrayList<>(own.size() + shown.size());
             out.addAll(own);
             for (BakedQuad q : shown) out.add(q.isTinted() ? retint(q) : q);

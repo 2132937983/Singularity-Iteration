@@ -155,4 +155,55 @@ public final class Round11553GameTests {
         Round33GameTests.remove(owner);
         h.succeed();
     }
+
+    /** Adaptive SlashBlade style: Swarm Dragon in crowds, Duelist vs Boss/FOCUS, hysteresis, and ground skate math. */
+    @GameTest(template = "empty", batch = "round11553_style", timeoutTicks = 20)
+    public static void adaptiveBladeStyleAndGroundSkate(GameTestHelper h) {
+        Class<?> cls = Round33GameTests.common("armory.WingmanBladeStyle");
+        Object style;
+        try {
+            style = cls.getConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+        // Crowd of 4 normal mobs -> DRAGON
+        Enum<?> s1 = (Enum<?>) Round33GameTests.call(style, "update", 100L, 4, 20.0F, false);
+        h.assertTrue("DRAGON".equals(s1.name()), "expected DRAGON in crowd of 4, got " + s1);
+        // Hysteresis: stays DRAGON after only 15 ticks with 1 mob
+        Enum<?> s2 = (Enum<?>) Round33GameTests.call(style, "update", 115L, 1, 20.0F, false);
+        h.assertTrue("DRAGON".equals(s2.name()), "hysteresis must hold DRAGON for 40 ticks, got " + s2);
+        // After 40 ticks with 1 mob -> DUELIST
+        Enum<?> s3 = (Enum<?>) Round33GameTests.call(style, "update", 145L, 1, 20.0F, false);
+        h.assertTrue("DUELIST".equals(s3.name()), "expected DUELIST after hysteresis, got " + s3);
+        // Boss (100 HP) in a crowd of 5 stays DUELIST
+        Enum<?> s4 = (Enum<?>) Round33GameTests.call(style, "update", 200L, 5, 100.0F, false);
+        h.assertTrue("DUELIST".equals(s4.name()), "boss must stay DUELIST, got " + s4);
+        // Crowd -> DRAGON, then explicit FOCUS immediately overrides hysteresis -> DUELIST
+        Enum<?> s5 = (Enum<?>) Round33GameTests.call(style, "update", 250L, 4, 20.0F, false);
+        h.assertTrue("DRAGON".equals(s5.name()), "crowd should enter DRAGON");
+        Enum<?> s6 = (Enum<?>) Round33GameTests.call(style, "update", 255L, 4, 20.0F, true);
+        h.assertTrue("DUELIST".equals(s6.name()), "FOCUS order must override hysteresis into DUELIST");
+
+        // Chain picks
+        Enum<?> dragonChain = (Enum<?>) Round33GameTests.call(cls, "pickGroundChain", s5, 0);
+        Enum<?> duelistChain = (Enum<?>) Round33GameTests.call(cls, "pickGroundChain", s6, 0);
+        h.assertTrue("GROUND_C".equals(dragonChain.name()), "DRAGON opener should be GROUND_C, got " + dragonChain);
+        h.assertTrue("GROUND_B".equals(duelistChain.name()), "DUELIST opener should be GROUND_B, got " + duelistChain);
+
+        // Ground footwork closes distance while sticking to the floor
+        var foot = (net.minecraft.world.phys.Vec3) Round33GameTests.call(cls, "groundFootwork",
+            new net.minecraft.world.phys.Vec3(0, 2, 0), new net.minecraft.world.phys.Vec3(4, 2, 0), 2.2);
+        h.assertTrue(foot.x > 0.1 && Math.abs(foot.y + 0.1) < 1e-4, "groundFootwork must glide toward enemy on floor: " + foot);
+
+        // Finisher drift directions are unit horizontal vectors
+        var dDragon = (net.minecraft.world.phys.Vec3) Round33GameTests.call(cls, "finisherDriftDir", s5,
+            new net.minecraft.world.phys.Vec3(0, 2, 0), new net.minecraft.world.phys.Vec3(2, 2, 0),
+            new net.minecraft.world.phys.Vec3(0, 2, 5), new net.minecraft.world.phys.Vec3(-3, 2, 0), true, 1);
+        var dDuelist = (net.minecraft.world.phys.Vec3) Round33GameTests.call(cls, "finisherDriftDir", s6,
+            new net.minecraft.world.phys.Vec3(0, 2, 0), new net.minecraft.world.phys.Vec3(2, 2, 0),
+            null, null, false, 1);
+        h.assertTrue(Math.abs(dDragon.length() - 1.0) < 0.05 && Math.abs(dDragon.y) < 1e-4, "invalid dragon drift: " + dDragon);
+        h.assertTrue(Math.abs(dDuelist.length() - 1.0) < 0.05 && dDuelist.x > 0.2, "duelist drift must orbit forward-flank: " + dDuelist);
+        h.succeed();
+    }
 }

@@ -1696,54 +1696,107 @@ public class WingmanEntity extends Mob {
     static final int RAPID_SLASH_COOLDOWN = 40;
 
     private final BladeChain chain = new BladeChain();
+    private final WingmanBladeStyle bladeStyle = new WingmanBladeStyle();
     /** The chain chosen next and where it is set up (the ground spot or the cleave perch), and since when. */
     @Nullable private BladeChain.Kind planned;
     @Nullable private Vec3 setupAt;
-    private int setupTicks, kickTicks, rapidSlashCooldown;
-    private boolean aerialB, firstChain = true;
+    private int setupTicks, kickTicks, rapidSlashCooldown, bladeChainStep, skateTicks, restElapsed;
+    private Vec3 skateVel = Vec3.ZERO;
+    private boolean aerialB, firstChain = true, driftedThisChain;
     @Nullable private LivingEntity chainTarget;
 
     /** 0.1.11.53: the chain scheduler (tests). */
     BladeChain bladeChain() { return chain; }
+    WingmanBladeStyle bladeStyle() { return bladeStyle; }
+
+    /** Ground-hugging thruster skate (micro-dash across the ground with sparks and dust). */
+    private void groundSkate(Vec3 dir, double speed, int ticks) {
+        Vec3 flat = new Vec3(dir.x, 0, dir.z);
+        if (flat.lengthSqr() < 1.0E-4) flat = new Vec3(strafeSign, 0, 0);
+        flat = flat.normalize();
+        skateVel = new Vec3(flat.x * speed, -0.12, flat.z * speed);
+        skateTicks = ticks;
+        boostCooldown = Math.max(boostCooldown, 18);
+        entityData.set(DATA_BOOSTS, entityData.get(DATA_BOOSTS) + 1);
+        level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_BOOST.get(), SoundSource.NEUTRAL, 0.55F,
+            1.1F + getRandom().nextFloat() * 0.15F);
+    }
+
+    private void tickGroundSkate(ServerLevel world) {
+        skateTicks--;
+        Vec3 safe = WingmanTactics.avoid(this, new Vec3(skateVel.x, 0, skateVel.z));
+        setDeltaMovement(safe.x, -0.12, safe.z);
+        world.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 0.1, getZ(), 3, 0.18, 0.05, 0.18, 0.06);
+        world.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.05, getZ(), 2, 0.15, 0.02, 0.15, 0.02);
+    }
+
+    /** Picks a different nearby hostile to weave toward in Swarm Dragon style, or null. */
+    @Nullable
+    private LivingEntity pickNextDragonTarget(LivingEntity current, ServerPlayer player) {
+        LivingEntity best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(8.5),
+                m -> m != current && m instanceof net.minecraft.world.entity.monster.Enemy && m.isAlive() && hasLineOfSight(m))) {
+            double d = e.distanceTo(this);
+            // Prefer edge targets 3..7.5 blocks away so the Wingman weaves cleanly across the crowd
+            double score = Math.abs(d - 4.8) + e.distanceTo(player) * 0.15;
+            if (score < bestScore) { bestScore = score; best = e; }
+        }
+        return best;
+    }
 
     private void engageBlade(LivingEntity enemy, ServerPlayer player) {
         // Evade fusing Creepers before committing to a grounded or close-range chain
         var fusing = WingmanTactics.fusingCreeper(this, 4.5);
         if (fusing != null && boostCooldown == 0) {
             chain.end(level().getGameTime(), 0);
+            skateTicks = 0;
             boost(position().subtract(fusing.position()));
             return;
         }
         faceSmooth(enemy.getEyePosition(), GAZE_TURN);
+        if (skateTicks > 0 && level() instanceof ServerLevel world) {
+            tickGroundSkate(world);
+            return;
+        }
         long now = level().getGameTime();
-        if (enemy != chainTarget) { chainTarget = enemy; firstChain = true; planned = null; chain.end(now, 0); }
+        // Update adaptive blade style (Swarm Dragon vs Duelist) with hysteresis
+        int nearby = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(WingmanBladeStyle.SWARM_RADIUS),
+            e -> e instanceof net.minecraft.world.entity.monster.Enemy && e.isAlive()).size();
+        WingmanBladeStyle.Style style = bladeStyle.update(now, nearby, enemy.getMaxHealth(), order == WingmanOrder.FOCUS);
+        if (enemy != chainTarget) { chainTarget = enemy; firstChain = true; planned = null; driftedThisChain = false; restElapsed = 0; chain.end(now, 0); }
         double d = distanceTo(enemy);
         BladeChain.Kind running = chain.running(now);
         if (running != null) {
-            playChain(enemy, player, running, now, d);
+            playChain(enemy, player, running, style, now, d);
             return;
         }
         if (!chain.free(now)) { holdAtBlade(enemy, player, false); return; }
-        // Rapid Slash gap-closer: dash straight into reach from 3.8..9.5 blocks with clear LOS
+        // Ground Skate + Rapid Slash gap-closer: dash straight into reach from 3.8..9.5 blocks with clear LOS
         if (rapidSlashCooldown == 0 && d >= 3.8 && d <= 9.5 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.attack(this, enemy, SlashBladeCombat.Command.FORWARD, SlashBladeCombat.Command.SPRINT) != null) {
                 slash(SLASH_DASH);
                 rapidSlashCooldown = RAPID_SLASH_COOLDOWN;
-                boost(enemy.position().subtract(position()));
+                if (onGround() && standsOnFloor(enemy)) groundSkate(enemy.position().subtract(position()), 0.95, 6);
+                else boost(enemy.position().subtract(position()));
                 return;
             }
         }
-        // between chains: a Slash Art when it is ready
-        if (artsCooldown == 0 && d < 7 && hasLineOfSight(enemy)) {
+        // between chains: a Slash Art when it is ready (Dragon prefers 2+ hostiles ahead; Duelist fires on cooldown)
+        boolean saGood = style == WingmanBladeStyle.Style.DUELIST || nearby >= 2 || d < 5.0;
+        if (artsCooldown == 0 && saGood && d < 7 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
                 slash(SLASH_ARTS);
                 artsCooldown = ARTS_INTERVAL;
-                chain.end(now, 20);
-                boost(position().subtract(enemy.position()));     // 0.1.9.1: break away after the art
+                chain.end(now, 16);
+                if (onGround()) groundSkate(WingmanBladeStyle.finisherDriftDir(style, position(), enemy.position(), null,
+                    player.position(), mode() == WingmanMode.ESCORT, strafeSign), 0.78, 6);
+                else boost(position().subtract(enemy.position()));
+                strafeSign = -strafeSign;
                 return;
             }
         }
-        if (planned == null) plan(enemy, now);
+        if (planned == null) plan(enemy, style, now);
         if (planned == null) { engageMelee(enemy, player); return; }   // the bridge went off: a plain sword
         switch (planned) {
             case CLEAVE -> {
@@ -1754,10 +1807,10 @@ public class WingmanEntity extends Mob {
                     return;
                 }
                 startChain(BladeChain.Kind.CLEAVE, now);
-                playChain(enemy, player, BladeChain.Kind.CLEAVE, now, d);
+                playChain(enemy, player, BladeChain.Kind.CLEAVE, style, now, d);
             }
             case GROUND_A, GROUND_B, GROUND_C -> {
-                if (setupAt == null || ++setupTicks > SETUP_TICKS || setupAt.distanceTo(enemy.position()) > BLADE_REACH) {
+                if (setupAt == null || ++setupTicks > SETUP_TICKS || setupAt.distanceTo(enemy.position()) > BLADE_REACH + 1.5) {
                     planned = aerialB ? BladeChain.Kind.AERIAL_B : BladeChain.Kind.AERIAL_A;
                     setupAt = null;
                     return;
@@ -1765,19 +1818,19 @@ public class WingmanEntity extends Mob {
                 if (!descendTo(setupAt, player)) return;
                 BladeChain.Kind k = planned;
                 startChain(k, now);
-                playChain(enemy, player, k, now, d);
+                playChain(enemy, player, k, style, now, d);
             }
             default -> {
                 if (d > BLADE_REACH) { steer(enemy.position().add(0, enemy.getBbHeight() * 0.5, 0).add(enemy.getDeltaMovement().scale(3)), COMBAT, player); return; }
                 BladeChain.Kind k = planned;
                 startChain(k, now);
-                playChain(enemy, player, k, now, d);
+                playChain(enemy, player, k, style, now, d);
             }
         }
     }
 
-    /** Chooses the next chain and where to set it up. */
-    private void plan(LivingEntity enemy, long now) {
+    /** Chooses the next chain (ground-first against grounded targets, style-matched) and where to set it up. */
+    private void plan(LivingEntity enemy, WingmanBladeStyle.Style style, long now) {
         if (!SlashBladeCombat.isBlade(getMainHandItem())) return;
         setupTicks = 0;
         setupAt = null;
@@ -1791,9 +1844,9 @@ public class WingmanEntity extends Mob {
                 && level().noCollision(this, getBoundingBox().move(perch.subtract(position())).expandTowards(0, -3.0, 0))) {
             planned = BladeChain.Kind.CLEAVE;
             setupAt = perch;
-        } else if (spot != null && getRandom().nextFloat() < GROUND_CHANCE) {
-            BladeChain.Kind[] ground = {BladeChain.Kind.GROUND_A, BladeChain.Kind.GROUND_C, BladeChain.Kind.GROUND_B};
-            planned = ground[getRandom().nextInt(ground.length)];
+        } else if (spot != null) {
+            // Ground-first swordsman: always fight on the ground when a clean floor spot exists
+            planned = WingmanBladeStyle.pickGroundChain(style, bladeChainStep++);
             setupAt = spot;
         } else {
             planned = aerialB ? BladeChain.Kind.AERIAL_B : BladeChain.Kind.AERIAL_A;
@@ -1813,6 +1866,8 @@ public class WingmanEntity extends Mob {
         chain.start(kind, now);
         planned = null;
         setupAt = null;
+        driftedThisChain = false;
+        restElapsed = 0;
         if (kind == BladeChain.Kind.AERIAL_A || kind == BladeChain.Kind.AERIAL_B) aerialB = !aerialB;
     }
 
@@ -1825,17 +1880,37 @@ public class WingmanEntity extends Mob {
         return false;
     }
 
-    /** One tick of a running chain: stay at the target (on the ground, or in the air), click when due. */
-    private void playChain(LivingEntity enemy, ServerPlayer player, BladeChain.Kind kind, long now, double d) {
+    /** One tick of a running chain: ground footwork or aerial hover, click when due, and thruster finisher drift. */
+    private void playChain(LivingEntity enemy, ServerPlayer player, BladeChain.Kind kind, WingmanBladeStyle.Style style, long now, double d) {
         // Smart finisher cancel: if the target died or fled out of reach during finisher rest, cut recovery short and pursue
-        if (chain.resting(now) && (!enemy.isAlive() || d > BLADE_REACH + 2.0)) {
-            chain.end(now, 0);
-            return;
+        if (chain.resting(now)) {
+            if (!enemy.isAlive() || d > BLADE_REACH + 2.0) {
+                chain.end(now, 0);
+                return;
+            }
+            // Seamless CLEAVE touchdown: shorten landing recovery straight into ground swordplay
+            if (kind == BladeChain.Kind.CLEAVE && onGround() && restElapsed >= 6) {
+                chain.end(now, 0);
+                return;
+            }
+            // Finisher Thruster Drift: after the final cut lands (5 ticks), skate into a back-orbit (Duelist) or weave to next mob (Dragon)
+            if (++restElapsed >= 5 && !driftedThisChain && kind.grounded && onGround() && boostCooldown == 0) {
+                driftedThisChain = true;
+                LivingEntity next = style == WingmanBladeStyle.Style.DRAGON ? pickNextDragonTarget(enemy, player) : null;
+                Vec3 dir = WingmanBladeStyle.finisherDriftDir(style, position(), enemy.position(),
+                    next == null ? null : next.position(), player.position(), mode() == WingmanMode.ESCORT, strafeSign);
+                strafeSign = -strafeSign;
+                groundSkate(dir, style == WingmanBladeStyle.Style.DRAGON ? 0.90 : 0.72, style == WingmanBladeStyle.Style.DRAGON ? 7 : 5);
+                if (next != null) target = next;
+                chain.end(now, 4);
+                return;
+            }
         }
         if (kind.grounded) {
             if (!onGround() && chain.clicks() > 0 && !chain.resting(now)) { chain.end(now, BladeChain.MISS_REST); return; }   // knocked off the ground: the chain is lost
-            setDeltaMovement(0, -0.1, 0);   // stand (the suit flies without gravity)
-            if (!chain.resting(now) && d > BLADE_REACH + 0.5) { chain.end(now, BladeChain.MISS_REST); return; }   // the target left
+            // Ground-hugging footwork: track knocked-back enemies smoothly while keeping onGround() true
+            setDeltaMovement(WingmanBladeStyle.groundFootwork(position(), enemy.position(), 2.2));
+            if (!chain.resting(now) && d > BLADE_REACH + 1.0) { chain.end(now, BladeChain.MISS_REST); return; }   // the target left
         } else if (kind == BladeChain.Kind.CLEAVE) {
             // the dive: the blade drives the Wingman down (3 blocks per tick) until it lands; no steering against it
             if (chain.resting(now) && onGround()) setDeltaMovement(0, -0.1, 0);
@@ -2334,7 +2409,16 @@ public class WingmanEntity extends Mob {
         Entity attacker = source.getEntity();
         if (attacker != null && owner != null && (owner.equals(attacker.getUUID())
                 || attacker instanceof WingmanEntity w && owner.equals(w.owner))) return false;
-        return super.hurt(source, amount);
+        boolean hit = super.hurt(source, amount);
+        // Reactive ground thruster side-dodge for SlashBlade Wingmen when taking a solid melee blow
+        if (hit && !level().isClientSide && weaponKind() == WeaponKind.BLADE && onGround()
+                && skateTicks == 0 && boostCooldown == 0 && amount >= 2.0F && attacker instanceof LivingEntity threat) {
+            Vec3 away = position().subtract(threat.position());
+            Vec3 side = new Vec3(-away.z * strafeSign, 0, away.x * strafeSign);
+            strafeSign = -strafeSign;
+            groundSkate(side.add(away.scale(0.35)), 0.85, 5);
+        }
+        return hit;
     }
 
     @Override

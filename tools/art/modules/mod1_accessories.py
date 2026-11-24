@@ -93,18 +93,23 @@ def propulsion(shell):
 
 def solar_core(shell, level):
     image = shell.copy()
-    stamp(image, (5, 4), [
-        ".hhhhh.",
-        "hlvgvvs",
-        "hvvgvvs",
-        "ggggggs",
-        "lvvgvvs",
-        "lvvgvvs",
-        ".sssss.",
-    ], {"h": "#FFEAA1", "l": "#FFD867", "v": "#FFC83D", "s": "#AB6D28", "g": "#BF831E"})
+    # Each tier adds one pixel to both dimensions of the photovoltaic crystal.
+    crystals = (
+        (".hh.", "hvvs", "gvgs", ".sv."),
+        (".hhv.", "hvgvs", "ggggs", "vvgvs", ".vss."),
+        (".hhhv.", "hvvgvs", "vvvgvs", "gggggs", "vvvgvs", ".vvss."),
+    )
+    crystal = crystals[level - 1]
+    size = len(crystal)
+    stamp(image, ((16 - size) // 2, (15 - size) // 2), crystal, {
+        "h": "#FFEAA1", "v": "#FFC83D", "s": "#AB6D28", "g": "#BF831E",
+    })
+
     pen = ImageDraw.Draw(image)
-    for x in (6, 8, 10)[:level]:
-        pen.point((x, 12), fill="#2B3440")
+    first = (16 - (2 * level - 1)) // 2
+    for i in range(level):
+        x = first + 2 * i
+        pen.line((x, 11, x, 12), fill="#2B3440")
     return image
 
 

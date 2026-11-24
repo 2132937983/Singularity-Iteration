@@ -1,25 +1,29 @@
 """Render the MOD1 inventory previews. Requires Pillow >= 10.1 and Git.
 
-From any directory, run this script after mod1_render.py. The old samples come
-from the brief's Git commit, so regenerating the sheets never changes the baseline.
-The Chinese guide uses an installed CJK font, optionally selected with --cjk-font.
+Run this script after mod1_render.py. The overview compares against the initial
+brief, and the second-round sheet compares against the accepted first round.
+The Chinese previews use an installed CJK font, optionally selected with --cjk-font.
 """
 
 import argparse
 import io
+import json
 import math
 import os
 import subprocess
 import sys
 from pathlib import Path
+from zipfile import ZipFile
 
 from PIL import Image, ImageDraw, ImageFont
 
 from mod1_render import ROOT, TEXTURES, batch_groups
 
 BRIEF = "baf296a8997cb39d83dc7a8a2cbf71f4fd36fe96"
+ROUND_ONE = "858c25a1302ce7a6efcb4f0feff9be665763debd"
 DESTINATION = ROOT / "docs/art/previews"
 FAMILIES = ("Quantum modules", "Nano modules", "Shared modules", "Accessories")
+CHINESE_FAMILIES = ("量子模块", "纳米模块", "共用模块", "配件")
 SAMPLES = (
     ("item_module_ore_scanner", "item_module_entity_esp", "item_module_entanglement_relay",
      "item_module_phase_jump_drive_mk2"),
@@ -90,14 +94,19 @@ def labeled_tile(sheet, draw, icons, name, cx, top, label_width):
     filename(draw, name + ".png", cx, top + square.height + 8, label_width)
 
 
-def old_icon(name):
-    path = (TEXTURES / (name + ".png")).relative_to(ROOT).as_posix()
-    data = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{BRIEF}:{path}"])
-    with Image.open(io.BytesIO(data)) as icon:
-        return icon.convert("RGBA")
+def historical_icons(commit, names):
+    path = TEXTURES.relative_to(ROOT).as_posix()
+    archive = subprocess.check_output(["git", "-C", str(ROOT), "archive", "--format=zip", commit, "--", path])
+    icons = {}
+    with ZipFile(io.BytesIO(archive)) as zipped:
+        for name in names:
+            with zipped.open(f"{path}/{name}.png") as file, Image.open(file) as icon:
+                icons[name] = icon.convert("RGBA")
+    return icons
 
 
 def overview(groups, icons):
+    originals = historical_icons(BRIEF, (name for group in SAMPLES for name in group))
     families_height = sum(SECTION_HEADER + ROW * math.ceil(len(names) / 10) for names in groups)
     sheet, draw = page("MOD1 suit module icons", "69 textures   /   8× inventory slots",
                        TOP + families_height + 282)
@@ -131,7 +140,7 @@ def overview(groups, icons):
         for i, name in enumerate(samples):
             pair_width = 10 * COLUMN / 16
             cx = start + round((i + 0.5) * pair_width)
-            sheet.paste(slot(old_icon(name), 2), (cx - 37, y + 22))
+            sheet.paste(slot(originals[name], 2), (cx - 37, y + 22))
             sheet.paste(slot(icons[name], 2), (cx + 1, y + 22))
             short_name = name.removeprefix("item_module_").removeprefix("item_")
             filename(draw, short_name, cx, y + 65, int(pair_width - 6), size=12)
@@ -208,7 +217,7 @@ def player_guide(groups, icons, font):
     draw = ImageDraw.Draw(sheet)
     heading_font = font.font_variant(size=20)
     y = margin
-    for family, names, rows in zip(("量子模块", "纳米模块", "共用模块", "配件"), names_by_group, rows_per_group):
+    for family, names, rows in zip(CHINESE_FAMILIES, names_by_group, rows_per_group):
         draw.text((margin, y), family, anchor="lt", font=heading_font, fill=INK)
         line_x = margin + round(draw.textlength(family, font=heading_font)) + 12
         draw.line((line_x, y + 10, width - margin - 1, y + 10), fill=RULE)
@@ -224,9 +233,68 @@ def player_guide(groups, icons, font):
     return sheet
 
 
+def round_two_sheet(groups, icons, font):
+    before = historical_icons(ROUND_ONE, icons)
+    changed = [[name for name in names if before[name].tobytes() != icons[name].tobytes()] for names in groups]
+    names_zh = json.loads((ROOT / "src/main/resources/assets/mio_icif/lang/zh_cn.json").read_text(encoding="utf-8"))
+    columns, cell_width, margin = 9, 160, 24
+    width = 2 * margin + columns * cell_width
+    section_header, row_height = 34, 88
+    height = 78 + sum(section_header + math.ceil(len(names) / columns) * row_height
+                      for names in changed if names) + 230
+    sheet = Image.new("RGB", (width, height), PAPER)
+    draw = ImageDraw.Draw(sheet)
+    title_font = font.font_variant(size=28)
+    section_font = font.font_variant(size=19)
+    small_font = font.font_variant(size=14)
+
+    def section(title, top):
+        draw.text((margin, top), title, anchor="lt", font=section_font, fill=INK)
+        end = margin + round(draw.textlength(title, font=section_font)) + 14
+        draw.line((end, top + 10, width - margin - 1, top + 10), fill=RULE)
+        return top + section_header
+
+    draw.text((margin, margin), "套装模块第二轮改图", anchor="lt", font=title_font, fill=INK)
+    draw.text((width - margin, margin + 8), "左图改前　右图改后　·　3× 物品栏",
+              anchor="rt", font=section_font, fill=SECONDARY)
+    y = 78
+    for family, names in zip(CHINESE_FAMILIES, changed):
+        if not names:
+            continue
+        y = section(family, y)
+        for i, name in enumerate(names):
+            cx = margin + (i % columns) * cell_width + cell_width // 2
+            top = y + (i // columns) * row_height
+            sheet.paste(slot(before[name], 3), (cx - 57, top))
+            sheet.paste(slot(icons[name], 3), (cx + 3, top))
+            label = names_zh["item.mio_icif.module." + name]
+            label_font = small_font if draw.textlength(label, font=font) > cell_width - 6 else font
+            draw.text((cx, top + 59), label, anchor="mt", font=label_font, fill=INK)
+        y += math.ceil(len(names) / columns) * row_height
+
+    y = section("量子模块全览　3×", y)
+    quantum = groups[0]
+    for i, name in enumerate(quantum):
+        x = margin + round(i * (width - 2 * margin - 54) / (len(quantum) - 1))
+        sheet.paste(slot(icons[name], 3), (x, y))
+    y = section("太阳能阵列核心", y + 72)
+    x = margin
+    for scale in (1, 3):
+        draw.text((x, y + 27), f"{scale}×", anchor="lm", font=section_font, fill=SECONDARY)
+        x += 44
+        for level, numeral in enumerate(("Ⅰ", "Ⅱ", "Ⅲ"), start=1):
+            square = slot(icons[f"item_core_solar_array_{level}"], scale)
+            cx = x + 31
+            sheet.paste(square, (cx - square.width // 2, y + (54 - square.height) // 2))
+            draw.text((cx, y + 60), numeral, anchor="mt", font=font, fill=INK)
+            x += 62
+        x += 42
+    return sheet
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cjk-font", metavar="FILE", help="Chinese .ttf, .ttc or .otf font for MOD1-guide.png")
+    parser.add_argument("--cjk-font", metavar="FILE", help="Chinese .ttf, .ttc or .otf font for the guide and R2 previews")
     args = parser.parse_args()
     groups = batch_groups()
     icons = {}
@@ -239,12 +307,13 @@ def main():
     pair_sheet(groups, icons)
     font = chinese_font(args.cjk_font)
     if font is None:
-        message = "MOD1-guide.png requires a Chinese font. Supply one with --cjk-font FILE."
+        message = "MOD1-guide.png and MOD1-r2.png require a Chinese font. Supply one with --cjk-font FILE."
         if args.cjk_font:
             parser.error(message)
         print(message, file=sys.stderr)
     else:
         player_guide(groups, icons, font).save(DESTINATION / "MOD1-guide.png")
+        round_two_sheet(groups, icons, font).save(DESTINATION / "MOD1-r2.png")
 
 
 if __name__ == "__main__":

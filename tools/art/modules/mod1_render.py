@@ -77,14 +77,14 @@ SHARED = {
         "...###...",
     )),
     "kinetic_generator": ("#FFEE58", (
-        "...#..#..",
-        "...#..#..",
-        "...#..#..",
-        "..######.",
-        "..######.",
-        "...####..",
-        "....#....",
-        "....###..",
+        ".##.....##",
+        "####...##.",
+        "#--#..###.",
+        "####...#..",
+        ".##...#...",
+        "..........",
+        "..###.....",
+        "...##.....",
     )),
 }
 
@@ -205,7 +205,7 @@ def module(name, glyphs, family):
     color, rows = glyphs[key]
     if family == "quantum":
         image = quantum_base(color)
-        inks = {"#": GRAPHITE, "+": "#5A6472"}
+        inks = {"#": GRAPHITE, "*": color}
     else:
         image = nano_base() if family == "nano" else shared_base()
         inks = {"#": color, "+": blend(color, WHITE, 0.4), "-": blend(color, WEAVE_DARK, 0.45)}

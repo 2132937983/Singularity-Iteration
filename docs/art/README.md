@@ -56,4 +56,4 @@
 
 ## 5. 当前批次
 
-[MOD1：套装模块图标](batches/MOD1-suit-modules.md)（69 张）。
+[MOD1 第二轮：修改清单](batches/MOD1-r2.md)。第一轮的完整清单见 [MOD1：套装模块图标](batches/MOD1-suit-modules.md)（69 张）。

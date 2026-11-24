@@ -12,7 +12,7 @@
 
 **你不改的文件：** 注册 ID 与文件路径、Java 代码、物品模型 JSON、语言文件、`tools/art/check_modules.py`。清单里有你认为不对的地方，写进报告。
 
-**不要运行** `tools/art/suit_icons_183.py`：它是旧模块图标的生成脚本，一运行就会把新图覆盖回旧图。
+**不要运行**旧的模块贴图脚本：`tools/tex_modules_180.py`、`tex_nano_185.py`、`tex_nano_186.py`、`tex_core_190.py`、`tex_1100.py`、`tex_1101.py`、`tex_1102.py`、`gen_suit_assets.py`。它们是历史版本的生成脚本，一运行就会把新图覆盖回旧图。现在的模块图标只由 `tools/art/modules/` 生成。
 
 **净室：** 不复制、不描摹、不调色改用任何其他模组或游戏的贴图。奇点迭代自己的贴图只用来对照风格、尺寸和颜色。
 

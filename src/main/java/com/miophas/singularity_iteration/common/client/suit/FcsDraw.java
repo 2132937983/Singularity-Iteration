@@ -124,10 +124,11 @@ public final class FcsDraw {
         triangle(g, x, y + c, x + c, y, x + c, y + c, body);
         quad(g, x + c, y + h - c, x + w - c, y + h - c, x + w - c, y + h, x + c, y + h, body);
         triangle(g, x + w - c, y + h - c, x + w, y + h - c, x + w - c, y + h, body);
-        // lower half slightly lighter: glass gradient
-        g.fill(x + 1, y + h / 2, x + w - 1, y + h - c, 0x0AFFFFFF);
+        // lower half slightly lighter: glass gradient (batched via quad instead of g.fill)
+        quad(g, x + 1, y + h / 2, x + w - 1, y + h / 2, x + w - 1, y + h - c, x + 1, y + h - c, 0x0AFFFFFF);
         // scanlines
-        for (int sy = y + 10; sy < y + h - 2; sy += 2) g.fill(x + 2, sy, x + w - 2, sy + 1, 0x07FFFFFF);
+        for (int sy = y + 10; sy < y + h - 2; sy += 2)
+            quad(g, x + 2, sy, x + w - 2, sy, x + w - 2, sy + 1, x + 2, sy + 1, 0x07FFFFFF);
         int edge = argb(rgb, 0.50F), bright = argb(rgb, 0.95F);
         // outline
         line(g, x + c, y, x + w, y, 1F, edge);
@@ -142,7 +143,8 @@ public final class FcsDraw {
         line(g, x, y + h - 6, x, y + h, 1.4F, bright);
         line(g, x, y + h, x + 8, y + h, 1.4F, bright);
         // accent bar
-        g.fill(x - 3, y + c + 2, x - 1, y + Math.max(c + 6, h - 6), argb(rgb, 0.75F));
+        int barBottom = y + Math.max(c + 6, h - 6);
+        quad(g, x - 3, y + c + 2, x - 1, y + c + 2, x - 1, barBottom, x - 3, barBottom, argb(rgb, 0.75F));
         if (label != null && !label.isEmpty()) {
             float tw = width(label, 0.6F) + 8;
             // header tab
@@ -150,7 +152,10 @@ public final class FcsDraw {
             triangle(g, x + 2, y + 9, x + c, y, x + c, y + 9, argb(rgb, 0.85F));
             line(g, x + c + tw, y + 9, x + w - 3, y + 9, 0.6F, argb(rgb, 0.35F));
             // index ticks on the rule
-            for (int k = 0; k < 3; k++) g.fill(x + w - 6 - k * 3, y + 3, x + w - 5 - k * 3, y + 6, argb(rgb, 0.6F - k * 0.15F));
+            for (int k = 0; k < 3; k++) {
+                int tx = x + w - 6 - k * 3;
+                quad(g, tx, y + 3, tx + 1, y + 3, tx + 1, y + 6, tx, y + 6, argb(rgb, 0.6F - k * 0.15F));
+            }
             g.flush();
             text(g, label, x + c + 3, y + 2, 0xF0050A0C, 0.6F);
         } else {
@@ -253,12 +258,16 @@ public final class FcsDraw {
         return font().width(seq) * scale;
     }
 
-    /** Meter bar: frame + fill. */
+    /** Meter bar: frame + fill (batched into a single GUI draw call). */
     public static void bar(GuiGraphics g, int x, int y, int w, int h, float fraction, int rgb) {
-        g.fill(x, y, x + w, y + h, 0x60000000);
+        quad(g, x, y, x + w, y, x + w, y + h, x, y + h, 0x60000000);
         int fill = (int) (Math.max(0, Math.min(1, fraction)) * (w - 2));
-        g.fill(x + 1, y + 1, x + 1 + fill, y + h - 1, argb(rgb, 0.9F));
-        for (int i = 1; i < 10; i++) g.fill(x + i * w / 10, y + h - 2, x + i * w / 10 + 1, y + h, 0x80000000);
+        if (fill > 0) quad(g, x + 1, y + 1, x + 1 + fill, y + 1, x + 1 + fill, y + h - 1, x + 1, y + h - 1, argb(rgb, 0.9F));
+        for (int i = 1; i < 10; i++) {
+            int tx = x + i * w / 10;
+            quad(g, tx, y + h - 2, tx + 1, y + h - 2, tx + 1, y + h, tx, y + h, 0x80000000);
+        }
+        g.flush();
     }
 
     /** "12.3k" style EU numbers. */

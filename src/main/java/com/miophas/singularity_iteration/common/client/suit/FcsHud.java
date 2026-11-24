@@ -160,7 +160,7 @@ public final class FcsHud {
         // 0.1.11.5 passive HUD: the heading tape in flight and in the detail view; the range read-out while there is a
         // ballistic solution or in the detail view (they were always on)
         boolean detail = FcsClient.detailHeld();
-        if (FcsClientConfig.showCompass() && (ManeuverModeClient.isFlying() || detail)) heading(g, player, cx, top, w, primary, partial);
+        if (FcsClientConfig.showCompass() && detail && !ManeuverModeClient.isFlying()) heading(g, player, cx, top, w, primary, partial);
         if (FcsState.ballistic != null || detail) rangeFinder(g, player, cx, h, primary, partial);
     }
 

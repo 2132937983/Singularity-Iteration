@@ -442,8 +442,18 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
      * settings of the screen; false (nothing changed) while the builder runs. The read error shows as for a file.
      */
     boolean selectUpload(Player player, String ref) {
+        return selectUpload(player, ref, null);
+    }
+
+    /** Overload accepting an already-parsed blueprint (avoids double-parsing on upload finish). */
+    boolean selectUpload(Player player, String ref, @Nullable Blueprint preloaded) {
         if (running || !(level instanceof ServerLevel)) return false;
-        keptKey = null;   // read it again
+        if (preloaded != null) {
+            kept = preloaded;
+            keptKey = "u:" + ref;
+        } else {
+            keptKey = null;   // read it again
+        }
         stop();
         useCreate = false;
         structure = "";
@@ -583,7 +593,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         if (now < checkFrom) return true;
         if (checkAt < 0) { checkAt = 0; checkFound = 0; }
         int end = Math.min(plan.size(), checkAt + CHECK_PER_TICK);
-        for (int t = checkAt; t < end; t++) {
+        long deadline = System.nanoTime() + 500_000L; // <= 0.5 ms per tick budget
+        int t = checkAt;
+        for (; t < end; t++) {
+            if ((t & 63) == 0 && t > checkAt && System.nanoTime() >= deadline) break;
             Blueprint.Entry e = plan.get(t);
             if (!done[t] || !world.isLoaded(e.pos())) continue;
             BlockState here = world.getBlockState(e.pos()), target = target(e.state());
@@ -594,7 +607,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             checkFound++;
             cursor = Math.min(cursor, t);
         }
-        checkAt = end;
+        checkAt = t;
         if (checkAt < plan.size()) return true;
         checkPasses++;
         checkAt = -1;
@@ -852,7 +865,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             replicators = supplyEnabled() ? scanReplicators(world) : List.of();
         }
         for (BlockPos p : interfaces) {
-            if (world.getBlockEntity(p) instanceof MaterialSource mi && mi.count(item) > 0) return p;
+            if (world.getBlockEntity(p) instanceof MaterialSource mi && mi.hasAny(item)) return p;
         }
         for (BlockPos p : replicators) {
             if (world.getBlockEntity(p) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep && rep.outputCount(item) > 0) return p;
@@ -894,7 +907,8 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             if (world.getBlockEntity(p) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep) open += rep.orderLeft(item);
         }
         int rest = 0;
-        for (int t = from; t < plan.size() && rest < 64; t++) {
+        int scanEnd = Math.min(plan.size(), from + 4096);
+        for (int t = from; t < scanEnd && rest < 64; t++) {
             if (done[t] || claimed[t]) continue;
             BlockState target = target(plan.get(t).state());
             if (material(target) == item) rest += amount(target);
@@ -934,7 +948,13 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
      * a potted plant, a ripe crop or a bush with berries cost one plain item but gave bone meal, honey, a bucket of
      * lava, the plant or the harvest when broken; they are placed empty (or unripe).
      */
+    private static final java.util.concurrent.ConcurrentHashMap<BlockState, BlockState> TARGET_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
     static BlockState target(BlockState s) {
+        return TARGET_CACHE.computeIfAbsent(s, BlueprintBuilderBlockEntity::computeTarget);
+    }
+
+    private static BlockState computeTarget(BlockState s) {
         if (s.getBlock() instanceof net.minecraft.world.level.block.AbstractCauldronBlock && !s.is(net.minecraft.world.level.block.Blocks.CAULDRON))
             return net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState();
         if (s.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock && !s.is(net.minecraft.world.level.block.Blocks.FLOWER_POT))

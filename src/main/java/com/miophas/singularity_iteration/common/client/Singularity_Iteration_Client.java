@@ -618,12 +618,7 @@ public class Singularity_Iteration_Client {
         );
         Singularity_Iteration.LOGGER.debug("Water kinetic generator rotor renderer registered");
 
-        // Register the crop block entity renderer.
-    event.registerBlockEntityRenderer(
-            mio_icif_block_entities.CROP_ENTITY_TYPE.get(),
-            com.miophas.singularity_iteration.common.client.render.CropEntityRenderer::new
-        );
-        Singularity_Iteration.LOGGER.debug("Crop entity renderer registered");
+        // Crop plants are rendered in the static chunk mesh via CropModels (no per-frame BER).
 
         // 注册激光子弹实体渲染器
         event.registerEntityRenderer(

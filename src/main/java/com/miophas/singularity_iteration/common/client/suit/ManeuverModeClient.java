@@ -1410,37 +1410,50 @@ public final class ManeuverModeClient {
         if (player == null) return;
         double s = Mth.lerp(partial, prevSpeed, speed);
         float thr = Mth.lerp(partial, prevThrottle, throttle);
-        int col = FcsDraw.argb(primary, 0.95F), dim = FcsDraw.argb(primary, 0.55F);
+        double kmh = s * 20 * 3.6;
+        double mach = s / ManeuverMode.BOOM_SPEED;
+        double vs = (player.getY() - player.yo) * 20;
+        boolean superSonic = supersonic(player) || mach >= 1.0;
+        int acc = superSonic ? VisorHudPrimitives.AMBER : primary;
         float cx = w / 2F, cy = h / 2F;
-        float pitch = player.getViewXRot(partial);
-        float pxPerDeg = h / 70F;   // near the vanilla FOV mapping at default settings
         float rollRad = (float) Math.toRadians(-roll);
 
         boolean cockpit = Minecraft.getInstance().options.getCameraType().isFirstPerson();
-        // 0.1.11.5 text-mode flight HUD: no pitch ladder and no tapes. The boresight and the flight path marker stay
-        // (they show directions); speed and altitude are read-outs beside the aim point; the bottom line is the mode,
-        // the cost and the thrust. Hovering still for 3 s folds it to the bottom line.
+        long now = System.currentTimeMillis();
+        if (thr > 0 || kmh > 3 || Math.abs(vs) > 1) movingAtMs = now;
+        boolean folded = now - movingAtMs > 3000;
+
+        // 1. Center Boresight (- v -) + Live Flight Path Marker (FPM) + Subtle Bank-Tilted Horizon Wings
         if (cockpit) {
-            FcsDraw.line(g, cx - 10, cy, cx - 4, cy, 1.2F, col);
-            FcsDraw.line(g, cx + 4, cy, cx + 10, cy, 1.2F, col);
-            FcsDraw.line(g, cx - 4, cy, cx - 2, cy + 3, 1.2F, col);
-            FcsDraw.line(g, cx + 4, cy, cx + 2, cy + 3, 1.2F, col);
+            VisorHudPrimitives.opticalLine(g, cx - 10, cy, cx - 4, cy, 1.2F, VisorHudPrimitives.WHITE, 0.92F);
+            VisorHudPrimitives.opticalLine(g, cx + 4, cy, cx + 10, cy, 1.2F, VisorHudPrimitives.WHITE, 0.92F);
+            VisorHudPrimitives.opticalLine(g, cx - 4, cy, cx - 2, cy + 3, 1.2F, VisorHudPrimitives.WHITE, 0.92F);
+            VisorHudPrimitives.opticalLine(g, cx + 4, cy, cx + 2, cy + 3, 1.2F, VisorHudPrimitives.WHITE, 0.92F);
             Vec3 vel = velocity;
             if (vel.lengthSqr() > 1.0E-3) {
                 Vec3 eye = player.getEyePosition(partial);
                 float[] fpm = FcsProjection.project(eye.add(vel.normalize().scale(40)));
                 if (fpm != null) {
                     float x = Mth.clamp(fpm[0], 30, w - 30), y = Mth.clamp(fpm[1], 30, h - 30);
-                    FcsDraw.circle(g, x, y, 4.5F, 1.2F, col);
-                    FcsDraw.line(g, x - 12, y, x - 4.5F, y, 1.2F, col);
-                    FcsDraw.line(g, x + 4.5F, y, x + 12, y, 1.2F, col);
-                    FcsDraw.line(g, x, y - 4.5F, x, y - 9, 1.2F, col);
+                    VisorHudPrimitives.opticalArc(g, x, y, 4.5F, 0F, (float) (Math.PI * 2), 1.2F, acc, 0.92F);
+                    VisorHudPrimitives.opticalLine(g, x - 11, y, x - 4.5F, y, 1.1F, acc, 0.90F);
+                    VisorHudPrimitives.opticalLine(g, x + 4.5F, y, x + 11, y, 1.1F, acc, 0.90F);
+                    VisorHudPrimitives.opticalLine(g, x, y - 4.5F, x, y - 8.5F, 1.1F, acc, 0.90F);
+                }
+            }
+            if (!folded) {
+                float cr = (float) Math.cos(rollRad), sr = (float) Math.sin(rollRad);
+                for (int side : new int[]{-1, 1}) {
+                    float x0 = cx + side * 36F * cr, y0 = cy + side * 36F * sr;
+                    float x1 = cx + side * 54F * cr, y1 = cy + side * 54F * sr;
+                    VisorHudPrimitives.opticalLine(g, x0, y0, x1, y1, 0.9F, acc, 0.55F);
+                    VisorHudPrimitives.opticalLine(g, x0, y0, x0 - 3.5F * sr, y0 + 3.5F * cr, 0.9F, acc, 0.55F);
                 }
             }
         }
-        // 0.1.11.5: the own boom in first person: a pale ring that closes in from the screen edge (the world disc is
-        // not drawn around the camera)
-        long sinceBoom = System.currentTimeMillis() - ownBoomAt;
+
+        // Own sonic boom edge flash
+        long sinceBoom = now - ownBoomAt;
         if (cockpit && sinceBoom >= 0 && sinceBoom < EDGE_FLASH_MS && FcsClientConfig.vaporEffects()) {
             float f = sinceBoom / (float) EDGE_FLASH_MS;
             float ease = 1 - (1 - f) * (1 - f);
@@ -1449,46 +1462,74 @@ public final class ManeuverModeClient {
             FcsDraw.circle(g, cx, cy, r, 10F, FcsDraw.argb(0xEAF6FF, 0.10F * a));
             FcsDraw.circle(g, cx, cy, r - 6, 1.5F, FcsDraw.argb(0xF4FBFF, 0.45F * a));
         }
-        double kmh = s * 20 * 3.6;
-        double mach = s / ManeuverMode.BOOM_SPEED;
-        double vs = (player.getY() - player.yo) * 20;
-        long now = System.currentTimeMillis();
-        if (thr > 0 || kmh > 3 || Math.abs(vs) > 1) movingAtMs = now;
-        boolean folded = now - movingAtMs > 3000;
-        float sc = 0.9F, lh = AsciiHud.LINE * sc;
-        if (!folded) {
-            float lx = cx - Math.min(w * 0.18F, 120), rx = cx + Math.min(w * 0.18F, 120);
-            float big = 1.7F, by = cy - lh * 1.2F;
-            // dark backing behind both read-out blocks (the labels were lost against a bright sky)
-            float bw = Math.max(AsciiHud.width("0000", big), AsciiHud.width(Component.translatable("hud.mio_icif.flight.speed").getString() + " / km/h", sc)) + 6;
-            float bh = lh * 2 + AsciiHud.LINE * big + 4;
-            g.fill((int) (lx - bw), (int) (by - lh - 3), (int) lx + 3, (int) (by - lh - 3 + bh), AsciiHud.GLASS);
-            g.fill((int) rx - 3, (int) (by - lh - 3), (int) (rx + bw), (int) (by - lh - 3 + bh), AsciiHud.GLASS);
-            AsciiHud.textRight(g, Component.translatable("hud.mio_icif.flight.speed").getString() + " / km/h", lx, by - lh, AsciiHud.DIM, sc);
-            AsciiHud.textRight(g, String.format(Locale.ROOT, "%.0f", kmh), lx, by, AsciiHud.TEXT, big);
-            AsciiHud.textRight(g, String.format(Locale.ROOT, "M %.2f", mach) + (mach >= 1 ? " \u25B2" : ""), lx, by + AsciiHud.LINE * big,
-                mach >= 1 ? AsciiHud.WARN : AsciiHud.DIM, sc);
-            AsciiHud.text(g, Component.translatable("hud.mio_icif.flight.alt").getString() + " / Y", rx, by - lh, AsciiHud.DIM, sc);
-            AsciiHud.text(g, String.format(Locale.ROOT, "%.0f", player.getY()), rx, by, AsciiHud.TEXT, big);
-            AsciiHud.text(g, String.format(Locale.ROOT, "%s %.0f m/s", vs < -0.5 ? "\u2193" : vs > 0.5 ? "\u2191" : "=", Math.abs(vs)), rx,
-                by + AsciiHud.LINE * big, vs < -15 ? AsciiHud.WARN : AsciiHud.DIM, sc);
+
+        // High-Mach outer visor airflow compression streaks (Plan F peripheral physics)
+        if (cockpit && mach >= 0.85 && FcsClientConfig.vaporEffects()) {
+            float str = Mth.clamp((float) ((mach - 0.85) / 0.35), 0F, 1F);
+            float r0 = Math.min(w, h) * 0.42F, r1 = Math.min(w, h) * 0.54F;
+            for (int side : new int[]{-1, 1}) {
+                for (int k = 0; k < 5; k++) {
+                    double ang = Math.toRadians(-28 + k * 14);
+                    float x0 = cx + side * (float) Math.cos(ang) * r0, y0 = cy + (float) Math.sin(ang) * r0 * 0.72F;
+                    float x1 = cx + side * (float) Math.cos(ang) * r1, y1 = cy + (float) Math.sin(ang) * r1 * 0.72F;
+                    VisorHudPrimitives.opticalLine(g, x0, y0, x1, y1, 1.0F, 0xDCEEFF, 0.42F * str);
+                }
+            }
         }
-        // bottom line: [mode] · EU/t · thrust bar
-        boolean superSonic = supersonic(player);
+
+        // 2. Top Curved Visor Mode & Heading Brow (always shown in flight; sole element when folded)
         String modeKey = superSonic ? "supersonic" : thr <= 0 ? "hover" : "cruise";
+        float yaw = Mth.wrapDegrees(player.getViewYRot(partial) + 180F);
+        int hdg = Math.round(Math.floorMod((int) yaw, 360));
+        var brow = Component.literal(String.format(Locale.ROOT, "%03d°  |  ", hdg))
+            .append(Component.translatable("hud.mio_icif.flight.mode." + modeKey));
+        if (superSonic) brow.append(Component.literal(String.format(Locale.ROOT, " M %.2f ▲", mach)));
+        if (locked) brow.append(Component.literal("  |  ")).append(Component.translatable("hud.mio_icif.flight.lock"));
+        VisorHudPrimitives.topBrowPill(g, cx, 7F, w, brow, acc, 0.95F);
+
+        if (folded) return;
+
+        // 3. Left & Right Curved Aerospace Wings (Speed + Throttle Arc on Left, Altitude + Energy Arc on Right)
+        float wingR = Math.min(w * 0.21F, 92F);
+        float aL0 = (float) Math.toRadians(235), aL1 = (float) Math.toRadians(305);
+        VisorHudPrimitives.opticalArc(g, cx, cy, wingR, aL0, aL1, 2.2F, acc, 0.22F);
+        if (thr > 0.01F) {
+            VisorHudPrimitives.opticalArc(g, cx, cy, wingR, aL0, Mth.lerp(Mth.clamp(thr, 0F, 1F), aL0, aL1), 2.2F, acc, 0.92F);
+        }
+        // Sound barrier notch on left throttle arc
+        float shockAng = Mth.lerp((float) ManeuverMode.SHOCK_THROTTLE, aL0, aL1);
+        VisorHudPrimitives.opticalLine(g,
+            cx + (float) Math.sin(shockAng) * (wingR - 4F), cy - (float) Math.cos(shockAng) * (wingR - 4F),
+            cx + (float) Math.sin(shockAng) * (wingR + 4F), cy - (float) Math.cos(shockAng) * (wingR + 4F),
+            1.1F, VisorHudPrimitives.AMBER, 0.85F);
+
         ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
         long e = SuitModules.energy(chest), max = chest.getItem() instanceof AbstractElectricArmor a ? a.getMaxEnergy(chest) : 1;
-        Component modeC = Component.translatable("hud.mio_icif.flight.mode." + modeKey);
-        String tail = String.format(Locale.ROOT, "  \u00B7  %.0f EU/t  \u00B7  %s %s %d%%  \u00B7  %.0f%%", ManeuverMode.costPerTick(s),
-            Component.translatable("hud.mio_icif.flight.thrust").getString(), AsciiHud.bar(thr, 10), Math.round(thr * 100), 100.0 * e / Math.max(1, max))
-            + (locked ? "  \u00B7  " + Component.translatable("hud.mio_icif.flight.lock").getString() : "");
-        String head = "[" + Component.translatable("hud.mio_icif.flight.tag").getString() + "] ";
-        float total = AsciiHud.width(head, sc) + AsciiHud.width(modeC, sc) + AsciiHud.width(tail, sc);
-        float bx = cx - total / 2, byl = cy + Math.min(h * 0.24F, 90);
-        g.fill((int) (bx - 3), (int) (byl - 2), (int) (bx + total + 3), (int) (byl + lh), AsciiHud.GLASS);
-        AsciiHud.text(g, head, bx, byl, AsciiHud.DIM, sc);
-        AsciiHud.text(g, modeC, bx + AsciiHud.width(head, sc), byl, superSonic ? AsciiHud.WARN : AsciiHud.TEXT, sc);
-        AsciiHud.text(g, tail, bx + AsciiHud.width(head, sc) + AsciiHud.width(modeC, sc), byl, AsciiHud.DIM, sc);
+        float euFrac = Mth.clamp((float) ((double) e / Math.max(1L, max)), 0F, 1F);
+        float aR0 = (float) Math.toRadians(125), aR1 = (float) Math.toRadians(55);
+        VisorHudPrimitives.opticalArc(g, cx, cy, wingR, aR1, aR0, 2.2F, primary, 0.22F);
+        if (euFrac > 0.01F) {
+            VisorHudPrimitives.opticalArc(g, cx, cy, wingR, Mth.lerp(euFrac, aR0, aR1), aR0, 2.2F, primary, 0.90F);
+        }
+
+        // Translucent chamfered Speed & Altitude telemetry cards flanking the two curved wings
+        float sc = 0.65F, big = 1.45F;
+        float cardW = 58F, cardH = 34F;
+        float lx0 = Math.max(8F, cx - wingR - 8F - cardW), rx0 = Math.min(w - 8F - cardW, cx + wingR + 8F);
+        float cardY = cy - cardH / 2F;
+
+        VisorHudPrimitives.glassCard(g, lx0, cardY, cardW, cardH, acc, 0.55F, 0.56F);
+        AsciiHud.text(g, Component.translatable("hud.mio_icif.flight.speed").getString() + " km/h", lx0 + 4F, cardY + 3F, AsciiHud.DIM, sc);
+        AsciiHud.text(g, String.format(Locale.ROOT, "%.0f", kmh), lx0 + 4F, cardY + 11F, VisorHudPrimitives.WHITE, big);
+        AsciiHud.text(g, String.format(Locale.ROOT, "M %.2f · %d%%", mach, Math.round(thr * 100)),
+            lx0 + 4F, cardY + 25.5F, superSonic ? VisorHudPrimitives.AMBER : primary, 0.55F);
+
+        VisorHudPrimitives.glassCard(g, rx0, cardY, cardW, cardH, primary, 0.55F, 0.56F);
+        AsciiHud.text(g, Component.translatable("hud.mio_icif.flight.alt").getString() + " Y", rx0 + 4F, cardY + 3F, AsciiHud.DIM, sc);
+        AsciiHud.text(g, String.format(Locale.ROOT, "%.0f", player.getY()), rx0 + 4F, cardY + 11F, VisorHudPrimitives.WHITE, big);
+        String vsStr = String.format(Locale.ROOT, "%s%.0f · %.0f EU/t", vs < -0.5 ? "\u2193" : vs > 0.5 ? "\u2191" : "=",
+            Math.abs(vs), ManeuverMode.costPerTick(s));
+        AsciiHud.text(g, vsStr, rx0 + 4F, cardY + 25.5F, vs < -15 ? VisorHudPrimitives.RED : primary, 0.52F);
     }
 
     /** 0.1.11.5: wall-clock time the wearer last moved in flight (the flight HUD folds after 3 s of hover). */

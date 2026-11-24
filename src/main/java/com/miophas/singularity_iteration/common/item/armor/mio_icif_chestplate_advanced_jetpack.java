@@ -44,9 +44,10 @@ public class mio_icif_chestplate_advanced_jetpack extends mio_icif_armor_elc
             "advanced_jetpack", CHARGE_RATE, JETPACK_ENERGY_PER_TICK, ARMOR_TIER);
     }
 
+    @SuppressWarnings("deprecation")
     public int getModeInternal(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data != null && data.copyTag().getInt(MODE_KEY) == MODE_HOVER ? MODE_HOVER : MODE_JETPACK;
+        return data != null && data.getUnsafe().getInt(MODE_KEY) == MODE_HOVER ? MODE_HOVER : MODE_JETPACK;
     }
 
     public void setModeInternal(ItemStack stack, int mode) {
@@ -55,9 +56,10 @@ public class mio_icif_chestplate_advanced_jetpack extends mio_icif_armor_elc
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
+    @SuppressWarnings("deprecation")
     public int getToggleTimer(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data == null ? 0 : Math.max(0, data.copyTag().getInt(TOGGLE_TIMER_KEY));
+        return data == null ? 0 : Math.max(0, data.getUnsafe().getInt(TOGGLE_TIMER_KEY));
     }
 
     public void setToggleTimer(ItemStack stack, int timer) {

@@ -84,14 +84,14 @@ public class FutureMarketData extends SavedData {
      * Before, each dimension had its own prices, day and history, so a machine in another dimension (the
      * Nether, a space station) was a second market with its own daily limit.
      */
+    private static final Factory<FutureMarketData> FACTORY =
+        new Factory<>(FutureMarketData::new, FutureMarketData::load);
+
     public static FutureMarketData get(Level level) {
         if (level instanceof ServerLevel serverLevel) {
             ServerLevel overworld = serverLevel.getServer().overworld();
             DimensionDataStorage storage = (overworld != null ? overworld : serverLevel).getDataStorage();
-            return storage.computeIfAbsent(
-                new Factory<>(FutureMarketData::new, FutureMarketData::load),
-                DATA_NAME
-            );
+            return storage.computeIfAbsent(FACTORY, DATA_NAME);
         }
         throw new IllegalStateException("Cannot get FutureMarketData on client side");
     }

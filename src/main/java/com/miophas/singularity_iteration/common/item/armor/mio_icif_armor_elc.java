@@ -139,10 +139,21 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
         if (!isEmpty(stack) && getArmorTier() >= 5 && getArmorTier() < 6 && slot == EquipmentSlot.CHEST) {
             // 0.1.8.0: renew only when the effect is near its end. The old code renewed it
             // every tick: one effect packet and one advancement trigger per tick per player.
-            MobEffectInstance current = player.getEffect(MobEffects.DAMAGE_RESISTANCE);
-            if (current == null || current.getAmplifier() == 0 && !current.isInfiniteDuration() && current.getDuration() < 40) {
-                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 0, false, false, false));
-            }
+            renewEffect(player, MobEffects.DAMAGE_RESISTANCE, 100, 0, 40, false, false, false);
+        }
+    }
+
+    /**
+     * Renews a passive armor effect only when missing, weaker, or below {@code threshold} ticks remaining.
+     * Avoids sending {@code ClientboundUpdateMobEffectPacket} and firing advancement triggers every tick.
+     */
+    public static void renewEffect(Player player, Holder<net.minecraft.world.effect.MobEffect> effect,
+                                   int duration, int amplifier, int threshold,
+                                   boolean ambient, boolean visible, boolean showIcon) {
+        MobEffectInstance current = player.getEffect(effect);
+        if (current == null || current.getAmplifier() < amplifier
+                || (current.getAmplifier() == amplifier && !current.isInfiniteDuration() && current.getDuration() < threshold)) {
+            player.addEffect(new MobEffectInstance(effect, duration, amplifier, ambient, visible, showIcon));
         }
     }
 

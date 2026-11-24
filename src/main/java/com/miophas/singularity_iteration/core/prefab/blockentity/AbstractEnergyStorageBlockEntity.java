@@ -276,9 +276,13 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * Reads the redstone input signal.
+     * Reads the redstone input signal (only used by redstone modes 5, 6 and 7).
      */
     protected void updateRedstoneInput(Level level, BlockPos pos) {
+        if (this.redstoneMode < 5 || this.redstoneMode > 7) {
+            this.hasRedstoneInput = false;
+            return;
+        }
         this.hasRedstoneInput = level.hasNeighborSignal(pos);
     }
     

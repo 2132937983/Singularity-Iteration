@@ -120,7 +120,7 @@ public final class BuilderGhosts {
         BlockState[] state;
         int[] sectionOf;
         final BitSet missing = new BitSet();
-        final Long2IntOpenHashMap index = new Long2IntOpenHashMap();
+        final Long2IntOpenHashMap index;
         final Long2IntOpenHashMap sectionIndex = new Long2IntOpenHashMap();
         final List<Section> sections = new ArrayList<>();
         int cursor, layer = Integer.MAX_VALUE, passLowest = Integer.MAX_VALUE;
@@ -137,6 +137,7 @@ public final class BuilderGhosts {
             state = new BlockState[n];
             sectionOf = new int[n];
             lastY = new int[tooLarge ? 0 : this.count];
+            index = new Long2IntOpenHashMap(Math.max(16, Math.min(n, 65536)));
             index.defaultReturnValue(-1);
             sectionIndex.defaultReturnValue(-1);
         }
@@ -308,7 +309,10 @@ public final class BuilderGhosts {
             for (Section s : g.sections) {
                 if (mode == LAYER && (g.layer < s.sy * 16 || g.layer >= s.sy * 16 + 16)) continue;
                 AABB box = d == null ? s.box : s.box.move(d[0], d[1], d[2]);
-                if (box.getCenter().distanceToSqr(cam) > reach * reach || !frustum.isVisible(box)) continue;
+                double cx = (box.minX + box.maxX) * 0.5 - cam.x;
+                double cy = (box.minY + box.maxY) * 0.5 - cam.y;
+                double cz = (box.minZ + box.maxZ) * 0.5 - cam.z;
+                if (cx * cx + cy * cy + cz * cz > reach * reach || !frustum.isVisible(box)) continue;
                 boolean stale = s.dirty || s.bakedMode != mode || mode == LAYER && s.bakedLayer != g.layer;
                 if (stale && System.nanoTime() < deadline && g.complete(s)) bake(mc.level, g, s);   // the rest next frame
                 if (s.bakedMode == mode && s.mesh != null && !s.empty) { draw.add(s); shifts.add(shift); }   // a section waiting keeps its last ghosts

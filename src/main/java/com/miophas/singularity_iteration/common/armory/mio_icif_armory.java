@@ -267,6 +267,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         int next = (int) Math.max(0, Math.min(MANA_CAPACITY, (long) mana + amount));
         if (next != mana) {
             mana = next;
+            maintenance.markDirty();
             setChanged();
         }
     }
@@ -275,7 +276,15 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         mana = Math.max(0, mana - Math.max(0, amount));
     }
 
-    void markStorageChanged() { setChanged(); }
+    void markStorageChanged() {
+        setChanged();
+    }
+
+    @Override
+    public void setChanged() {
+        if (maintenance != null) maintenance.markDirty();
+        super.setChanged();
+    }
 
     public ArmoryMaintenance maintenance() { return maintenance; }
 
@@ -481,6 +490,8 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     private int shownMaintenance;
     /** Server: the last synced signature of the icons and the maintenance state. */
     private long iconSignature = Long.MIN_VALUE;
+    /** Server: legacy 1x1 saves grow their upper gantry half on first tick when the cell above is air. */
+    private boolean checkedUpper;
 
     /** Icon piece of suit {@code set}: the chestplate, else the helmet, else the first stored piece. */
     ItemStack iconOf(int set) {
@@ -589,8 +600,26 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         }
         boolean lit = owner != null && getEnergyStorage().getAmount() >= BIND_ENERGY;
         BlockState state = getBlockState();
-        if (level != null && state.hasProperty(ArmoryBlock.LIT) && state.getValue(ArmoryBlock.LIT) != lit) {
-            level.setBlock(worldPosition, state.setValue(ArmoryBlock.LIT, lit), 3);
+        if (level != null && state.hasProperty(ArmoryBlock.LIT)) {
+            if (state.getValue(ArmoryBlock.LIT) != lit) {
+                state = state.setValue(ArmoryBlock.LIT, lit);
+                level.setBlock(worldPosition, state, 3);
+            }
+            if (!level.isClientSide && state.getBlock() instanceof ArmoryBlock) {
+                BlockPos above = worldPosition.above();
+                if (above.getY() < level.getMaxBuildHeight()) {
+                    BlockState up = level.getBlockState(above);
+                    if (!checkedUpper) {
+                        checkedUpper = true;
+                        if (up.isAir()) {
+                            level.setBlock(above, state.setValue(ArmoryBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER), 3);
+                        }
+                    } else if (up.is(state.getBlock()) && up.getValue(ArmoryBlock.HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER
+                            && (up.getValue(ArmoryBlock.LIT) != lit || up.getValue(ArmoryBlock.FACING) != state.getValue(ArmoryBlock.FACING))) {
+                        level.setBlock(above, up.setValue(ArmoryBlock.LIT, lit).setValue(ArmoryBlock.FACING, state.getValue(ArmoryBlock.FACING)), 2);
+                    }
+                }
+            }
         }
     }
 

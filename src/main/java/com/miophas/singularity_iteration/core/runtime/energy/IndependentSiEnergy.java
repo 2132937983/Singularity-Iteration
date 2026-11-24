@@ -942,6 +942,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         /** 0.1.11.23: the chunks of the endpoints, foreign ports, registrations and special cables; built at most once a tick. */
         private final it.unimi.dsi.fastutil.longs.LongOpenHashSet endpointChunks = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         private long endpointChunksKey = Long.MIN_VALUE;
+        /** Chunks that have ever had any grid entry, special cable, registration, foreign contact or catch-up position. */
+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet knownChunks = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        void markChunk(BlockPos at) { knownChunks.add(ChunkPos.asLong(at)); }
 
         /** Rebuilt when the endpoints change (their revision, the edit count or the sizes of the other maps). */
         it.unimi.dsi.fastutil.longs.LongOpenHashSet endpointChunks(long tick) {
@@ -1438,11 +1441,13 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         if (grid != null) {
             long frame = Math.max(ticks + 1, grid.entries.metrics().advancedFrame() + 1);
             if (element != null && element.tile instanceof IndependentSpecialCableBlockEntity || grid.specialObserved.containsKey(at)) {
+                grid.markChunk(at);
                 grid.observeSpecial(frame, at.immutable(), element != null && element.tile instanceof IndependentSpecialCableBlockEntity ? element : null);
                 if (element == null || element.tile instanceof IndependentSpecialCableBlockEntity) return;
             }
             // 0.1.10.44 (P-5): a block entity next to the grid (also one of a chunk that loaded): probe it for an FE contact
             if (element == null) grid.foreignCandidate(at);
+            grid.markChunk(at);
             grid.entries.observe(frame, at.immutable(), element);
         }
     }
@@ -1456,6 +1461,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     public void chunkRemoved(ServerLevel level, int chunkX, int chunkZ) {
         var grid = worlds.get(level);
         if (grid != null) {
+            long chunkKey = ChunkPos.asLong(chunkX, chunkZ);
+            if (!grid.knownChunks.remove(chunkKey)) return;
             grid.apply(grid.forget(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ));
             grid.registered.keySet().removeIf(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ);
             grid.foreign.removeIf(contact -> (contact.at.getX() >> 4) == chunkX && (contact.at.getZ() >> 4) == chunkZ);
@@ -1602,6 +1609,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // Preserve pause/catch-up for the edited electrical neighbourhood.
                 // Independent circuits neither pause nor get duplicate START output.
                 grid.catchUpEndpoints.addAll(affected);
+                for (var ep : affected) grid.markChunk(ep);
                 grid.catchUp = !grid.catchUpEndpoints.isEmpty();
                 grid.catchUpFrame = server.getTickCount();
                 settleScoped(level, grid, null, affected, server.getTickCount());
@@ -3015,6 +3023,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     ENDPOINT_LIMIT, grid.registrationLimitDrops);
             return;
         }
+        grid.markChunk(at);
         grid.registered.put(at.immutable(), tile);
         topology.changed(level, at);
     }
@@ -3341,7 +3350,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES);
         boolean valid = foreignQuery(grid, contact, adapter::isValid);
         if (!currentWorld(level, grid)) return false;
-        if (valid) { grid.foreign.putIfAbsent(contact, adapter.retain()); grid.foreignMisses.remove(contact); }
+        if (valid) { grid.markChunk(at); grid.foreign.putIfAbsent(contact, adapter.retain()); grid.foreignMisses.remove(contact); }
         else {
             if (grid.foreignMisses.size() >= 16_384) grid.foreignMisses.clear();
             grid.foreignMisses.put(contact, server.getTickCount() + 200L);
@@ -3432,6 +3441,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     var tile = chunk == null ? null : chunk.getBlockEntity(item.getKey(), LevelChunk.EntityCreationType.CHECK);
                     if (tile == null) continue;
                     endpoint = new ForeignEndpoint(item.getKey(), tile);
+                    grid.markChunk(endpoint.at);
                     grid.foreignPorts.put(endpoint.at, endpoint);
                 }
                 System.arraycopy(item.getValue(), 0, endpoint.adapters, 0, 6);

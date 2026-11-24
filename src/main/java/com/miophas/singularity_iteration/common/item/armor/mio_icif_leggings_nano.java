@@ -61,7 +61,7 @@ public class mio_icif_leggings_nano extends mio_icif_armor_elc {
         }
 
         if (ArmorFeatureToggle.isEnabled(stack, "speed_boost")) {
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, EFFECT_DURATION, 0, false, false, false));
+            mio_icif_armor_elc.renewEffect(player, MobEffects.MOVEMENT_SPEED, EFFECT_DURATION, 0, 40, false, false, false);
         } else {
             removeOwnSpeed(player);
         }

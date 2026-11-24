@@ -44,6 +44,7 @@ public final class OrderBook {
 
     private final TreeMap<Long, ArrayDeque<Entry>> bids = new TreeMap<>(Comparator.reverseOrder());
     private final TreeMap<Long, ArrayDeque<Entry>> asks = new TreeMap<>();
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Entry> byId = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
     private int size;
 
     /** Resting orders. */
@@ -71,7 +72,7 @@ public final class OrderBook {
                 fills.add(new Fill(entry.order.id(), entry.order.owner(), owner, buy, price, take));
                 entry.remaining -= take;
                 left -= take;
-                if (entry.remaining == 0) { queue.remove(); size--; }
+                if (entry.remaining == 0) { queue.remove(); byId.remove(entry.order.id()); size--; }
             }
             if (level.getValue().isEmpty()) levels.remove();
         }
@@ -84,25 +85,22 @@ public final class OrderBook {
 
     /** Adds a resting order (its {@code remaining} is the quantity that rests). */
     public void rest(Order order) {
-        (order.buy() ? bids : asks).computeIfAbsent(order.price(), p -> new ArrayDeque<>()).addLast(new Entry(order));
+        Entry entry = new Entry(order);
+        (order.buy() ? bids : asks).computeIfAbsent(order.price(), p -> new ArrayDeque<>()).addLast(entry);
+        byId.put(order.id(), entry);
         size++;
     }
 
     /** Removes a resting order; returns its unfilled quantity, or 0 when it is not in the book. */
     public int cancel(long id) {
-        for (var side : List.of(bids, asks)) {
-            for (Iterator<Map.Entry<Long, ArrayDeque<Entry>>> levels = side.entrySet().iterator(); levels.hasNext(); ) {
-                var level = levels.next();
-                for (Iterator<Entry> queue = level.getValue().iterator(); queue.hasNext(); ) {
-                    Entry entry = queue.next();
-                    if (entry.order.id() == id) {
-                        queue.remove();
-                        size--;
-                        if (level.getValue().isEmpty()) levels.remove();
-                        return entry.remaining;
-                    }
-                }
-            }
+        Entry target = byId.remove(id);
+        if (target == null) return 0;
+        TreeMap<Long, ArrayDeque<Entry>> side = target.order.buy() ? bids : asks;
+        ArrayDeque<Entry> queue = side.get(target.order.price());
+        if (queue != null && queue.remove(target)) {
+            size--;
+            if (queue.isEmpty()) side.remove(target.order.price());
+            return target.remaining;
         }
         return 0;
     }
@@ -119,6 +117,7 @@ public final class OrderBook {
                     Entry x = new Entry(new Order(o.id(), o.owner(), o.team(), o.buy(), o.price(), o.remaining(), d));
                     x.remaining = e.remaining;
                     moved.addLast(x);
+                    byId.put(o.id(), x);
                 }
                 queue.clear();
                 queue.addAll(moved);
@@ -128,8 +127,9 @@ public final class OrderBook {
 
     /** The resting order with this id (with its current remaining quantity), or null. */
     public Order find(long id) {
-        for (Order order : orders()) if (order.id() == id) return order;
-        return null;
+        Entry e = byId.get(id);
+        if (e == null) return null;
+        return new Order(e.order.id(), e.order.owner(), e.order.team(), e.order.buy(), e.order.price(), e.remaining, e.order.day());
     }
 
     /** All resting orders with their current remaining quantity: bids best first, then asks best first. */

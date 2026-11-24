@@ -24,7 +24,44 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_eu_meter extends Item implements IEUMeterItem {
+public class mio_icif_eu_meter extends Item implements IEUMeterItem, com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
+
+    /**
+     * 0.1.11.200 (T5c, decision D7): the multimeter's probe. The EU meter, the wind meter and the geomagnetic detector were
+     * three tools that each read one number; the meter now carries all three probes (G switches). Readings need no energy,
+     * as the EU meter's never did.
+     */
+    public enum Probe { ENERGY, WIND, GEOMAGNETIC }
+
+    private static final String TAG_PROBE = "MeterProbe";
+
+    public static Probe getProbe(ItemStack stack) {
+        var data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        int i = data == null ? 0 : data.copyTag().getInt(TAG_PROBE);
+        return Probe.values()[Math.max(0, Math.min(Probe.values().length - 1, i))];
+    }
+
+    private static Component probeName(Probe probe) {
+        return Component.translatable("item.mio_icif.item_tool_meter.probe." + probe.name().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    @Override
+    public void toggleActive(ItemStack stack, Player player) {
+        Probe next = Probe.values()[(getProbe(stack).ordinal() + 1) % Probe.values().length];
+        net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, stack,
+            tag -> tag.putInt(TAG_PROBE, next.ordinal()));
+        player.displayClientMessage(Component.translatable("item.mio_icif.item_tool_meter.probe_switched", probeName(next)), true);
+    }
+
+    @Override
+    public List<Component> toolModes(ItemStack stack) {
+        return java.util.Arrays.stream(Probe.values()).map(mio_icif_eu_meter::probeName).toList();
+    }
+
+    @Override
+    public int toolModeIndex(ItemStack stack) {
+        return getProbe(stack).ordinal();
+    }
 
     private static final String TAG_MODE = "meterMode";
 
@@ -46,6 +83,23 @@ public class mio_icif_eu_meter extends Item implements IEUMeterItem {
         Player player = context.getPlayer();
         if (player == null) return InteractionResult.PASS;
 
+        // 0.1.11.200 (T5c): the wind and geomagnetic probes read the clicked block (a wind generator) or the place
+        Probe probe = getProbe(stack);
+        if (probe != Probe.ENERGY) {
+            if (!level.isClientSide) {
+                if (probe == Probe.WIND) {
+                    if (level.getBlockEntity(context.getClickedPos()) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator generator) {
+                        MeterReadings.windOf(player, generator);
+                    } else {
+                        MeterReadings.windHere(player);
+                    }
+                } else {
+                    MeterReadings.geomagnetic(player, level, context.getClickedPos());
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
+
         // 潜行右键：循环切换测量模式，不打开界面
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide) {
@@ -63,8 +117,8 @@ public class mio_icif_eu_meter extends Item implements IEUMeterItem {
 
         if (energyTile == null && !networkTarget) {
             if (!level.isClientSide) {
-                player.sendSystemMessage(Component.translatable("item.mio_icif.item_tool_meter.not_energy_tile")
-                    .withStyle(ChatFormatting.RED));
+                player.displayClientMessage(Component.translatable("item.mio_icif.item_tool_meter.not_energy_tile")
+                    .withStyle(ChatFormatting.RED), true);   // 0.1.11.200 (U-20)
             }
             // 与 IC2 一致：无论是否为能量节点都消费交互，避免误触方块自身界面
             return InteractionResult.SUCCESS;
@@ -103,8 +157,12 @@ public class mio_icif_eu_meter extends Item implements IEUMeterItem {
             return InteractionResultHolder.success(stack);
         }
 
-        player.sendSystemMessage(Component.translatable("item.mio_icif.item_tool_meter.help")
-            .withStyle(ChatFormatting.GRAY));
+        switch (getProbe(stack)) {
+            case WIND -> MeterReadings.windHere(player);
+            case GEOMAGNETIC -> MeterReadings.geomagnetic(player, level, player.blockPosition());
+            case ENERGY -> player.displayClientMessage(Component.translatable("item.mio_icif.item_tool_meter.help")
+                .withStyle(ChatFormatting.GRAY), true);   // 0.1.11.200 (U-20)
+        }
 
         return InteractionResultHolder.success(stack);
     }
@@ -134,14 +192,16 @@ public class mio_icif_eu_meter extends Item implements IEUMeterItem {
         CompoundTag tag = getOrCreateTag(stack);
         tag.putString(TAG_MODE, next.name());
         saveTag(stack, tag);
-        player.sendSystemMessage(Component.translatable("item.mio_icif.item_tool_meter.mode_switched", next.getDisplayName())
-            .withStyle(ChatFormatting.YELLOW));
+        player.displayClientMessage(Component.translatable("item.mio_icif.item_tool_meter.mode_switched", next.getDisplayName())
+            .withStyle(ChatFormatting.YELLOW), true);
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         MeterMode mode = getMode(stack);
+        tooltipComponents.add(Component.translatable("item.mio_icif.item_tool_meter.tooltip_probe", probeName(getProbe(stack)))
+            .withStyle(ChatFormatting.AQUA));   // 0.1.11.200 (T5c)
         tooltipComponents.add(Component.translatable("item.mio_icif.item_tool_meter.tooltip_mode", mode.getDisplayName())
             .withStyle(ChatFormatting.YELLOW));
         tooltipComponents.add(Component.translatable("item.mio_icif.item_tool_meter.tooltip_usage")

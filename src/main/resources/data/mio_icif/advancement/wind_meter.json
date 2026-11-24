@@ -2,7 +2,7 @@
   "parent": "mio_icif:wind",
   "display": {
     "icon": {
-      "id": "mio_icif:item_tool_windmeter"
+      "id": "mio_icif:item_tool_meter"
     },
     "title": {
       "translate": "advancements.mio_icif.wind_meter.title"

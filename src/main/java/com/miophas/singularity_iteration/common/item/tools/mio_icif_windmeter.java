@@ -36,54 +36,28 @@ public class mio_icif_windmeter extends mio_icif_tool_elc implements IWindMeterI
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-
         BlockPos pos = context.getClickedPos();
+        // 0.1.11.200 (T5c, U-08): both sides decide on the block first. The client answered SUCCESS for any block, so a
+        // click on a block that is no wind generator never fell back to the hand-held reading.
         if (!(level.getBlockEntity(pos) instanceof mio_icif_Wind_Kinetic_Generator generator)) {
             return InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
         }
 
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
         if (player == null) return InteractionResult.PASS;
 
-        // IC2 行为：无转子或未运转时提示且不耗电
-        if (generator.getRotorStack().isEmpty()) {
-            player.displayClientMessage(
-                Component.translatable("message.mio_icif.windmeter.rotor.none")
-                    .withStyle(ChatFormatting.RED),
-                false
-            );
-            return InteractionResult.SUCCESS;
-        }
-        if (!generator.isGenerating() && generator.getContainerData().get(0)
-                != com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_FEATHERED
-                && generator.getContainerData().get(0)
-                != com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_WEAK_WIND) {
-            player.displayClientMessage(
-                Component.translatable("message.mio_icif.windmeter.rotor.blocked")
-                    .withStyle(ChatFormatting.YELLOW),
-                false
-            );
-            return InteractionResult.SUCCESS;
-        }
-
         if (!hasEnoughEnergy(stack, ENERGY_PER_USE)) {
-            player.displayClientMessage(
-                Component.translatable("message.mio_icif.windmeter.no_energy")
-                    .withStyle(ChatFormatting.RED),
-                true
-            );
+            player.displayClientMessage(Component.translatable("message.mio_icif.windmeter.no_energy").withStyle(ChatFormatting.RED), true);
             return InteractionResult.FAIL;
         }
-        consumeEnergy(stack, ENERGY_PER_USE);
-
-        reportWind(player, generator.getWindStrength());
+        // 0.1.11.200 (T5c): the reading the multimeter gives too; charged only when there was something to read
+        if (MeterReadings.windOf(player, generator)) consumeEnergy(stack, ENERGY_PER_USE);
         return InteractionResult.SUCCESS;
     }
-
     /**
      * 手持右键空气：测量玩家当前位置的全局风场风力
      * （对应 IC2 风力计的 itemUse：windSim.getWindAt(玩家高度)）。
@@ -105,30 +79,9 @@ public class mio_icif_windmeter extends mio_icif_tool_elc implements IWindMeterI
             return InteractionResultHolder.fail(stack);
         }
 
-        if (level instanceof ServerLevel server) {
-            consumeEnergy(stack, ENERGY_PER_USE);
-            double windStrength = WindSim.get(server).getWindAt(player.blockPosition().getY() + 0.5);
-            reportWind(player, windStrength);
-        }
+        if (consumeEnergy(stack, ENERGY_PER_USE)) MeterReadings.windHere(player);
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
-    }
-
-    private void reportWind(Player player, double windStrength) {
-        com.miophas.singularity_iteration.common.advancement.SiAdvancements.grant(player, "wind_meter", "used");   // 0.1.11.79
-        String formatted = String.format("%.2f", Math.max(0.0, windStrength));
-        player.sendSystemMessage(
-            Component.translatable("message.mio_icif.windmeter.info", formatted)
-                .withStyle(ChatFormatting.AQUA)
-        );
-        // 0.1.11.9: the bearing the wind comes from, and the weather factor
-        if (player.level() instanceof ServerLevel server) {
-            int bearing = WindSim.get(server).getWindDirection();
-            String weather = server.isThundering() ? "×1.50" : server.isRaining() ? "×1.25" : "×1.00";
-            player.sendSystemMessage(Component.translatable("message.mio_icif.windmeter.direction", bearing,
-                Component.translatable("gui.mio_icif.wind.point." + com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindPhysics.point(bearing)),
-                weather).withStyle(ChatFormatting.DARK_AQUA));
-        }
     }
 
     @Override

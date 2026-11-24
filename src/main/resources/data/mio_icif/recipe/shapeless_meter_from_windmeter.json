@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "mio_icif:item_tool_windmeter"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:item_tool_meter",
+    "count": 1
+  }
+}

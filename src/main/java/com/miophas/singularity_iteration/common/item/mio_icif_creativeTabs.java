@@ -220,10 +220,8 @@ public class mio_icif_creativeTabs {
         withFull(o, mio_icif_items_tools.OD_SCANNER.get());
         withFull(o, mio_icif_items_tools.OV_SCANNER.get());
         o.accept(mio_icif_items_tools.AREA_SCANNER.get());
-        withFull(o, mio_icif_items_tools.GEOMAGNETIC_DETECTOR.get());
         withFull(o, mio_icif_normal.CROP_ANALYZER.get());
-        o.accept(mio_icif_items_tools.EU_METER.get());
-        withFull(o, mio_icif_items_tools.WINDMETER.get());
+        o.accept(mio_icif_items_tools.EU_METER.get());   // 0.1.11.200 (T5c): the multimeter; the wind meter and geomagnetic detector convert into it
         // remotes and link tools
         withFull(o, mio_icif_items_tools.ELECTRIC_WIRELESS_MANAGER.get());
         o.accept(mio_icif_normal.TESU_CONNECTOR.get());

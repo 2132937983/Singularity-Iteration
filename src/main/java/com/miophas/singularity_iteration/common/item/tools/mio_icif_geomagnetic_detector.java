@@ -56,35 +56,8 @@ public class mio_icif_geomagnetic_detector extends com.miophas.singularity_itera
             return InteractionResult.SUCCESS;
         }
 
-        // 计算地磁强度
-        float ratio = getMagneticSource(level, pos);
-
-        // 检查生物群系
-        Biome biome = level.getBiome(pos).value();
-        // 0.1.11.198 (T5, U-16): from the holder's key; a biome missing from the registry gave null and a crash
-        String biomeKey = level.getBiome(pos).unwrapKey().map(k -> k.location().toString()).orElse("");
-
-        // 特殊群系加成
-        if (biomeKey.contains("nether") || biomeKey.contains("hell")) {
-            ratio *= 1.2F;
-        } else if (biomeKey.contains("mountain") || biomeKey.contains("hill") || biomeKey.contains("peaks")) {
-            ratio *= 1.1F;
-        }
-
-        player.sendSystemMessage(Component.translatable("message.mio_icif.geomagnetic_detector.value",
-            String.format("%.2f", ratio)));
-        // 0.1.11.20: the field's disturbance now (the daily variation and storms)
-        long seed = com.miophas.singularity_iteration.common.energy.GeomagPhysics.seed(level);
-        player.sendSystemMessage(Component.translatable("message.mio_icif.geomagnetic_detector.kp",
-            String.format("%.1f", com.miophas.singularity_iteration.common.energy.GeomagPhysics.kp(seed, level.getDayTime())),
-            String.format("%.2f", com.miophas.singularity_iteration.common.energy.GeomagPhysics.disturbance(seed, level.getDayTime()))));
-
+        MeterReadings.geomagnetic(player, level, pos);   // 0.1.11.200 (T5c): the multimeter's reading
         return InteractionResult.SUCCESS;
-    }
-
-    /** 0.1.11.20: the generator's rule (from the bottom of the world; the old one gave 0 or less below Y 0). */
-    private float getMagneticSource(Level world, BlockPos pos) {
-        return com.miophas.singularity_iteration.common.energy.GeomagPhysics.source(world, pos);
     }
 
     @Override

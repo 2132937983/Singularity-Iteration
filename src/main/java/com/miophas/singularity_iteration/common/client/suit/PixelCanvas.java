@@ -131,40 +131,77 @@ public final class PixelCanvas {
 
     /** An axis-aligned fill in GUI coordinates (scaled like everything else). */
     void rect(float xa, float ya, float xb, float yb, int argb) {
-        convex(new float[]{xa, xb, xb, xa}, new float[]{ya, ya, yb, yb}, argb);
+        float x1 = px(xa), x2 = px(xb), y1 = py(ya), y2 = py(yb);
+        float minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+        float minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+        if (maxX - minX < 1e-4F || maxY - minY < 1e-4F) return;
+        short p = partFor();
+        int i0 = Math.max(0, (int) Math.floor(minX)), i1 = Math.min(w - 1, (int) Math.ceil(maxX));
+        int j0 = Math.max(0, (int) Math.floor(minY)), j1 = Math.min(h - 1, (int) Math.ceil(maxY));
+        boolean any = false;
+        for (int j = j0; j <= j1; j++) {
+            float sy = j + 0.5F;
+            if (sy < minY - 1e-4F || sy > maxY + 1e-4F) continue;
+            for (int i = i0; i <= i1; i++) {
+                float sx = i + 0.5F;
+                if (sx >= minX - 1e-4F && sx <= maxX + 1e-4F) {
+                    plot(i, j, argb, p);
+                    any = true;
+                }
+            }
+        }
+        if (!any && maxX - minX < 1.5F && maxY - minY < 1.5F && depth == 0)
+            plot((int) Math.floor((minX + maxX) * 0.5F), (int) Math.floor((minY + maxY) * 0.5F), argb, p);
     }
 
-    /** Draws the canvas: shaded edges, then runs of equal colour as fills. */
+    /** Draws the canvas: shaded edges, then runs of equal colour batched into a single GUI draw call. */
     public void draw(GuiGraphics g) {
-        int n = w * h;
-        boolean[] interior = new boolean[parts + 1];
-        for (int k = 0; k < n; k++) {
-            short p = part[k];
-            if (p == 0 || interior[p]) continue;
-            int i = k % w, j = k / w;
-            if (i > 0 && i < w - 1 && j > 0 && j < h - 1 && part[k - 1] == p && part[k + 1] == p && part[k - w] == p && part[k + w] == p)
-                interior[p] = true;
+        int[] out;
+        if (edges) {
+            int n = w * h;
+            boolean[] interior = new boolean[parts + 1];
+            for (int k = 0; k < n; k++) {
+                short p = part[k];
+                if (p == 0 || interior[p]) continue;
+                int i = k % w, j = k / w;
+                if (i > 0 && i < w - 1 && j > 0 && j < h - 1 && part[k - 1] == p && part[k + 1] == p && part[k - w] == p && part[k + w] == p)
+                    interior[p] = true;
+            }
+            out = rgb.clone();
+            for (int k = 0; k < n; k++) {
+                short p = part[k];
+                if (p == 0 || !interior[p]) continue;
+                int i = k % w, j = k / w;
+                boolean darkEdge = behind(p, i + 1, j) || behind(p, i, j + 1);
+                boolean lightEdge = behind(p, i - 1, j) || behind(p, i, j - 1);
+                if (darkEdge) out[k] = shade(rgb[k], 0.62F);
+                else if (lightEdge) out[k] = tint(rgb[k], 0.35F);
+            }
+        } else {
+            out = rgb;
         }
-        int[] out = rgb.clone();
-        for (int k = 0; k < n; k++) {
-            short p = part[k];
-            if (!edges || p == 0 || !interior[p]) continue;
-            int i = k % w, j = k / w;
-            boolean darkEdge = behind(p, i + 1, j) || behind(p, i, j + 1);
-            boolean lightEdge = behind(p, i - 1, j) || behind(p, i, j - 1);
-            if (darkEdge) out[k] = shade(rgb[k], 0.62F);
-            else if (lightEdge) out[k] = tint(rgb[k], 0.35F);
-        }
+        org.joml.Matrix4f pose = g.pose().last().pose();
+        com.mojang.blaze3d.vertex.VertexConsumer vc = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
+        boolean any = false;
         for (int j = 0; j < h; j++) {
+            int row = j * w, y1 = y0 + j, y2 = y1 + 1;
             int i = 0;
             while (i < w) {
-                int c = out[j * w + i];
+                int c = out[row + i];
                 int e = i + 1;
-                while (e < w && out[j * w + e] == c) e++;
-                if (c != 0) g.fill(x0 + i, y0 + j, x0 + e, y0 + j + 1, c);
+                while (e < w && out[row + e] == c) e++;
+                if (c != 0) {
+                    float x1 = x0 + i, x2 = x0 + e;
+                    vc.addVertex(pose, x1, y1, 0).setColor(c);
+                    vc.addVertex(pose, x1, y2, 0).setColor(c);
+                    vc.addVertex(pose, x2, y2, 0).setColor(c);
+                    vc.addVertex(pose, x2, y1, 0).setColor(c);
+                    any = true;
+                }
                 i = e;
             }
         }
+        if (any) g.flush();
     }
 
     /** Whether the pixel at (i, j) lies behind part p (empty, outside, or an earlier part). */

@@ -552,7 +552,8 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         return com.miophas.singularity_iteration.common.suit.UnitRef.ofItem(stack) != null
             || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isDensifier(stack)
             || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isCore(stack)
-            || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isBayExpander(stack);
+            || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isBayExpander(stack)
+            || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isLivingLining(stack);
     }
 
     /** Installs the item in {@link #MOD_SLOT} directly into the stored suit piece at {@code suitSlot}. */
@@ -629,6 +630,24 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
             setChanged();
             sync();
             if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.6F, 1.6F);
+            return Component.translatable("gui.mio_icif.armory.mod.installed");
+        }
+
+        // 3b. Living Nano Lining (awakens internal 4 LP nano undersuit layer on Quantum pieces)
+        if (com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isLivingLining(mod)) {
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.isQuantumPiece(suit)) {
+                return Component.translatable("gui.mio_icif.station.status.wrong_class");
+            }
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.installLivingLining(suit)) {
+                return Component.translatable("gui.mio_icif.station.status.lining_max");
+            }
+            spendEnergy(MOD_INSTALL_EU);
+            mod.shrink(1);
+            handler.setStackInSlot(suitSlot, suit);
+            handler.setStackInSlot(MOD_SLOT, mod);
+            setChanged();
+            sync();
+            if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.7F, 1.4F);
             return Component.translatable("gui.mio_icif.armory.mod.installed");
         }
 

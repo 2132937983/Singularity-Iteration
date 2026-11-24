@@ -340,7 +340,7 @@ public final class Round33GameTests {
     public static void recipesAndTags(GameTestHelper h) {
         var recipes = h.getLevel().getRecipeManager();
         List<String> missing = new ArrayList<>();
-        String[] ids = {"block_quantum_modification_station", "item_module_ore_scanner", "item_module_grid_telemetry", "item_module_entity_esp",
+        String[] ids = {"item_module_ore_scanner", "item_module_grid_telemetry", "item_module_entity_esp",
             "item_module_ballistic", "item_module_blast_warning", "item_module_behavior_predictor", "item_module_holomap",
             "item_module_threat_sensor", "item_module_deflector"};
         for (String id : ids) {

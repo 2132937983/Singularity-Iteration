@@ -55,7 +55,12 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     public static final int PIECES = 6;
     public static final int BATTERY_SLOT = 0;
     public static final int FIRST_SUIT_SLOT = 1;
-    public static final int SLOT_COUNT = FIRST_SUIT_SLOT + SETS * PIECES;
+    public static final int SUIT_SLOT_END = FIRST_SUIT_SLOT + SETS * PIECES;
+    /** Integrated modification bay slot: accepts modules, frame cores, densifiers and bay expanders. */
+    public static final int MOD_SLOT = SUIT_SLOT_END;
+    public static final int SLOT_COUNT = MOD_SLOT + 1;
+    /** EU cost of one integrated modification operation inside the Armory. */
+    public static final long MOD_INSTALL_EU = 1_280L;
 
     public static final long CAPACITY = 1_000_000L;
     public static final long MAX_RECEIVE = 512L;
@@ -84,7 +89,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         public Automation next() { return values()[(ordinal() + 1) % values().length]; }
     }
 
-    private static final SlotLayout LAYOUT = SlotLayout.builder().battery().extra(SETS * PIECES).build();
+    private static final SlotLayout LAYOUT = SlotLayout.builder().battery().extra(SETS * PIECES + 1).build();
 
     @Nullable private UUID owner;
     private String ownerName = "";
@@ -540,17 +545,177 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         shownMaintenance = tag.getInt("ArmoryMaint");
     }
 
+    // ------------------------------------------------------------------ integrated suit modification bay
+    /** True when {@code stack} is a valid item for the Armory's integrated modification bay slot. */
+    public static boolean isModItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return com.miophas.singularity_iteration.common.suit.UnitRef.ofItem(stack) != null
+            || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isDensifier(stack)
+            || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isCore(stack)
+            || com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isBayExpander(stack);
+    }
+
+    /** Installs the item in {@link #MOD_SLOT} directly into the stored suit piece at {@code suitSlot}. */
+    public Component installMod(Player player, int suitSlot) {
+        if (!mayAccess(player)) return Component.translatable("message.mio_icif.armory.not_owner");
+        if (suitSlot < FIRST_SUIT_SLOT || suitSlot >= SUIT_SLOT_END) return Component.translatable("gui.mio_icif.armory.mod.select_piece");
+        var handler = (net.neoforged.neoforge.items.IItemHandlerModifiable) getItemHandler();
+        ItemStack suit = handler.getStackInSlot(suitSlot).copy();
+        ItemStack mod = handler.getStackInSlot(MOD_SLOT).copy();
+        if (suit.isEmpty() || !com.miophas.singularity_iteration.common.suit.SuitModules.isSuitPiece(suit)) {
+            return Component.translatable("gui.mio_icif.station.status.not_a_suit_piece");
+        }
+        if (mod.isEmpty() || !isModItem(mod)) {
+            return Component.translatable("gui.mio_icif.station.status.idle");
+        }
+        if (storedEnergy() < MOD_INSTALL_EU) {
+            return Component.translatable("gui.mio_icif.station.status.no_power");
+        }
+
+        // 1. Frame Core
+        if (com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isCore(mod)) {
+            var core = ((com.miophas.singularity_iteration.common.suit.core.FrameCoreItem) mod.getItem()).core();
+            var chk = com.miophas.singularity_iteration.common.suit.core.FrameCores.check(suit, core);
+            if (chk != com.miophas.singularity_iteration.common.suit.core.FrameCores.Check.OK
+                    && chk != com.miophas.singularity_iteration.common.suit.core.FrameCores.Check.SWAP) {
+                return Component.translatable("gui.mio_icif.station.status." + chk.name().toLowerCase(java.util.Locale.ROOT));
+            }
+            if (chk == com.miophas.singularity_iteration.common.suit.core.FrameCores.Check.SWAP && mod.getCount() > 1) {
+                return Component.translatable("gui.mio_icif.station.status.upgrade_one_at_a_time");
+            }
+            var old = com.miophas.singularity_iteration.common.suit.core.FrameCores.install(suit, core);
+            spendEnergy(MOD_INSTALL_EU);
+            mod.shrink(1);
+            handler.setStackInSlot(suitSlot, suit);
+            handler.setStackInSlot(MOD_SLOT, old != null
+                ? new ItemStack(com.miophas.singularity_iteration.common.suit.SuitRegistry.coreItem(old)) : mod);
+            setChanged();
+            sync();
+            if (level != null) level.playSound(null, worldPosition,
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.CORE_INSTALL.get(), SoundSource.BLOCKS, 0.8F, 1.0F);
+            return Component.translatable("gui.mio_icif.armory.mod.installed");
+        }
+
+        // 2. Lattice Densifier
+        if (com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isDensifier(mod)) {
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.isNanoPiece(suit)) {
+                return Component.translatable("gui.mio_icif.station.status.wrong_class");
+            }
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.densify(suit)) {
+                return Component.translatable("gui.mio_icif.station.status.lattice_max");
+            }
+            spendEnergy(MOD_INSTALL_EU);
+            mod.shrink(1);
+            handler.setStackInSlot(suitSlot, suit);
+            handler.setStackInSlot(MOD_SLOT, mod);
+            setChanged();
+            sync();
+            if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.6F, 1.6F);
+            return Component.translatable("gui.mio_icif.armory.mod.installed");
+        }
+
+        // 3. Quantum Bay Expander
+        if (com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity.isBayExpander(mod)) {
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.isQuantumPiece(suit)) {
+                return Component.translatable("gui.mio_icif.station.status.wrong_class");
+            }
+            if (!com.miophas.singularity_iteration.common.suit.SuitModules.expand(suit)) {
+                return Component.translatable("gui.mio_icif.station.status.bay_max");
+            }
+            spendEnergy(MOD_INSTALL_EU);
+            mod.shrink(1);
+            handler.setStackInSlot(suitSlot, suit);
+            handler.setStackInSlot(MOD_SLOT, mod);
+            setChanged();
+            sync();
+            if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.6F, 1.6F);
+            return Component.translatable("gui.mio_icif.armory.mod.installed");
+        }
+
+        // 4. Suit Upgrade Module (Mk.I or Mk.II in-place upgrade)
+        var unit = com.miophas.singularity_iteration.common.suit.UnitRef.ofItem(mod);
+        if (unit == null) return Component.translatable("gui.mio_icif.station.status.idle");
+        int tier = com.miophas.singularity_iteration.common.suit.SuitModuleItem.tierOf(mod);
+        var check = com.miophas.singularity_iteration.common.suit.SuitModules.check(suit, unit, tier);
+        if (check != com.miophas.singularity_iteration.common.suit.SuitModules.InstallCheck.OK) {
+            return Component.translatable("gui.mio_icif.station.status." + check.name().toLowerCase(java.util.Locale.ROOT));
+        }
+        boolean upgrade = com.miophas.singularity_iteration.common.suit.SuitModules.isUpgrade(suit, unit, tier);
+        if (upgrade && mod.getCount() > 1) {
+            return Component.translatable("gui.mio_icif.station.status.upgrade_one_at_a_time");
+        }
+        if (!com.miophas.singularity_iteration.common.suit.SuitModules.install(suit, unit, tier)) {
+            return Component.translatable("gui.mio_icif.station.status.idle");
+        }
+        spendEnergy(MOD_INSTALL_EU);
+        mod.shrink(1);
+        handler.setStackInSlot(suitSlot, suit);
+        handler.setStackInSlot(MOD_SLOT, upgrade ? unit.unitStack(1) : mod);
+        setChanged();
+        sync();
+        if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.65F, upgrade ? 1.9F : 1.6F);
+        return Component.translatable("gui.mio_icif.armory.mod.installed");
+    }
+
+    /** Ejects the {@code unitIndex}-th installed module from {@code suitSlot} into {@link #MOD_SLOT} or player inventory. */
+    public boolean removeModUnit(Player player, int suitSlot, int unitIndex) {
+        if (!mayAccess(player) || suitSlot < FIRST_SUIT_SLOT || suitSlot >= SUIT_SLOT_END) return false;
+        var handler = (net.neoforged.neoforge.items.IItemHandlerModifiable) getItemHandler();
+        ItemStack suit = handler.getStackInSlot(suitSlot).copy();
+        var units = com.miophas.singularity_iteration.common.suit.SuitModules.installed(suit).units();
+        if (unitIndex < 0 || unitIndex >= units.size()) return false;
+        var unit = units.get(unitIndex);
+        int tier = Math.max(1, com.miophas.singularity_iteration.common.suit.SuitModules.tier(suit, unit.key()));
+        if (!com.miophas.singularity_iteration.common.suit.SuitModules.remove(suit, unit)) return false;
+        handler.setStackInSlot(suitSlot, suit);
+        giveOrModSlot(player, unit.unitStack(tier));
+        setChanged();
+        sync();
+        if (level != null) level.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.6F, 1.2F);
+        return true;
+    }
+
+    /** Ejects the installed Frame Core from {@code suitSlot} into {@link #MOD_SLOT} or player inventory. */
+    public boolean removeModCore(Player player, int suitSlot) {
+        if (!mayAccess(player) || suitSlot < FIRST_SUIT_SLOT || suitSlot >= SUIT_SLOT_END) return false;
+        var handler = (net.neoforged.neoforge.items.IItemHandlerModifiable) getItemHandler();
+        ItemStack suit = handler.getStackInSlot(suitSlot).copy();
+        var removed = com.miophas.singularity_iteration.common.suit.core.FrameCores.remove(suit);
+        if (removed == null) return false;
+        handler.setStackInSlot(suitSlot, suit);
+        giveOrModSlot(player, new ItemStack(com.miophas.singularity_iteration.common.suit.SuitRegistry.coreItem(removed)));
+        setChanged();
+        sync();
+        if (level != null) level.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.6F, 1.1F);
+        return true;
+    }
+
+    private void giveOrModSlot(Player player, ItemStack out) {
+        var handler = (net.neoforged.neoforge.items.IItemHandlerModifiable) getItemHandler();
+        ItemStack inMod = handler.getStackInSlot(MOD_SLOT);
+        if (inMod.isEmpty()) {
+            handler.setStackInSlot(MOD_SLOT, out);
+        } else if (ItemStack.isSameItemSameComponents(inMod, out) && inMod.getCount() + out.getCount() <= inMod.getMaxStackSize()) {
+            ItemStack merged = inMod.copy();
+            merged.grow(out.getCount());
+            handler.setStackInSlot(MOD_SLOT, merged);
+        } else if (!player.getInventory().add(out)) {
+            player.drop(out, false);
+        }
+    }
+
     // ------------------------------------------------------------------ machine plumbing
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == BATTERY_SLOT) return isBattery(stack);
-        if (slot < FIRST_SUIT_SLOT || slot >= SLOT_COUNT) return false;
+        if (slot == MOD_SLOT) return isModItem(stack);
+        if (slot < FIRST_SUIT_SLOT || slot >= SUIT_SLOT_END) return false;
         ArmoryPiece piece = ArmoryPiece.COLUMNS[(slot - FIRST_SUIT_SLOT) % PIECES];
         return ArmoryRules.fits(stack, piece);
     }
 
     private static final int[] BATTERY_ONLY = {BATTERY_SLOT};
-    private static final int[] ALL_SLOTS = java.util.stream.IntStream.range(0, SLOT_COUNT).toArray();
+    private static final int[] ALL_SLOTS = java.util.stream.IntStream.range(0, SUIT_SLOT_END).toArray();
 
     /** The battery is always reachable; the suits only as far as {@link Automation} allows. */
     @Override
@@ -561,14 +726,14 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     @Override
     protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
         if (slot == BATTERY_SLOT) return super.canInsertItem(slot, stack, side);
-        if (automation == Automation.LOCKED || slot < FIRST_SUIT_SLOT || slot >= SLOT_COUNT) return false;
+        if (automation == Automation.LOCKED || slot < FIRST_SUIT_SLOT || slot >= SUIT_SLOT_END) return false;
         if (deployed((slot - FIRST_SUIT_SLOT) / PIECES)) return false;   // 0.1.11.39 (G-1): kept for its Wingman
         return getItemHandler().getStackInSlot(slot).isEmpty() && isItemValidForSlot(slot, stack);
     }
 
     @Override
     protected boolean canExtractItem(int slot, @Nullable Direction side) {
-        return automation == Automation.OPEN && slot >= FIRST_SUIT_SLOT && slot < SLOT_COUNT;
+        return automation == Automation.OPEN && slot >= FIRST_SUIT_SLOT && slot < SUIT_SLOT_END;
     }
 
     @Override

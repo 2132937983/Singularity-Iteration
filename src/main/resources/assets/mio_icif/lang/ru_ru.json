@@ -6162,5 +6162,8 @@
   "message.mio_icif.tool.no_permission": "Здесь нельзя изменять этот блок",
   "message.mio_icif.tool.other_dimension": "Цель находится в другом измерении",
   "message.mio_icif.tool.target_unloaded": "Первый блок не загружен; подойдите ближе",
-  "message.mio_icif.electric_wireless_manager.not_energy": "Этот блок не хранит EU; выберите машину или накопитель"
+  "message.mio_icif.electric_wireless_manager.not_energy": "Этот блок не хранит EU; выберите машину или накопитель",
+  "tooltip.mio_icif.tool.stats": "Уровень %s · %s EU за раз · осталось ~%s раз",
+  "tooltip.mio_icif.tool.tier": "Уровень %s",
+  "message.mio_icif.tool.no_energy": "Недостаточно энергии"
 }

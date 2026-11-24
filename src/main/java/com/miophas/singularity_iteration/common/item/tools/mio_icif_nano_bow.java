@@ -32,7 +32,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
     public static final float MAX_VELOCITY = 5.0F;
 
     public mio_icif_nano_bow(Properties properties) {
-        super(properties, MAX_ENERGY, 0L, "nano_bow", MAX_ENERGY, 512, TIER);
+        super(properties, MAX_ENERGY, 0L, "nano_bow", standardChargeRate(TIER), 512, TIER);
     }
 
     @Override

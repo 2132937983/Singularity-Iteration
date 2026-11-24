@@ -1,7 +1,6 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
 import com.miophas.singularity_iteration.core.api.energy.IWirelessPowerNode;
-import com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -20,7 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_electric_wireless_manager extends mio_icif_bat implements com.miophas.singularity_iteration.core.api.item.IElectricToolItem {
+public class mio_icif_electric_wireless_manager extends com.miophas.singularity_iteration.core.prefab.item.AbstractElectricTool {
 
     private static final int MAX_ENERGY = 50000;
     private static final int TRANSFER_SPEED = 128;
@@ -32,30 +31,13 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
     private static final String TAG_TARGET_DIM = "WirelessTargetDim";
 
     public mio_icif_electric_wireless_manager() {
-        super(new Item.Properties(), MAX_ENERGY, 0L, "item_electric_wireless_manager", TRANSFER_SPEED);
+        // 0.1.11.194 (T1, I-10): on the shared tool base (pack pull, holder tracking, atomic debit), no longer on the battery base
+        super(new Item.Properties(), MAX_ENERGY, 0L, TRANSFER_SPEED, ENERGY_COST, 2);
     }
 
-    @Override
-    public long getEnergyPerUse() {
-        return ENERGY_COST;
-    }
 
-    @Override
-    public int getToolTier() {
-        return 2;
-    }
 
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        com.miophas.singularity_iteration.core.runtime.energy.EnergyPackCharging.trackHolder(stack, entity);
-    }
 
-    @Override
-    public long getEnergy(ItemStack stack) {
-        com.miophas.singularity_iteration.core.runtime.energy.EnergyPackCharging.pullFromArmor(stack);
-        return super.getEnergy(stack);
-    }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -64,7 +46,11 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        if (player == null || level.isClientSide() || getEnergy(stack) < ENERGY_COST) {
+        if (player == null || level.isClientSide()) {
+            return InteractionResult.SUCCESS;
+        }
+        if (!hasEnoughEnergy(stack, ENERGY_COST)) {   // 0.1.11.194 (T1, U-20): a word when the manager is flat
+            player.displayClientMessage(Component.translatable("message.mio_icif.tool.no_energy"), true);
             return InteractionResult.SUCCESS;
         }
 
@@ -76,7 +62,7 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
             }
             setTargetPosition(stack, pos.getX(), pos.getY(), pos.getZ());
             setTargetDimension(stack, level.dimension().location().toString());
-            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
+            consumeEnergy(stack, ENERGY_COST);   // 0.1.11.194 (T1, I-09)
 
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_set",
                 pos.getX(), pos.getY(), pos.getZ()));
@@ -107,7 +93,7 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
                 }
 
                 node.setTargetPosition(new BlockPos(targetX, targetY, targetZ));
-                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
+                consumeEnergy(stack, ENERGY_COST);   // 0.1.11.194 (T1, I-09)
 
                 player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.node_set",
                     targetX, targetY, targetZ, pos.getX(), pos.getY(), pos.getZ()));
@@ -125,7 +111,7 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
 
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_info",
                 targetX, targetY, targetZ));
-            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
+            consumeEnergy(stack, ENERGY_COST);   // 0.1.11.194 (T1, I-09)
         } else {
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.no_target"));
         }
@@ -174,9 +160,4 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
         return null;
     }
 
-    /** A tool on the battery base: right click keeps its tool action, no inventory auto-charge. */
-    @Override
-    public boolean supportsAutoCharge() {
-        return false;
-    }
 }

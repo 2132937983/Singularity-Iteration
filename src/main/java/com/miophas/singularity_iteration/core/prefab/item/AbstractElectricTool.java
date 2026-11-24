@@ -37,8 +37,9 @@ import net.minecraft.world.level.Level;
  * <ul>
  *   <li>Energy storage (on the shared DataComponent)</li>
  *   <li>Energy bar rendering (green to red gradient)</li>
- *   <li>Energy tooltip</li>
- *   <li>Shift + right-click charges equipment</li>
+ *   <li>Energy tooltip, with the tier, the cost per use and the uses left (0.1.11.194)</li>
+ *   <li>Energy pulled from a worn energy pack before a use (IC2 chargeFromArmor)</li>
+ *   <li>Never stacks (0.1.11.194)</li>
  *   <li>Charger compatibility (through the IBatteryItem interface)</li>
  *   <li>No vanilla durability loss</li>
  *   <li>Energy use and energy checks</li>
@@ -89,6 +90,20 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
         return super.getEnergy(stack);
     }
 
+    /**
+     * 0.1.11.194 (T1, I-03): the usual charge rate of a tool of {@code tier} (EU/t): 100, 128, 512, 2,048, 8,192 for
+     * tiers 1 to 5. Several tools used their capacity as the rate, so any source filled them in one tick.
+     */
+    public static long standardChargeRate(int tier) {
+        return switch (Math.max(1, Math.min(5, tier))) {
+            case 1 -> 100L;
+            case 2 -> 128L;
+            case 3 -> 512L;
+            case 4 -> 2_048L;
+            default -> 8_192L;
+        };
+    }
+
     // ==================== IElectricToolItem implementation ====================
 
     @Override
@@ -105,6 +120,23 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
     public boolean hasEnoughEnergy(ItemStack stack) {
         // 0.1.10.5: the cost after Energy Saving, as the debit takes it
         return getEnergy(stack) >= com.miophas.singularity_iteration.core.api.item.EnergySaving.maxCost(stack, energyPerUse);
+    }
+
+    // ==================== Tooltip ====================
+
+    /**
+     * 0.1.11.194 (T1): every electric tool shows its tier and, when a use costs energy, the cost per use (after Energy
+     * Saving) and the uses left, under the energy line. Before, only the futures terminal showed its cost.
+     */
+    @Override
+    protected void appendEnergyTooltip(ItemStack stack, java.util.List<net.minecraft.network.chat.Component> tooltipComponents) {
+        super.appendEnergyTooltip(stack, tooltipComponents);
+        long cost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, getEnergyPerUse());
+        net.minecraft.network.chat.Component line = cost > 0
+            ? net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.tool.stats", getToolTier(), formatEu(cost),
+                formatEu(getEnergy(stack) / cost))
+            : net.minecraft.network.chat.Component.translatable("tooltip.mio_icif.tool.tier", getToolTier());
+        tooltipComponents.add(line.copy().withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
     }
 
     // ==================== Energy use ====================
@@ -146,7 +178,7 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
      * Gets the remaining energy as a fraction (0.0 to 1.0).
      */
     public float getDurabilityPercent(ItemStack stack) {
-        long max = getMaxEnergy();
+        long max = getMaxEnergy(stack);   // 0.1.11.194 (T1, I-11): the stack's own capacity
         return max <= 0 ? 0F : (float) getEnergy(stack) / max;   // no NaN for a zero capacity
     }
 

@@ -604,8 +604,9 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
 
         @Override
         public long charge(ItemStack stack, long amount, int tier, boolean ignoreTransferLimit, boolean simulate) {
-            if (amount <= 0 || stack.isEmpty()) return 0;
-            if (tier > this.tier) return 0;
+            // 0.1.11.194 (T1, I-06): one item at a time (a stack of N gained N times the charge), and no tier gate: it
+            // was inverted (a stronger charger was refused), and tiers do not gate charging in SI
+            if (amount <= 0 || stack.isEmpty() || stack.getCount() != 1) return 0;
 
             long currentCharge = getCharge(stack);
             long canCharge = Math.min(maxCharge - currentCharge, amount);
@@ -622,7 +623,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
 
         @Override
         public long discharge(ItemStack stack, long amount, int tier, boolean ignoreTransferLimit, boolean externally, boolean simulate) {
-            if (amount <= 0 || stack.isEmpty()) return 0;
+            if (amount <= 0 || stack.isEmpty() || stack.getCount() != 1) return 0;   // 0.1.11.194 (T1, I-06)
             if (!canProvide && externally) return 0;
 
             long currentCharge = getCharge(stack);

@@ -53,8 +53,7 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
             return;
         }
 
-        if (getEnergy(stack) >= ENERGY_COST) {
-            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
+        if (consumeEnergy(stack, ENERGY_COST)) {   // 0.1.11.194 (T1, I-09): shared atomic debit
             player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
                 net.minecraft.world.effect.MobEffects.ABSORPTION,
                 EFFECT_DURATION,

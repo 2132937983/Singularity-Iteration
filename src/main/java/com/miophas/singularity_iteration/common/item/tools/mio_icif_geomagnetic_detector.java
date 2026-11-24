@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
-import com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -28,27 +27,18 @@ import java.util.List;
  * wireless manager: charging batteries and machines charge it, and it is no longer a source a machine or another mod
  * drains (on the battery base alone it was a battery, so a charging battery skipped it).
  */
-public class mio_icif_geomagnetic_detector extends mio_icif_bat implements com.miophas.singularity_iteration.core.api.item.IElectricToolItem {
+public class mio_icif_geomagnetic_detector extends com.miophas.singularity_iteration.core.prefab.item.AbstractElectricTool {
 
     private static final int MAX_ENERGY = 50000;
     private static final int TRANSFER_SPEED = 128;
     private static final int ENERGY_COST = 100;
 
     public mio_icif_geomagnetic_detector() {
-        super(new Item.Properties(), MAX_ENERGY, 0L, "item_geomagnetic_detector", TRANSFER_SPEED);
+        // 0.1.11.194 (T1, I-10): on the shared tool base (pack pull, holder tracking, atomic debit), no longer on the battery base
+        super(new Item.Properties(), MAX_ENERGY, 0L, TRANSFER_SPEED, ENERGY_COST, 1);
     }
 
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        com.miophas.singularity_iteration.core.runtime.energy.EnergyPackCharging.trackHolder(stack, entity);
-    }
 
-    @Override
-    public long getEnergy(ItemStack stack) {
-        com.miophas.singularity_iteration.core.runtime.energy.EnergyPackCharging.pullFromArmor(stack);
-        return super.getEnergy(stack);
-    }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -57,11 +47,14 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat implements com.m
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        if (player == null || level.isClientSide() || getEnergy(stack) < ENERGY_COST) {
+        if (player == null || level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
-
-        extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
+        // 0.1.11.194 (T1, I-09, U-20): shared atomic debit, and a word when the detector is flat
+        if (!consumeEnergy(stack, ENERGY_COST)) {
+            player.displayClientMessage(Component.translatable("message.mio_icif.tool.no_energy"), true);
+            return InteractionResult.SUCCESS;
+        }
 
         // 计算地磁强度
         float ratio = getMagneticSource(level, pos);
@@ -99,15 +92,4 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat implements com.m
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.geomagnetic_detector.desc"));
     }
 
-    @Override
-    public long getEnergyPerUse() { return ENERGY_COST; }
-
-    @Override
-    public int getToolTier() { return 1; }
-
-    /** A tool on the battery base: right click keeps its tool action, no inventory auto-charge. */
-    @Override
-    public boolean supportsAutoCharge() {
-        return false;
-    }
 }

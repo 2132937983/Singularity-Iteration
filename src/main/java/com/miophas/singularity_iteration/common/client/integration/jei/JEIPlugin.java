@@ -148,6 +148,15 @@ public class JEIPlugin implements IModPlugin {
                 com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-curios-subtypes", "JEI subtypes of the Curios trinkets", e);
             }
         }
+        // 0.1.11.194 (T1, I-07): every other electric tool of the mod too, so JEI keeps its empty and full variants apart
+        for (var entry : net.minecraft.core.registries.BuiltInRegistries.ITEM.entrySet()) {
+            var item = entry.getValue();
+            if (entry.getKey().location().getNamespace().equals(com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID)
+                    && item instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricTool
+                    && !ChargedInputs.isRegistered(item)) {
+                ChargedInputs.register(registration, item, energyInterpreter);
+            }
+        }
     }
 
     @Override

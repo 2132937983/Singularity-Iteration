@@ -102,6 +102,11 @@ public final class ChargedInputs {
         ITEMS.add(item.asItem());
     }
 
+    /** 0.1.11.194: already given a subtype interpreter here. */
+    static boolean isRegistered(net.minecraft.world.item.Item item) {
+        return ITEMS.contains(item);
+    }
+
     /** An item stack's charge, or a block item's {@code energy} block-entity data. */
     public static boolean isCharged(ItemStack stack) {
         if (stack.getItem() instanceof IBatteryItem battery) return battery.getEnergy(stack) > 0;

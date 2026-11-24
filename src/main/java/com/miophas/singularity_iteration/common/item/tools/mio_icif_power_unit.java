@@ -19,7 +19,7 @@ public class mio_icif_power_unit extends mio_icif_tool_elc {
      * @param properties the item properties
      */
     public mio_icif_power_unit(Properties properties) {
-        super(properties, POWER_UNIT_MAX_ENERGY, 0L, "power_unit", POWER_UNIT_MAX_ENERGY, POWER_UNIT_ENERGY_PER_USE, 1);
+        super(properties, POWER_UNIT_MAX_ENERGY, 0L, "power_unit", standardChargeRate(1), POWER_UNIT_ENERGY_PER_USE, 1);
     }
 
     /**
@@ -28,7 +28,7 @@ public class mio_icif_power_unit extends mio_icif_tool_elc {
      * @param initialEnergy the initial energy
      */
     public mio_icif_power_unit(Properties properties, int initialEnergy) {
-        super(properties, POWER_UNIT_MAX_ENERGY, POWER_UNIT_MAX_ENERGY - initialEnergy, "power_unit", POWER_UNIT_MAX_ENERGY, POWER_UNIT_ENERGY_PER_USE, 1);
+        super(properties, POWER_UNIT_MAX_ENERGY, POWER_UNIT_MAX_ENERGY - initialEnergy, "power_unit", standardChargeRate(1), POWER_UNIT_ENERGY_PER_USE, 1);
     }
 
     /**

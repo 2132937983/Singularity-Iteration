@@ -6162,5 +6162,8 @@
   "message.mio_icif.tool.no_permission": "你没有权限改动这个方块",
   "message.mio_icif.tool.other_dimension": "目标在另一个维度",
   "message.mio_icif.tool.target_unloaded": "第一个方块所在区块没有加载，请靠近它",
-  "message.mio_icif.electric_wireless_manager.not_energy": "这个方块不储存 EU，请选择机器或储电方块"
+  "message.mio_icif.electric_wireless_manager.not_energy": "这个方块不储存 EU，请选择机器或储电方块",
+  "tooltip.mio_icif.tool.stats": "等级 %s · 每次 %s EU · 约可用 %s 次",
+  "tooltip.mio_icif.tool.tier": "等级 %s",
+  "message.mio_icif.tool.no_energy": "电量不足"
 }

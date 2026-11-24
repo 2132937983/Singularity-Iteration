@@ -66,7 +66,7 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
             level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.BLOCKS, 0.8F, 1.6F);
             return InteractionResult.SUCCESS;
         }
-        if (getEnergy(stack) < ENERGY_COST) {
+        if (!hasEnoughEnergy(stack, ENERGY_COST)) {
             player.displayClientMessage(Component.translatable("message.mio_icif.electric_lighter.no_energy"), true);
             return InteractionResult.FAIL;
         }
@@ -89,8 +89,8 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
             return InteractionResult.FAIL;
         }
 
-        if (level.setBlockAndUpdate(placePos, lightState)) {
-            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
+        // 0.1.11.194 (T1, I-09): the debit comes first, through the shared atomic path
+        if (consumeEnergy(stack, ENERGY_COST) && level.setBlockAndUpdate(placePos, lightState)) {
             level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 0.5F);   // 0.1.11.193: the user hears it too
             return InteractionResult.SUCCESS;
         }

@@ -52,11 +52,10 @@ public class mio_icif_electric_first_aid_life_support extends mio_icif_tool_elc 
         if (player.getHealth() >= player.getMaxHealth() || !PassiveDeviceRules.onInterval(player, PassiveDeviceRules.FIRST_AID_INTERVAL)) {
             return;
         }
-        if (!PassiveDeviceRules.isActingCopy(player, stack, s -> getAutoSupplement(s) && getEnergy(s) >= ENERGY_COST)) {
+        if (!PassiveDeviceRules.isActingCopy(player, stack, s -> getAutoSupplement(s) && hasEnoughEnergy(s, ENERGY_COST))) {
             return;
         }
-        long cost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST);
-        if (getEnergy(stack) >= cost && extractEnergy(stack, cost) >= cost) {
+        if (consumeEnergy(stack, ENERGY_COST)) {   // 0.1.11.194 (T1, I-09): shared atomic debit
             player.heal(1.0F);
             player.containerMenu.broadcastChanges();
         }

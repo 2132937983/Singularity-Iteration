@@ -6162,5 +6162,8 @@
   "message.mio_icif.tool.no_permission": "ここではそのブロックを変更できません",
   "message.mio_icif.tool.other_dimension": "対象は別のディメンションにあります",
   "message.mio_icif.tool.target_unloaded": "最初のブロックが読み込まれていません。近づいてください",
-  "message.mio_icif.electric_wireless_manager.not_energy": "そのブロックは EU を蓄えません。機械か蓄電ブロックを選んでください"
+  "message.mio_icif.electric_wireless_manager.not_energy": "そのブロックは EU を蓄えません。機械か蓄電ブロックを選んでください",
+  "tooltip.mio_icif.tool.stats": "ティア %s · 1 回 %s EU · 残り約 %s 回",
+  "tooltip.mio_icif.tool.tier": "ティア %s",
+  "message.mio_icif.tool.no_energy": "エネルギー不足"
 }

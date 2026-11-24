@@ -51,11 +51,11 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
     // 0.1.11.172: c:wrench_can_damaged is gone; what a wrench takes apart is mio_icif:wrenchable (WrenchRules.dismantlable)
 
     public mio_icif_wrench_elc(Properties properties) {
-        super(properties, WRENCH_ELC_MAX_ENERGY, 0, "wrench_elc", WRENCH_ELC_MAX_ENERGY, WRENCH_ELC_ENERGY_PER_USE, 1);
+        super(properties, WRENCH_ELC_MAX_ENERGY, 0, "wrench_elc", standardChargeRate(1), WRENCH_ELC_ENERGY_PER_USE, 1);
     }
 
     public mio_icif_wrench_elc(Properties properties, int initialEnergy) {
-        super(properties, WRENCH_ELC_MAX_ENERGY, initialEnergy, "wrench_elc", WRENCH_ELC_MAX_ENERGY, WRENCH_ELC_ENERGY_PER_USE, 1);
+        super(properties, WRENCH_ELC_MAX_ENERGY, initialEnergy, "wrench_elc", standardChargeRate(1), WRENCH_ELC_ENERGY_PER_USE, 1);
     }
 
     @Override

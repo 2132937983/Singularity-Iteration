@@ -33,7 +33,10 @@ public record ToolTogglePacket() implements CustomPacketPayload {
 
     public static void handle(ToolTogglePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer serverPlayer) {
+            // 0.1.11.194 (T1, I-12): each toggle sends a message or a sound, so it is rate-limited like the other tool packets
+            if (context.player() instanceof ServerPlayer serverPlayer
+                    && com.miophas.singularity_iteration.common.util.PacketRateLimit.allow(serverPlayer,
+                        com.miophas.singularity_iteration.common.util.PacketRateLimit.TOOL_TOGGLE)) {
                 ItemStack mainHand = serverPlayer.getMainHandItem();
                 ItemStack offHand = serverPlayer.getOffhandItem();
 

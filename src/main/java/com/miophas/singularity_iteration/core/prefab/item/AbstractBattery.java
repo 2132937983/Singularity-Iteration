@@ -136,7 +136,10 @@ public class AbstractBattery extends Item implements IBatteryItem {
         } else {
             // Non-stackable battery: the default component holds the initial energy (this keeps the old meaning of initialEnergy)
             long clamped = Math.clamp(initialEnergy, 0L, Math.max(0, maxEnergy));
+            // 0.1.11.194 (T1, I-04): a non-stackable electric item never stacks, whatever namespace it comes from (an addon tool
+            // made with plain Properties stacked to 64, and a stack of two could neither charge nor be used)
             return properties
+                .stacksTo(1)
                 .component(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(clamped, maxEnergy));
         }
     }
@@ -156,12 +159,13 @@ public class AbstractBattery extends Item implements IBatteryItem {
     @Override
     public long getEnergy(ItemStack stack) {
         if (stack.isEmpty()) return 0;
-        return Math.clamp(readStoredEnergy(stack), 0L, Math.max(0, maxEnergy));
+        // 0.1.11.194 (T1, I-11): every read and write uses the stack's capacity, so a subclass may override getMaxEnergy(stack)
+        return Math.clamp(readStoredEnergy(stack), 0L, Math.max(0, getMaxEnergy(stack)));
     }
 
     @Override
     public void setEnergy(ItemStack stack, long energy) {
-        energy = Math.max(0L, Math.min(maxEnergy, energy));
+        energy = Math.max(0L, Math.min(getMaxEnergy(stack), energy));
         // 0.1.10.3: a stack of several empty batteries is never charged as one (each item would get the energy)
         if (energy > 0 && emptyStackSize > 1 && stack.getCount() > 1) return;
         writeStoredEnergy(stack, energy);
@@ -171,7 +175,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
     public long addEnergy(ItemStack stack, long amount) {
         if (stack.isEmpty() || stack.getCount() != 1 || amount <= 0) return 0;
         long currentEnergy = getEnergy(stack);
-        long accepted = Math.min(amount, Math.max(0, maxEnergy - currentEnergy));
+        long accepted = Math.min(amount, Math.max(0, getMaxEnergy(stack) - currentEnergy));
         if (accepted == 0) return 0;
         setEnergy(stack, currentEnergy + accepted);
         return getEnergy(stack) - currentEnergy;
@@ -232,7 +236,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
             dropLegacyEnergyKey(stack);
             return;
         }
-        stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(energy, maxEnergy));
+        stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(energy, getMaxEnergy(stack)));
     }
 
     /**
@@ -318,15 +322,15 @@ public class AbstractBattery extends Item implements IBatteryItem {
 
     @Override
     public int getBarWidth(ItemStack stack) {
-        long currentEnergy = getEnergy(stack);
-        if (maxEnergy <= 0) return 0;
-        return (int) Math.round(13.0 * currentEnergy / maxEnergy);
+        long currentEnergy = getEnergy(stack), max = getMaxEnergy(stack);
+        if (max <= 0) return 0;
+        return (int) Math.round(13.0 * currentEnergy / max);
     }
 
     @Override
     public int getBarColor(ItemStack stack) {
-        long currentEnergy = getEnergy(stack);
-        float ratio = maxEnergy <= 0 ? 0.0F : (float) currentEnergy / maxEnergy;
+        long currentEnergy = getEnergy(stack), max = getMaxEnergy(stack);
+        float ratio = max <= 0 ? 0.0F : (float) currentEnergy / max;
         int r = Math.round(255 * (1.0F - ratio));
         int g = Math.round(255 * ratio);
         return r << 16 | g << 8;
@@ -341,7 +345,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
 
     @Override
     public boolean isDamaged(ItemStack stack) {
-        return getEnergy(stack) < maxEnergy;
+        return getEnergy(stack) < getMaxEnergy(stack);
     }
 
     // ==================== Right-click energy distribution ====================
@@ -371,8 +375,9 @@ public class AbstractBattery extends Item implements IBatteryItem {
      * @param tooltipComponents the tooltip list
      */
     protected void appendEnergyTooltip(ItemStack stack, List<Component> tooltipComponents) {
+        // 0.1.11.194 (T1, I-13): grouped digits (400,000,000 rather than 400000000)
         tooltipComponents.add(
-            Component.translatable("tooltip.mio_icif.energy", getEnergy(stack), maxEnergy)
+            Component.translatable("tooltip.mio_icif.energy", formatEu(getEnergy(stack)), formatEu(getMaxEnergy(stack)))
                 .withStyle(ChatFormatting.GRAY)
         );
         if (this instanceof IEnergyDistributable d && d.supportsAutoCharge()) {
@@ -412,6 +417,11 @@ public class AbstractBattery extends Item implements IBatteryItem {
 
     // ==================== Helper methods ====================
 
+    /** 0.1.11.194: an EU amount with grouped digits, as tooltips show it. */
+    public static String formatEu(long eu) {
+        return String.format(java.util.Locale.ROOT, "%,d", eu);
+    }
+
     /**
      * Gets the charge rate (EU/tick).
      */
@@ -430,6 +440,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
      * Gets the remaining energy fraction (0.0 to 1.0).
      */
     public float getDurabilityPercent(ItemStack stack) {
-        return maxEnergy <= 0 ? 0.0F : (float) getEnergy(stack) / maxEnergy;
+        long max = getMaxEnergy(stack);
+        return max <= 0 ? 0.0F : (float) getEnergy(stack) / max;
     }
 }

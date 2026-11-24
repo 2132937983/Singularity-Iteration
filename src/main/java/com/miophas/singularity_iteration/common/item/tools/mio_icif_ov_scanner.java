@@ -48,7 +48,7 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
      * @param properties the item properties
      */
     public mio_icif_ov_scanner(Properties properties) {
-        super(properties, OV_SCANNER_MAX_ENERGY, 0L, "ov_scanner", OV_SCANNER_MAX_ENERGY, OV_SCANNER_ENERGY_PER_USE, 1);
+        super(properties, OV_SCANNER_MAX_ENERGY, 0L, "ov_scanner", standardChargeRate(1), OV_SCANNER_ENERGY_PER_USE, 1);
     }
 
     /**
@@ -57,7 +57,7 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
      * @param initialEnergy the initial energy, in EU
      */
     public mio_icif_ov_scanner(Properties properties, int initialEnergy) {
-        super(properties, OV_SCANNER_MAX_ENERGY, OV_SCANNER_MAX_ENERGY - initialEnergy, "ov_scanner", OV_SCANNER_MAX_ENERGY, OV_SCANNER_ENERGY_PER_USE, 1);
+        super(properties, OV_SCANNER_MAX_ENERGY, OV_SCANNER_MAX_ENERGY - initialEnergy, "ov_scanner", standardChargeRate(1), OV_SCANNER_ENERGY_PER_USE, 1);
     }
 
     /**

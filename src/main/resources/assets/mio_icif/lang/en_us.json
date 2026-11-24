@@ -6162,5 +6162,8 @@
   "message.mio_icif.tool.no_permission": "You may not change that block here",
   "message.mio_icif.tool.other_dimension": "The target is in another dimension",
   "message.mio_icif.tool.target_unloaded": "The first block is not loaded; go closer to it",
-  "message.mio_icif.electric_wireless_manager.not_energy": "That block stores no EU; pick a machine or a storage block"
+  "message.mio_icif.electric_wireless_manager.not_energy": "That block stores no EU; pick a machine or a storage block",
+  "tooltip.mio_icif.tool.stats": "Tier %s · %s EU per use · %s uses left",
+  "tooltip.mio_icif.tool.tier": "Tier %s",
+  "message.mio_icif.tool.no_energy": "Not enough energy"
 }

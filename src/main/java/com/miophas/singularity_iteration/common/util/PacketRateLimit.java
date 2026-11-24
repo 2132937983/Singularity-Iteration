@@ -57,6 +57,8 @@ public final class PacketRateLimit {
     public static final Bucket EXCHANGE_VIEW = new Bucket("exchange_view", 10, 4);
     /** 0.1.10.22: protection settings and terminal actions (priority, reset). */
     public static final Bucket GRID = new Bucket("grid", 10, 4);
+    /** 0.1.11.194 (T1, I-12): the G key mode switch of hand-held tools. */
+    public static final Bucket TOOL_TOGGLE = new Bucket("tool_toggle", 6, 4);
 
     private static final class State {
         double tokens;

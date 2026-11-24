@@ -29,7 +29,7 @@ public class mio_icif_treetap_elc extends mio_icif_tool_elc implements ITreeTapI
      * @param properties the item properties
      */
     public mio_icif_treetap_elc(Properties properties) {
-        super(properties, TREETAP_ELC_MAX_ENERGY, 0L, "treetap_elc", TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_ENERGY_PER_USE, 1);
+        super(properties, TREETAP_ELC_MAX_ENERGY, 0L, "treetap_elc", standardChargeRate(1), TREETAP_ELC_ENERGY_PER_USE, 1);
     }
 
     /**
@@ -38,7 +38,7 @@ public class mio_icif_treetap_elc extends mio_icif_tool_elc implements ITreeTapI
      * @param initialEnergy the initial energy
      */
     public mio_icif_treetap_elc(Properties properties, int initialEnergy) {
-        super(properties, TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_MAX_ENERGY - initialEnergy, "treetap_elc", TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_ENERGY_PER_USE, 1);
+        super(properties, TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_MAX_ENERGY - initialEnergy, "treetap_elc", standardChargeRate(1), TREETAP_ELC_ENERGY_PER_USE, 1);
     }
 
     /**

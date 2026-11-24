@@ -207,12 +207,17 @@ public final class BatteryElectricAdapter {
         }
 
         @Override public boolean canProvideEnergy(ItemStack stack) {
+            // 0.1.11.194 (T1, I-05): a tool never feeds machines or other items, as BatteryTransfer.canProvideExternally says
+            if (battery instanceof com.miophas.singularity_iteration.core.api.item.IElectricToolItem) return false;
             return query(stack, item -> !battery.isEmpty(item));
         }
         @Override public long getMaxCharge(ItemStack stack) {
             return query(stack, item -> battery.getMaxEnergy());
         }
-        @Override public int getTier(ItemStack stack) { return 1; }
+        @Override public int getTier(ItemStack stack) {
+            // 0.1.11.194 (T1, I-05): the tool's own tier (it was always 1)
+            return battery instanceof com.miophas.singularity_iteration.core.api.item.IElectricToolItem tool ? tool.getToolTier() : 1;
+        }
         @Override public long getTransferLimit(ItemStack stack) {
             return query(stack, battery::getChargeRate);
         }
@@ -221,12 +226,18 @@ public final class BatteryElectricAdapter {
             return query(stack, item -> battery.getEnergy(item) + " / " + battery.getMaxEnergy());
         }
 
+        /** (ignoreTransferLimit, simulate). 0.1.11.194 (T1, I-05): only a simulation was rate-limited before. */
         @Override public long charge(ItemStack stack, long amount, int tier, boolean b0, boolean b1) {
-            return transfer(stack, access, amount, true, b1, b1 && !b0, false);
+            return transfer(stack, access, amount, true, b1, !b0, false);
         }
 
+        /**
+         * (ignoreTransferLimit, externally, simulate). 0.1.11.194 (T1, I-05): a real external drain used to run as a
+         * simulation, and an internal simulation took energy.
+         */
         @Override public long discharge(ItemStack stack, long amount, int tier, boolean b0, boolean b1, boolean b2) {
-            return transfer(stack, access, amount, false, b1 || !b2, b1 && !b0, false);
+            if (b1 && !canProvideEnergy(stack)) return 0;
+            return transfer(stack, access, amount, false, b2, !b0, false);
         }
 
         @Override public boolean canUse(ItemStack stack, long amount) {

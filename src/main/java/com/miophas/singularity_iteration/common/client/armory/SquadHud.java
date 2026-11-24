@@ -61,29 +61,39 @@ public final class SquadHud {
     }
 
     private static void panel(GuiGraphics g, LocalPlayer player, List<Unit> units, int h, float t, float partial) {
-        int x = 10, rowH = 11, pw = 156;   // 0.1.11.41: one more column (flight time)
-        int y = (int) (h * 0.38F);
-        int ph = 14 + units.size() * rowH;
-        FcsDraw.panel(g, x, y, pw, ph, Component.translatable("gui.mio_icif.command.squad").getString(), 0x5CEBFF);
-        boolean dl = SquadClient.datalink();
-        FcsDraw.textRight(g, tr(dl ? "gui.mio_icif.command.hud.datalink_on" : "gui.mio_icif.command.hud.datalink_off"), x + pw - 4, y + 2, FcsDraw.argb(dl ? 0x6FF3D6 : 0x7A8A94, dl ? 0.8F + 0.2F * Mth.sin(t * 0.2F) : 0.7F), 0.45F);
+        // Visor-aligned compact tactical cards in upper-left (clear of bottom curved Quantum/Nano Visor HUD)
+        int x = 10, y = 26, pw = 128, cardH = 15, gap = 2;
+        // Header strip
+        g.fill(x, y, x + pw, y + 11, 0x8006101A);
+        g.fill(x, y, x + pw, y + 1, FcsDraw.argb(0x5CEBFF, 0.75F));
+        FcsDraw.text(g, tr("gui.mio_icif.command.squad"), x + 4, y + 3, FcsDraw.argb(0xDFFBFF, 0.92F), 0.50F);
         int cd = SquadClient.recallCooldown();
-        if (cd > 0) FcsDraw.textRight(g, tr("gui.mio_icif.command.hud.recall_cd", (cd + 19) / 20), x + pw - 46, y + 2, FcsDraw.argb(0x9B7CFF, 0.8F), 0.45F);
+        if (cd > 0) {
+            FcsDraw.textRight(g, tr("gui.mio_icif.command.hud.recall_cd", (cd + 19) / 20), x + pw - 4, y + 3,
+                FcsDraw.argb(0x9B7CFF, 0.9F), 0.45F);
+        } else if (SquadClient.datalink()) {
+            float pulse = 0.65F + 0.35F * Mth.sin(t * 0.18F);
+            g.fill(x + pw - 7, y + 4, x + pw - 4, y + 7, FcsDraw.argb(0x6FF3D6, pulse));
+        }
         int ry = y + 13;
         Unit selected = SquadClient.selectedUnit();
         for (Unit u : units) {
             boolean sel = selected != null && selected.id().equals(u.id());
             int col = u.mode() >= 0 ? CommandWheelScreen.modeColor(u.mode()) : 0x8A96A0;
-            if (sel) g.fill(x + 1, ry - 1, x + pw - 1, ry + rowH - 2, FcsDraw.argb(col, 0.18F));
-            FcsDraw.text(g, SquadClient.label(u), x + 4, ry + 1, FcsDraw.argb(col, 1F), 0.55F);
+            // Card glass background + stance color left accent bar
+            g.fill(x, ry, x + pw, ry + cardH, sel ? 0x980A1D2B : 0x70050E17);
+            g.fill(x, ry, x + 2, ry + cardH, FcsDraw.argb(col, sel ? 1.0F : 0.85F));
+            if (sel) {
+                g.fill(x + 2, ry, x + pw, ry + 1, FcsDraw.argb(0x5CEBFF, 0.65F));
+                g.fill(x + 2, ry + cardH - 1, x + pw, ry + cardH, FcsDraw.argb(0x5CEBFF, 0.65F));
+            }
+            // Top line: callsign + order badge + distance
+            FcsDraw.text(g, SquadClient.label(u), x + 5, ry + 2, FcsDraw.argb(col, 1F), 0.55F);
             if (u.where() != 0) {
-                FcsDraw.text(g, fit(SquadClient.whereText(u), 104, 0.5F), x + 22, ry + 1, FcsDraw.argb(0xFF9F4D, 0.9F), 0.5F);
-                ry += rowH;
+                FcsDraw.text(g, fit(SquadClient.whereText(u), 92, 0.48F), x + 24, ry + 4, FcsDraw.argb(0xFF9F4D, 0.92F), 0.48F);
+                ry += cardH + gap;
                 continue;
             }
-            String mode = u.mode() >= 0 && u.mode() < WingmanMode.VALUES.length
-                ? tr("gui.mio_icif.wingman.mode_short." + WingmanMode.byId(u.mode()).name().toLowerCase(Locale.ROOT)) : "---";
-            FcsDraw.text(g, fit(mode, 18, 0.5F) + (u.individual() ? "*" : ""), x + 22, ry + 1, FcsDraw.argb(col, 0.75F), 0.5F);
             WingmanOrder o = SquadClient.order(u);
             Vec3 at = SquadClient.position(u, partial);
             String order = switch (o) {
@@ -97,18 +107,18 @@ public final class SquadHud {
             };
             float[] oc = CommandFx.orderColor(o);
             int orderCol = o == WingmanOrder.NONE ? 0x9AA8B0 : ((int) (oc[0] * 255) << 16 | (int) (oc[1] * 255) << 8 | (int) (oc[2] * 255));
-            FcsDraw.text(g, fit(order, 46, 0.5F), x + 44, ry + 1, FcsDraw.argb(orderCol, 0.9F), 0.5F);
-            // health bar and distance to the owner
-            int bx = x + 92, bw = 18;
-            g.fill(bx, ry + 3, bx + bw, ry + 6, 0x60000000);
-            g.fill(bx, ry + 3, bx + (int) (bw * Mth.clamp(u.health(), 0, 1)), ry + 6, FcsDraw.argb(u.health() < 0.35F ? 0xFF5A4C : 0x5CFF9A, 0.9F));
-            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0f", at.distanceTo(player.position())), x + 128, ry + 1,
-                FcsDraw.argb(0xDFFBFF, 0.7F), 0.45F);
-            // 0.1.11.41 (decision 1 C): flight time left from the suit charge and the upkeep reserve
+            FcsDraw.text(g, fit(order, 62, 0.48F), x + 24, ry + 2, FcsDraw.argb(orderCol, 0.92F), 0.48F);
+            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0fm", at.distanceTo(player.position())), x + pw - 4, ry + 2,
+                FcsDraw.argb(0xDFFBFF, 0.72F), 0.45F);
+            // Bottom line: thin HP bar + endurance readout
+            int bx = x + 5, bw = 82;
+            g.fill(bx, ry + 10, bx + bw, ry + 12, 0x60000000);
+            g.fill(bx, ry + 10, bx + (int) (bw * Mth.clamp(u.health(), 0, 1)), ry + 12,
+                FcsDraw.argb(u.health() < 0.35F ? 0xFF5A4C : 0x5CFF9A, 0.92F));
             String left = SquadClient.enduranceText(u.endurance());
-            if (!left.isEmpty()) FcsDraw.textRight(g, fit(left, 24, 0.45F), x + pw - 4, ry + 1,
-                FcsDraw.argb(SquadClient.enduranceColor(u.endurance()), 0.85F), 0.45F);
-            ry += rowH;
+            if (!left.isEmpty()) FcsDraw.textRight(g, fit(left, 32, 0.44F), x + pw - 4, ry + 9,
+                FcsDraw.argb(SquadClient.enduranceColor(u.endurance()), 0.88F), 0.44F);
+            ry += cardH + gap;
         }
     }
 

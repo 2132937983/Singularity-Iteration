@@ -196,14 +196,14 @@ public final class Round11539GameTests {
         h.succeed();
     }
 
-    /** G-12: the wheel's squad mode leaves an individual mode alone; a console recall by entity id reaches only that one. */
+    /** Squad-wide A_MODE unifies every Wingman (clears individual lock); a console recall by entity id reaches only that one. */
     @GameTest(template = "empty", batch = "round11539_command", timeoutTicks = 20)
     public static void squadModeAndRecallById(GameTestHelper h) {
         ServerPlayer owner = Round1102GameTests.commander(h);
         Entity a = wingman(h, owner, 0, new Vec3(1.5, 4, 1.5)), b = wingman(h, owner, 1, new Vec3(3.5, 4, 1.5));
         call(a, "setMode", Round1102GameTests.constant("armory.WingmanMode", "ESCORT"), true);
         Round1102GameTests.handle(owner, Round1102GameTests.command((byte) 5, new UUID(0L, 0L), (byte) 1, Vec3.ZERO, -1));   // A_MODE all: DISPERSAL
-        h.assertTrue("ESCORT".equals(Round1102GameTests.mode(a)) && (Boolean) call(a, "individual"), "the individual mode was overwritten");
+        h.assertTrue("DISPERSAL".equals(Round1102GameTests.mode(a)) && !(Boolean) call(a, "individual"), "squad-wide mode must unify individual unit");
         h.assertTrue("DISPERSAL".equals(Round1102GameTests.mode(b)), "the squad mode did not apply: " + Round1102GameTests.mode(b));
         call(Round33GameTests.common(SERVICE), "recallById", owner, b.getId());
         h.assertTrue(state(b) == 1 && state(a) == 0, "recall by id: a " + state(a) + " b " + state(b));

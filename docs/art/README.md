@@ -42,7 +42,7 @@
 
 ## 4. 一批的流程
 
-1. 从当前分支切新分支（例如 `art/mod1`）；只在本地提交，不推送，不开 PR。
+1. 仓库是 `https://github.com/rianfalltwilight-lab/Singularity-Iteration`，从分支 `art/mod1-suit-modules-brief` 切新分支 `art/mod1`；画完提交并**推送这个分支**到同一个仓库，不开 PR，不改其他分支。Claude 从这个分支取图、检查、接入。
 2. 按批次说明画，交预览图到 `docs/art/previews/<批次>.png`：
    - 所有图标放大 8 倍，放在原版物品栏格子背景上（格子 `#8B8B8B`，左上边框 `#373737`，右下边框 `#FFFFFF`），按批次清单的分组排，每张下面写文件名；
    - 另加一行原尺寸（1 倍）的同一批图，排在原版物品栏格子上，用来检查实际游戏里的可读性；

@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.common.armory;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
+import com.miophas.singularity_iteration.common.suit.SuitModules;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -16,8 +17,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -49,6 +52,8 @@ public final class WingmanService {
 
     /** Server thread only. */
     private static final Map<UUID, List<WingmanEntity>> BY_OWNER = new HashMap<>();
+    /** Tracks rapid consecutive deployments per owner: {lastGameTime, salvoCount}. */
+    private static final Map<UUID, long[]> DEPLOY_SALVO = new HashMap<>();
 
     /**
      * One Wingman row of the console. {@code energy} is -1 without electric pieces. 0.1.11.39: {@code entityId} names the
@@ -183,6 +188,38 @@ public final class WingmanService {
         return null;
     }
 
+    /**
+     * V-wedge staggered aerial drop point for squad {@code slot} (0..3). Tries wide V-formation first, then tight
+     * indoor wedge, then falls back to {@link #dropInPoint(ServerPlayer)} so cramped spaces always stay safe.
+     */
+    @org.jetbrains.annotations.Nullable
+    static Vec3 dropInPoint(ServerPlayer player, int slot) {
+        Vec3 base = dropInPoint(player);
+        if (base == null) return null;
+        ServerLevel level = player.serverLevel();
+        var size = ArmoryRegistry.WINGMAN.get().getDimensions();
+        float yawRad = (float) Math.toRadians(player.getYRot());
+        double baseHeight = base.y - player.getY();
+        boolean outdoor = baseHeight >= 6.0;
+        for (boolean tight : outdoor ? new boolean[]{false, true} : new boolean[]{true}) {
+            double[] off = WingmanDeployRules.vFormationOffset(slot, yawRad, tight);
+            Vec3 candidate = base.add(off[0], outdoor ? off[1] : 0.0, off[2]);
+            if (level.noCollision(size.makeBoundingBox(candidate))) return candidate;
+        }
+        return base;
+    }
+
+    private static int nextSalvoIndex(UUID owner, long gameTime) {
+        long[] state = DEPLOY_SALVO.computeIfAbsent(owner, k -> new long[]{Long.MIN_VALUE / 2, 0});
+        if (gameTime - state[0] <= WingmanDeployRules.STAGGER_WINDOW_TICKS) {
+            state[1] = Math.min(3, state[1] + 1);
+        } else {
+            state[1] = 0;
+        }
+        state[0] = gameTime;
+        return (int) state[1];
+    }
+
     // ------------------------------------------------------------------ actions
     /** Deploys suit {@code set} of {@code armory} as a Wingman in {@code mode}. */
     public static Component deploy(ServerPlayer player, mio_icif_armory armory, int set, WingmanMode mode) {
@@ -211,7 +248,8 @@ public final class WingmanService {
         boolean sameDimension = player.level() == home;
         double straight = sameDimension ? player.position().distanceTo(armory.launchTop()) : -1;
         boolean launch = sameDimension && straight >= 0 && straight < LAUNCH_RANGE;
-        Vec3 at = launch ? armory.launchTop().add(0, 0.5, 0) : dropInPoint(player);
+        int deploySlot = of(player).size();
+        Vec3 at = launch ? armory.launchTop().add(0, 0.5, 0) : dropInPoint(player, deploySlot);
         if (at == null) return Component.translatable("message.mio_icif.wingman.no_room");   // 0.1.11.39 (G-4): before the payment
         long cost = mio_icif_armory.cost(pieces, straight, sameDimension);
         var payment = armory.getEnergyStorageInternal().scexReserveInternal(cost);
@@ -241,11 +279,30 @@ public final class WingmanService {
         w.setReserve(reserve);
         armory.markStorageChanged();
         WingmanCallouts.say(w, WingmanCallouts.Kind.DEPLOYED);   // 0.1.11.58 (P6)
+
+        // Salvo stagger, catapult/orbital-drop impulse, harmonic audio pitch & S2C deploy FX spectacle
+        int salvoIdx = nextSalvoIndex(player.getUUID(), player.serverLevel().getGameTime());
+        float pitch = WingmanDeployRules.staggerPitch(salvoIdx);
+        float dropHeight = launch ? 0F : (float) Math.max(0.0, at.y - player.getY());
         if (launch) {
+            double fanAngle = (salvoIdx - 1.5) * 0.45;
+            w.setDeltaMovement(Math.sin(fanAngle) * 0.28, 1.30, Math.cos(fanAngle) * 0.28);
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_HATCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-            home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_LAUNCH.get(), SoundSource.BLOCKS, 1.0F, 0.9F);
+            home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_LAUNCH.get(), SoundSource.BLOCKS, 1.0F, pitch);
         } else {
-            player.serverLevel().playSound(null, at.x, at.y, at.z, mio_icif_sounds.ARMORY_FLYBY.get(), SoundSource.NEUTRAL, 1.5F, 0.9F);
+            if (dropHeight >= 5.0F) w.setDeltaMovement(0, -1.05, 0);
+            player.serverLevel().playSound(null, at.x, at.y, at.z, mio_icif_sounds.ARMORY_FLYBY.get(), SoundSource.NEUTRAL, 1.4F, pitch);
+            player.serverLevel().playSound(null, at.x, at.y, at.z, net.minecraft.sounds.SoundEvents.ILLUSIONER_MIRROR_MOVE, SoundSource.NEUTRAL, 1.1F, pitch * 0.85F);
+        }
+        boolean livingLining = SuitModules.hasLivingLining(w.getItemBySlot(EquipmentSlot.CHEST));
+        WingmanDeployFxPacket fxPacket = new WingmanDeployFxPacket(
+            w.getId(), at.x, at.y + 0.9, at.z, armory.getBlockPos(), launch, (byte) mode.ordinal(),
+            livingLining, WingmanDeployRules.staggerDelayTicks(salvoIdx), dropHeight);
+        for (ServerPlayer viewer : player.serverLevel().players()) {
+            if (viewer.connection != null && viewer.connection.hasChannel(WingmanDeployFxPacket.TYPE)
+                && viewer.distanceToSqr(at) <= 96.0 * 96.0) {
+                PacketDistributor.sendToPlayer(viewer, fxPacket);
+            }
         }
         long upkeep = WingmanConfig.upkeepEuPerSecond();
         return Component.translatable("message.mio_icif.wingman.deployed_reserve", armory.setName(set), Component.translatable(mode.key()), cost,
@@ -377,6 +434,7 @@ public final class WingmanService {
     @SubscribeEvent
     static void onServerStopped(ServerStoppedEvent event) {
         BY_OWNER.clear();
+        DEPLOY_SALVO.clear();
     }
 
     /** 0.1.10.5: a copy of a Wingman does not enter a level (see {@link WingmanSorties}). */

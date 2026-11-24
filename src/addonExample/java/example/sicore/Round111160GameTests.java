@@ -68,20 +68,22 @@ public final class Round111160GameTests {
 
     private static String path(ItemStack stack) { return BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath(); }
 
-    /** The suit modification station and the nano / quantum plugins (all "module/..." items) close the tab, Mk.II after Mk.I. */
+    /** The nano / quantum plugins (all "module/..." items) close the tab, Mk.II after Mk.I; the retired station is omitted. */
     @GameTest(template = "empty", batch = "round111160_tab")
     public static void suitPluginsCloseTheTab(GameTestHelper h) {
         List<ItemStack> stacks = tab(h);
-        int station = -1;
-        for (int i = 0; i < stacks.size(); i++) if (path(stacks.get(i)).equals("producer/block_quantum_modification_station")) station = i;
-        h.assertTrue(station > 0, "the suit modification station is not in the tab");
+        int firstPlugin = -1;
         for (int i = 0; i < stacks.size(); i++) {
-            boolean plugin = path(stacks.get(i)).startsWith("module/");
-            if (i < station) h.assertTrue(!plugin, path(stacks.get(i)) + " stands before the suit station (index " + i + ")");
-            if (i > station) h.assertTrue(plugin, path(stacks.get(i)) + " stands among the suit plugins (index " + i + ")");
+            String p = path(stacks.get(i));
+            h.assertTrue(!p.equals("producer/block_quantum_modification_station"), "retired modification station should not be in the creative tab");
+            if (p.startsWith("module/") && firstPlugin < 0) firstPlugin = i;
         }
-        h.assertTrue(stacks.size() - station > 40, "only " + (stacks.size() - station - 1) + " plugins after the station");
-        for (int i = station + 1; i < stacks.size(); i++) {
+        h.assertTrue(firstPlugin > 0, "no suit plugins found in the tab");
+        for (int i = firstPlugin; i < stacks.size(); i++) {
+            h.assertTrue(path(stacks.get(i)).startsWith("module/"), path(stacks.get(i)) + " stands among the suit plugins (index " + i + ")");
+        }
+        h.assertTrue(stacks.size() - firstPlugin > 40, "only " + (stacks.size() - firstPlugin) + " plugins at the end of the tab");
+        for (int i = firstPlugin + 1; i < stacks.size(); i++) {
             String p = path(stacks.get(i));
             if (p.endsWith("_mk2")) h.assertTrue(path(stacks.get(i - 1)).equals(p.substring(0, p.length() - 4)),
                 p + " does not follow its Mk.I (it follows " + path(stacks.get(i - 1)) + ")");

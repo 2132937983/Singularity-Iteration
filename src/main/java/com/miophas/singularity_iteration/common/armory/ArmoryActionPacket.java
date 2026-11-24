@@ -46,7 +46,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public record ArmoryActionPacket(int containerId, int action, int index, String text) implements CustomPacketPayload {
     /** Action ids. Each id fits in one unsigned byte. */
-    public static final int SUMMON = 0, RENAME = 1, UNBIND = 2, AUTOMATION = 3;
+    public static final int SUMMON = 0, RENAME = 1, UNBIND = 2, AUTOMATION = 3,
+        MOD_INSTALL = 4, MOD_REMOVE_UNIT = 5, MOD_REMOVE_CORE = 6;
 
     public static final Type<ArmoryActionPacket> TYPE =
         new Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armory_action"));
@@ -77,6 +78,12 @@ public record ArmoryActionPacket(int containerId, int action, int index, String 
                         }
                     }
                     case AUTOMATION -> armory.cycleAutomation(player);
+                    case MOD_INSTALL -> {
+                        Component msg = armory.installMod(player, packet.index);
+                        if (msg != null) player.displayClientMessage(msg, true);
+                    }
+                    case MOD_REMOVE_UNIT -> armory.removeModUnit(player, packet.index >>> 8, packet.index & 0xFF);
+                    case MOD_REMOVE_CORE -> armory.removeModCore(player, packet.index);
                     default -> { }
                 }
             }

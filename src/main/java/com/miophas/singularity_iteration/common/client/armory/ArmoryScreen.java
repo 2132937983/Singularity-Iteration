@@ -30,8 +30,11 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
     private static final int BAR_X = 30, BAR_Y = 130, BAR_W = 138, BAR_H = 4;
     private static final int MANA_Y = 135, MANA_H = 2;
     private static final int STATUS_RIGHT = 157;
+    private static final int MOD_X = -118, MOD_Y = 14, MOD_W = 114, MOD_H = 152;
 
     private SiButton automationButton;
+    private SiButton modInstallButton;
+    private int selectedModSlot = -1;
 
     private EditBox renameBox;
     private int renaming = -1;
@@ -69,6 +72,14 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
             if (minecraft != null) minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
                 com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_TOGGLE.get(), 1.0F, 0.8F));
         }));
+        modInstallButton = addRenderableWidget(new SiButton(leftPos + MOD_X + 28, topPos + MOD_Y + 21, 52, 13,
+            Component.translatable("gui.mio_icif.armory.mod.install"), b -> {
+                ensureSelectedModSlot();
+                if (selectedModSlot >= mio_icif_armory.FIRST_SUIT_SLOT) {
+                    send(ArmoryActionPacket.MOD_INSTALL, selectedModSlot, "");
+                }
+            }));
+        modInstallButton.setTooltip(Tooltip.create(Component.translatable("gui.mio_icif.armory.mod.install.tip", mio_icif_armory.MOD_INSTALL_EU)));
     }
 
     private Component automationLabel() {
@@ -148,12 +159,100 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
             }
         }
         chargeFrames(g);
+        renderModBay(g, mouseX, mouseY);
         renderPreview(g, mouseX, mouseY);
+    }
+
+    private void ensureSelectedModSlot() {
+        if (selectedModSlot >= mio_icif_armory.FIRST_SUIT_SLOT && selectedModSlot < mio_icif_armory.SUIT_SLOT_END) {
+            if (com.miophas.singularity_iteration.common.suit.SuitModules.isSuitPiece(menu.getSlot(selectedModSlot).getItem())) return;
+        }
+        selectedModSlot = -1;
+        for (int i = mio_icif_armory.FIRST_SUIT_SLOT; i < mio_icif_armory.SUIT_SLOT_END; i++) {
+            if (com.miophas.singularity_iteration.common.suit.SuitModules.isSuitPiece(menu.getSlot(i).getItem())) {
+                selectedModSlot = i;
+                return;
+            }
+        }
+    }
+
+    /** Left-side integrated Suit Modification Bay panel: modifies any stored suit piece directly inside the Armory. */
+    private void renderModBay(GuiGraphics g, int mouseX, int mouseY) {
+        ensureSelectedModSlot();
+        int px = leftPos + MOD_X, py = topPos + MOD_Y;
+        // Dark modern-IC chassis panel
+        g.fill(px - 1, py - 1, px + MOD_W + 1, py + MOD_H + 1, 0xFF3A4E5E);
+        g.fill(px, py, px + MOD_W, py + MOD_H, 0xEE141A22);
+        g.fill(px, py, px + MOD_W, py + 13, 0xFF1E2834);
+        g.drawString(font, Component.translatable("gui.mio_icif.armory.mod.title"), px + 5, py + 3, 0xFF78EEFF, false);
+
+        // Slot frame around MOD_SLOT (at ArmoryMenu.MOD_SLOT_X, MOD_SLOT_Y)
+        int sx = leftPos + ArmoryMenu.MOD_SLOT_X, sy = topPos + ArmoryMenu.MOD_SLOT_Y;
+        g.fill(sx - 1, sy - 1, sx + 17, sy + 17, 0xFF4A6274);
+        g.fill(sx, sy, sx + 16, sy + 16, 0xFF0C1218);
+
+        // Highlight selected suit slot in the main grid
+        if (selectedModSlot >= mio_icif_armory.FIRST_SUIT_SLOT && selectedModSlot < mio_icif_armory.SUIT_SLOT_END) {
+            var sel = menu.getSlot(selectedModSlot);
+            int gx = leftPos + sel.x, gy = topPos + sel.y;
+            g.fill(gx - 2, gy - 2, gx + 18, gy - 1, 0xFF5CEBFF);
+            g.fill(gx - 2, gy + 17, gx + 18, gy + 18, 0xFF5CEBFF);
+            g.fill(gx - 2, gy - 1, gx - 1, gy + 17, 0xFF5CEBFF);
+            g.fill(gx + 17, gy - 1, gx + 18, gy + 17, 0xFF5CEBFF);
+
+            var suit = sel.getItem();
+            // Selected piece mini display at top-right of mod bay
+            g.fill(px + MOD_W - 22, py + 19, px + MOD_W - 4, py + 37, 0xFF22303D);
+            g.renderItem(suit, px + MOD_W - 21, py + 20);
+
+            boolean nano = com.miophas.singularity_iteration.common.suit.SuitModules.isNanoPiece(suit);
+            int cap = nano ? com.miophas.singularity_iteration.common.suit.SuitModules.latticeCapacity(suit)
+                : com.miophas.singularity_iteration.common.suit.SuitModules.capacity(suit);
+            int used = nano ? com.miophas.singularity_iteration.common.suit.SuitModules.latticeUsed(suit)
+                : com.miophas.singularity_iteration.common.suit.SuitModules.installed(suit).units().size();
+            Component capTxt = Component.translatable(nano ? "gui.mio_icif.station.lattice" : "gui.mio_icif.station.units", used, cap);
+            g.drawString(font, capTxt, px + 5, py + 41, nano ? 0xFF6FE6FF : 0xFF7CFFB2, false);
+
+            // Frame Core badge + eject button
+            int listTop = py + 53;
+            var core = com.miophas.singularity_iteration.common.suit.core.FrameCores.core(suit);
+            if (core != null) {
+                g.fill(px + 4, listTop, px + MOD_W - 4, listTop + 12, 0x40000000 | (core.color() & 0xFFFFFF));
+                g.drawString(font, font.plainSubstrByWidth(Component.translatable(core.nameKey()).getString(), MOD_W - 24),
+                    px + 7, listTop + 2, 0xFFE8F6FF, false);
+                int ex = px + MOD_W - 14, ey = listTop + 1;
+                boolean hover = mouseX >= ex && mouseX < ex + 9 && mouseY >= ey && mouseY < ey + 9;
+                g.fill(ex, ey, ex + 9, ey + 9, hover ? 0xFFFF5A4C : 0xFF8A3A34);
+                g.drawString(font, "×", ex + 2, ey + 1, 0xFFFFFFFF, false);
+                listTop += 14;
+            }
+
+            // Installed module rows with [x] eject buttons
+            var units = com.miophas.singularity_iteration.common.suit.SuitModules.installed(suit).units();
+            for (int i = 0; i < units.size() && listTop + (i + 1) * 12 <= py + MOD_H - 4; i++) {
+                var u = units.get(i);
+                int ry = listTop + i * 12;
+                g.fill(px + 4, ry, px + MOD_W - 4, ry + 11, 0x28FFFFFF);
+                g.fill(px + 4, ry, px + 6, ry + 11, 0xFF000000 | u.color());
+                String name = Component.translatable(u.nameKey()).getString();
+                if (com.miophas.singularity_iteration.common.suit.SuitModules.tier(suit, u.key()) >= 2) name = "II " + name;
+                g.drawString(font, font.plainSubstrByWidth(name, MOD_W - 24), px + 8, ry + 2, 0xFFE8F4F8, false);
+                int ex = px + MOD_W - 14, ey = ry + 1;
+                boolean hover = mouseX >= ex && mouseX < ex + 9 && mouseY >= ey && mouseY < ey + 9;
+                g.fill(ex, ey, ex + 9, ey + 9, hover ? 0xFFFF5A4C : 0xFF8A3A34);
+                g.drawString(font, "×", ex + 2, ey + 1, 0xFFFFFFFF, false);
+            }
+        } else {
+            var hint = font.split(Component.translatable("gui.mio_icif.armory.mod.select_piece"), MOD_W - 10);
+            for (int i = 0; i < hint.size() && i < 4; i++) {
+                g.drawString(font, hint.get(i), px + 5, py + 44 + i * 10, 0xFF8FA4AE, false);
+            }
+        }
     }
 
     /** 0.1.10.32 (G-2): a frame round each stored electric armour piece in the colour of its charge. */
     private void chargeFrames(GuiGraphics g) {
-        for (int i = 1; i < mio_icif_armory.SLOT_COUNT; i++) {
+        for (int i = mio_icif_armory.FIRST_SUIT_SLOT; i < mio_icif_armory.SUIT_SLOT_END; i++) {
             var slot = menu.getSlot(i);
             var stack = slot.getItem();
             if (!(stack.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor)) continue;
@@ -299,8 +398,47 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
     }
 
     @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeft, int guiTop, int mouseButton) {
+        if (over(MOD_X, MOD_Y, MOD_W, MOD_H, mouseX, mouseY)) return false;
+        return super.hasClickedOutside(mouseX, mouseY, guiLeft, guiTop, mouseButton);
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0 && preview.click(mouseX, mouseY, previewBox())) return true;
+        // Handle clicks inside the left-side Integrated Modification Bay (eject core / eject module)
+        if (button == 0 && selectedModSlot >= mio_icif_armory.FIRST_SUIT_SLOT && selectedModSlot < mio_icif_armory.SUIT_SLOT_END) {
+            var suit = menu.getSlot(selectedModSlot).getItem();
+            if (com.miophas.singularity_iteration.common.suit.SuitModules.isSuitPiece(suit)) {
+                int px = leftPos + MOD_X, py = topPos + MOD_Y;
+                int listTop = py + 53;
+                if (com.miophas.singularity_iteration.common.suit.core.FrameCores.core(suit) != null) {
+                    int ex = px + MOD_W - 14, ey = listTop + 1;
+                    if (mouseX >= ex && mouseX < ex + 9 && mouseY >= ey && mouseY < ey + 9) {
+                        send(ArmoryActionPacket.MOD_REMOVE_CORE, selectedModSlot, "");
+                        return true;
+                    }
+                    listTop += 14;
+                }
+                var units = com.miophas.singularity_iteration.common.suit.SuitModules.installed(suit).units();
+                for (int i = 0; i < units.size() && listTop + (i + 1) * 12 <= py + MOD_H - 4; i++) {
+                    int ex = px + MOD_W - 14, ey = listTop + i * 12 + 1;
+                    if (mouseX >= ex && mouseX < ex + 9 && mouseY >= ey && mouseY < ey + 9) {
+                        send(ArmoryActionPacket.MOD_REMOVE_UNIT, (selectedModSlot << 8) | i, "");
+                        return true;
+                    }
+                }
+            }
+        }
+        // Clicking any stored Nano/Quantum armor slot selects it for modification (while still allowing normal slot click)
+        for (int i = mio_icif_armory.FIRST_SUIT_SLOT; i < mio_icif_armory.SUIT_SLOT_END; i++) {
+            var slot = menu.getSlot(i);
+            if (over(slot.x, slot.y, 16, 16, mouseX, mouseY)
+                    && com.miophas.singularity_iteration.common.suit.SuitModules.isSuitPiece(slot.getItem())) {
+                selectedModSlot = i;
+                break;
+            }
+        }
         for (int r = 0; r < mio_icif_armory.SETS; r++) {
             if (over(NAME_X, 18 + r * 18, NAME_W, 18, mouseX, mouseY)) {
                 startRename(r);

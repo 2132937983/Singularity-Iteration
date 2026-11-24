@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:modification_station",
+  "parent": "mio_icif:armory",
   "display": {
     "icon": {
       "id": "mio_icif:module/item_module_phase_jump_drive"

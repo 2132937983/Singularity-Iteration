@@ -19,6 +19,7 @@ public class ArmoryMenu extends mio_icif_machine_menu {
     public static final int DATA_COUNT = 12;
     public static final int GRID_X = 66, GRID_Y = 19, ROW_H = 18;
     public static final int BATTERY_X = 8, BATTERY_Y = 130;
+    public static final int MOD_SLOT_X = -112, MOD_SLOT_Y = 34;
     public static final int GUI_HEIGHT = 232;
 
     @Nullable private final BlockPos pos;
@@ -54,6 +55,10 @@ public class ArmoryMenu extends mio_icif_machine_menu {
                 addSlot(slot);
             }
         }
+        // Integrated modification bay slot (sits in the left-side modification panel)
+        addSlot(new SlotItemHandler(itemHandler, mio_icif_armory.MOD_SLOT, MOD_SLOT_X, MOD_SLOT_Y) {
+            @Override public boolean mayPlace(ItemStack stack) { return mio_icif_armory.isModItem(stack); }
+        });
     }
 
     /** Vanilla empty-slot silhouettes so each column reads at a glance. */
@@ -80,6 +85,14 @@ public class ArmoryMenu extends mio_icif_machine_menu {
             var source = slots.get(index);
             if (source.hasItem()) {
                 ItemStack stack = source.getItem();
+                if (mio_icif_armory.isModItem(stack)) {
+                    ItemStack copy = stack.copy();
+                    if (moveItemStackTo(stack, mio_icif_armory.MOD_SLOT, mio_icif_armory.MOD_SLOT + 1, false)) {
+                        if (stack.isEmpty()) source.setByPlayer(ItemStack.EMPTY); else source.setChanged();
+                        source.onTake(player, stack);
+                        return copy;
+                    }
+                }
                 int target = suitSlotFor(stack);
                 if (target >= 0) {
                     ItemStack copy = stack.copy();

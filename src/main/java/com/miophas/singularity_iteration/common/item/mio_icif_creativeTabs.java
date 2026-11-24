@@ -1128,11 +1128,11 @@ public class mio_icif_creativeTabs {
     // ------------------------------------------------------------------ suits (last)
 
     /**
-     * The suit modification station, then the plugins: quantum-only units and the bay expander, units both suits take, nano-only
-     * units and the lattice densifier, each unit's Mk.II right after its Mk.I; the frame cores last.
+     * Suit plugins: quantum-only units and the bay expander, units both suits take, nano-only units
+     * and the lattice densifier, each unit's Mk.II right after its Mk.I; the frame cores last.
+     * (The standalone modification station was retired into the Armory's integrated modification bay.)
      */
     private static void suit(CreativeModeTab.Output o) {
-        o.accept(SuitRegistry.STATION_ITEM.get());
         for (int group = 0; group < 3; group++) {
             for (SuitModuleType type : SuitModuleType.VALUES) {
                 boolean nano = type.allows(SuitClass.NANO), quantum = type.allows(SuitClass.QUANTUM);

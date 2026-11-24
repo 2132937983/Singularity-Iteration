@@ -104,7 +104,7 @@ public final class ArmoryGameTests {
     public static void suitSlotsAcceptGearOfEveryMod(GameTestHelper h) {
         var armory = armory(h, 5_000);
         var inv = armory.getItemHandler();
-        h.assertTrue(inv.getSlots() == 37, "Battery + 6 suits x 6 pieces, got " + inv.getSlots());
+        h.assertTrue(inv.getSlots() == 38, "Battery + 6 suits x 6 pieces + mod slot, got " + inv.getSlots());
         h.assertTrue(inv.isItemValid(HEAD_0, new ItemStack(Items.IRON_HELMET)), "Helmet column takes helmets");
         h.assertTrue(!inv.isItemValid(HEAD_0, new ItemStack(Items.IRON_BOOTS)), "Helmet column rejects boots");
         h.assertTrue(inv.isItemValid(FEET_0, new ItemStack(Items.IRON_BOOTS)), "Boots column takes boots");
@@ -199,6 +199,45 @@ public final class ArmoryGameTests {
             .noneMatch(t -> String.valueOf(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(t)).equals("mio_icif:armory_target")),
             "A stranger's remote must not pair");
         owner.discard(); stranger.discard();
+        h.succeed();
+    }
+
+    @GameTest(template = "reactor_loop", batch = "armory", timeoutTicks = 40)
+    public static void integratedModificationBayInstallsAndEjects(GameTestHelper h) {
+        var armory = armory(h, 10_000);
+        ServerPlayer p = player(h);
+        var inv = armory.getItemHandler();
+        final int MOD_SLOT = 37;
+
+        // Place Quantum Helmet in HEAD_0 and Entity ESP (HEAD) module in MOD_SLOT
+        inv.insertItem(HEAD_0, si("armor/item_armor_quantum_helmet"), false);
+        inv.insertItem(MOD_SLOT, si("module/item_module_entity_esp"), false);
+        long energyBefore = armory.getEnergyStorage().getAmount();
+        call(armory, "installMod", p, HEAD_0);
+        h.assertTrue(inv.getStackInSlot(MOD_SLOT).isEmpty(), "Mod slot must be consumed after install");
+        h.assertTrue(armory.getEnergyStorage().getAmount() == energyBefore - 1_280L, "Install must consume 1,280 EU");
+        ItemStack modded = inv.getStackInSlot(HEAD_0);
+        h.assertTrue(modded.getComponents().keySet().stream()
+                .anyMatch(t -> String.valueOf(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(t)).equals("mio_icif:suit_modules")),
+            "Helmet must carry installed suit_modules component");
+
+        // Eject the installed module
+        h.assertTrue((boolean) call(armory, "removeModUnit", p, HEAD_0, 0), "Armory must eject installed module");
+        boolean gotModuleBack = p.getInventory().items.stream().anyMatch(s -> s.is(si("module/item_module_entity_esp").getItem()))
+            || inv.getStackInSlot(MOD_SLOT).is(si("module/item_module_entity_esp").getItem());
+        h.assertTrue(gotModuleBack, "Ejected module must return to player or mod slot");
+
+        // Install and eject a Frame Core
+        inv.extractItem(MOD_SLOT, 64, false);
+        inv.insertItem(MOD_SLOT, si("module/item_core_solar_array_1"), false);
+        call(armory, "installMod", p, HEAD_0);
+        h.assertTrue(inv.getStackInSlot(MOD_SLOT).isEmpty(), "Core must be consumed from mod slot");
+        h.assertTrue((boolean) call(armory, "removeModCore", p, HEAD_0), "Armory must eject installed frame core");
+        boolean gotCoreBack = p.getInventory().items.stream().anyMatch(s -> s.is(si("module/item_core_solar_array_1").getItem()))
+            || inv.getStackInSlot(MOD_SLOT).is(si("module/item_core_solar_array_1").getItem());
+        h.assertTrue(gotCoreBack, "Ejected core must return to player or mod slot");
+
+        p.discard();
         h.succeed();
     }
 

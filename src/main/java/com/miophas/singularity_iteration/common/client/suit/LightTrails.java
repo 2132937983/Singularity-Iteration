@@ -5,7 +5,8 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.armory.WingmanEntity;
 import com.miophas.singularity_iteration.common.client.render.FxBudget;
 import com.miophas.singularity_iteration.common.client.render.FxLodRules;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.suit.LightTrail;
 import com.miophas.singularity_iteration.common.suit.LightTrailRules;
 import com.miophas.singularity_iteration.common.suit.ManeuverMode;
@@ -133,7 +134,7 @@ public final class LightTrails {
 
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        if (!IrisCompat.isFxStage(event)) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != lastLevel) { FLYERS.clear(); lastLevel = mc.level; }
         if (mc.level == null) return;
@@ -156,19 +157,18 @@ public final class LightTrails {
             }
         }
         if (!trails.isEmpty()) {
-            RenderType curtainType = LightTrailRules.CURTAIN_ADDITIVE ? SiRenderTypes.FIELD_GLOW : SiRenderTypes.VAPOR;
-            VertexConsumer vc = buffers.getBuffer(curtainType);
+            VertexConsumer vc = LightTrailRules.CURTAIN_ADDITIVE ? SiFxBuffers.glow(buffers) : SiFxBuffers.translucent(buffers);
             for (Trail t : trails) curtain(vc, m, t);
-            if (curtainType != SiRenderTypes.FIELD_GLOW) {
-                buffers.endBatch(curtainType);
-                vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (!LightTrailRules.CURTAIN_ADDITIVE) {
+                SiFxBuffers.endTranslucent(buffers);
+                vc = SiFxBuffers.glow(buffers);
             }
             for (Trail t : trails) {
                 float superBoost = Mth.clamp((t.mach - 0.95F) / 0.35F, 0F, 1F);
                 line(vc, m, t, LightTrailRules.RIBBON_LINE_HALF_WIDTH + 0.012F * superBoost, t.lineColor, LightTrailRules.LINE_ALPHA);
                 line(vc, m, t, LightTrailRules.RIBBON_CORE_HALF_WIDTH + 0.004F * superBoost, t.coreColor, LightTrailRules.CORE_ALPHA + 0.2F * superBoost);
             }
-            buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+            SiFxBuffers.endGlow(buffers);
         }
         pose.popPose();
     }

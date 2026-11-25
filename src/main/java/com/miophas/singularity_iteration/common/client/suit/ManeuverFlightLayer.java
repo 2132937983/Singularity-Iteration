@@ -2,7 +2,8 @@
 package com.miophas.singularity_iteration.common.client.suit;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.suit.QuantumNozzles;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -47,7 +48,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
     @Override
     public void render(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player,
                        float limbSwing, float limbSwingAmount, float partial, float age, float headYaw, float headPitch) {
-        if (!ManeuverModeClient.inManeuver(player)) return;
+        if (IrisCompat.isShadowPass() || !ManeuverModeClient.inManeuver(player)) return;
         float[] output = ManeuverModeClient.thrusterOutput(player);
         if (output == null) return;
         PlayerModel<AbstractClientPlayer> model = getParentModel();
@@ -76,7 +77,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             if (rcs) pulseAge = RcsPulse.age(player.getId(), i, player.tickCount, partial, outs[i], power);
             if (field ? outs[i] <= 0.02F : !rcs || Float.isNaN(pulseAge)) continue;
             if (!NozzleDraw.push(pose, model, n)) continue;
-            if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (vc == null) vc = SiFxBuffers.glow(buffers);
             if (field) NozzleDraw.fieldPhase(vc, pose, n.size(), outs[i], seconds);
             else RcsPulse.draw(vc, pose.last().pose(), power[0], pulseAge,
                 player.getId() * 1_000_003L + (player.tickCount - (long) Math.floor(pulseAge)) * 31L + i);

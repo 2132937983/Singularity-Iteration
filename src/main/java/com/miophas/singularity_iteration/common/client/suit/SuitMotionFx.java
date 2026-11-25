@@ -179,21 +179,21 @@ public final class SuitMotionFx {
             for (Map.Entry<Player, State> e : STATES.entrySet()) {
                 State s = e.getValue();
                 if (s.streakCount < 2 || s.streakAlpha <= 0.3F || e.getKey() == mc.player && firstPerson) continue;
-                if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+                if (vc == null) vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
                 double[] a = s.streak[0], b = s.streak[s.streakCount - 1];
                 for (int k = 0; k < 4; k += 2)
                     com.miophas.singularity_iteration.common.client.render.StarStreams.streak(vc, new org.joml.Matrix4f(), new Vec3(a[k * 3], a[k * 3 + 1], a[k * 3 + 2]).subtract(cam),
                         new Vec3(b[k * 3], b[k * 3 + 1], b[k * 3 + 2]).subtract(cam), 0.05F, com.miophas.singularity_iteration.common.suit.PhaseRules.WHITE,
                         com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, 0.8F * s.streakAlpha);
             }
-            if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+            if (vc != null) com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
             pose.popPose();
             return;
         }
         for (Map.Entry<Player, State> e : STATES.entrySet()) {
             State s = e.getValue();
             if (s.streakCount < 2 || s.streakAlpha <= 0F || e.getKey() == mc.player && firstPerson) continue;
-            if (vc == null) vc = buffers.getBuffer(SiRenderTypes.VAPOR);
+            if (vc == null) vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.translucent(buffers);
             for (int k = 0; k < 4; k++) {
                 for (int i = 0; i + 1 < s.streakCount; i++) {
                     double[] a = s.streak[i], b = s.streak[i + 1];
@@ -204,7 +204,7 @@ public final class SuitMotionFx {
                 }
             }
         }
-        if (vc != null) buffers.endBatch(SiRenderTypes.VAPOR);
+        if (vc != null) com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endTranslucent(buffers);
         pose.popPose();
     }
 

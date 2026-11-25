@@ -142,7 +142,8 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
         effects(pose, buffers, time, flicker, any && !physical, showcase.docked());
         if (any && !physical && buildY >= 0) {
             // the build-up scan line
-            VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (com.miophas.singularity_iteration.common.client.render.IrisCompat.isShadowPass()) return;
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
             ring(vc, pose.last().pose(), 0.5F, 0.28F + buildY, 0.5F, 0.0F, 0.46F, 0.6F, 0.95F, 1F, 0.9F * flicker);
         }
 
@@ -153,7 +154,8 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
 
     /** Light fan, rising scan rings and the ground glow (additive). */
     private static void effects(PoseStack pose, MultiBufferSource buffers, float time, float flicker, boolean any, boolean docked) {
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        if (com.miophas.singularity_iteration.common.client.render.IrisCompat.isShadowPass()) return;
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         Matrix4f m = pose.last().pose();
         float cx = 0.5F, cz = 0.5F, base = 0.25F;
         float strength = (any ? 1.0F : 0.45F) * flicker;

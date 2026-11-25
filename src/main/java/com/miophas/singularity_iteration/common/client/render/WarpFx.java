@@ -31,7 +31,7 @@ public final class WarpFx {
 
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || FcsClientConfig.classicFlightFx()) return;
+        if (!IrisCompat.isFxStage(event) || FcsClientConfig.classicFlightFx()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
@@ -42,11 +42,11 @@ public final class WarpFx {
             if (p.distanceToSqr(cam) > 128 * 128) continue;
             float gather = ManeuverModeClient.warpGather(p, partial), since = ManeuverModeClient.warpSince(p, partial);
             if (gather <= 0.01F && WarpRules.phase(since) == WarpRules.Phase.NONE && since > 6) continue;
-            if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (vc == null) vc = SiFxBuffers.glow(buffers);
             boolean own = p == mc.player && mc.options.getCameraType().isFirstPerson();
             draw(vc, p, gather, since, own, partial, cam);
         }
-        if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        if (vc != null) SiFxBuffers.endGlow(buffers);
     }
 
     private static void draw(VertexConsumer vc, Player p, float gather, float since, boolean own, float partial, Vec3 cam) {

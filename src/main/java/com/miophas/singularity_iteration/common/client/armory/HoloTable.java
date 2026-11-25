@@ -216,7 +216,7 @@ public final class HoloTable {
         Vector3f left = event.getCamera().getLeftVector(), up = event.getCamera().getUpVector();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
@@ -224,7 +224,7 @@ public final class HoloTable {
         frame(vc, m, cam, mc.player, t, ease, partial);
         terrain(vc, m, t, d);
         if (ease > 0.6F) markers(vc, m, cam, left, up, mc, t, partial, (ease - 0.6F) / 0.4F);
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
         pose.popPose();
     }
 

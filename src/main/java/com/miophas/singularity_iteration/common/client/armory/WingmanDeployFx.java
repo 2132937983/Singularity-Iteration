@@ -9,7 +9,8 @@ import com.miophas.singularity_iteration.common.armory.WingmanMode;
 import com.miophas.singularity_iteration.common.armory.mio_icif_armory;
 import com.miophas.singularity_iteration.common.client.render.FxDraw;
 import com.miophas.singularity_iteration.common.client.render.FxLodRules;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
 import com.miophas.singularity_iteration.common.suit.SuitModules;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -188,7 +189,7 @@ public final class WingmanDeployFx {
 
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        if (!IrisCompat.isFxStage(event)) return;
         if (GATES.isEmpty() && SHOCKS.isEmpty() && SCANS.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || !FcsClientConfig.armoryFx()) return;
@@ -209,16 +210,16 @@ public final class WingmanDeployFx {
 
         // Pass 1: dark quantum portal void cores (alpha-blended)
         if (!GATES.isEmpty()) {
-            VertexConsumer veil = buffers.getBuffer(SiRenderTypes.VAPOR);
+            VertexConsumer veil = SiFxBuffers.translucent(buffers);
             for (QuantumGate g : GATES) {
                 float open = WingmanDeployRules.gateOpen(now - g.startTime);
                 if (open > 0.01F) drawVoidCore(veil, m, g, open);
             }
-            buffers.endBatch(SiRenderTypes.VAPOR);
+            SiFxBuffers.endTranslucent(buffers);
         }
 
         // Pass 2: additive electromagnetic rings, spiral arms, starbursts, shockwaves & body scans
-        VertexConsumer glow = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer glow = SiFxBuffers.glow(buffers);
         Vector3f camLeft = new Vector3f(event.getCamera().getLeftVector());
         Vector3f camUp = new Vector3f(event.getCamera().getUpVector());
 
@@ -251,7 +252,7 @@ public final class WingmanDeployFx {
             }
         }
 
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        SiFxBuffers.endGlow(buffers);
         pose.popPose();
     }
 

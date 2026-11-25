@@ -3,7 +3,8 @@ package com.miophas.singularity_iteration.common.client.suit;
 
 import com.miophas.singularity_iteration.common.client.render.FxBudget;
 import com.miophas.singularity_iteration.common.client.render.FxLodRules;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.suit.LightTrailRules;
 import com.miophas.singularity_iteration.common.suit.PhaseWingRules;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -28,7 +29,7 @@ public final class PhaseEnergyWings {
     /** Draws the translucent segmented electromagnetic energy wings unfolding from the dorsal pods at high throttle. */
     public static void drawWings(PoseStack pose, MultiBufferSource buffers, PlayerModel<?> model,
                                  AbstractClientPlayer player, float partial) {
-        if (FxBudget.tier(player) == FxLodRules.FAR) return;
+        if (IrisCompat.isShadowPass() || FxBudget.tier(player) == FxLodRules.FAR) return;
         float trans = ManeuverModeClient.transitionOf(player);
         if (trans <= 0.01F) return;
         float thr = ManeuverModeClient.throttleOf(player, partial);
@@ -48,7 +49,7 @@ public final class PhaseEnergyWings {
 
         pose.pushPose();
         model.body.translateAndRotate(pose);
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
 
         for (int side : new int[]{-1, 1}) {
             pose.pushPose();
@@ -126,14 +127,14 @@ public final class PhaseEnergyWings {
     /** Draws cyan-white reverse-thrust electromagnetic rings at both palms during high-speed Air-Brake Flare. */
     public static void drawBrakePalms(PoseStack pose, MultiBufferSource buffers, PlayerModel<?> model,
                                       AbstractClientPlayer player, float partial) {
-        if (FxBudget.tier(player) == FxLodRules.FAR) return;
+        if (IrisCompat.isShadowPass() || FxBudget.tier(player) == FxLodRules.FAR) return;
         float trans = ManeuverModeClient.transitionOf(player);
         float brake = ManeuverModeClient.brakeOf(player);
         float alpha = PhaseWingRules.brakeRingAlpha(brake) * trans;
         if (alpha <= 0.01F) return;
 
         float phase = ((player.tickCount + partial) * 0.22F) % 1.0F;
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
 
         drawPalmRings(pose, vc, model.rightArm, -1, alpha, phase);
         drawPalmRings(pose, vc, model.leftArm, 1, alpha, (phase + 0.5F) % 1.0F);

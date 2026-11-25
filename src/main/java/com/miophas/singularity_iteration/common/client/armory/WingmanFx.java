@@ -5,7 +5,7 @@ import com.miophas.singularity_iteration.common.armory.ArmoryRegistry;
 import com.miophas.singularity_iteration.common.armory.WingmanEntity;
 import com.miophas.singularity_iteration.common.armory.WingmanMode;
 import com.miophas.singularity_iteration.common.client.render.FxDraw;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -124,7 +124,7 @@ public final class WingmanFx {
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         boolean classic = FcsClientConfig.classicFlightFx();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
@@ -228,14 +228,14 @@ public final class WingmanFx {
             float swing = w.getAttackAnim(partial);
             if (swing > 0.02F && !isRanged(w)) slashArc(vc, m, w, pos, swing, partial);
         }
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        SiFxBuffers.endGlow(buffers);
         if (!classic) {
-            VertexConsumer light = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            VertexConsumer light = SiFxBuffers.glow(buffers);
             for (var entry : STATES.int2ObjectEntrySet()) {
                 Entity e = mc.level.getEntity(entry.getIntKey());
                 if (e instanceof WingmanEntity w && w.isAlive()) phase(light, w, entry.getValue(), now, partial, cam);
             }
-            buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+            SiFxBuffers.endGlow(buffers);
         }
         pose.popPose();
     }

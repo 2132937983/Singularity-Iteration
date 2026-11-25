@@ -115,7 +115,7 @@ public final class CommandFx {
         Vector3f left = event.getCamera().getLeftVector(), up = event.getCamera().getUpVector();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
@@ -123,7 +123,7 @@ public final class CommandFx {
         for (Order o : ORDERS) orderGlow(vc, m, o, cam, t, partial, mc, flash);
         if (markers) markers(vc, m, cam, left, up, t, partial, mc);
         for (Recall r : RECALLS) recallGlow(vc, m, r, cam, left, up, t, flash);
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
         pose.popPose();
     }
 

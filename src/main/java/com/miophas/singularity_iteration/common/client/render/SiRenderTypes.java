@@ -1,8 +1,10 @@
 package com.miophas.singularity_iteration.common.client.render;
 
+import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 
 /** Custom render types. Extends RenderType only to reach its protected state shards. */
 @SuppressWarnings("null")
@@ -124,6 +126,46 @@ public final class SiRenderTypes extends RenderType {
             .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
             .setDepthTestState(LEQUAL_DEPTH_TEST)
             .setCullState(NO_CULL)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
+    /** Pure white 4x4 RGBA texture used by shader-friendly NEW_ENTITY emissive render types. */
+    public static final ResourceLocation WHITE_TEXTURE =
+        ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "textures/effect/white.png");
+
+    /**
+     * Shader-friendly additive emissive quads ({@code NEW_ENTITY} + {@code RENDERTYPE_EYES_SHADER} + pure white
+     * texture): routed by Iris to {@code gbuffers_spidereyes} so energy wings, rings, trails, and portals receive real
+     * HDR bloom, clean alpha blending, and accurate depth testing without turning grey or black.
+     */
+    public static final RenderType SHADER_GLOW = create("mio_icif_shader_glow",
+        DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 16384, false, false,
+        CompositeState.builder()
+            .setShaderState(RENDERTYPE_EYES_SHADER)
+            .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
+            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+            .setCullState(NO_CULL)
+            .setLightmapState(LIGHTMAP)
+            .setOverlayState(OVERLAY)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
+    /**
+     * Shader-friendly alpha-blended emissive quads ({@code NEW_ENTITY} + {@code RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER}
+     * + pure white texture): routed by Iris to {@code gbuffers_entities_translucent} for curtains, portal void cores, and
+     * soft veils without depth-sorting artifacts or dark boxes.
+     */
+    public static final RenderType SHADER_TRANSLUCENT = create("mio_icif_shader_translucent",
+        DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 16384, false, true,
+        CompositeState.builder()
+            .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+            .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setCullState(NO_CULL)
+            .setLightmapState(LIGHTMAP)
+            .setOverlayState(OVERLAY)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
             .setWriteMaskState(COLOR_WRITE)
             .createCompositeState(false));
 }

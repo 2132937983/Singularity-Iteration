@@ -39,6 +39,7 @@ public final class HoverField {
 
     /** The sole rings of a hovering player, from the posed model (the layer pose). */
     static void drawSoles(PoseStack pose, MultiBufferSource buffers, HumanoidModel<?> model, Player player, float partial) {
+        if (com.miophas.singularity_iteration.common.client.render.IrisCompat.isShadowPass()) return;
         float weight = QuantumWornMounts.hoverWeight(player, partial);
         if (weight <= 0.02F || FxBudget.tier(player) == FxLodRules.FAR) return;
         double t = seconds(player, partial);
@@ -46,7 +47,7 @@ public final class HoverField {
         VertexConsumer vc = null;
         for (QuantumNozzles.Nozzle n : NozzleDraw.worn(player, partial)) {
             if (n.kind() != QuantumNozzles.Kind.LIFT || !n.name().startsWith("sole") || !NozzleDraw.push(pose, model, n)) continue;
-            if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (vc == null) vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
             var m = pose.last().pose();
             PhaseFx.ringAt(vc, m, 0.01F, HoverFieldRules.SOLE_RADIUS, HoverFieldRules.SOLE_WIDTH, PhaseRules.CYAN,
                 HoverFieldRules.SOLE_ALPHA * breath * weight);
@@ -59,7 +60,7 @@ public final class HoverField {
     /** The ground ripples under the hovering players. */
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        if (!com.miophas.singularity_iteration.common.client.render.IrisCompat.isFxStage(event)) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
@@ -78,10 +79,10 @@ public final class HoverField {
             float phase = HoverFieldRules.phase(seconds(p, partial));
             float alpha = HoverFieldRules.groundAlpha(phase, height) * weight;
             if (alpha <= 0.01F) continue;
-            if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (vc == null) vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
             Vec3 centre = new Vec3(feet.x, hit.getLocation().y + 0.03, feet.z).subtract(cam);
             PhaseFx.ring(vc, centre, new Vec3(0, 1, 0), HoverFieldRules.groundRadius(phase), HoverFieldRules.GROUND_WIDTH, PhaseRules.CYAN, alpha);
         }
-        if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        if (vc != null) com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
     }
 }

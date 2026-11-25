@@ -144,7 +144,7 @@ public final class QuantumFx {
         Vec3 cam = event.getCamera().getPosition();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
@@ -157,7 +157,7 @@ public final class QuantumFx {
             barrier(vc, m, e, hit, now, cam, partial, event);
         }
         if (scan) scanSphere(vc, m, mc, scanAge / SCAN_TICKS, cam, partial, event);
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
         pose.popPose();
     }
 

@@ -355,9 +355,9 @@ public final class FcsClient {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             FcsProjection.capture(new Matrix4f(event.getProjectionMatrix()), new Matrix4f(event.getModelViewMatrix()),
                 event.getCamera().getPosition());
-            if (!FcsClientConfig.hudEnabled() || FcsState.activeSet().isEmpty()) return;
-            renderSensors(event, mc);
-        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            if (FcsClientConfig.hudEnabled() && !FcsState.activeSet().isEmpty()) renderSensors(event, mc);
+        }
+        if (com.miophas.singularity_iteration.common.client.render.IrisCompat.isFxStage(event)) {
             ShieldFieldRenderer.render(event);
             ManeuverModeClient.renderWorld(event);
             SuitMotionFx.render(event);                                // 0.1.10.31 sprint streaks of the quantum leggings

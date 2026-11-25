@@ -264,7 +264,8 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
      * slid out), additive, in the light colour, flickering a little.
      */
     private static void ventLight(PoseStack pose, MultiBufferSource buffers, ModelPart body, Light light, float vent, float ticks) {
-        VertexConsumer vc = buffers.getBuffer(com.miophas.singularity_iteration.common.client.render.SiRenderTypes.FIELD_GLOW);
+        if (com.miophas.singularity_iteration.common.client.render.IrisCompat.isShadowPass()) return;
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         pose.pushPose();
         body.translateAndRotate(pose);
         org.joml.Matrix4f m = pose.last().pose();

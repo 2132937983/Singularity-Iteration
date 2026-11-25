@@ -4,7 +4,8 @@ package com.miophas.singularity_iteration.common.client.armory;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.armory.SuitUpFxRules;
 import com.miophas.singularity_iteration.common.client.render.FxDraw;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
 import com.miophas.singularity_iteration.common.suit.SuitModules;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -105,7 +106,7 @@ public final class SuitUpFx {
 
     @SubscribeEvent
     static void renderWorld(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        if (!IrisCompat.isFxStage(event)) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != lastLevel) { clear(); lastLevel = mc.level; }
         if (mc.level == null || (RINGS.isEmpty() && BLADES.isEmpty() && BOOTS.isEmpty())) return;
@@ -129,7 +130,7 @@ public final class SuitUpFx {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
 
         for (LockRing r : RINGS) {
             float dur = r.purge ? SuitUpFxRules.PURGE_RING_TICKS : SuitUpFxRules.LOCK_RING_TICKS;
@@ -167,7 +168,7 @@ public final class SuitUpFx {
             drawFullBoot(vc, m, wearer, partial, sec, b.tier, ownFirstPerson, camLeft, camUp);
         }
 
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        SiFxBuffers.endGlow(buffers);
         pose.popPose();
     }
 

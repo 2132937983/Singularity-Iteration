@@ -4,7 +4,8 @@ package com.miophas.singularity_iteration.common.client.armory;
 import com.miophas.singularity_iteration.common.armory.ArmoryFlight;
 import com.miophas.singularity_iteration.common.armory.ArmoryPieceEntity;
 import com.miophas.singularity_iteration.common.armory.SuitUpFxRules;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.suit.SuitModules;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -74,6 +75,7 @@ public final class PieceFx {
      * the origin is the render position of the entity ({@code origin}), axes of the world.
      */
     static void flight(ArmoryPieceEntity piece, PoseStack pose, MultiBufferSource buffers, Vec3 origin, Vec3 at, float partial) {
+        if (IrisCompat.isShadowPass()) return;
         Trail t = TRAILS.get(piece);
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().subtract(origin);
         Vec3 v = piece.flightPosition(partial + 0.5F).subtract(piece.flightPosition(partial - 0.5F));
@@ -94,7 +96,7 @@ public final class PieceFx {
         boolean emReentry = SuitUpFxRules.isElectromagneticReentry(tech);
 
         Matrix4f m = pose.last().pose();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
         Vec3 here = at.subtract(origin);
         if (trail) {
             float r, gr, b, widthScale = 1F, alphaScale = 0.55F;
@@ -147,7 +149,7 @@ public final class PieceFx {
 
     /** Magnetic traction filaments pulling hovering/snapping armor pieces cleanly onto the wearer's body node. */
     static void tether(ArmoryPieceEntity piece, PoseStack pose, MultiBufferSource buffers, Vec3 origin, Vec3 at, float partial) {
-        if (piece.isReturn() || ArmoryPieceRenderer.isDrawnBlade(piece.item())) return;
+        if (IrisCompat.isShadowPass() || piece.isReturn() || ArmoryPieceRenderer.isDrawnBlade(piece.item())) return;
         float age = piece.age(partial);
         int flight = piece.duration();
         float latch = piece.latchAge(partial);
@@ -171,7 +173,7 @@ public final class PieceFx {
             : 0.45F * Math.min(1F, sinceHover / 4F);
 
         Matrix4f m = pose.last().pose();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
         Vec3 dir = here.subtract(dock).normalize();
         Vec3 side = Math.abs(dir.y) < 0.95 ? dir.cross(new Vec3(0, 1, 0)).normalize() : dir.cross(new Vec3(1, 0, 0)).normalize();
         Vec3 up = side.cross(dir).normalize();
@@ -295,7 +297,7 @@ public final class PieceFx {
     }
 
     static void seams(PoseStack pose, MultiBufferSource buffers, ModelPart part, float[][] quads, float age, float[] col) {
-        if (quads == null || quads.length == 0 || age < 0 || age >= PieceFxRules.SEAM_TICKS) return;
+        if (IrisCompat.isShadowPass() || quads == null || quads.length == 0 || age < 0 || age >= PieceFxRules.SEAM_TICKS) return;
         float top = Float.MAX_VALUE, bottom = -Float.MAX_VALUE;
         for (float[] q : quads) {
             for (int i = 0; i < 4; i++) {
@@ -304,7 +306,7 @@ public final class PieceFx {
             }
         }
         float span = Math.max(0.5F, bottom - top);
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
         pose.pushPose();
         part.translateAndRotate(pose);
         Matrix4f m = pose.last().pose();

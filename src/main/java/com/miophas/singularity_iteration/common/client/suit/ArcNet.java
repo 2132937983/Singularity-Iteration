@@ -22,10 +22,11 @@ public final class ArcNet {
     private ArcNet() {}
 
     static void draw(PoseStack pose, MultiBufferSource buffers, HumanoidModel<?> model, Player player) {
+        if (com.miophas.singularity_iteration.common.client.render.IrisCompat.isShadowPass()) return;
         float level = ArcNetRules.level(ManeuverModeClient.machOf(player));
         if (level <= 0.02F || FxBudget.tier(player) == FxLodRules.FAR || !model.body.visible) return;
         long tick = player.tickCount, seed = player.getId() * 0x5851F42D4C957F2DL + ArcNetRules.generation(tick);
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         pose.pushPose();
         model.body.translateAndRotate(pose);
         drawFrame(vc, pose.last().pose(), seed, tick, level);

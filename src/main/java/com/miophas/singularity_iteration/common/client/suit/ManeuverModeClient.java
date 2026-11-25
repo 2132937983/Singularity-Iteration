@@ -1100,7 +1100,7 @@ public final class ManeuverModeClient {
 
         if (!vapour) {
             // Modern electromagnetic flight mode: Mach 1.0 dual-ring Phase Boom (cyan inner + violet outer + 6 radial spikes)
-            VertexConsumer phase = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            VertexConsumer phase = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
             for (Iterator<Boom> it = BOOMS.iterator(); it.hasNext(); ) {
                 Boom b = it.next();
                 float age = (now - b.start) / (float) PHASE_BOOM_LIFE_MS;
@@ -1108,7 +1108,7 @@ public final class ManeuverModeClient {
                 if (b.own && firstPerson) continue;
                 phaseBoom(phase, m, b, age, boomCentre(mc, b, age, partial));
             }
-            buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+            com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
             pose.popPose();
             return;
         }

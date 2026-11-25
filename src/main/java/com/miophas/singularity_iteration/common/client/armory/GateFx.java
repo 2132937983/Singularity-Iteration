@@ -8,7 +8,7 @@ import com.miophas.singularity_iteration.common.client.render.FxBudget;
 import com.miophas.singularity_iteration.common.client.render.FxDraw;
 import com.miophas.singularity_iteration.common.client.render.FxLodRules;
 import com.miophas.singularity_iteration.common.client.render.RenderTypeTextures;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
 import com.miophas.singularity_iteration.common.client.suit.nano.NanoRender;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -91,13 +91,13 @@ public final class GateFx {
         Matrix4f m = pose.last().pose();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         // the dark hole first (alpha veil), then the light (additive)
-        VertexConsumer veil = buffers.getBuffer(SiRenderTypes.VAPOR);
+        VertexConsumer veil = SiFxBuffers.translucent(buffers);
         for (Gate g : GATES.values()) {
             float open = ArmoryFxRules.gate(now - g.pass, g.returning);
             if (open > 0.01F) hole(veil, m, g, open);
         }
-        buffers.endBatch(SiRenderTypes.VAPOR);
-        VertexConsumer glow = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        SiFxBuffers.endTranslucent(buffers);
+        VertexConsumer glow = SiFxBuffers.glow(buffers);
         Vector3f left = new Vector3f(event.getCamera().getLeftVector()), up = new Vector3f(event.getCamera().getUpVector());
         for (Gate g : GATES.values()) {
             float t = now - g.pass;
@@ -108,7 +108,7 @@ public final class GateFx {
             float flash = g.returning ? 0F : ArmoryFxRules.flash(t);
             if (flash > 0F) FxDraw.star(glow, m, g.centre, left, up, 1.2F * flash + 0.3F, 0.85F, 0.7F, 1F, flash);
         }
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        SiFxBuffers.endGlow(buffers);
         pose.popPose();
     }
 

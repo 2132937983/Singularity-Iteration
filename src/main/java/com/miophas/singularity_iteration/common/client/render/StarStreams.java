@@ -32,7 +32,7 @@ public final class StarStreams {
 
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || FcsClientConfig.classicFlightFx()) return;
+        if (!IrisCompat.isFxStage(event) || FcsClientConfig.classicFlightFx()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
@@ -51,13 +51,13 @@ public final class StarStreams {
             float boost = com.miophas.singularity_iteration.common.suit.WarpRules.streamBoost(ManeuverModeClient.warpSince(p, partial));
             alpha = Math.min(1F, alpha * boost * (1 - 0.4F * gather));
             if (alpha <= 0.01F) continue;
-            if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            if (vc == null) vc = SiFxBuffers.glow(buffers);
             boolean own = p == mc.player && mc.options.getCameraType().isFirstPerson();
             // round the own first-person camera the tube is twice as wide (it would brush the eye)
             draw(vc, m, p, flow, speed, alpha * (own ? 0.7F : 0.85F), own ? 2F : 1F, gather, boost, partial, cam);
         }
         pose.popPose();
-        if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        if (vc != null) SiFxBuffers.endGlow(buffers);
     }
 
     private static void draw(VertexConsumer vc, Matrix4f m, net.minecraft.world.entity.Entity p, Vec3 flow, float speed, float alpha, float widen, float gather, float boost,

@@ -7,7 +7,8 @@ import com.miophas.singularity_iteration.common.armory.ArmoryPieceEntity;
 import com.miophas.singularity_iteration.common.armory.mio_icif_armory;
 import com.miophas.singularity_iteration.common.client.render.FxBudget;
 import com.miophas.singularity_iteration.common.client.render.FxLodRules;
-import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
+import com.miophas.singularity_iteration.common.client.render.IrisCompat;
+import com.miophas.singularity_iteration.common.client.render.SiFxBuffers;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -88,8 +89,8 @@ public class ArmoryRenderer implements BlockEntityRenderer<mio_icif_armory> {
     /** Recessed six-blade iris, silo core glow, 3-stage vertical railgun pulses, and open-corridor launch column. */
     private void irisAndRailPulse(PoseStack pose, MultiBufferSource buffers, float open, float wake, Direction facing, float time, int light, int tier) {
         Matrix4f m = pose.last().pose();
-        if (open > 0.01F || wake > 0.01F) {
-            VertexConsumer glow = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        if (!IrisCompat.isShadowPass() && (open > 0.01F || wake > 0.01F)) {
+            VertexConsumer glow = SiFxBuffers.glow(buffers);
             int seg = FxLodRules.segments(20, tier);
             if (open > 0.01F) {
                 float r0 = ArmoryFxRules.IRIS_RADIUS * 0.96F;
@@ -171,14 +172,14 @@ public class ArmoryRenderer implements BlockEntityRenderer<mio_icif_armory> {
 
     /** Floor ring, 3-stage rail status glow, and between-rails laser scan plane during maintenance (additive). */
     private static void maintenance(PoseStack pose, MultiBufferSource buffers, int state, Direction facing, float time, int tier) {
-        if (state == ArmoryMaintenance.IDLE) return;
+        if (state == ArmoryMaintenance.IDLE || IrisCompat.isShadowPass()) return;
         float r, g, b, a;
         switch (state) {
             case ArmoryMaintenance.WORKING -> { r = 0.35F; g = 0.85F; b = 1F; a = 0.62F; }
             case ArmoryMaintenance.NEED_POWER -> { r = 1F; g = 0.66F; b = 0.22F; a = 0.35F + 0.35F * (float) Math.sin(time * 0.3F); }
             default -> { r = 0.72F; g = 0.47F; b = 1F; a = 0.35F + 0.35F * (float) Math.sin(time * 0.3F); }
         }
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = SiFxBuffers.glow(buffers);
         Matrix4f m = pose.last().pose();
         int seg = FxLodRules.segments(36, tier);
         for (int s = 0; s < seg; s++) {
@@ -237,8 +238,8 @@ public class ArmoryRenderer implements BlockEntityRenderer<mio_icif_armory> {
         for (ItemStack s : icons) if (!s.isEmpty()) count++;
         if (count == 0 && wake <= 0.01F) return;
 
-        if (tier < FxLodRules.FAR) {
-            VertexConsumer glow = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        if (tier < FxLodRules.FAR && !IrisCompat.isShadowPass()) {
+            VertexConsumer glow = SiFxBuffers.glow(buffers);
             Matrix4f m = pose.last().pose();
             int seg = FxLodRules.segments(16, tier);
             float coneAlpha = (count > 0 ? 0.14F : 0.07F) + 0.08F * wake;

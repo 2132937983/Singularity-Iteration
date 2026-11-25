@@ -43,7 +43,7 @@ public final class ShieldFieldRenderer {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        VertexConsumer vc = com.miophas.singularity_iteration.common.client.render.SiFxBuffers.glow(buffers);
         long now = System.currentTimeMillis();
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
@@ -71,7 +71,7 @@ public final class ShieldFieldRenderer {
                 }
             }
         }
-        buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        com.miophas.singularity_iteration.common.client.render.SiFxBuffers.endGlow(buffers);
         pose.popPose();
         if (sparked.size() > 128) sparked.clear();
     }

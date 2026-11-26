@@ -20,7 +20,8 @@ import org.joml.Matrix4f;
  * 0.1.11.213 (MT1 X1): draws the inside of the molecular transformer's glass chamber: the input as its pixel atoms at the
  * sample position (the chamber centre), standing still while the machine waits. 0.1.11.214 (X2): while it works, each item
  * is taken apart and rebuilt into the product the way its process works ({@link MolecularMotion}); atoms in the cloud carry
- * a glow. The field, the finishing flash, the vents and the continuous stream come in the next version. Nothing is drawn beyond {@link #VIEW_DISTANCE} blocks, and the "Fast"
+ * a glow. 0.1.11.215 (X3): the confinement field (corner columns, a scanning ring, breathing contacts), a flash as each
+ * item finishes, specks drifting out of the eight edge notches, and a continuous stream when one item takes under 2 s. Nothing is drawn beyond {@link #VIEW_DISTANCE} blocks, and the "Fast"
  * graphics setting halves the atoms.
  */
 public class MolecularTransformerRenderer implements BlockEntityRenderer<mio_icif_molecular_transformer> {
@@ -51,8 +52,8 @@ public class MolecularTransformerRenderer implements BlockEntityRenderer<mio_ici
         float bright = brightness(level, light, working);
         Matrix4f m = pose.last().pose();
 
-        if (!working || machine.viewStream()) {
-            // standing sample, or (until the stream is drawn) a turning one
+        if (!working) {
+            // a standing sample: input waiting for power or for room in the output
             VertexConsumer vc = SiFxBuffers.translucent(buffers);
             float cos = (float) Math.cos(angle), sin = (float) Math.sin(angle), h = PIXEL / 2;
             for (MolecularAtoms.Atom a : atoms) {
@@ -62,37 +63,90 @@ public class MolecularTransformerRenderer implements BlockEntityRenderer<mio_ici
             return;
         }
 
-        // 0.1.11.214 (X2): one item at a time, taken apart and rebuilt the way its process works
         ItemStack result = machine.viewResult();
         List<MolecularAtoms.Atom> product = result.isEmpty() ? atoms : MolecularAtomCache.of(result, level);
         if (fast) product = MolecularAtoms.thin(product, 24);
-        List<MolecularAtoms.Atom> in = shuffledIn(atoms), out = shuffledOut(product);
         MolecularMotion.Kind kind = MolecularMotion.Kind.of(machine.viewKind());
-        double p = machine.viewProgress(ticks), t = ticks / 20.0;
+        double t = ticks / 20.0;
+        boolean stream = machine.viewStream();
+        double p = stream ? 0 : machine.viewProgress(ticks);
+        MolecularMotion.State s = STATE;
+        List<float[]> glows = new java.util.ArrayList<>();
 
         VertexConsumer solid = SiFxBuffers.translucent(buffers);
-        int n = Math.max(in.size(), out.size());
-        MolecularMotion.State s = STATE;
-        float[][] glows = new float[n][];
-        for (int k = 0; k < n; k++) {
-            MolecularMotion.single(kind, k, in, out, p, t, angle, s);
-            if (!s.visible || s.alpha <= 0.01F) continue;
-            float lit = Math.max(bright, s.cloud);   // atoms in the cloud carry their own light
-            cubeRgb(solid, m, s.x / 16F, s.y / 16F, s.z / 16F, s.size / 32F, s.r * lit, s.g * lit, s.b * lit, s.alpha);
-            if (s.cloud > 0.3F) {
+        if (stream) {
+            // 0.1.11.215 (X3): under 2 s an item, a continuous stream from the input (low) up to the product (high)
+            float[] q = new float[3];
+            for (MolecularAtoms.Atom a : atoms) {
+                if (!MolecularMotion.streamInputShows(a, t)) continue;
+                MolecularMotion.streamSample(a, false, angle, q);
+                cube(solid, m, q[0] / 16F, q[1] / 16F, q[2] / 16F, PIXEL * MolecularMotion.STREAM_SCALE / 2, a.rgb(), bright, 1F);
+            }
+            for (MolecularAtoms.Atom a : product) {
+                MolecularMotion.streamSample(a, true, angle, q);
+                cube(solid, m, q[0] / 16F, q[1] / 16F, q[2] / 16F, PIXEL * MolecularMotion.STREAM_SCALE / 2, a.rgb(), bright,
+                    MolecularMotion.streamProductAlpha(a, t));
+            }
+            int n = fast ? MolecularMotion.STREAM_ATOMS / 2 : MolecularMotion.STREAM_ATOMS;
+            for (int k = 0; k < n; k++) {
+                MolecularMotion.streamAtom(kind, k, atoms, product, t, angle, s);
+                if (!s.visible) continue;
+                cubeRgb(solid, m, s.x / 16F, s.y / 16F, s.z / 16F, s.size / 32F, s.r, s.g, s.b, 1F);
                 float[] c = MolecularMotion.magentaGlow(kind, k, t) ? MolecularMotion.MAGENTA : MolecularMotion.CYAN;
-                glows[k] = new float[]{s.x, s.y, s.z, s.size, c[0], c[1], c[2], 0.28F * s.cloud * s.alpha,
-                    s.ax, s.ay, s.az};
+                glows.add(new float[]{s.x, s.y, s.z, s.size, c[0], c[1], c[2], 0.22F * s.cloud, Float.NaN, 0, 0});
+            }
+        } else {
+            // 0.1.11.214 (X2): one item at a time, taken apart and rebuilt the way its process works
+            List<MolecularAtoms.Atom> in = shuffledIn(atoms), out = shuffledOut(product);
+            int n = Math.max(in.size(), out.size());
+            for (int k = 0; k < n; k++) {
+                MolecularMotion.single(kind, k, in, out, p, t, angle, s);
+                if (!s.visible || s.alpha <= 0.01F) continue;
+                float lit = Math.max(bright, s.cloud);   // atoms in the cloud carry their own light
+                cubeRgb(solid, m, s.x / 16F, s.y / 16F, s.z / 16F, s.size / 32F, s.r * lit, s.g * lit, s.b * lit, s.alpha);
+                if (s.cloud > 0.3F) {
+                    float[] c = MolecularMotion.magentaGlow(kind, k, t) ? MolecularMotion.MAGENTA : MolecularMotion.CYAN;
+                    glows.add(new float[]{s.x, s.y, s.z, s.size, c[0], c[1], c[2], 0.28F * s.cloud * s.alpha, s.ax, s.ay, s.az});
+                }
             }
         }
+
         VertexConsumer glow = SiFxBuffers.glow(buffers);
         for (float[] g : glows) {
-            if (g == null) continue;
             cubeRgb(glow, m, g[0] / 16F, g[1] / 16F, g[2] / 16F, g[3] * 0.95F / 16F, g[4], g[5], g[6], g[7]);
             if (!Float.isNaN(g[8]))   // molecular: the bond to the molecule's centre
                 line(glow, m, g[0], g[1], g[2], g[8], g[9], g[10], 0.05F, MolecularMotion.CYAN, 0.35F * g[7] / 0.28F);
         }
-        extras(glow, m, kind, p, t);
+        if (!stream) extras(glow, m, kind, p, t);
+        field(glow, m, t, stream);
+        if (!stream) {
+            float f = MolecularMotion.flash(p);
+            if (f > 0) {   // the finishing flash: a ring running out past the glass, a glow in the middle
+                square(glow, m, MolecularMotion.CENTRE, MolecularMotion.flashRadius(p), MolecularMotion.WHITE, f * 0.9F);
+                float r = MolecularMotion.flashRadius(p) * 0.45F / 16F;
+                cubeRgb(glow, m, 0.5F, 0.5F, 0.5F, r, MolecularMotion.CYAN[0], MolecularMotion.CYAN[1], MolecularMotion.CYAN[2], f * 0.3F);
+            }
+        }
+        float[] q = new float[3];
+        for (int v = 0; v < MolecularMotion.VENTS.length; v++) {
+            for (int i = 0; i < MolecularMotion.VENT_SPECKS; i++) {
+                float a = MolecularMotion.vent(v, i, p, t, stream, q);
+                if (a > 0) cubeRgb(glow, m, q[0] / 16F, q[1] / 16F, q[2] / 16F, 0.11F / 16F,
+                    MolecularMotion.CYAN[0], MolecularMotion.CYAN[1], MolecularMotion.CYAN[2], a);
+            }
+        }
+    }
+
+    /** The confinement field: four corner columns, a scanning ring, the two contacts breathing. */
+    private static void field(VertexConsumer glow, Matrix4f m, double t, boolean stream) {
+        float breathe = MolecularMotion.breathe(t), strength = stream ? 1F : 0.75F;
+        float lo = MolecularMotion.IN0, hi = MolecularMotion.IN1;
+        for (float[] c : new float[][]{{lo, lo}, {hi, lo}, {lo, hi}, {hi, hi}})
+            line(glow, m, c[0], MolecularMotion.LO, c[1], c[0], MolecularMotion.HI, c[1], 0.14F, MolecularMotion.CYAN,
+                (0.22F + 0.22F * breathe) * strength);
+        square(glow, m, MolecularMotion.sweepHeight(t, stream), 3.65F, MolecularMotion.CYAN2, 0.55F * strength);
+        plate(glow, m, MolecularMotion.LO + 0.05F, 3.2F, MolecularMotion.CYAN, 0.12F + 0.12F * breathe);
+        plate(glow, m, MolecularMotion.HI - 0.05F, 3.2F, MolecularMotion.CYAN, 0.12F + 0.12F * (1 - breathe));
     }
 
     private static final MolecularMotion.State STATE = new MolecularMotion.State();

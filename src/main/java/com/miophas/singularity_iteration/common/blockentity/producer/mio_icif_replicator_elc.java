@@ -65,7 +65,17 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     /** Game time of the last paid step, for {@link #isReplicating()} (not saved). */
     private long lastWorkedTick=Long.MIN_VALUE/2;
     private CompoundTag held;
-    private final int[] clientData=new int[8];
+    private final int[] clientData=new int[DATA_COUNT];
+    /** 0.1.11.219: the pattern of the paid copy is away (crystal out, storage gone): the copy waits for it (not saved). */
+    private boolean patternMissing;
+    /** 0.1.11.219: ticks until the pattern of a paid copy is looked up again (not saved; 0 looks at once). */
+    private int patternCheck;
+    private static final int PATTERN_CHECK_TICKS=20;
+    /** 0.1.11.219: the status line of the screen, see {@link #statusCode()}. */
+    public static final int STATUS_STOPPED=0,STATUS_REPLICATING=1,STATUS_READY=2,STATUS_PAUSED=3,STATUS_PATTERN_PAUSED=4,
+        STATUS_NO_PATTERN=5,STATUS_NO_UU=6,STATUS_NO_ENERGY=7,STATUS_OUTPUT_FULL=8,STATUS_HELD=9;
+    /** Menu data: progress, max, replicating, energy, capacity, tank, tank capacity, mode; 0.1.11.219: status, paid UU, price, balance (0.1 mB). */
+    public static final int DATA_COUNT=12;
     /** 0.1.8.4 build order (Blueprint Builder supply): item to make and copies still to make; saved outside the paid-work record. */
     private ItemStack order=ItemStack.EMPTY;
     private int orderLeft;
@@ -90,7 +100,8 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         super(pos,state,type,DEFAULT_CAPACITY,DEFAULT_MAX_RECEIVE,0,DEFAULT_WORK_TIME,LAYOUT,DEFAULT_ENERGY_PER_TICK,CableTier.EV);
         credit=new IndependentUuBuffer(()->level==null||serverThread(),()->ContainerToTank.markUnsaved(this));
         tank=new FluidTank(UUMATTER_CAPACITY,f->f.getFluid()==uuFluid()){
-            @Override protected void onContentsChanged(){ContainerToTank.markUnsaved(mio_icif_replicator_elc.this);}
+            // 0.1.11.219: UU piped in also wakes a replicator that fell asleep waiting for it
+            @Override protected void onContentsChanged(){ContainerToTank.markUnsaved(mio_icif_replicator_elc.this);mio_icif_replicator_elc.this.wakeFromIdleSleep();}
         };
         fluidPort=new IFluidHandler(){
             public int getTanks(){return 1;}
@@ -187,17 +198,20 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     private void refreshSelection(){
         long generation=priceGeneration();
         if(generation<0)return;
-        if(!selected.isEmpty()&&(processed>0||paidEu>0||pendingUu>0)){
-            // 0.1.10.14: like IC2 refreshInfo, a pattern that changed or left (the crystal taken out or
-            // swapped) ends the copy: the UU already processed is lost and the machine stops.
-            if(patternChanged){patternChanged=false;if(!hasPatternFor(selected)){cancelCopy();return;}}
-            if(generation!=quotedGeneration){
-                var next=trustedQuote(selected);
-                if(next==null||Double.compare(next.buckets(),price)!=0){hold("Price changed during paid work");return;}
-                quotedGeneration=next.generation();stepEu=stepEnergy();
+        if(hasPaidCopy()){
+            // 0.1.11.219: a paid copy is never lost. While its pattern is away (the crystal taken out, the pattern storage
+            // removed, the inventory spilled by a wrench) it waits and goes on when the pattern is back; a crystal with
+            // another pattern ends it and the paid UU goes back to the balance. Until 0.1.11.218 (as IC2 refreshInfo) a
+            // changed or missing pattern threw the paid UU and EU away, and a copy loaded without its crystal kept copying.
+            if(patternChanged||--patternCheck<=0){
+                boolean swapped=patternChanged;patternChanged=false;patternCheck=PATTERN_CHECK_TICKS;
+                patternMissing=!hasPatternFor(selected);
+                if(patternMissing&&swapped&&crystalHoldsAnotherPattern()){abandonCopy(false);return;}
             }
+            if(generation!=quotedGeneration)applyQuote(trustedQuote(selected));
             return;
         }
+        patternMissing=false;
         if(!selectionDirty&&generation==quotedGeneration&&selectionCooldown-->0)return;
         selectionDirty=false;patternChanged=false;selectionCooldown=20;
         ItemStack item=selectPatternItem();
@@ -221,6 +235,48 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         order=ItemStack.EMPTY;orderLeft=0;mode=WorkMode.STOPPED;isWorking=false;lastWorkedTick=Long.MIN_VALUE/2;
         updateProgress();ContainerToTank.markUnsaved(this);
     }
+    /** A copy has paid UU or EU (it keeps its item and price until it is output or ended). */
+    private boolean hasPaidCopy(){return !selected.isEmpty()&&(processed>0||paidEu>0||pendingUu>0);}
+    /** 0.1.11.219: the crystal slot holds the pattern of another item than the paid copy. */
+    private boolean crystalHoldsAnotherPattern(){
+        var memory=itemHandler.getStackInSlot(MEMORY_SLOT);
+        if(memory.getCount()!=1||!(memory.getItem() instanceof mio_icif_memory crystal))return false;
+        var stored=crystal.getStoredItemStack(memory);
+        return !stored.isEmpty()&&!ItemStack.isSameItemSameComponents(stored,selected);
+    }
+    /**
+     * 0.1.11.219: ends the paid copy without its output. The UU it paid goes back to the balance (the next copy uses it
+     * first); the EU of the paid steps is spent. {@code stop}: a second Stop, which also stops the machine and drops a build
+     * order.
+     */
+    private void abandonCopy(boolean stop){
+        double refunded=processed>0?credit.refund(processed):0;
+        if(refunded+1e-12<processed)com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER
+            .warn("Replicator at {}: the UU balance is full, {} B of an ended copy are lost",worldPosition,processed-refunded);
+        processed=0;pendingUu=0;pendingEu=0;paidEu=0;selected=ItemStack.EMPTY;price=0;selectionDirty=true;patternMissing=false;
+        if(stop){order=ItemStack.EMPTY;orderLeft=0;mode=WorkMode.STOPPED;}
+        isWorking=false;lastWorkedTick=Long.MIN_VALUE/2;updateProgress();ContainerToTank.markUnsaved(this);
+    }
+    /**
+     * 0.1.11.219: a new price generation during a paid copy (a data pack reload, a Scanner price worked out again). The copy
+     * keeps what it paid: a higher price costs the rest; a price already paid completes it and the excess goes back to the
+     * balance; an item that lost its price ends the copy with the paid UU back in the balance. Until 0.1.11.218 any change
+     * held the machine (frozen with its inventory until the world was loaded again, and held again then).
+     */
+    void applyQuote(@Nullable UuQuoteBook.Quote next){
+        if(next==null||!(next.buckets()>0)){abandonCopy(false);return;}
+        quotedGeneration=next.generation();
+        if(Double.compare(next.buckets(),price)!=0){
+            price=next.buckets();
+            if(processed>=price){
+                // already paid: the step in flight is dropped (its EU is spent), the excess UU goes back
+                if(processed>price)credit.refund(processed-price);
+                processed=price;pendingUu=0;pendingEu=0;paidEu=0;
+            }else if(pendingUu>price-processed)pendingUu=price-processed;
+            updateProgress();ContainerToTank.markUnsaved(this);
+        }
+        stepEu=stepEnergy();
+    }
     protected ItemStack selectPatternItem(){
         if(!order.isEmpty()){
             if(hasPatternFor(order))return order.copy();
@@ -241,7 +297,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         var out=itemHandler.getStackInSlot(OUTPUT_SLOT);int limit=Math.min(itemHandler.getSlotLimit(OUTPUT_SLOT),selected.getMaxStackSize());
         return out.isEmpty()?limit>0:ItemStack.isSameItemSameComponents(out,selected)&&out.getCount()<limit;
     }
-    @Override protected boolean canWork(){return !changing&&!hasHeldReplicationData()&&mode!=WorkMode.STOPPED&&!selected.isEmpty()&&price>0
+    @Override protected boolean canWork(){return !changing&&!hasHeldReplicationData()&&mode!=WorkMode.STOPPED&&!selected.isEmpty()&&!patternMissing&&price>0
         &&quotedGeneration>=0&&quotedGeneration==priceGeneration()&&completed<Long.MAX_VALUE&&fitsOutput();}
     @Override protected void tickProduction(){
         isWorking=false;
@@ -292,7 +348,16 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     public void loopGeneration(){setWorkMode(2);}
     public void setWorkMode(int value){
         if(!serverThread()||changing||hasHeldReplicationData()||value<0||value>=3)return;
-        if(value==0){cancelCopy();return;}
+        if(value==0){
+            // 0.1.11.219: Stop pauses a paid copy (Single or Loop goes on with it); Stop on a stopped machine ends it and the
+            // paid UU goes back to the balance. Until 0.1.11.218 (as IC2) Stop threw the paid UU and EU away.
+            if(hasPaidCopy()){
+                if(mode==WorkMode.STOPPED)abandonCopy(true);
+                else{order=ItemStack.EMPTY;orderLeft=0;mode=WorkMode.STOPPED;isWorking=false;ContainerToTank.markUnsaved(this);}
+                return;
+            }
+            cancelCopy();return;
+        }
         mode=WorkMode.values()[value];selectionDirty=true;ContainerToTank.markUnsaved(this);
     }
     public WorkMode getWorkMode(){return mode;}
@@ -300,7 +365,24 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
      * Copying: a 0.1 mB step was paid in the last second. 0.1.10.14: {@code isWorking} alone is true only
      * on the tick a step completes, so with EU arriving slower than a step the lamp and the GUI status flickered off.
      */
-    public boolean isReplicating(){return isWorking||mode!=WorkMode.STOPPED&&!selected.isEmpty()&&level!=null&&level.getGameTime()-lastWorkedTick<=20;}
+    public boolean isReplicating(){return isWorking||mode!=WorkMode.STOPPED&&!selected.isEmpty()&&!patternMissing&&level!=null&&level.getGameTime()-lastWorkedTick<=20;}
+    /** 0.1.11.219: what the status line shows (STATUS_*): why the machine copies, waits or stands. */
+    public int statusCode(){
+        if(hasHeldReplicationData())return STATUS_HELD;
+        if(isReplicating())return STATUS_REPLICATING;
+        boolean paid=hasPaidCopy();
+        if(paid&&patternMissing)return STATUS_PATTERN_PAUSED;
+        if(mode==WorkMode.STOPPED)return paid?STATUS_PAUSED:STATUS_STOPPED;
+        if(selected.isEmpty())return STATUS_NO_PATTERN;
+        if(!fitsOutput())return STATUS_OUTPUT_FULL;
+        if(processed>=price)return STATUS_READY;
+        if(pendingUu==0&&credit.creditBuckets()+tank.getFluidAmount()/1000.0<Math.min(BASE_RATE,price-processed))return STATUS_NO_UU;
+        long due=pendingUu==0?stepEu:pendingEu-paidEu;
+        if(due>0&&energyStorage.getAmount()<due)return STATUS_NO_ENERGY;
+        return STATUS_READY;
+    }
+    /** 0.1.11.219: true while a paid copy waits for its pattern. */
+    public boolean isWaitingForPattern(){return patternMissing&&hasPaidCopy();}
     public int getReplicateProgress(){return progress;}
     public int getReplicateMaxProgress(){return 10000;}
     @Override public int getMaxProgress(){return 10000;}
@@ -314,12 +396,15 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     @Override public Component getDisplayName(){return Component.translatable("container.mio_icif.replicator_elc");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return new ReplicatorElcMenu(id,inventory,this);}
     public ContainerData getContainerData(){return new ContainerData(){
-        public int getCount(){return 8;}
-        public int get(int i){if(i<0||i>=8)throw new IndexOutOfBoundsException(i);if(level!=null&&level.isClientSide())return clientData[i];return switch(i){
+        public int getCount(){return DATA_COUNT;}
+        public int get(int i){if(i<0||i>=DATA_COUNT)throw new IndexOutOfBoundsException(i);if(level!=null&&level.isClientSide())return clientData[i];return switch(i){
             case 0->progress;case 1->10000;case 2->isReplicating()?1:0;case 3->(int)Math.min(Integer.MAX_VALUE,energyStorage.getAmount());
-            case 4->(int)Math.min(Integer.MAX_VALUE,energyStorage.getCapacity());case 5->tank.getFluidAmount();case 6->UUMATTER_CAPACITY;default->mode.ordinal();};}
-        public void set(int i,int v){if(i<0||i>=8)throw new IndexOutOfBoundsException(i);clientData[i]=v;}
+            case 4->(int)Math.min(Integer.MAX_VALUE,energyStorage.getCapacity());case 5->tank.getFluidAmount();case 6->UUMATTER_CAPACITY;case 7->mode.ordinal();
+            case 8->statusCode();case 9->tenths(processed);case 10->tenths(price);default->tenths(credit.creditBuckets());};}
+        public void set(int i,int v){if(i<0||i>=DATA_COUNT)throw new IndexOutOfBoundsException(i);clientData[i]=v;}
     };}
+    /** Buckets as 0.1 mB units for the screen (rounded down, capped). */
+    private static int tenths(double buckets){return (int)Math.min(Integer.MAX_VALUE,Math.max(0,Math.floor(buckets*10000+1e-6)));}
     // ---- 0.1.8.4: build orders. A Blueprint Builder that runs out of a material asks an idle
     // replicator nearby to make it from a stored pattern (UU matter and energy of this machine, the
     // usual price). The replicator runs the order like LOOP mode and stops when it is done; the

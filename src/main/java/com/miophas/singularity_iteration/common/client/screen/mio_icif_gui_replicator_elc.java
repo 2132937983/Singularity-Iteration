@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
+import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -101,47 +102,46 @@ public class mio_icif_gui_replicator_elc extends mio_icif_screen<com.miophas.sin
         }
     }
 
+    // 0.1.11.219: the status line (STATUS_* of the block entity), with the reason and the paid UU in its tooltip
+    private static final String[] STATUS_KEYS = {"stopped", "replicating", "ready", "paused", "pattern_paused",
+        "no_pattern", "no_uu", "no_energy", "output_full", "held"};
+    private static final int STATUS_X = 50, STATUS_Y = 39, STATUS_WIDTH = 100;
+
+    private static String statusKey(int status) {
+        return STATUS_KEYS[status >= 0 && status < STATUS_KEYS.length ? status : 0];
+    }
+
+    private Component statusLine(com.miophas.singularity_iteration.common.menu.producer.ReplicatorElcMenu menu) {
+        int status = menu.getStatus();
+        String key = "gui.mio_icif.replicator.status." + statusKey(status);
+        boolean withPercent = status == mio_icif_replicator_elc.STATUS_REPLICATING || status == mio_icif_replicator_elc.STATUS_PAUSED
+            || status == mio_icif_replicator_elc.STATUS_PATTERN_PAUSED;
+        return withPercent ? Component.translatable(key, String.format(java.util.Locale.ROOT, "%.2f%%", menu.getProgress() / 100.0))
+            : Component.translatable(key);
+    }
+
+    private static int statusColor(int status) {
+        return switch (status) {
+            case mio_icif_replicator_elc.STATUS_REPLICATING, mio_icif_replicator_elc.STATUS_READY -> 0x2A2E33;
+            case mio_icif_replicator_elc.STATUS_HELD -> 0xB02020;
+            default -> 0xA86A00;
+        };
+    }
+
+    /** 0.1 mB units as "1,234.5". */
+    private static String millibuckets(int tenths) {
+        return String.format(java.util.Locale.ROOT, "%,.1f", tenths / 10.0);
+    }
+
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
-
-
         com.miophas.singularity_iteration.common.menu.producer.ReplicatorElcMenu menu = this.menu;
         if (menu == null) return;
-
-        // 绘制状态信息
-        boolean isReplicating = menu.isReplicating();
-        String stateText;
-        int color;
-        if (isReplicating) {
-            int progressPercent = menu.getMaxProgress() > 0 ?
-                (menu.getProgress() * 100 / menu.getMaxProgress()) : 0;
-            stateText = "Replicating... " + progressPercent + "%";
-            color = 0x2A2E33;
-        } else {
-            int workMode = menu.getWorkMode();
-            switch (workMode) {
-                case 0:
-                    stateText = "Stopped";
-                    color = 0xA86A00;
-                    break;
-                case 1:
-                    stateText = "Single Mode";
-                    color = 0x2A2E33;
-                    break;
-                case 2:
-                    stateText = "Loop Mode";
-                    color = 0x2A2E33;
-                    break;
-                default:
-                    stateText = "";
-                    color = 0x2A2E33;
-            }
-        }
-
-        if (!stateText.isEmpty()) {
-            guiGraphics.drawString(this.font, stateText, 50, 39, color, false);
-        }
+        Component line = statusLine(menu);
+        String text = line.getString();
+        if (this.font.width(text) > STATUS_WIDTH) text = this.font.plainSubstrByWidth(text, STATUS_WIDTH - this.font.width("…")) + "…";
+        guiGraphics.drawString(this.font, text, STATUS_X, STATUS_Y, statusColor(menu.getStatus()), false);
     }
 
     @Override
@@ -162,31 +162,51 @@ public class mio_icif_gui_replicator_elc extends mio_icif_screen<com.miophas.sin
                 mouseX, mouseY);
         }
 
-        // 鼠标悬停提示 - 流体槽区域
+        // 鼠标悬停提示 - 流体槽区域 (0.1.11.219: and the UU balance)
         if (mouseX >= x + FLUID_TANK_X && mouseX <= x + FLUID_TANK_X + FLUID_TANK_WIDTH &&
             mouseY >= y + FLUID_TANK_Y && mouseY <= y + FLUID_TANK_Y + FLUID_TANK_HEIGHT) {
             java.util.List<Component> tooltip = new java.util.ArrayList<>();
             tooltip.add(Component.literal(mio_icif_fluids.UUMATTER.get().getFluidType().getDescription().getString()));
             tooltip.add(Component.literal(menu.getFluidAmount() + " / " + menu.getFluidCapacity() + " mB"));
+            if (menu.getBalanceTenths() > 0) tooltip.add(Component.translatable("gui.mio_icif.replicator.tip.balance", millibuckets(menu.getBalanceTenths())));
             guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
         }
 
-        // 鼠标悬停提示 - 停止按钮
+        // 0.1.11.219: the status line - why, the paid UU, the balance
+        if (mouseX >= x + STATUS_X - 2 && mouseX <= x + STATUS_X + STATUS_WIDTH && mouseY >= y + STATUS_Y - 2 && mouseY <= y + STATUS_Y + 10) {
+            java.util.List<net.minecraft.util.FormattedCharSequence> lines = new java.util.ArrayList<>();
+            lines.add(statusLine(menu).getVisualOrderText());
+            int status = menu.getStatus();
+            if (status == mio_icif_replicator_elc.STATUS_PAUSED || status == mio_icif_replicator_elc.STATUS_PATTERN_PAUSED
+                    || status == mio_icif_replicator_elc.STATUS_HELD || status == mio_icif_replicator_elc.STATUS_NO_UU) {
+                lines.addAll(this.font.split(Component.translatable("gui.mio_icif.replicator.detail." + statusKey(status)), 220));
+            }
+            if (menu.getPriceTenths() > 0) lines.add(Component.translatable("gui.mio_icif.replicator.tip.paid",
+                millibuckets(menu.getPaidTenths()), millibuckets(menu.getPriceTenths())).getVisualOrderText());
+            if (menu.getBalanceTenths() > 0) lines.add(Component.translatable("gui.mio_icif.replicator.tip.balance",
+                millibuckets(menu.getBalanceTenths())).getVisualOrderText());
+            guiGraphics.renderTooltip(this.font, lines, mouseX, mouseY);
+        }
+
+        // 鼠标悬停提示 - 停止按钮 (0.1.11.219: Stop pauses, a second Stop ends the copy)
         if (mouseX >= x + STOP_BTN_X && mouseX <= x + STOP_BTN_X + BTN_WIDTH &&
             mouseY >= y + STOP_BTN_Y && mouseY <= y + STOP_BTN_Y + BTN_HEIGHT) {
-            guiGraphics.renderTooltip(this.font, Component.literal("Stop"), mouseX, mouseY);
+            java.util.List<net.minecraft.util.FormattedCharSequence> lines = new java.util.ArrayList<>();
+            lines.add(Component.translatable("gui.mio_icif.replicator.button.stop").getVisualOrderText());
+            lines.addAll(this.font.split(Component.translatable("gui.mio_icif.replicator.button.stop.tip"), 220));
+            guiGraphics.renderTooltip(this.font, lines, mouseX, mouseY);
         }
 
         // 鼠标悬停提示 - 单次按钮
         if (mouseX >= x + SINGLE_BTN_X && mouseX <= x + SINGLE_BTN_X + BTN_WIDTH &&
             mouseY >= y + SINGLE_BTN_Y && mouseY <= y + SINGLE_BTN_Y + BTN_HEIGHT) {
-            guiGraphics.renderTooltip(this.font, Component.literal("Single"), mouseX, mouseY);
+            guiGraphics.renderTooltip(this.font, Component.translatable("gui.mio_icif.replicator.button.single"), mouseX, mouseY);
         }
 
         // 鼠标悬停提示 - 循环按钮
         if (mouseX >= x + LOOP_BTN_X && mouseX <= x + LOOP_BTN_X + BTN_WIDTH &&
             mouseY >= y + LOOP_BTN_Y && mouseY <= y + LOOP_BTN_Y + BTN_HEIGHT) {
-            guiGraphics.renderTooltip(this.font, Component.literal("Loop"), mouseX, mouseY);
+            guiGraphics.renderTooltip(this.font, Component.translatable("gui.mio_icif.replicator.button.loop"), mouseX, mouseY);
         }
     }
 

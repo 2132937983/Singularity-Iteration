@@ -48,7 +48,12 @@ import org.jetbrains.annotations.Nullable;
     private static final int DATA_FLUID_AMOUNT = 5;
     private static final int DATA_FLUID_CAPACITY = 6;
     private static final int DATA_WORK_MODE = 7;
-    private static final int DATA_COUNT = 8;
+    // 0.1.11.219: status line, paid UU, price and UU balance (0.1 mB units)
+    private static final int DATA_STATUS = 8;
+    private static final int DATA_PAID = 9;
+    private static final int DATA_PRICE = 10;
+    private static final int DATA_BALANCE = 11;
+    private static final int DATA_COUNT = mio_icif_replicator_elc.DATA_COUNT;
 
     public ReplicatorElcMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -117,6 +122,26 @@ import org.jetbrains.annotations.Nullable;
 
     public int getWorkMode() {
         return this.data.get(DATA_WORK_MODE);
+    }
+
+    /** 0.1.11.219: the status line ({@code mio_icif_replicator_elc.STATUS_*}). */
+    public int getStatus() {
+        return this.data.get(DATA_STATUS);
+    }
+
+    /** 0.1.11.219: UU paid into the copy so far, in 0.1 mB. */
+    public int getPaidTenths() {
+        return this.data.get(DATA_PAID);
+    }
+
+    /** 0.1.11.219: the UU price of the copy, in 0.1 mB. */
+    public int getPriceTenths() {
+        return this.data.get(DATA_PRICE);
+    }
+
+    /** 0.1.11.219: the UU balance (refunds and leftovers, used first by the next steps), in 0.1 mB. */
+    public int getBalanceTenths() {
+        return this.data.get(DATA_BALANCE);
     }
 
     @Override

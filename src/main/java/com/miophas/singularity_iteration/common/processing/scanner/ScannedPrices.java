@@ -25,12 +25,18 @@ import org.jetbrains.annotations.Nullable;
  * 0.1.10.36: the prices the Scanner worked out, saved with the world (item id, buckets, recipe or estimate). A scanned price
  * stays fixed, so crystals and patterns keep their price; a datapack price added later wins (the quote book only answers a
  * Scanner price for an item the published generation neither prices nor denies). Loaded into {@link UuQuoteBook} at start.
+ * <p>0.1.11.218: the saved prices carry a pricing version. Saves from before the 0.1.11.218 pricing fix (EESU and TESU
+ * Energy Cell at 0.33 mB, priced as natural blocks) are priced again once, at the first start with published prices.
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public final class ScannedPrices extends SavedData {
     public record Entry(double buckets, ScannerPricing.Source source) { }
 
+    /** 0.1.11.218: the pricing the saved entries were made with; a save without one is version 1. */
+    public static final int VERSION = 2;
+
     private final Map<ResourceLocation, Entry> entries = new LinkedHashMap<>();
+    private int version = VERSION;
 
     public static ScannedPrices get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ScannedPrices::new, ScannedPrices::load), "si_scanned_uu_prices");
@@ -53,8 +59,33 @@ public final class ScannedPrices extends SavedData {
 
     public int size() { return entries.size(); }
 
+    public int version() { return version; }
+
+    /**
+     * 0.1.11.218: prices every saved entry again with the current Scanner pricing and marks the data current. An entry the
+     * Scanner can no longer price keeps its old price. Returns how many entries changed. Server thread only.
+     */
+    public int reprice(MinecraftServer server) {
+        int changed = 0;
+        for (var row : entries.entrySet()) {
+            var item = BuiltInRegistries.ITEM.getOptional(row.getKey());
+            if (item.isEmpty()) continue;
+            var price = ScannerPricing.price(server, item.get().getDefaultInstance());
+            if (price == null) continue;
+            Entry old = row.getValue();
+            if (Math.abs(price.buckets() - old.buckets()) > old.buckets() * 1e-9 || price.source() != old.source()) {
+                row.setValue(new Entry(price.buckets(), price.source()));
+                changed++;
+            }
+        }
+        version = VERSION;
+        setDirty();
+        return changed;
+    }
+
     private static ScannedPrices load(CompoundTag tag, HolderLookup.Provider registries) {
         var data = new ScannedPrices();
+        data.version = tag.contains("version", Tag.TAG_INT) ? tag.getInt("version") : 1;
         for (Tag value : tag.getList("prices", Tag.TAG_COMPOUND)) {
             var row = (CompoundTag) value;
             var id = ResourceLocation.tryParse(row.getString("item"));
@@ -77,6 +108,7 @@ public final class ScannedPrices extends SavedData {
             list.add(row);
         });
         tag.put("prices", list);
+        tag.putInt("version", version);
         return tag;
     }
 
@@ -84,8 +116,14 @@ public final class ScannedPrices extends SavedData {
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void started(ServerStartedEvent event) {
         var server = event.getServer();
+        var data = get(server);
+        // 0.1.11.218: a save from before the pricing fix is priced again once (only with a published generation to price from)
+        if (data.version < VERSION && UuQuoteBook.generation(server) > 0) {
+            int changed = data.reprice(server);
+            Singularity_Iteration.LOGGER.info("[UU Scanner] {} of {} saved prices changed with the 0.1.11.218 pricing", changed, data.size());
+        }
         int loaded = 0;
-        for (var row : get(server).entries.entrySet()) {
+        for (var row : data.entries.entrySet()) {
             var item = BuiltInRegistries.ITEM.getOptional(row.getKey());
             if (item.isPresent() && UuQuoteBook.registerScanned(server, item.get().getDefaultInstance(), row.getValue().buckets())) loaded++;
         }

@@ -125,37 +125,61 @@ public final class PlayerFeedbackGameTests {
     private static double processed(BlockEntity replicator) { return (Double) call(replicator, "getProcessedUuBuckets"); }
     private static String mode(BlockEntity replicator) { return String.valueOf(call(replicator, "getWorkMode")); }
 
-    @GameTest(batch = "player_feedback", template = "empty", timeoutTicks = 100)
-    public static void replicatorStopsWhenItsCrystalIsTakenOut(GameTestHelper h) {
+    /**
+     * 0.1.10.14 (a player saw it copy on without the crystal): no copying without the crystal. 0.1.11.219: the paid copy is
+     * kept (it used to be thrown away) and goes on when the crystal is back.
+     */
+    @GameTest(batch = "player_feedback", template = "empty", timeoutTicks = 200)
+    public static void replicatorWaitsWhenItsCrystalIsTakenOut(GameTestHelper h) {
         BlockEntity replicator = replicator(h, new BlockPos(1, 1, 1));
-        var slots = (IItemHandler) call(replicator, "getItemHandler");
+        var slots = (IItemHandlerModifiable) call(replicator, "getItemHandler");
+        ItemStack[] crystal = {ItemStack.EMPTY};
+        double[] paid = {0};
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(processed(replicator) > 0, "no copy started"))
             .thenExecute(() -> {
                 h.assertTrue((Boolean) call(replicator, "isReplicating"), "not replicating mid-copy");
-                h.assertTrue(!slots.extractItem(2, 1, false).isEmpty(), "the crystal did not come out");
+                crystal[0] = slots.extractItem(2, 1, false);
+                h.assertTrue(!crystal[0].isEmpty(), "the crystal did not come out");
             })
             .thenIdle(2)
-            .thenExecute(() -> h.assertTrue(processed(replicator) == 0 && mode(replicator).equals("STOPPED")
-                && !(Boolean) call(replicator, "isReplicating"),
-                "still copying without the crystal: " + processed(replicator) + " " + mode(replicator)))
+            .thenExecute(() -> paid[0] = processed(replicator))
+            .thenIdle(5)
+            .thenExecute(() -> {
+                h.assertTrue(paid[0] > 0 && processed(replicator) == paid[0] && !(Boolean) call(replicator, "isReplicating"),
+                    "copying without the crystal, or the paid copy was lost: " + paid[0] + " -> " + processed(replicator));
+                h.assertTrue((Boolean) call(replicator, "isWaitingForPattern"), "not waiting for its pattern");
+                slots.setStackInSlot(2, crystal[0]);
+            })
+            .thenWaitUntil(() -> h.assertTrue(processed(replicator) > paid[0] || (Long) call(replicator, "getTotalProcessed") > 0,
+                "the copy did not go on with the crystal back"))
             .thenSucceed();
     }
 
-    @GameTest(batch = "player_feedback", template = "empty", timeoutTicks = 100)
-    public static void replicatorStopDiscardsTheCopy(GameTestHelper h) {
+    /** 0.1.11.219: Stop pauses the copy (it used to throw the paid UU away); a second Stop ends it and refunds the paid UU. */
+    @GameTest(batch = "player_feedback", template = "empty", timeoutTicks = 200)
+    public static void replicatorStopPausesAndASecondStopRefunds(GameTestHelper h) {
         BlockEntity replicator = replicator(h, new BlockPos(1, 1, 1));
+        double[] paid = {0};
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(processed(replicator) > 0, "no copy started"))
-            .thenExecute(() -> call(replicator, "stopGeneration"))
-            .thenExecute(() -> h.assertTrue(processed(replicator) == 0 && mode(replicator).equals("STOPPED"),
-                "Stop kept the copy: " + processed(replicator) + " " + mode(replicator)))
+            .thenExecute(() -> {
+                call(replicator, "stopGeneration");
+                paid[0] = processed(replicator);
+            })
             .thenIdle(3)
             .thenExecute(() -> {
-                h.assertTrue(processed(replicator) == 0, "copying after Stop: " + processed(replicator));
+                h.assertTrue(mode(replicator).equals("STOPPED") && paid[0] > 0 && processed(replicator) == paid[0],
+                    "Stop did not pause the copy: " + processed(replicator) + " " + mode(replicator));
+                double before = (Double) call(replicator, "getUuCreditBuckets");
+                call(replicator, "stopGeneration");   // a second Stop ends the copy
+                double after = (Double) call(replicator, "getUuCreditBuckets");
+                h.assertTrue(processed(replicator) == 0 && Math.abs(after - before - paid[0]) < 1e-12,
+                    "the second Stop did not refund " + paid[0] + " B: " + before + " -> " + after);
                 call(replicator, "generateOnce");
             })
-            .thenWaitUntil(() -> h.assertTrue(processed(replicator) > 0, "Single did not start a new copy"))
+            .thenWaitUntil(() -> h.assertTrue(processed(replicator) > 0 || (Long) call(replicator, "getTotalProcessed") > 0,
+                "Single did not start a new copy"))
             .thenSucceed();
     }
 

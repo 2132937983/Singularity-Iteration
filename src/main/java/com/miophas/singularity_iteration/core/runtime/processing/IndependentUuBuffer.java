@@ -80,6 +80,20 @@ public final class IndependentUuBuffer {
         } finally { busy = false; }
     }
 
+    /**
+     * 0.1.11.219: puts UU that was already paid back into the account (a copy ended before its output: another pattern, a
+     * second Stop, a price that fell below what was paid). Credits at most up to the account's ceiling and returns the amount
+     * credited; nothing while the account is busy or blocked.
+     */
+    public double refund(double buckets) {
+        if (!serverThread.getAsBoolean() || busy || blocked() || !Double.isFinite(buckets) || buckets <= 0) return 0;
+        double credited = Math.min(buckets, MAX_CREDIT - credit);
+        if (credited <= 0) return 0;
+        credit += credited;
+        changed.run();
+        return credited;
+    }
+
     public CompoundTag save() {
         if (heldRaw != null) return heldRaw.copy();
         var tag = new CompoundTag();

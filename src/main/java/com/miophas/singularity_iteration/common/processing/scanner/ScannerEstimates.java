@@ -19,19 +19,25 @@ import org.jetbrains.annotations.Nullable;
  * purpose: an estimate too low would let the Replicator copy an item for less than it is worth.
  * <ol>
  *   <li>the same material: the lowest published price of an item sharing a {@code c:} material tag ({@link ItemMatch#FAMILIES});</li>
- *   <li>a block: the price of the tool tier it needs (none / stone / iron / diamond / netherite) times its hardness / 3
- *       (clamped), an ore times {@code ore_factor};</li>
- *   <li>another item: {@code item_base} times its rarity, its stack size and, for a tool or armor, its durability.</li>
+ *   <li>a block found in the world: the price of the tool tier it needs (none / stone / iron / diamond / netherite) times
+ *       its hardness / 3 (clamped), an ore times {@code ore_factor};</li>
+ *   <li>another item, and a block that recipes make: {@code item_base} times its rarity, its stack size and, for a tool or
+ *       armor, its durability.</li>
  * </ol>
+ * 0.1.11.218: the block formula is calibrated on stone, ores and logs. Until 0.1.11.217 it also priced machines whose
+ * recipes the Scanner could not follow, so 79 SI machine and storage blocks (EESU, TESU Energy Cell, generators) cost less
+ * than 1 mB, less than an iron ingot (0.75 mB). A block that any recipe makes now takes the item formula.
  */
 public final class ScannerEstimates {
     private ScannerEstimates() {}
 
-    public static @Nullable Double estimate(Item item, ScannerPolicy policy, Map<IndependentUuValueIndex.Key, Double> published) {
+    /** @param crafted whether any recipe makes the item (a machine block), so it is no block found in the world */
+    public static @Nullable Double estimate(Item item, ScannerPolicy policy, Map<IndependentUuValueIndex.Key, Double> published, boolean crafted) {
         if (policy.excluded(item)) return null;
         Double peer = materialPeer(item, published);
         if (peer != null) return peer;
-        if (item instanceof BlockItem block) return blockEstimate(block.getBlock().defaultBlockState(), block.getBlock().defaultDestroyTime(), policy);
+        if (item instanceof BlockItem block && !crafted)
+            return blockEstimate(block.getBlock().defaultBlockState(), block.getBlock().defaultDestroyTime(), policy);
         return itemEstimate(item, policy);
     }
 
@@ -39,8 +45,8 @@ public final class ScannerEstimates {
      * The seed of an item that recipes make but that no recipe could price (a cycle with no outside source, as amethyst shard
      * and block): the higher of its estimate and the item formula, since a raw-block estimate would make a crafted block too cheap.
      */
-    public static @Nullable Double conservative(Item item, ScannerPolicy policy, Map<IndependentUuValueIndex.Key, Double> published) {
-        Double estimate = estimate(item, policy, published);
+    public static @Nullable Double conservative(Item item, ScannerPolicy policy, Map<IndependentUuValueIndex.Key, Double> published, boolean crafted) {
+        Double estimate = estimate(item, policy, published, crafted);
         if (estimate == null) return null;
         return Math.max(estimate, itemEstimate(item, policy));
     }

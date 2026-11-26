@@ -32,6 +32,11 @@ import org.jetbrains.annotations.Nullable;
  * craftable from them, so an item whose recipes hold no vanilla item at all still gets a price; (2) an estimate for an item
  * no recipe reaches. Items of the excluded namespaces (magic mods) and creative-only items are never priced. The recipe graph
  * is built once per recipe set and published generation (start, /reload), on the first scan that needs it.
+ *
+ * <p>0.1.11.218: (a) SI's electric ingredient and charge-carrying recipes are read ({@link UuCraftingRecipes#readForScanner});
+ * (b) an item the published generation denies (an MFSU, a machine casing: IC2 observed them as not replicable) stays not
+ * replicable, but takes the cost of its own recipes where another item uses it, so an EESU is priced from its parts instead
+ * of falling back to an estimate; (c) a block that a crafting recipe makes is never estimated as a natural block.
  */
 public final class ScannerPricing {
     private ScannerPricing() {}
@@ -42,8 +47,9 @@ public final class ScannerPricing {
 
     private static final ResourceLocation PROCESSING = ResourceLocation.fromNamespaceAndPath("mio_icif", "uu/processing_policy.json");
 
+    /** {@code crafted}: the items a crafting recipe makes (of any kind), which the estimate never treats as natural blocks. */
     private record Graph(RecipeManager recipes, long generation, ScannerPolicy policy, Map<IndependentUuValueIndex.Key, Double> solved,
-                         Set<IndependentUuValueIndex.Key> estimatedLeaves) { }
+                         Set<IndependentUuValueIndex.Key> estimatedLeaves, Set<Item> crafted) { }
 
     private static final Map<MinecraftServer, Graph> GRAPHS = new HashMap<>();
 
@@ -55,13 +61,26 @@ public final class ScannerPricing {
         if (server == null || !server.isSameThread() || item == null || item.isEmpty()) return null;
         Graph graph = graph(server);
         if (graph.policy().excluded(item.getItem())) return null;
-        var key = IndependentUuValueIndex.keyOf(item.getItem().getDefaultInstance());
-        if (UuQuoteBook.publishedDenied(server).contains(key)) return null;
-        Double solved = graph.solved().get(key);
-        if (solved != null && solved > 0)
-            return new Price(solved, graph.estimatedLeaves().contains(key) ? Source.ESTIMATE : Source.RECIPE);
-        Double estimate = ScannerEstimates.estimate(item.getItem(), graph.policy(), UuQuoteBook.publishedPrices(server));
+        // 0.1.11.218: the default form (a Super Lapotron Crystal comes fully charged) and the plain stack, which the catalogs
+        // and the recipe results use; a denial of either form stands
+        var keys = keys(item.getItem());
+        var denied = UuQuoteBook.publishedDenied(server);
+        for (var key : keys) if (denied.contains(key)) return null;
+        for (var key : keys) {
+            Double solved = graph.solved().get(key);
+            if (solved != null && solved > 0)
+                return new Price(solved, graph.estimatedLeaves().contains(key) ? Source.ESTIMATE : Source.RECIPE);
+        }
+        Double estimate = ScannerEstimates.estimate(item.getItem(), graph.policy(), UuQuoteBook.publishedPrices(server),
+            graph.crafted().contains(item.getItem()));
         return estimate == null ? null : new Price(estimate, Source.ESTIMATE);
+    }
+
+    /** The keys of an item's default form and of its plain stack (one key when they are the same). */
+    private static List<IndependentUuValueIndex.Key> keys(Item item) {
+        ItemStack fallback = item.getDefaultInstance(), plain = new ItemStack(item);
+        var first = IndependentUuValueIndex.keyOf(fallback);
+        return ItemStack.isSameItemSameComponents(fallback, plain) ? List.of(first) : List.of(first, IndependentUuValueIndex.keyOf(plain));
     }
 
     /** True when the Scanner never prices {@code item} (an excluded namespace or a creative-only item). */
@@ -90,7 +109,7 @@ public final class ScannerPricing {
         Set<IndependentUuValueIndex.Key> denied = UuQuoteBook.publishedDenied(server);
         List<UuRecipeSolver.Rule<IndependentUuValueIndex.Key>> rules = new ArrayList<>();
         try {
-            rules.addAll(UuCraftingRecipes.read(server.getRecipeManager(), server.registryAccess()).rules());
+            rules.addAll(UuCraftingRecipes.readForScanner(server.getRecipeManager(), server.registryAccess()).rules());
         } catch (RuntimeException failure) {
             LogUtils.getLogger().warn("[UU Scanner] crafting recipes skipped: {}", failure.toString());
         }
@@ -107,6 +126,7 @@ public final class ScannerPricing {
             || rule.slots().stream().allMatch(slot -> slot.stream().allMatch(choice -> excludedKey(choice.consumed(), policy))));
         Set<IndependentUuValueIndex.Key> outputs = new HashSet<>();
         for (var rule : rules) outputs.add(rule.output());
+        Set<Item> crafted = craftedItems(server);
         // Fixed points: the published prices, and an estimate for each input that no recipe makes.
         Map<IndependentUuValueIndex.Key, Double> fixed = new HashMap<>();
         for (var row : published.entrySet()) if (!denied.contains(row.getKey())) fixed.put(row.getKey(), row.getValue());
@@ -115,10 +135,12 @@ public final class ScannerPricing {
             var key = choice.consumed();
             if (fixed.containsKey(key) || outputs.contains(key) || denied.contains(key) || excludedKey(key, policy)) continue;
             Item item = item(key);
-            Double estimate = item == null ? null : ScannerEstimates.estimate(item, policy, published);
+            Double estimate = item == null ? null : ScannerEstimates.estimate(item, policy, published, crafted.contains(item));
             if (estimate != null && estimate > 0) { fixed.put(key, estimate); leaves.add(key); }
         }
-        Map<IndependentUuValueIndex.Key, Double> solved = solve(fixed, denied, rules);
+        // 0.1.11.218: the denied items are not excluded from the solve: one made from priced parts takes their cost where
+        // another item uses it (price() still refuses the denied item itself). A denied item no recipe makes gets no seed.
+        Map<IndependentUuValueIndex.Key, Double> solved = solve(fixed, rules);
         // Items made only from each other (amethyst shard <-> block) have no outside source: after a pass, every input still
         // unpriced gets an estimate and the recipes are solved again (at most three passes).
         for (int pass = 0; pass < 3; pass++) {
@@ -127,11 +149,11 @@ public final class ScannerPricing {
                 var key = choice.consumed();
                 if (solved.containsKey(key) || denied.contains(key) || excludedKey(key, policy)) continue;
                 Item item = item(key);
-                Double estimate = item == null ? null : ScannerEstimates.conservative(item, policy, published);
+                Double estimate = item == null ? null : ScannerEstimates.conservative(item, policy, published, crafted.contains(item));
                 if (estimate != null && estimate > 0) { fixed.put(key, estimate); solved.put(key, estimate); leaves.add(key); seeded = true; }
             }
             if (!seeded) break;
-            solved = solve(fixed, denied, rules);
+            solved = solve(fixed, rules);
         }
         // A seed is never below its own recipes: a seeded item that recipes make takes their cost when that is higher, and
         // then counts as priced from recipes (a seed set too low would let the Replicator copy it too cheaply).
@@ -148,16 +170,31 @@ public final class ScannerPricing {
                 if (best != null && best > fixed.get(key)) { fixed.put(key, best); leaves.remove(key); raised = true; }
             }
             if (!raised) break;
-            solved = solve(fixed, denied, rules);
+            solved = solve(fixed, rules);
         }
-        LogUtils.getLogger().info("[UU Scanner] {} recipes, {} published, {} estimated inputs, {} priced in {} ms",
-            rules.size(), published.size(), leaves.size(), solved.size(), (System.nanoTime() - started) / 1_000_000);
-        return new Graph(server.getRecipeManager(), generation, policy, Map.copyOf(solved), Set.copyOf(leaves));
+        long deniedParts = solved.keySet().stream().filter(denied::contains).count();
+        LogUtils.getLogger().info("[UU Scanner] {} recipes, {} published, {} estimated inputs, {} priced ({} not-replicable parts costed from recipes) in {} ms",
+            rules.size(), published.size(), leaves.size(), solved.size(), deniedParts, (System.nanoTime() - started) / 1_000_000);
+        return new Graph(server.getRecipeManager(), generation, policy, Map.copyOf(solved), Set.copyOf(leaves), Set.copyOf(crafted));
+    }
+
+    /** The items any crafting recipe makes, of any recipe class (smelting and stonecutting outputs stay natural blocks). */
+    private static Set<Item> craftedItems(MinecraftServer server) {
+        Set<Item> out = new HashSet<>();
+        for (var holder : server.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+            try {
+                ItemStack result = holder.value().getResultItem(server.registryAccess());
+                if (!result.isEmpty()) out.add(result.getItem());
+            } catch (RuntimeException ignored) {
+                // a special recipe without a fixed result
+            }
+        }
+        return out;
     }
 
     /** The fixed points and what the existing recipe solver derives from them (a cut-off solve keeps what it found). */
     private static Map<IndependentUuValueIndex.Key, Double> solve(Map<IndependentUuValueIndex.Key, Double> fixed,
-            Set<IndependentUuValueIndex.Key> denied, List<UuRecipeSolver.Rule<IndependentUuValueIndex.Key>> rules) {
+            List<UuRecipeSolver.Rule<IndependentUuValueIndex.Key>> rules) {
         Map<IndependentUuValueIndex.Key, Double> solved = new HashMap<>(fixed);
         if (fixed.size() > 16384 || rules.size() > 32768) {
             LogUtils.getLogger().warn("[UU Scanner] {} fixed points / {} recipes exceed the solver bounds; scanned items are estimated",
@@ -165,7 +202,7 @@ public final class ScannerPricing {
             return solved;
         }
         try {
-            var solution = new UuRecipeSolver<IndependentUuValueIndex.Key>(16384, 2_000_000).solve(fixed, denied, rules);
+            var solution = new UuRecipeSolver<IndependentUuValueIndex.Key>(16384, 2_000_000).solve(fixed, Set.of(), rules);
             solved.putAll(solution.values());   // each value is the cost of a real route
             if (!solution.complete()) LogUtils.getLogger().warn("[UU Scanner] recipe solve stopped at its work limit; the rest is estimated");
         } catch (RuntimeException failure) {

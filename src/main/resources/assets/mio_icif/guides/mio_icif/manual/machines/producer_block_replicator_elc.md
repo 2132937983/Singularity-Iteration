@@ -40,6 +40,18 @@ The game measured these values from the block entity of this version.
 4. Click Single or Loop in the GUI to start.
 5. Take the result from the output slot.
 
+## Copying
+
+- A copy goes in steps: each tick pays 0.1 mB of UU-matter and 512 EU (a replication list can set its own EU per item). The tank need not hold the whole price: with a steady supply the copy finishes, also for items that cost more than the tank holds (64 buckets). It takes the price / 0.1 mB in ticks; one bucket of UU is about 8.3 minutes.
+- The UU paid into a copy is not lost:
+  - The memory crystal taken out, or the pattern storage gone: the copy pauses and keeps its progress; it goes on when the same pattern is back.
+  - A crystal with another pattern: the copy ends and the paid UU goes back to the balance.
+  - Stop: pauses; Single or Loop goes on. Stop while paused ends the copy; the paid UU goes back to the balance, the EU spent does not.
+  - A new price for the item: the copy goes on at the new price; if more than the new price is paid it finishes at once and the excess goes back to the balance; an item that can no longer be copied ends the copy with a refund.
+  - No UU, no power, a full output slot: the copy waits and keeps its progress.
+  - Taken down with a wrench: the tank, the balance and the progress stay with the item; place it again and put the crystal in to go on.
+- Balance: refunded UU and the small rest of each step stay in the machine and are used before the tank. The status line says why the machine copies, waits or stands; its tooltip shows the paid UU and the balance.
+
 ## Replicable items and data packs
 
 - The replicator makes an item from its pattern (scan the item first) when the item has a UU price.

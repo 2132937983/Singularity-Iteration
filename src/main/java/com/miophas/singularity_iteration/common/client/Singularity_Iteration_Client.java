@@ -223,6 +223,7 @@ public class Singularity_Iteration_Client {
             com.miophas.singularity_iteration.common.client.render.CoreAttachmentModel.invalidate();
             com.miophas.singularity_iteration.common.client.suit.QuantumWornMounts.invalidate();
             com.miophas.singularity_iteration.common.client.render.GlowMasks.invalidate();
+            com.miophas.singularity_iteration.common.client.molecular.MolecularAtomCache.invalidate();
         });
     }
 
@@ -598,6 +599,9 @@ public class Singularity_Iteration_Client {
         // 0.1.11.139: the fusion reactor's plasma, seen through the diagnostic viewports
         event.registerBlockEntityRenderer(mio_icif_block_entities.FUSION_CONTROLLER_ENTITY_TYPE.get(),
             com.miophas.singularity_iteration.common.client.render.FusionPlasmaRenderer::new);
+        // 0.1.11.213 (MT1 X1): the molecular transformer's chamber (the sample as pixel atoms)
+        event.registerBlockEntityRenderer(mio_icif_block_entities.MOLECULAR_TRANSFORMER_ENTITY_TYPE.get(),
+            com.miophas.singularity_iteration.common.client.molecular.MolecularTransformerRenderer::new);
         // 0.1.8.0: resin collector fluid animation (tray level and stream)
         event.registerBlockEntityRenderer(mio_icif_block_entities.RESIN_COLLECTOR.get(),
             com.miophas.singularity_iteration.common.client.render.ResinCollectorRenderer::new);

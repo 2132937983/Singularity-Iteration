@@ -313,7 +313,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
                 int savedProgress = progress;
                 // Publish completed billing before slot callbacks can observe the next input.
                 consumedEU = 0; currentRecipeEU = null; lastEnergyPerTick = null; progress = 0; isWorking = false;
-                if (plan.get().commit()) { countFinishedOperation(); resetWork(); }   // 0.1.11.3: closes the work cycle
+                if (plan.get().commit()) { countFinishedOperation(); viewFinished++; resetWork(); }   // 0.1.11.3: closes the work cycle
                 else { consumedEU = paid; currentRecipeEU = cost; lastEnergyPerTick = lastRate; progress = savedProgress; stopWork(); }
             } else {
                 // 无法添加到输出槽，停止工作状态，不重置进度
@@ -392,5 +392,131 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_molecular_transformer blockEntity) {
         if (level.isClientSide()) return;
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
+        blockEntity.updateView();
+    }
+
+    // ------------------------------------------------------------------ 0.1.11.213 (MT1 X1): what the chamber renderer sees
+    /*
+     * The client draws the chamber from a small view: the input (one item), the recipe's result and process kind, whether the
+     * machine works, and the EU paid / needed / spent per tick at a game time. The client runs the progress on from that, so
+     * the server sends an update only on events, never every tick: the input or result changes, the machine starts or stops,
+     * an item finishes while one item takes STREAM_TICKS or more, or the smoothed draw moves by more than a quarter. Updates
+     * go through ClientSyncThrottle (at most one packet per 5 ticks per machine).
+     */
+    /** Below this many ticks per item the chamber shows a continuous stream instead of item-by-item (2 s, as the screen). */
+    public static final int STREAM_TICKS = 40;
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<mio_icif_MolecularTransformerRecipeInput, com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipe> recipeCache5 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE);
+    private int viewFinished;
+    private double viewRateAvg;
+    // last sent (server) / last received (client)
+    private ItemStack viewInput = ItemStack.EMPTY, viewResult = ItemStack.EMPTY;
+    private String viewKind = "unknown";
+    private boolean viewWorking;
+    private long viewPaid, viewCost, viewRate, viewTime;
+    private int viewSentFinished;
+
+    private void updateView() {
+        if (level == null || level.isClientSide) return;
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        ItemStack result = ItemStack.EMPTY;
+        String kind = "unknown";
+        if (!input.isEmpty()) {
+            var recipe = recipeCache5.find(level, new mio_icif_MolecularTransformerRecipeInput(input));
+            if (recipe.isPresent()) {
+                result = recipe.get().value().getResult();
+                kind = recipe.get().value().getProcess().kind();
+            }
+        }
+        long spent = isWorking && lastEnergyPerTick != null ? lastEnergyPerTick : 0;
+        viewRateAvg = isWorking ? (viewRateAvg <= 0 ? spent : viewRateAvg * 0.85 + spent * 0.15) : 0;
+        long rate = Math.round(viewRateAvg);
+        long cost = currentRecipeEU != null ? currentRecipeEU : 0;
+        boolean single = rate > 0 && cost >= rate * (long) STREAM_TICKS;
+        boolean changed = !ItemStack.isSameItem(input, viewInput) || !ItemStack.isSameItem(result, viewResult)
+            || !kind.equals(viewKind) || isWorking != viewWorking
+            || single && viewFinished != viewSentFinished
+            || Math.abs(rate - viewRate) * 4 > Math.max(1, viewRate);
+        if (!changed) return;
+        viewInput = input.copyWithCount(1);
+        viewResult = result.copyWithCount(1);
+        viewKind = kind;
+        viewWorking = isWorking;
+        viewPaid = consumedEU;
+        viewCost = cost;
+        viewRate = rate;
+        viewTime = level.getGameTime();
+        viewSentFinished = viewFinished;
+        com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        CompoundTag view = new CompoundTag();
+        if (!viewInput.isEmpty()) view.put("in", viewInput.save(registries));
+        if (!viewResult.isEmpty()) view.put("out", viewResult.save(registries));
+        view.putString("kind", viewKind);
+        view.putBoolean("work", viewWorking);
+        view.putLong("paid", viewPaid);
+        view.putLong("cost", viewCost);
+        view.putLong("rate", viewRate);
+        view.putLong("time", viewTime);
+        tag.put("mt_view", view);
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.handleUpdateTag(tag, registries);
+        if (!tag.contains("mt_view")) return;
+        CompoundTag view = tag.getCompound("mt_view");
+        viewInput = view.contains("in") ? ItemStack.parseOptional(registries, view.getCompound("in")) : ItemStack.EMPTY;
+        viewResult = view.contains("out") ? ItemStack.parseOptional(registries, view.getCompound("out")) : ItemStack.EMPTY;
+        viewKind = view.getString("kind");
+        viewWorking = view.getBoolean("work");
+        viewPaid = view.getLong("paid");
+        viewCost = view.getLong("cost");
+        viewRate = view.getLong("rate");
+        viewTime = view.getLong("time");
+    }
+
+    /** Block entity data packets carry the update tag (the default would load it as a save and clear the machine). */
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet,
+                             HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);
+    }
+
+    /** The chamber view on the client (or the last sent view on the server). */
+    public ItemStack viewInput() { return viewInput; }
+    public ItemStack viewResult() { return viewResult; }
+    /** The recipe's process kind: molecular, lattice, nuclear, exotic or unknown (MolecularProcess). */
+    public String viewKind() { return viewKind; }
+    public boolean viewWorking() { return viewWorking && !viewInput.isEmpty(); }
+
+    /** Ticks one item takes at the synced draw, or 0 when nothing is drawn. */
+    public double viewTicksPerItem() {
+        return viewRate > 0 && viewCost > 0 ? (double) viewCost / viewRate : 0;
+    }
+
+    /** Whether the chamber shows a continuous stream: one item takes less than {@link #STREAM_TICKS}. */
+    public boolean viewStream() {
+        double t = viewTicksPerItem();
+        return viewWorking() && t > 0 && t < STREAM_TICKS;
+    }
+
+    /**
+     * Progress of the item in the chamber, 0..1, at {@code gameTime} (partial ticks allowed): the paid EU at the last update
+     * plus the synced draw since. Past one item it starts the next (the same recipe runs on until an update says otherwise).
+     */
+    public double viewProgress(double gameTime) {
+        if (!viewWorking() || viewCost <= 0) return 0;
+        double p = (viewPaid + viewRate * Math.max(0, gameTime - viewTime)) / (double) viewCost;
+        return p - Math.floor(p);
     }
 }

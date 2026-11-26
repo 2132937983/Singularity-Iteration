@@ -46,7 +46,7 @@ public final class BuiltinStructureBlueprints {
             .key('G', KEY + "tesu.glass", block("build/block_alloy_glass"))
             .key('E', KEY + "tesu.cell", block("wiring/block_tesu_cell"))
             .key('P', KEY + "tesu.port", block("wiring/block_tesu_input"), block("wiring/block_tesu_output"),
-                block("wiring/block_tesu_wireless_port"), block("wiring/block_tesu_casing"))
+                block("wiring/block_tesu_wireless_port"), block("wiring/block_tesu_induction_port"), block("wiring/block_tesu_casing"))
             .controller('K')
             .note(KEY + "tesu.note.inside")
             .note(KEY + "tesu.note.turn"));
@@ -130,7 +130,8 @@ public final class BuiltinStructureBlueprints {
             .layer("...", ".O.", "...")
             .key('C', block("wiring/block_gesu_core"))
             .key('I', KEY + "gesu.input", block("wiring/block_gesu_input_iv"))
-            .key('O', KEY + "gesu.output", block("wiring/block_gesu_output_iv"), block("wiring/block_gesu_output_luv"))
+            .key('O', KEY + "gesu.output", block("wiring/block_gesu_output_iv"), block("wiring/block_gesu_output_luv"),
+                block("wiring/block_gesu_induction_port"))   // 0.1.11.206: any module on any face
             .controller('C')
             .note(KEY + "gesu.note"));
     }

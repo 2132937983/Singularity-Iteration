@@ -1,0 +1,33 @@
+{
+  "parent": "mio_icif:industrial_age",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_creative_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.nixiankaide.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.nixiankaide.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "creative_generator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:generator/block_creative_generator",
+              "mio_icif:generator/block_unlimit_generator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

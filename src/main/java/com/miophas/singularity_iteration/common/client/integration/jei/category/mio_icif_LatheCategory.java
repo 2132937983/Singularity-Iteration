@@ -2,11 +2,10 @@ package com.miophas.singularity_iteration.common.client.integration.jei.category
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.blockentity.kuentity.mio_icif_lathe;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
 import com.miophas.singularity_iteration.common.item.lathe.LatheShapes;
 import com.miophas.singularity_iteration.common.item.lathe.LatheTurningBlanksItem;
-import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-import com.miophas.singularity_iteration.core.api.item.ILatheItem;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
@@ -14,14 +13,11 @@ import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,21 +51,14 @@ public class mio_icif_LatheCategory implements IRecipeCategory<LatheShapes.Shape
     @Override public int getWidth() { return WIDTH; }
     @Override public int getHeight() { return HEIGHT; }
 
+    // 0.1.11.209: the blank and the tools come from RecipeViews, shared with the EMI plugin
     private static ItemStack blank(LatheTurningBlanksItem.LatheMaterial material) {
-        return new ItemStack(material == LatheTurningBlanksItem.LatheMaterial.WOOD
-            ? mio_icif_normal.WOODEN_TURNING_BLANKS.get() : mio_icif_normal.IRON_TURNING_BLANKS.get());
+        return RecipeViews.latheBlank(material);
     }
 
     /** Every lathe tool that can cut the blank (harder than it). */
     private static List<ItemStack> tools(ItemStack blank) {
-        int hardness = ((ILatheItem) blank.getItem()).getHardness(blank);
-        List<ItemStack> tools = new ArrayList<>();
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (!(item instanceof ILatheItem.ILatheTool tool)) continue;
-            ItemStack stack = new ItemStack(item);
-            if (tool.getHardness(stack) > hardness) tools.add(stack);
-        }
-        return tools;
+        return RecipeViews.latheTools(blank);
     }
 
     @Override

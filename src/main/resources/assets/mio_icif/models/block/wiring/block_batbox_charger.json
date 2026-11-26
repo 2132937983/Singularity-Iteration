@@ -2,21 +2,22 @@
 	"format_version": "26.3",
 	"credit": "Made with Blockbench",
 	"parent": "block/cube",
+	"texture_size": [80, 16],
 	"textures": {
 		"particle_ub": "mio_icif:block/wiring/block_bat_box_chargepad",
-		"particle": "minecraft:block/spruce_planks"
+		"particle": "block/spruce_planks"
 	},
 	"elements": [
 		{
 			"from": [0, 0, 0],
 			"to": [16, 16, 16],
 			"faces": {
-				"north": {"uv": [4, 0, 5.33, 16], "texture": "#particle_ub"},
-				"east": {"uv": [6.66, 0, 8, 16], "texture": "#particle_ub"},
-				"south": {"uv": [2.66, 0, 4, 16], "texture": "#particle_ub"},
-				"west": {"uv": [5.33, 0, 6.66, 16], "texture": "#particle_ub"},
-				"up": {"uv": [1.33, 0, 2.66, 16], "texture": "#particle_ub"},
-				"down": {"uv": [0, 0, 1.33, 16], "texture": "#particle_ub", "cullface": "down"}
+				"north": {"uv": [6.4, 0, 9.6, 16], "texture": "#particle_ub"},
+				"east": {"uv": [9.6, 0, 12.8, 16], "texture": "#particle_ub"},
+				"south": {"uv": [3.192, 0, 6.408, 16], "texture": "#particle_ub"},
+				"west": {"uv": [9.6, 0, 12.8, 16], "texture": "#particle_ub"},
+				"up": {"uv": [0, 0, 3.2, 16], "texture": "#particle_ub"},
+				"down": {"uv": [3.2, 0, 6.4, 16], "texture": "#particle_ub", "cullface": "down"}
 			}
 		}
 	]

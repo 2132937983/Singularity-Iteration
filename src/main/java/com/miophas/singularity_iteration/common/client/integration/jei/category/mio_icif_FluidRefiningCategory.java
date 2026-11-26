@@ -2,6 +2,7 @@ package com.miophas.singularity_iteration.common.client.integration.jei.category
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_oil_refinery_elc;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
 import com.miophas.singularity_iteration.common.recipe.fluid_refining.FluidRefiningRecipe;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -11,16 +12,13 @@ import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -53,16 +51,7 @@ public class mio_icif_FluidRefiningCategory extends AbstractJeiRecipeCategory<Fl
 
     /** The fluids the recipe takes: its fluid, or the source fluids of its tag. */
     private static List<Fluid> inputFluids(FluidRefiningRecipe recipe) {
-        List<Fluid> fluids = new ArrayList<>();
-        if (recipe.getInputFluidTag() != null) {
-            for (var holder : BuiltInRegistries.FLUID.getTagOrEmpty(recipe.getInputFluidTag())) {
-                Fluid fluid = holder.value();
-                if (fluid != Fluids.EMPTY && fluid.isSource(fluid.defaultFluidState())) fluids.add(fluid);
-            }
-        } else if (recipe.getInputFluid() != Fluids.EMPTY) {
-            fluids.add(recipe.getInputFluid());
-        }
-        return fluids;
+        return RecipeViews.refiningInputs(recipe);   // 0.1.11.209: shared with the EMI plugin
     }
 
     @Override

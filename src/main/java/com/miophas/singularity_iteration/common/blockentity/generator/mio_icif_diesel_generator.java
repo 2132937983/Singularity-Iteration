@@ -380,7 +380,10 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
-        return slot == EMPTY_BUCKET_SLOT || slot == BATTERY_SLOT;
+        // 0.1.11.205: the screen (no side) also gives the fuel container back. Its slots go through these rules, so a container
+        // that never empties (a creative tank of another mod) stayed in the fuel slot for ever; pipes and hoppers still only take
+        // the emptied containers and the battery.
+        return slot == EMPTY_BUCKET_SLOT || slot == BATTERY_SLOT || slot == FUEL_BUCKET_SLOT && direction == null;
     }
 
     @Override

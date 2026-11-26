@@ -4,6 +4,7 @@ import com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_g
 import com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_gesu_input_iv;
 import com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_gesu_output_iv;
 import com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_gesu_output_luv;
+import com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_gesu_induction_port;
 import com.miophas.singularity_iteration.common.blockentity.batbox.mio_icif_gesu_core_entity;
 import com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyPart;
 
@@ -42,6 +43,7 @@ import com.mojang.logging.LogUtils;
  *   <li>{@code mio_icif_gesu_input_iv}: input module. It receives energy.</li>
  *   <li>{@code mio_icif_gesu_output_iv}: IV output module. It sends energy.</li>
  *   <li>{@code mio_icif_gesu_output_luv}: LuV output module. It sends energy.</li>
+ *   <li>{@code mio_icif_gesu_induction_port}: 0.1.11.206, wireless induction port. It charges the players near it.</li>
  * </ul>
  * <p>The core stores the energy. The validator sets no minimum or maximum count
  * for a module type. All 6 faces must hold a module.
@@ -76,6 +78,7 @@ public class mio_icif_gesu_validator implements mio_icif_multiblock_validator {
         int inputModuleCount = 0;
         int outputIvModuleCount = 0;
         int outputLuvModuleCount = 0;
+        int inductionModuleCount = 0;
 
         // Direction.values() gives the 6 faces: down, up, north, south, west, east.
         for (Direction direction : Direction.values()) {
@@ -91,6 +94,9 @@ public class mio_icif_gesu_validator implements mio_icif_multiblock_validator {
                 structureBlocks.add(adjacentPos);
             } else if (adjacentBlock instanceof mio_icif_gesu_output_luv) {
                 outputLuvModuleCount++;
+                structureBlocks.add(adjacentPos);
+            } else if (adjacentBlock instanceof mio_icif_gesu_induction_port) {   // 0.1.11.206
+                inductionModuleCount++;
                 structureBlocks.add(adjacentPos);
             } else {
                 return mio_icif_multiblock_validation_result.failure(
@@ -108,6 +114,7 @@ public class mio_icif_gesu_validator implements mio_icif_multiblock_validator {
                 .setStructureData("inputModuleCount", inputModuleCount)
                 .setStructureData("outputIvModuleCount", outputIvModuleCount)
                 .setStructureData("outputLuvModuleCount", outputLuvModuleCount)
+                .setStructureData("inductionModuleCount", inductionModuleCount)
                 .build();
     }
 

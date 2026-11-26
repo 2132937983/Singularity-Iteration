@@ -15,7 +15,7 @@
 				"north": {"uv": [8, 0, 10.66667, 16], "texture": "#particle_ub"},
 				"east": {"uv": [10.66667, 0, 13.33333, 16], "texture": "#particle_ub"},
 				"south": {"uv": [5.33333, 0, 8, 16], "texture": "#particle_ub"},
-				"west": {"uv": [2.83333, 0, 5.5, 16], "texture": "#particle_ub"},
+				"west": {"uv": [10.66666, 0, 13.33333, 16], "texture": "#particle_ub"},
 				"up": {"uv": [2.66666, 0, 5.33333, 16], "texture": "#particle_ub"},
 				"down": {"uv": [0, 0, 2.66667, 16], "texture": "#particle_ub", "cullface": "down"}
 			}

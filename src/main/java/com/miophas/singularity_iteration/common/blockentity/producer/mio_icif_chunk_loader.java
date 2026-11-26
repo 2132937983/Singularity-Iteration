@@ -100,6 +100,8 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
 
     protected final MachineItemHandler itemHandler;
     protected IMachineUpgradeStats upgradeStats = MachineUpgradeStats.empty();
+    /** 0.1.11.204: wireless upgrades in the upgrade slots (it accepted them, but nothing drew from the TESU wireless field). */
+    private int wirelessUpgrades;
     protected final long baseCapacity;
 
     private final LongOpenHashSet loadedChunks = new LongOpenHashSet();
@@ -652,14 +654,34 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
             blockEntity.upgradesDirty = false;
             blockEntity.recalculateUpgradeStats();
         }
+        blockEntity.chargeWirelessly(server);
         blockEntity.handleBatterySlot();
         blockEntity.updateTickets(server);
+    }
+
+    /**
+     * 0.1.11.204: the wireless upgrade, as on the processing machines: inside a TESU wireless field the storage is filled every
+     * tick, whatever its voltage. No setChanged here (the loader avoids a per-tick block update; its payments save it).
+     */
+    private void chargeWirelessly(ServerLevel server) {
+        if (wirelessUpgrades <= 0) return;
+        long room = Math.min(energyStorage.getCapacity(), getEffectiveCapacity()) - energyStorage.getAmount();
+        if (room <= 0) return;
+        long got = com.miophas.singularity_iteration.core.api.energy.WirelessEnergySources.draw(server, worldPosition, room);
+        if (got > 0) energyStorage.generateEnergyInternal(got, false);
     }
 
     private void recalculateUpgradeStats() {
         int upgradeStart = LAYOUT.getStart(SlotType.UPGRADE);
         int upgradeCount = LAYOUT.getCount(SlotType.UPGRADE);
         this.upgradeStats = MachineUpgradeStats.fromInventory(itemHandler, upgradeStart, upgradeCount);
+        int wireless = 0;
+        var itemApi = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
+        for (int i = upgradeStart; i < upgradeStart + upgradeCount && i < itemHandler.getSlots(); i++) {
+            var stack = itemHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && "wireless".equals(itemApi.getUpgradeType(stack))) wireless += stack.getCount();
+        }
+        this.wirelessUpgrades = wireless;
         long newCapacity = baseCapacity + upgradeStats.getEnergyCapacityBonus();
         if (newCapacity != energyStorage.getMaxEnergyStored()) {
             energyStorage.setCapacity(newCapacity);

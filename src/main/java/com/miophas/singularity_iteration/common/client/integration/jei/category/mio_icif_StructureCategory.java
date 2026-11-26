@@ -2,12 +2,12 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
 import com.miophas.singularity_iteration.common.client.multiblock.StructureView;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprint;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -27,7 +27,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -66,20 +65,9 @@ public class mio_icif_StructureCategory implements IRecipeCategory<StructureBlue
     @Override public int getHeight() { return HEIGHT; }
     @Override public ResourceLocation getRegistryName(StructureBlueprint blueprint) { return blueprint.id(); }
 
-    /** The items of the permitted blocks of each key, with the count of the key. */
+    /** The items of the permitted blocks of each key, with the count of the key (0.1.11.209: RecipeViews, shared with EMI). */
     private static List<List<ItemStack>> materials(StructureBlueprint blueprint) {
-        List<List<ItemStack>> out = new ArrayList<>();
-        for (Map.Entry<StructureBlueprint.Key, Integer> entry : blueprint.counts().entrySet()) {
-            List<ItemStack> stacks = new ArrayList<>();
-            for (StructureBlueprint.BlockRef ref : entry.getKey().blocks()) {
-                BlockState state = ref.resolve();
-                if (state == null) continue;
-                ItemStack stack = new ItemStack(state.getBlock().asItem(), entry.getValue());
-                if (!stack.isEmpty() && stacks.stream().noneMatch(s -> s.is(stack.getItem()))) stacks.add(stack);
-            }
-            out.add(stacks);
-        }
-        return out;
+        return RecipeViews.structureMaterials(blueprint);
     }
 
     private static int rows(int materials) {

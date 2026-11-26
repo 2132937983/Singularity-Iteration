@@ -333,6 +333,13 @@ public class mio_icif_block_entities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessPortBlockEntity>> TESU_WIRELESS_PORT =
         BLOCK_ENTITIES.register("tesu_wireless_port", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuWirelessPortBlockEntity::new,
             com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_WIRELESS_PORT.get()).build(null));
+    // 0.1.11.206: the wireless induction ports
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.GesuInductionPortBlockEntity>> GESU_INDUCTION_PORT =
+        BLOCK_ENTITIES.register("gesu_induction_port", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.GesuInductionPortBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.GESU_INDUCTION_PORT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuInductionPortBlockEntity>> TESU_INDUCTION_PORT =
+        BLOCK_ENTITIES.register("tesu_induction_port", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuInductionPortBlockEntity::new,
+            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_INDUCTION_PORT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.batbox.TesuRelayBlockEntity>> TESU_RELAY =
         BLOCK_ENTITIES.register("tesu_relay", () -> BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.batbox.TesuRelayBlockEntity::new,
             com.miophas.singularity_iteration.common.registry.mio_icif_blocks.TESU_RELAY.get()).build(null));

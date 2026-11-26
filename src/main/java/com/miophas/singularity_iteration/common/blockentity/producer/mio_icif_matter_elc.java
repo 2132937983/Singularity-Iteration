@@ -147,6 +147,7 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
     @Override protected void doWork(){} // The exact ledger below owns production.
     @Override protected void recalculateUpgradeStats(){
         upgradeStats=MachineUpgradeStats.fromInventory(itemHandler,UPGRADE_SLOT_START,UPGRADE_SLOT_COUNT);
+        wirelessUpgrades=countWirelessUpgrades(UPGRADE_SLOT_START,UPGRADE_SLOT_COUNT); // 0.1.11.204: the TESU wireless field
         capacity=Math.addExact(DEFAULT_CAPACITY,Math.max(0,upgradeStats.getEnergyCapacityBonus()));
         // 0.1.10.15: no rate of its own (IC2); the buffer room set in updateAdmission is the only intake limit.
         // A Transformer Upgrade raises the tier (packet voltage) through upgradeStats.
@@ -163,6 +164,7 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
         if(!m.live()||m.changing)return;
         m.ready=true;
         m.recalculateUpgradeStats();m.isWorking=false;m.amplifying=false;
+        m.chargeWirelessly(); // 0.1.11.204: its own tick never charged from the TESU wireless field
         if(!m.hasUnmappedState()&&m.canWorkRedstone()){
             m.changing=true;
             try{m.fabricate();m.fillContainer();}finally{m.changing=false;}

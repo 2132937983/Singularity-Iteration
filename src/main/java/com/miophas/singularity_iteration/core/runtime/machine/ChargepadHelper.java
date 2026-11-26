@@ -16,6 +16,26 @@ import java.util.List;
 
 public final class ChargepadHelper {
 
+    /**
+     * 0.1.11.206: where the charge comes from: a charge pad's own storage, a GESU core, a TESU controller (the wireless induction
+     * ports). {@code take} moves EU out and returns what it moved; {@code refund} puts back what an item refused.
+     */
+    public interface Source {
+        long available();
+        long take(long amount);
+        void refund(long amount);
+    }
+
+    /** A charge pad's own storage as the source. */
+    private static Source of(AbstractEnergyStorageBlockEntity container) {
+        var storage = container.getEnergyStorageInternal();
+        return new Source() {
+            @Override public long available() { return storage.getAmount(); }
+            @Override public long take(long amount) { return storage.extract(amount, false); }
+            @Override public void refund(long amount) { storage.generateEnergyInternal(amount, false); }
+        };
+    }
+
     private static final EquipmentSlot[] CHARGE_SLOTS = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
@@ -33,18 +53,24 @@ public final class ChargepadHelper {
         List<Player> players = container.getLevel().getEntitiesOfClass(Player.class, container.getChargepadDetectionBox());
 
         boolean charged = false;
+        Source source = of(container);
         for (Player player : players) {
-            if (chargePlayerEquipment(container, player, maxTransferPerItem)) {
+            if (chargePlayer(player, source, maxTransferPerItem) > 0) {
                 charged = true;
             }
         }
+        if (charged) container.setChanged();
         return charged;
     }
 
-    private static boolean chargePlayerEquipment(AbstractEnergyStorageBlockEntity container, Player player, long maxTransferPerItem) {
-        var storage = container.getEnergyStorageInternal();
-        long availableEnergy = storage.getAmount();
-        if (availableEnergy <= 0) return false;
+    /**
+     * Charges the electric items {@code player} carries (armor and hands by charge priority, then the inventory) from
+     * {@code source}, at most {@code maxTransferPerItem} EU an item; returns the EU moved. 0.1.11.206: public, from any source.
+     */
+    public static long chargePlayer(Player player, Source source, long maxTransferPerItem) {
+        long availableEnergy = source.available();
+        if (availableEnergy <= 0) return 0;
+        Source container = source;
 
         long totalExtracted = 0;
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
@@ -79,11 +105,7 @@ public final class ChargepadHelper {
             }
         }
 
-        if (totalExtracted > 0) {
-            container.setChanged();
-            return true;
-        }
-        return false;
+        return totalExtracted;
     }
 
     /**
@@ -92,19 +114,18 @@ public final class ChargepadHelper {
      * item refused - e.g. its per-tick charge limit - which showed up as very low
      * charging efficiency.
      */
-    private static long transfer(AbstractEnergyStorageBlockEntity container, long offer,
+    private static long transfer(Source container, long offer,
                                  java.util.function.LongUnaryOperator simulate, java.util.function.LongUnaryOperator charge) {
         long accepted = Math.min(offer, Math.max(0, simulate.applyAsLong(offer)));
         if (accepted <= 0) return 0;
-        var storage = container.getEnergyStorageInternal();
-        long extracted = storage.extract(accepted, false);
+        long extracted = container.take(accepted);
         if (extracted <= 0) return 0;
         long stored = Math.max(0, charge.applyAsLong(extracted));
-        if (stored < extracted) storage.generateEnergyInternal(extracted - stored, false);   // refund, never lose energy
+        if (stored < extracted) container.refund(extracted - stored);   // refund, never lose energy
         return stored;
     }
 
-    private static long chargeArmor(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
+    private static long chargeArmor(Source container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
         long current = api.getElectricArmorStored(stack);
         long max = api.getElectricArmorMaxEnergy(stack);
@@ -116,7 +137,7 @@ public final class ChargepadHelper {
             amount -> api.chargeElectricArmor(stack, amount, false));
     }
 
-    private static long chargeTool(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
+    private static long chargeTool(Source container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
         if (stack.isEmpty()) return 0;
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
         if (!api.isElectricTool(stack)) return 0;
@@ -130,7 +151,7 @@ public final class ChargepadHelper {
             amount -> api.chargeElectricTool(stack, amount, false));
     }
 
-    private static long chargeInventoryItem(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
+    private static long chargeInventoryItem(Source container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
         if (stack.isEmpty()) return 0;
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
         if (api.isElectricArmor(stack)) {
@@ -149,7 +170,7 @@ public final class ChargepadHelper {
      * 0.1.10.39: another mod's FE item (an AE2 wireless terminal, a Mekanism tool) on a charge pad. It takes whole EU at
      * {@link ILongEnergyStorage#FE_PER_EU} FE each; what it refuses goes back to the pad. SI items keep their own paths above.
      */
-    private static long chargeFeItem(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
+    private static long chargeFeItem(Source container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
         if (stack.isEmpty() || stack.getCount() != 1 || stack.getItem() instanceof IBatteryItem) return 0;
         var cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (cap == null || !cap.canReceive()) return 0;
@@ -161,7 +182,7 @@ public final class ChargepadHelper {
             amount -> DirectItemCharging.charge(stack, amount));
     }
 
-    private static long chargeBattery(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
+    private static long chargeBattery(Source container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
         if (api.isBatteryFull(stack)) return 0;
         long current = api.getBatteryStored(stack);

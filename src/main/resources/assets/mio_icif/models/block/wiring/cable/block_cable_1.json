@@ -3,9 +3,9 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"particle": "mio_icif:block/wiring/cable/block_cable",
-		"texture": "mio_icif:block/wiring/cable/block_cable",
-		"color_band": "block/white_concrete"
+		"texture": "mio_icif:block/wiring/cable/block_copper_cable_1",
+		"color_band": "block/white_concrete",
+		"particle": "mio_icif:block/wiring/cable/block_copper_cable_1"
 	},
 	"elements": [
 		{

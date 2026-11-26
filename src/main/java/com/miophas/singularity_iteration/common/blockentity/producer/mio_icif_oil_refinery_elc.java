@@ -454,6 +454,7 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
                 || !server.getServer().isSameThread() || blockEntity.isRemoved()) return;
 
         blockEntity.recalculateUpgradeStats();
+        blockEntity.chargeWirelessly();   // 0.1.11.204: its own tick never charged from the TESU wireless field
         blockEntity.handleInputCellSlot();
         blockEntity.handleOutputCellSlot();
         blockEntity.refreshPaidRecipe();

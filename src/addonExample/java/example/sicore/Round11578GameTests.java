@@ -38,7 +38,7 @@ public final class Round11578GameTests {
     private static final List<String> BRANCH_ROOTS = List.of("root", "industrial_age", "wrench", "ejector");
     /** 114 with Curios; the flight ring advancement needs Curios (its item is a Curios trinket). 0.1.11.92: +3 for the fusion reactor. */
     private static boolean curios() { return net.neoforged.fml.ModList.get().isLoaded("curios"); }
-    private static int expected() { return curios() ? 114 : 113; }
+    private static int expected() { return curios() ? 115 : 114; }   // 0.1.11.207: + nixiankaide
 
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("mio_icif", path); }
 
@@ -109,7 +109,7 @@ public final class Round11578GameTests {
             {"advanced_miner", "miner"}, {"far_teleport", "teleporter"}, {"end_paradise", "terraformer"},
             {"living_circuit", "nano_metal"}, {"picard_order", "ex_nihilo"},
             {"industrial_age", "industrial_prologue"}, {"solar", "wire_cutter"}, {"batbox", "any_cable"}, {"ejector", "hammer_time"},
-            {"miner", "hammer_time"}, {"jetpack", "wrench"}};
+            {"miner", "hammer_time"}, {"jetpack", "wrench"}, {"nixiankaide", "industrial_age"}};
         for (String[] r : rules) {
             if (r[0].equals("flight_ring") && !curios()) continue;
             h.assertTrue(tree.containsKey(r[0]) && tree.containsKey(r[1]), "missing " + r[0] + " or " + r[1]);
@@ -133,7 +133,7 @@ public final class Round11578GameTests {
         for (String goal : List.of("iridium_ore", "induction_furnace", "scrap_box", "advanced_machine", "kinetic_running", "storage_upgrade",
                 "fluid_reactor", "chainsaw_creeper", "advanced_jetpack", "armory", "advanced_miner", "teleporter", "terraformer", "tesla", "futures"))
             h.assertTrue(tree.get(goal).value().display().get().getType() == AdvancementType.GOAL, goal + " is not a goal");
-        for (String hidden : List.of("cable_burnt", "broken_machine", "industrial_accident", "meltdown", "know_nothing", "forgot_charge"))
+        for (String hidden : List.of("cable_burnt", "broken_machine", "industrial_accident", "meltdown", "know_nothing", "forgot_charge", "nixiankaide"))
             h.assertTrue(tree.get(hidden).value().display().get().isHidden(), hidden + " is not hidden");
         h.assertTrue(!tree.get("electric_furnace").value().display().get().isHidden(), "a plain advancement is hidden");
         h.succeed();

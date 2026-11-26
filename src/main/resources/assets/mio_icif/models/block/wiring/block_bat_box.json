@@ -2,21 +2,22 @@
 	"format_version": "26.3",
 	"credit": "Made with Blockbench",
 	"parent": "block/cube",
+	"texture_size": [80, 16],
 	"textures": {
 		"particle_ub": "mio_icif:block/wiring/block_bat_box",
-		"particle": "minecraft:block/spruce_planks"
+		"particle": "block/spruce_planks"
 	},
 	"elements": [
 		{
 			"from": [0, 0, 0],
 			"to": [16, 16, 16],
 			"faces": {
-				"north": {"uv": [8, 0, 10.66, 16], "texture": "#particle_ub", "cullface": "north"},
-				"east": {"uv": [13.33, 0, 16, 16], "texture": "#particle_ub", "cullface": "east"},
-				"south": {"uv": [5.33, 0, 8, 16], "texture": "#particle_ub", "cullface": "south"},
-				"west": {"uv": [10.66, 0, 13.33, 16], "texture": "#particle_ub", "cullface": "west"},
-				"up": {"uv": [2.66, 0, 5.33, 16], "texture": "#particle_ub", "cullface": "up"},
-				"down": {"uv": [0, 0, 2.66, 16], "texture": "#particle_ub", "cullface": "down"}
+				"north": {"uv": [9.6, 0, 12.792, 16], "texture": "#particle_ub", "cullface": "north"},
+				"east": {"uv": [12.796, 0, 16, 16], "texture": "#particle_ub", "cullface": "east"},
+				"south": {"uv": [6.396, 0, 9.6, 16], "texture": "#particle_ub", "cullface": "south"},
+				"west": {"uv": [12.792, 0, 15.996, 16], "texture": "#particle_ub", "cullface": "west"},
+				"up": {"uv": [3.192, 0, 6.396, 16], "texture": "#particle_ub", "cullface": "up"},
+				"down": {"uv": [0, 0, 3.192, 16], "texture": "#particle_ub", "cullface": "down"}
 			}
 		}
 	]

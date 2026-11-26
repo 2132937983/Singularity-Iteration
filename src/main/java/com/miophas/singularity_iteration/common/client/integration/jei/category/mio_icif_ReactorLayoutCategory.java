@@ -2,12 +2,11 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
 import com.miophas.singularity_iteration.common.reactor.ReactorLayoutAnalysis;
-import com.miophas.singularity_iteration.common.reactor.ReactorLayoutAnalysis.Verdict;
 import com.miophas.singularity_iteration.core.api.reactor.ReactorLayout;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
@@ -16,7 +15,6 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -44,7 +42,6 @@ public class mio_icif_ReactorLayoutCategory implements IRecipeCategory<ReactorLa
 
     private static final int WIDTH = 168, HEIGHT = 190, GRID_Y = 11, LINES_Y = GRID_Y + 6 * 18 + 3;
     private static final int TITLE_COLOR = 0xFF404040;
-    private static final String KEY = "jei.mio_icif.reactor_layout.";
 
     private final IDrawable icon;
 
@@ -84,61 +81,13 @@ public class mio_icif_ReactorLayoutCategory implements IRecipeCategory<ReactorLa
         builder.addScrollBoxWidget(WIDTH, HEIGHT - LINES_Y, 0, LINES_Y).setContents(lines(layout));
     }
 
-    /** The text under the grid (also used by the GameTests through the keys it picks). */
+    /** The text under the grid (0.1.11.209: built by RecipeViews, shared with the EMI plugin). */
     static List<FormattedText> lines(ReactorLayoutAnalysis layout) {
-        List<FormattedText> out = new ArrayList<>();
-        ReactorLayout plan = layout.layout();
-        ReactorLayoutAnalysis.Result result = layout.result();
-        if (result == null) {
-            out.add(Component.translatable(KEY + "unknown", String.join(", ", layout.unknown())).withStyle(ChatFormatting.RED));
-        } else {
-            var report = result.report();
-            // 0.1.10.37: a steam layout shows its steam and the EU/t of the turbines it feeds (2 mB of steam per EU)
-            if (plan.steam()) out.add(Component.translatable(KEY + "steam_output", SiJei.number(report.steamPerCycle()),
-                SiJei.number(report.steamPerCycle() / 20 / com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_steam_turbine.STEAM_PER_EU), plan.chambers()).withStyle(ChatFormatting.DARK_GRAY));
-            else out.add(Component.translatable(KEY + "output", SiJei.number(Math.round(report.euPerTick())), plan.chambers())
-                .withStyle(ChatFormatting.DARK_GRAY));
-            out.add(Component.translatable(KEY + "heat", SiJei.number(report.heatPerCycle()), SiJei.number(report.ventPerCycle()))
-                .withStyle(ChatFormatting.DARK_GRAY));
-            out.add(risk(result));
-            var blast = result.blast();
-            out.add(blast.disabled()
-                ? Component.translatable(KEY + "blast_off").withStyle(ChatFormatting.DARK_GRAY)
-                : Component.translatable(KEY + "blast", String.format(Locale.ROOT, "%.1f", blast.power()), blast.radius())
-                    .withStyle(result.verdict() == Verdict.STABLE ? ChatFormatting.DARK_GRAY : ChatFormatting.DARK_RED));
-            if (result.verdict() == Verdict.STABLE && result.fuelCycles() > 0) {
-                out.add(plan.steam()
-                    ? Component.translatable(KEY + "steam_fuel", duration(result.fuelCycles()), SiJei.number(report.steamPerCycle() * result.fuelCycles()))
-                        .withStyle(ChatFormatting.DARK_GRAY)
-                    : Component.translatable(KEY + "fuel", duration(result.fuelCycles()), SiJei.number(Math.round(result.euPerLoad())))
-                        .withStyle(ChatFormatting.DARK_GRAY));
-            }
-        }
-        if (plan.noteKey() != null) out.add(Component.translatable(plan.noteKey()).withStyle(ChatFormatting.GRAY));
-        out.add(Component.translatable(KEY + "model").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        if (plan.steam()) out.add(Component.translatable(KEY + "steam_model").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        return out;
-    }
-
-    private static Component risk(ReactorLayoutAnalysis.Result result) {
-        return switch (result.verdict()) {
-            case STABLE -> Component.translatable(KEY + "stable").withStyle(ChatFormatting.DARK_GREEN);
-            case HULL_RISING -> Component.translatable(KEY + "hull_rising",
-                String.format(Locale.ROOT, "%.1f", result.report().hullTrend()), duration(result.riskSeconds())).withStyle(ChatFormatting.GOLD);
-            case COMPONENTS_MELT -> Component.translatable(KEY + "melts", duration(result.riskSeconds())).withStyle(ChatFormatting.GOLD);
-            case MELTDOWN -> result.report().firstMeltCycle() >= 0
-                ? Component.translatable(KEY + "meltdown_after_melt", duration(result.report().firstMeltCycle()), duration(result.riskSeconds()))
-                    .withStyle(ChatFormatting.RED)
-                : Component.translatable(KEY + "meltdown", duration(result.riskSeconds())).withStyle(ChatFormatting.RED);
-        };
+        return new ArrayList<>(RecipeViews.reactorLayoutLines(layout));
     }
 
     /** "45 s", "4 min 40 s", "5 h 33 min". */
     static String duration(int seconds) {
-        if (seconds < 0) return "-";
-        if (seconds < 60) return seconds + " s";
-        if (seconds < 3600) return seconds % 60 == 0 ? seconds / 60 + " min" : seconds / 60 + " min " + seconds % 60 + " s";
-        int minutes = seconds / 60;
-        return minutes % 60 == 0 ? minutes / 60 + " h" : minutes / 60 + " h " + minutes % 60 + " min";
+        return RecipeViews.duration(seconds);
     }
 }

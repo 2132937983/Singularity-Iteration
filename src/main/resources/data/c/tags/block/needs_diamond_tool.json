@@ -14,6 +14,10 @@
       "required": false
     },
     {
+      "id": "mio_icif:wiring/block_gesu_induction_port",
+      "required": false
+    },
+    {
       "id": "mio_icif:wiring/block_tesu_controller",
       "required": false
     },
@@ -27,6 +31,10 @@
     },
     {
       "id": "mio_icif:wiring/block_tesu_wireless_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_tesu_induction_port",
       "required": false
     },
     {

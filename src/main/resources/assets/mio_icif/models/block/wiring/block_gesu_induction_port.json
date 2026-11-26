@@ -1,0 +1,23 @@
+{
+	"format_version": "26.3",
+	"credit": "Made with Blockbench",
+	"parent": "block/cube",
+	"textures": {
+		"particle_ub": "mio_icif:block/wiring/block_gesu_induction_port",
+		"particle": "mio_icif:block/producer/block_machine"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#particle_ub", "cullface": "north"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#particle_ub", "cullface": "east"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#particle_ub", "cullface": "south"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#particle_ub", "cullface": "west"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#particle_ub", "cullface": "up"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#particle_ub", "cullface": "down"}
+			}
+		}
+	]
+}

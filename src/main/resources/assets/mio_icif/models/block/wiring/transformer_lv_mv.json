@@ -5,7 +5,7 @@
 	"texture_size": [64, 16],
 	"textures": {
 		"particle_ub": "mio_icif:block/wiring/transformer_lv_mv",
-		"particle": "minecraft:block/spruce_planks"
+		"particle": "block/spruce_planks"
 	},
 	"elements": [
 		{

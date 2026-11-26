@@ -8,9 +8,12 @@ import com.miophas.singularity_iteration.common.menu.producer.IndustrialWorkbenc
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes;
+import com.miophas.singularity_iteration.common.client.integration.AdvancedMinerFilters;
 import com.miophas.singularity_iteration.common.client.screen.GridScadaScreen;
+import com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_advanced_miner_elc;
 import com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_future_elc;
 import com.miophas.singularity_iteration.common.client.screen.mio_icif_screen;
+import dev.emi.emi.api.EmiDragDropHandler;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -28,6 +31,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * EMI 插件主类
  * 为 EMI 提供原生配方支持，无需依赖 JEI
+ * <p>0.1.11.209: 只要模组带有 EMI 插件，EMI 就完全不调用该模组的 JEI 插件（即使同时装了 JEI），
+ * 所以 JEI 插件里的每个配方页都必须在这里有原生版本（见 {@link SiEmiRecipes}）。
  */
 @SuppressWarnings("null")
 @EmiEntrypoint
@@ -118,6 +123,17 @@ public class MioIcifEmiPlugin implements EmiPlugin {
         registry.addWorkstation(MIX, EmiStack.of(mio_icif_blocks.CANNER_ELC.get()));
         registry.addWorkstation(BLAST_FURNACE, EmiStack.of(mio_icif_blocks.BLAST_FURNACE.get()));
         registry.addWorkstation(MOLECULAR_TRANSFORMER, EmiStack.of(mio_icif_blocks.MOLECULAR_TRANSFORMER.get()));
+        // 0.1.11.209: the advanced machines run the same recipe sets; the electric furnaces smelt (as the JEI catalysts)
+        registry.addWorkstation(POWDER, EmiStack.of(mio_icif_blocks.POWDER_ADVANCED_ELC.get()));
+        registry.addWorkstation(COMPRESSOR, EmiStack.of(mio_icif_blocks.COMPRESSOR_ADVANCED_ELC.get()));
+        registry.addWorkstation(ROLLING, EmiStack.of(mio_icif_blocks.METAL_FORMER_ADVANCED.get()));
+        registry.addWorkstation(CUTTING, EmiStack.of(mio_icif_blocks.METAL_FORMER_ADVANCED.get()));
+        registry.addWorkstation(EXTRUDING, EmiStack.of(mio_icif_blocks.METAL_FORMER_ADVANCED.get()));
+        registry.addWorkstation(BLAST_FURNACE, EmiStack.of(mio_icif_blocks.BLAST_FURNACE_ELC.get()));
+        registry.addWorkstation(BLAST_FURNACE, EmiStack.of(mio_icif_blocks.BLAST_FURNACE_ADVANCED.get()));
+        registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(mio_icif_blocks.FURNACE_ELC.get()));
+        registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(mio_icif_blocks.INDUCTION_ELC.get()));
+
 
         // 注册工业工作台为合成配方工作站
         registry.addWorkstation(VanillaEmiRecipeCategories.CRAFTING,
@@ -197,6 +213,22 @@ public class MioIcifEmiPlugin implements EmiPlugin {
             recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MOLECULAR_TRANSFORMER_TYPE.get())
                     .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(MOLECULAR_TRANSFORMER, recipe)));
         }
+
+        // 0.1.11.209: every other page of the JEI plugin, natively. EMI never calls the JEI plugin of a mod that has an EMI
+        // plugin, so without these the Neutron Polymerizer (the Neutron Plate), the refinery, the structures... were missing.
+        SiEmiRecipes.register(registry);
+
+        // 0.1.11.209: an item dragged from EMI onto an Advanced Miner filter slot sets the filter (as the JEI ghost handler)
+        registry.addDragDropHandler(mio_icif_gui_advanced_miner_elc.class,
+            new EmiDragDropHandler.BoundsBased<mio_icif_gui_advanced_miner_elc>((gui, out) -> {
+                for (AdvancedMinerFilters.Target target : AdvancedMinerFilters.targets(gui)) {
+                    out.accept(new Bounds(target.x(), target.y(), 16, 16), ingredient -> {
+                        List<EmiStack> stacks = ingredient.getEmiStacks();
+                        if (!stacks.isEmpty()) AdvancedMinerFilters.set(gui, target, stacks.get(0).getItemStack());
+                    });
+                }
+            }));
+
     }
 
     /**

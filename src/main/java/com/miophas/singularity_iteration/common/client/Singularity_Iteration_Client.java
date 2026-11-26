@@ -542,13 +542,10 @@ public class Singularity_Iteration_Client {
         }, mio_icif_items_tools.NANO_SABER.get());
         Singularity_Iteration.LOGGER.debug("Nano saber client extensions registered");
 
-        // 注册钢制防爆盾客户端扩展 - 设置盾牌渲染器和举盾姿势
+        // 注册钢制防爆盾客户端扩展 - 举盾姿势
+        // 0.1.11.211: the shield is SCXSYGL's riot shield, a JSON model (item_tool_steel_shield.json and its blocking
+        // variant), no longer drawn in code: no custom renderer
         event.registerItem(new IClientItemExtensions() {
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return new com.miophas.singularity_iteration.common.client.render.mio_icif_ShieldRenderer();
-            }
-
             @Override
             @Nullable
             public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {

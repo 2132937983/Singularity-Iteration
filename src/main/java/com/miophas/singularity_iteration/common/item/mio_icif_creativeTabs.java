@@ -882,6 +882,7 @@ public class mio_icif_creativeTabs {
         o.accept(mio_icif_blocks.GESU_INPUT_IV.get());
         o.accept(mio_icif_blocks.GESU_OUTPUT_IV.get());
         o.accept(mio_icif_blocks.GESU_OUTPUT_LUV.get());
+        o.accept(mio_icif_blocks.GESU_INDUCTION_PORT.get());   // 0.1.11.206
         // TESU (0.1.11.157; 227,000,000,000 EU since 0.1.11.158) and its wireless field (the connector is with the tools)
         storageBlock(o, mio_icif_blocks.TESU_CONTROLLER.get(), 227_000_000_000L, "mio_icif:tesu_controller");
         o.accept(mio_icif_blocks.TESU_INPUT.get());
@@ -889,6 +890,7 @@ public class mio_icif_creativeTabs {
         o.accept(mio_icif_blocks.TESU_CASING.get());
         o.accept(mio_icif_blocks.TESU_CELL.get());
         o.accept(mio_icif_blocks.TESU_WIRELESS_PORT.get());
+        o.accept(mio_icif_blocks.TESU_INDUCTION_PORT.get());   // 0.1.11.206
         o.accept(mio_icif_blocks.TESU_RELAY.get());
     }
 

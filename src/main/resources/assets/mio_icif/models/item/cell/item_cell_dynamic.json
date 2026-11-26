@@ -19,7 +19,6 @@
     { "predicate": { "mio_icif:cell_type": 12.0 }, "model": "mio_icif:item/cell/item_cell_superheatedsteam" },
     { "predicate": { "mio_icif:cell_type": 13.0 }, "model": "mio_icif:item/cell/item_cell_uumatter" },
     { "predicate": { "mio_icif:cell_type": 14.0 }, "model": "mio_icif:item/cell/item_cell_air" },
-    { "predicate": { "mio_icif:cell_type": 15.0 }, "model": "mio_icif:item/cell/item_cell_dynamic_generic" },
-    { "predicate": { "mio_icif:cell_type": 16.0 }, "model": "mio_icif:item/cell/item_cell_unstable_hotwater" }
+    { "predicate": { "mio_icif:cell_type": 15.0 }, "model": "mio_icif:item/cell/item_cell_dynamic_generic" }
   ]
 }

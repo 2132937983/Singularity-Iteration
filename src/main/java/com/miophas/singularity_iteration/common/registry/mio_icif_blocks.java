@@ -389,11 +389,13 @@ public static final DeferredBlock<mio_icif_block_stirling_generator> STIRLING_GE
     public static final DeferredBlock<mio_icif_Block_Advanced_Semifluid_Generator> ADVANCED_SEMIFLUID_GENERATOR =
         registerBlock("generator/block_advanced_semifluid_generator", () -> new mio_icif_Block_Advanced_Semifluid_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
+    // 0.1.11.210: the SCXSYGL models of both experience generators are open frames, not full cubes: noOcclusion, or the
+    // faces of the blocks beside them are culled and the gaps show through the world
     public static final DeferredBlock<mio_icif_block_experience_generator> EXPERIENCE_GENERATOR =
-        registerBlock("generator/block_experience_generator", () -> new mio_icif_block_experience_generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_experience_generator", () -> new mio_icif_block_experience_generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final DeferredBlock<mio_icif_block_advanced_experience_generator> ADVANCED_EXPERIENCE_GENERATOR =
-        registerBlock("generator/block_advanced_experience_generator", () -> new mio_icif_block_advanced_experience_generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+        registerBlock("generator/block_advanced_experience_generator", () -> new mio_icif_block_advanced_experience_generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()));
 
     // 注册手动动能发电机方法
 public static final DeferredBlock<mio_icif_Block_Manual_Kinetic_Generator> MANUAL_KINETIC_GENERATOR =
@@ -496,6 +498,9 @@ public static final DeferredBlock<mio_icif_mfsu_charger> MFSU_CHARGER = register
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuRelayColumnBlock> TESU_RELAY_COLUMN = registerBlockNoItem("wiring/block_tesu_relay_column", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuRelayColumnBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion().noLootTable().pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
 
     // 注册 GESU 输出模块(LuV)方块
+    // 0.1.11.206: the GESU and TESU wireless induction ports (players, and for the TESU's machines without the wireless upgrade)
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_gesu_induction_port> GESU_INDUCTION_PORT = registerBlock("wiring/block_gesu_induction_port", () -> new com.miophas.singularity_iteration.common.block.energycontainer.mio_icif_gesu_induction_port(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 8.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.energycontainer.TesuInductionBlock> TESU_INDUCTION_PORT = registerBlock("wiring/block_tesu_induction_port", () -> new com.miophas.singularity_iteration.common.block.energycontainer.TesuInductionBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 12.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
     public static final DeferredBlock<mio_icif_gesu_output_luv> GESU_OUTPUT_LUV = registerBlock("wiring/block_gesu_output_luv", () -> new mio_icif_gesu_output_luv(Block.Properties.of().mapColor(MapColor.METAL).strength(5.0f, 8.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
     // 注册 LV 电线方块（低压）

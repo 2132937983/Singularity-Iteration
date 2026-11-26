@@ -1,44 +1,124 @@
 {
-  "parent": "builtin/entity",
-  "gui_light": "front",
-  "textures": {
-    "particle": "block/iron_block"
-  },
+  "parent": "mio_icif:item/item_tool_steel_shield",
   "display": {
     "thirdperson_righthand": {
-      "rotation": [45, 155, 0],
-      "translation": [-3.49, 11, -2],
-      "scale": [1, 1, 1]
+      "rotation": [
+        45.0,
+        -25.0,
+        0.0
+      ],
+      "translation": [
+        0.675,
+        -5.686,
+        -4.548
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
     },
     "thirdperson_lefthand": {
-      "rotation": [45, 155, 0],
-      "translation": [11.51, 7, 2.5],
-      "scale": [1, 1, 1]
+      "rotation": [
+        45.0,
+        -25.0,
+        0.0
+      ],
+      "translation": [
+        15.675,
+        -9.686,
+        -0.048
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
     },
     "firstperson_righthand": {
-      "rotation": [0, 180, -5],
-      "translation": [-15, 5, -11],
-      "scale": [1.25, 1.25, 1.25]
+      "rotation": [
+        0.0,
+        0.0,
+        5.0
+      ],
+      "translation": [
+        -3.556,
+        -11.064,
+        -1.875
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
     },
     "firstperson_lefthand": {
-      "rotation": [0, 180, -5],
-      "translation": [5, 5, -11],
-      "scale": [1.25, 1.25, 1.25]
+      "rotation": [
+        0.0,
+        0.0,
+        5.0
+      ],
+      "translation": [
+        16.444,
+        -11.064,
+        -1.875
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
     },
     "gui": {
-      "rotation": [15, -25, -5],
-      "translation": [2, 3, 0],
-      "scale": [0.65, 0.65, 0.65]
+      "rotation": [
+        15.0,
+        155.0,
+        5.0
+      ],
+      "translation": [
+        -1.388,
+        -3.305,
+        -8.745
+      ],
+      "scale": [
+        0.52,
+        0.52,
+        0.52
+      ]
     },
     "fixed": {
-      "rotation": [0, 180, 0],
-      "translation": [-4.5, 4.5, -5],
-      "scale": [0.55, 0.55, 0.55]
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "translation": [
+        -0.1,
+        -2.98,
+        -0.985
+      ],
+      "scale": [
+        0.44,
+        0.44,
+        0.44
+      ]
     },
     "ground": {
-      "rotation": [0, 0, 0],
-      "translation": [2, 4, 2],
-      "scale": [0.25, 0.25, 0.25]
+      "rotation": [
+        0.0,
+        180.0,
+        0.0
+      ],
+      "translation": [
+        0.0,
+        0.6,
+        0.175
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.2
+      ]
     }
   }
 }

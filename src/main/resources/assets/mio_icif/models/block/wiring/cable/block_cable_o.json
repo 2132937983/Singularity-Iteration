@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"particle": "mio_icif:block/wiring/cable/block_cable_o",
-		"texture": "mio_icif:block/wiring/cable/block_cable_o"
+		"particle": "mio_icif:block/wiring/cable/block_copper_cable",
+		"texture": "mio_icif:block/wiring/cable/block_copper_cable"
 	},
 	"elements": [
 		{

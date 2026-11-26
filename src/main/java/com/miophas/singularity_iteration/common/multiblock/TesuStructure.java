@@ -131,7 +131,8 @@ public final class TesuStructure {
             case CELL -> state.is(mio_icif_blocks.TESU_CELL.get());
             case CONTROLLER -> state.is(mio_icif_blocks.TESU_CONTROLLER.get());
             case PORT_SLOT -> state.is(mio_icif_blocks.TESU_INPUT.get()) || state.is(mio_icif_blocks.TESU_OUTPUT.get())
-                || state.is(mio_icif_blocks.TESU_WIRELESS_PORT.get()) || state.is(mio_icif_blocks.TESU_CASING.get());
+                || state.is(mio_icif_blocks.TESU_WIRELESS_PORT.get()) || state.is(mio_icif_blocks.TESU_INDUCTION_PORT.get())   // 0.1.11.206
+                || state.is(mio_icif_blocks.TESU_CASING.get());
             case AIR -> state.isAir();
         };
     }
@@ -160,6 +161,7 @@ public final class TesuStructure {
                 if (state.is(mio_icif_blocks.TESU_INPUT.get())) inputs.add(pos.immutable());
                 else if (state.is(mio_icif_blocks.TESU_OUTPUT.get())) outputs.add(pos.immutable());
                 else if (state.is(mio_icif_blocks.TESU_WIRELESS_PORT.get())) wireless.add(pos.immutable());   // 0.1.11.158
+                else if (state.is(mio_icif_blocks.TESU_INDUCTION_PORT.get())) wireless.add(pos.immutable());   // 0.1.11.206: a wireless port too
             }
         }
         return new Check(true, false, null, null, List.copyOf(inputs), List.copyOf(outputs), List.copyOf(wireless));

@@ -19,6 +19,11 @@ public class TesuWirelessPortBlockEntity extends BlockEntity {
         super(mio_icif_block_entities.TESU_WIRELESS_PORT.get(), pos, state);
     }
 
+    /** 0.1.11.206: for the wireless induction port, a wireless output port of its own type. */
+    protected TesuWirelessPortBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
     /** Bound to a controller, or let go ({@code null}). */
     public void bind(@Nullable BlockPos pos) {
         if (java.util.Objects.equals(controller, pos)) return;

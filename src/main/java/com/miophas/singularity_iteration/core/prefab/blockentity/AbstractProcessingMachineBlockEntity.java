@@ -923,6 +923,22 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
+     * 0.1.11.204: the wireless upgrades in the slots {@code start} .. {@code start + count - 1}. A machine that counts its own
+     * upgrades (its own {@code recalculateUpgradeStats}) calls it too, and a machine with its own tick calls
+     * {@link #chargeWirelessly()}: the UU-Matter Fabricator and the Oil Refinery did neither, so their wireless upgrade did
+     * nothing.
+     */
+    protected int countWirelessUpgrades(int start, int count) {
+        int wireless = 0;
+        var itemApi = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
+        for (int i = start; i < start + count && i < itemHandler.getSlots(); i++) {
+            var stack = itemHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && "wireless".equals(itemApi.getUpgradeType(stack))) wireless += stack.getCount();
+        }
+        return wireless;
+    }
+
+    /**
      * Updates the upgrade statistics.
      * Overclocker upgrade: more progress per tick and more EU use. The voltage tier does not change.
      */
@@ -931,13 +947,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         int upgradeStart = slotLayout.getStart(SlotType.UPGRADE);
         int upgradeCount = slotLayout.getCount(SlotType.UPGRADE);
         this.upgradeStats = throttled(MachineUpgradeStats.fromInventory(itemHandler, upgradeStart, upgradeCount));
-        int wireless = 0;
-        var itemApi = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
-        for (int i = upgradeStart; i < upgradeStart + upgradeCount && i < itemHandler.getSlots(); i++) {
-            var stack = itemHandler.getStackInSlot(i);
-            if (!stack.isEmpty() && "wireless".equals(itemApi.getUpgradeType(stack))) wireless += stack.getCount();
-        }
-        this.wirelessUpgrades = wireless;
+        this.wirelessUpgrades = countWirelessUpgrades(upgradeStart, upgradeCount);
         updateProcessingParameters();
         long newCapacity = getProcessingCapacity();
         IEnergyTileAccess api = getEnergyAPI();

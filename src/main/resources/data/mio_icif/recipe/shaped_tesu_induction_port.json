@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CWC",
+    "FPF",
+    "CWC"
+  ],
+  "key": {
+    "C": {
+      "tag": "c:circuits/ultimate"
+    },
+    "W": {
+      "type": "mio_icif:electric",
+      "item": "mio_icif:wiring/block_wireless_power_transmission_node"
+    },
+    "F": {
+      "item": "mio_icif:normal/item_field_generator"
+    },
+    "P": {
+      "item": "mio_icif:wiring/block_tesu_wireless_port"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_tesu_induction_port",
+    "count": 1
+  }
+}

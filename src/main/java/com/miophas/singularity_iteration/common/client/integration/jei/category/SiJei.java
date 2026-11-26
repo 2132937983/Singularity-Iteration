@@ -1,24 +1,19 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
-import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * The shared look of the SI JEI recipe categories: JEI's own slot backgrounds (18 px inputs, 26 px
@@ -34,30 +29,31 @@ public final class SiJei {
     /** The JEI arrow (24 x 17). */
     public static final int ARROW_W = 24, ARROW_H = 17;
 
+    // 0.1.11.209: the texts and the fluid containers live in RecipeViews, shared with the EMI plugin
+
     /** Ticks as seconds: "15 s", "0.5 s". */
     public static String seconds(int ticks) {
-        return ticks % 20 == 0 ? ticks / 20 + " s" : String.format(Locale.ROOT, "%.1f s", ticks / 20f);
+        return RecipeViews.seconds(ticks);
     }
 
     /** A number with thousands separators: 2,304,000. */
     public static String number(long n) {
-        return String.format(Locale.ROOT, "%,d", n);
+        return RecipeViews.number(n);
     }
 
     /** "15 s · 2 EU/t · 600 EU"; without energy "15 s". Too long for big machines: use {@link #rate} and {@link #total}. */
     public static Component cost(int ticks, long euPerTick) {
-        if (euPerTick <= 0) return Component.literal(seconds(ticks));
-        return Component.translatable("jei.mio_icif.cost", seconds(ticks), number(euPerTick), number(euPerTick * ticks));
+        return RecipeViews.cost(ticks, euPerTick);
     }
 
     /** "75 s · 1,536 EU/t". */
     public static Component rate(int ticks, long euPerTick) {
-        return Component.translatable("jei.mio_icif.rate", seconds(ticks), number(euPerTick));
+        return RecipeViews.rate(ticks, euPerTick);
     }
 
     /** "2,304,000 EU in total". */
     public static Component total(long eu) {
-        return Component.translatable("jei.mio_icif.total", number(eu));
+        return RecipeViews.total(eu);
     }
 
     /** An item input slot with JEI's slot background. */
@@ -100,15 +96,7 @@ public final class SiJei {
 
     /** The items that hold {@code fluid}: its own cell, the universal cell filled with it, its bucket. */
     public static List<ItemStack> containers(Fluid fluid) {
-        List<ItemStack> containers = new ArrayList<>();
-        if (fluid == Fluids.EMPTY) return containers;
-        Item cell = mio_icif_cells.getFilledCellForFluid(fluid);
-        if (cell != null) containers.add(new ItemStack(cell));
-        ItemStack universal = mio_icif_cells.createDynamicFilledCell(fluid, 1000);
-        if (!universal.isEmpty()) containers.add(universal);
-        Item bucket = fluid.getBucket();
-        if (bucket != Items.AIR) containers.add(new ItemStack(bucket));
-        return containers;
+        return RecipeViews.containers(fluid);
     }
 
     /**
@@ -116,12 +104,7 @@ public final class SiJei {
      * {@code role}, so looking up the fluid finds recipes that make or use its containers.
      */
     public static void contents(IRecipeLayoutBuilder builder, RecipeIngredientRole role, List<ItemStack> stacks) {
-        java.util.Map<Fluid, Integer> fluids = new java.util.LinkedHashMap<>();
-        for (ItemStack stack : stacks) {
-            FluidStack inside = mio_icif_cells.getCellFluid(stack);
-            if (inside.isEmpty()) inside = FluidUtil.getFluidContained(stack).orElse(FluidStack.EMPTY);
-            if (!inside.isEmpty()) fluids.putIfAbsent(inside.getFluid(), inside.getAmount());
-        }
+        java.util.Map<Fluid, Integer> fluids = RecipeViews.fluidsInside(stacks);
         if (fluids.isEmpty()) return;
         var acceptor = builder.addInvisibleIngredients(role);
         fluids.forEach(acceptor::addFluidStack);

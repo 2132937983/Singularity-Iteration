@@ -2,7 +2,8 @@ package com.miophas.singularity_iteration.common.client.integration.jei.category
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_canner_elc;
-import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
+import com.miophas.singularity_iteration.common.client.integration.RecipeViews.CellFill;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -12,16 +13,12 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +31,7 @@ import java.util.List;
  * </pre>
  */
 @SuppressWarnings("null")
-public class mio_icif_CannerTankCategory implements IRecipeCategory<mio_icif_CannerTankCategory.CellFill> {
+public class mio_icif_CannerTankCategory implements IRecipeCategory<CellFill> {
 
     public static final RecipeType<CellFill> FILL_FROM_TANK_TYPE = new RecipeType<>(
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "fill_from_tank"), CellFill.class);
@@ -46,20 +43,9 @@ public class mio_icif_CannerTankCategory implements IRecipeCategory<mio_icif_Can
     private static final int FLUID_X = 13, PLUS_X = 34, EMPTY_X = 52, FILL_ARROW_X = 75, FILLED_X = 105;
     private static final int FULL_X = 31, DRAIN_ARROW_X = 55, OUT_X = 85;
 
-    /** An empty cell and {@code fluid} make the {@code filled} cell; Cell → Tank runs it backwards. */
-    public record CellFill(ItemStack empty, FluidStack fluid, ItemStack filled) {}
-
-    /** Every source fluid a cell can hold, with the cell the canner fills it into. */
+    /** Every source fluid a cell can hold, with the cell the canner fills it into (0.1.11.209: RecipeViews, shared with EMI). */
     public static List<CellFill> recipes() {
-        List<CellFill> recipes = new ArrayList<>();
-        for (Fluid fluid : BuiltInRegistries.FLUID) {
-            if (fluid == Fluids.EMPTY || !fluid.isSource(fluid.defaultFluidState())) continue;
-            ItemStack filled = mio_icif_cells.getFilledCellForFluidStack(fluid);
-            FluidStack inside = mio_icif_cells.getCellFluid(filled);
-            if (filled.isEmpty() || inside.isEmpty()) continue;
-            recipes.add(new CellFill(mio_icif_cells.getEmptyCellForStack(filled), inside, filled));
-        }
-        return recipes;
+        return RecipeViews.cellFills();
     }
 
     private final boolean toTank;

@@ -7,7 +7,6 @@ import com.miophas.singularity_iteration.common.blockentity.MachineConversions;
 import com.miophas.singularity_iteration.common.blockentity.kuentity.mio_icif_lathe;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_canner_elc;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_fermenter_elc;
-import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_oil_refinery_elc;
 import com.miophas.singularity_iteration.common.client.integration.RecipeViews;
 import com.miophas.singularity_iteration.common.item.lathe.LatheShapes;
@@ -146,31 +145,12 @@ public final class SiEmiRecipes {
         }
     }
 
-    // ---- one item in, one item out (the JEI SiItemMachineCategory layout)
-
-    private static final int IN_X = 36, IN_Y = 9, ARROW_X = 60, OUT_X = 94, LINES_Y = 34;
+    // ---- one item in, one item out (the JEI SiItemMachineCategory layout, built by SiEmiMachines)
 
     private static SiEmiRecipe neutronPolymerizer(RecipeHolder<NeutronPolymerizerRecipe> holder) {
-        NeutronPolymerizerRecipe recipe = holder.value();
-        int ticks = mio_icif_neutron_polymerizer.DEFAULT_WORK_TIME;
-        long eu = mio_icif_neutron_polymerizer.DEFAULT_ENERGY_PER_TICK;
-        EmiIngredient input = EmiIngredient.of(recipe.getIngredient());
-        EmiStack result = EmiStack.of(recipe.getResult());
-        List<EmiStack> inContents = SiEmi.contents(Arrays.asList(recipe.getIngredient().getItems()));
-        List<EmiStack> outContents = SiEmi.contents(List.of(recipe.getResult()));
-        List<EmiIngredient> inputs = new ArrayList<>(List.of(input));
-        inputs.addAll(inContents);
-        List<EmiStack> outputs = new ArrayList<>(List.of(result));
-        outputs.addAll(outContents);
-        SiEmiRecipe emi = new SiEmiRecipe(NEUTRON_POLYMERIZER, id("neutron_polymerizer", holder), WIDTH, LINES_Y + 2 * SiEmi.LINE_HEIGHT + 1,
-            inputs, outputs, (w, r) -> {
-                SiEmi.input(w, input, IN_X, IN_Y);
-                SiEmi.arrow(w, ARROW_X, IN_Y, ticks);
-                SiEmi.mainOutput(w, r, result, OUT_X, IN_Y);
-                SiEmi.line(w, RecipeViews.rate(ticks, eu), WIDTH, LINES_Y);
-                SiEmi.line(w, RecipeViews.total((long) ticks * eu), WIDTH, LINES_Y + SiEmi.LINE_HEIGHT);
-            });
-        return inContents.isEmpty() && outContents.isEmpty() ? emi : emi.noTree();
+        // 0.1.11.217: the shared one-in-one-out page (SiEmiMachines) with the shared data
+        return SiEmiMachines.itemMachine(NEUTRON_POLYMERIZER, id("neutron_polymerizer", holder),
+            com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews.neutronPolymerizer(holder.value()));
     }
 
     // ---- Oil Refinery: [item][fluid] ==> [fluid], 1:1 by volume per cycle

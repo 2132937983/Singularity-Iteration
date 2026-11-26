@@ -3,14 +3,11 @@ package com.miophas.singularity_iteration.common.client.integration.jei.category
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe;
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-
-import java.util.List;
 
 /** Compressor: the recipe sets the time and the energy. */
 @SuppressWarnings("null")
@@ -24,22 +21,7 @@ public class mio_icif_CompressorCategory extends SiItemMachineCategory<mio_icif_
     }
 
     @Override
-    protected List<ItemStack> inputs(mio_icif_CompressorRecipe recipe) {
-        return SiJei.withCount(recipe.getIngredient(), recipe.getIngredientCount());
-    }
-
-    @Override
-    protected ItemStack result(mio_icif_CompressorRecipe recipe) {
-        return recipe.getResult();
-    }
-
-    @Override
-    protected int ticks(mio_icif_CompressorRecipe recipe) {
-        return com.miophas.singularity_iteration.common.processing.Pressing.cost(recipe).ticks();   // 0.1.11.112: as the compressor runs it
-    }
-
-    @Override
-    protected long euPerTick(mio_icif_CompressorRecipe recipe) {
-        return com.miophas.singularity_iteration.common.processing.Pressing.cost(recipe).power();
+    protected MachineRecipeViews.ItemMachine view(mio_icif_CompressorRecipe recipe) {
+        return MachineRecipeViews.compressor(recipe);
     }
 }

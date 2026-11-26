@@ -1,7 +1,7 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -13,8 +13,6 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,26 +49,21 @@ public class mio_icif_BlastFurnaceCategory extends AbstractJeiRecipeCategory<mio
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_BlastFurnaceRecipe recipe, IFocusGroup focuses) {
-        SiJei.input(builder, ORE_X, ROW_Y).addItemStacks(SiJei.withCount(recipe.getIngredient(), recipe.getIngredientCount()));
-        long air = (long) recipe.getAirCostPerTick() * recipe.getDuration();
-        if (air > 0) {
-            // the furnace fills its air tank from compressed air cells; the fluid itself is nearly invisible
-            ItemStack cell = new ItemStack(mio_icif_cells.CELL_AIR.get());
-            int perCell = Math.max(1, mio_icif_cells.getCellCapacity(cell));
-            SiJei.input(builder, AIR_X, ROW_Y).addItemStack(cell.copyWithCount((int) Math.min(64, (air + perCell - 1) / perCell)));
-            SiJei.contents(builder, RecipeIngredientRole.INPUT, List.of(cell));
+        MachineRecipeViews.Blasting view = MachineRecipeViews.blasting(recipe);
+        SiJei.input(builder, ORE_X, ROW_Y).addItemStacks(view.ore());
+        if (!view.airCells().isEmpty()) {
+            SiJei.input(builder, AIR_X, ROW_Y).addItemStack(view.airCells());
+            SiJei.contents(builder, RecipeIngredientRole.INPUT, List.of(view.airCells().copyWithCount(1)));
         }
-        SiJei.mainOutput(builder, OUT_X, ROW_Y).addItemStack(recipe.getResult());
-        if (!recipe.getSecondaryResult().isEmpty()) SiJei.output(builder, SLAG_X, ROW_Y).addItemStack(recipe.getSecondaryResult());
+        SiJei.mainOutput(builder, OUT_X, ROW_Y).addItemStack(view.result());
+        if (!view.slag().isEmpty()) SiJei.output(builder, SLAG_X, ROW_Y).addItemStack(view.slag());
     }
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, mio_icif_BlastFurnaceRecipe recipe, IFocusGroup focuses) {
-        if (recipe.getAirCostPerTick() > 0) builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
-        SiJei.arrow(builder, ARROW_X, ROW_Y, recipe.getDuration());
-        Component line = recipe.getAirCostPerTick() > 0
-            ? Component.translatable("jei.mio_icif.blast_furnace.air", SiJei.seconds(recipe.getDuration()), SiJei.number(recipe.getAirCostPerTick()))
-            : Component.literal(SiJei.seconds(recipe.getDuration()));
-        SiJei.line(builder, line, WIDTH, LINES_Y);
+        MachineRecipeViews.Blasting view = MachineRecipeViews.blasting(recipe);
+        if (view.usesAir()) builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, view.ticks());
+        for (int i = 0; i < view.lines().size(); i++) SiJei.line(builder, view.lines().get(i), WIDTH, LINES_Y + i * SiJei.LINE_HEIGHT);
     }
 }

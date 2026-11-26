@@ -7,7 +7,6 @@ import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.menu.producer.IndustrialWorkbenchMenu;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes;
 import com.miophas.singularity_iteration.common.client.integration.AdvancedMinerFilters;
 import com.miophas.singularity_iteration.common.client.screen.GridScadaScreen;
 import com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_advanced_miner_elc;
@@ -154,65 +153,11 @@ public class MioIcifEmiPlugin implements EmiPlugin {
             }
         });
 
-        // 获取配方管理器并注册配方
+        // 0.1.11.217: the processing machine pages have the layouts of their JEI twins and the same data
+        // (MachineRecipeViews): input counts, arrow, time, energy, air cells, water. Before, one generic page showed
+        // most inputs as a single item (one Tin Plate for the Dense Tin Plate, which takes 9).
         RecipeManager recipeManager = registry.getRecipeManager();
-        if (recipeManager != null) {
-            // 注册打粉配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.POWDER_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(POWDER, recipe)));
-
-            // 注册洗矿配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.WASHER_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(WASHER, recipe)));
-
-            // 注册离心机配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CENTRIFUGE_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(CENTRIFUGE, recipe)));
-
-            // 注册提取机配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRACTOR_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(EXTRACTOR, recipe)));
-
-            // 注册压缩机配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.COMPRESSOR_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(COMPRESSOR, recipe)));
-
-            // 注册方块切割机配方
-            // 0.1.10.29: the wood recipe is shown once per planks recipe.
-            var cutterLevel = net.minecraft.client.Minecraft.getInstance().level;
-            com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipe.displays(recipeManager,
-                    cutterLevel == null ? null : cutterLevel.registryAccess(),
-                    recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get()))
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(BLOCK_CUTTER, recipe)));
-
-            // 注册金属成型机 - 轧制配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.ROLLING_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(ROLLING, recipe)));
-
-            // 注册金属成型机 - 切割配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CUTTING_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(CUTTING, recipe)));
-
-            // 注册金属成型机 - 挤出配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRUDING_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(EXTRUDING, recipe)));
-
-            // 注册装罐配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CANNING_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(CANNING, recipe)));
-
-            // 注册混合配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MIX_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(MIX, recipe)));
-
-            // 娉ㄥ唽楂樼倝閰嶆柟
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLAST_FURNACE_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(BLAST_FURNACE, recipe)));
-
-            // 注册分子重组仪配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MOLECULAR_TRANSFORMER_TYPE.get())
-                    .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(MOLECULAR_TRANSFORMER, recipe)));
-        }
+        if (recipeManager != null) SiEmiMachines.register(registry, recipeManager);
 
         // 0.1.11.209: every other page of the JEI plugin, natively. EMI never calls the JEI plugin of a mod that has an EMI
         // plugin, so without these the Neutron Polymerizer (the Neutron Plate), the refinery, the structures... were missing.

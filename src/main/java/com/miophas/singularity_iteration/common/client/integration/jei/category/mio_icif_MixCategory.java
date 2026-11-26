@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.recipe.canner.mix.MixRecipe;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
@@ -12,9 +13,7 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -47,23 +46,23 @@ public class mio_icif_MixCategory extends AbstractJeiRecipeCategory<MixRecipe> {
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, MixRecipe recipe, IFocusGroup focuses) {
-        if (!recipe.getInputFluid().isEmpty()) SiJei.fluid(builder, RecipeIngredientRole.INPUT, FLUID_X, ROW_Y, recipe.getInputFluid());
-        SiJei.input(builder, MAT_X, ROW_Y).addItemStacks(SiJei.withCount(recipe.getMaterialIngredient(), recipe.getMaterialCount()));
+        MachineRecipeViews.Mixing view = MachineRecipeViews.mixing(recipe);
+        if (!view.fluid().isEmpty()) SiJei.fluid(builder, RecipeIngredientRole.INPUT, FLUID_X, ROW_Y, view.fluid());
+        SiJei.input(builder, MAT_X, ROW_Y).addItemStacks(view.material());
         int x = OUT_X;
-        FluidStack resultFluid = recipe.getResultFluid();
-        if (!resultFluid.isEmpty()) {
-            SiJei.fluid(builder, RecipeIngredientRole.OUTPUT, x, ROW_Y, resultFluid);
+        if (!view.resultFluid().isEmpty()) {
+            SiJei.fluid(builder, RecipeIngredientRole.OUTPUT, x, ROW_Y, view.resultFluid());
             x += 18;
         }
-        ItemStack cell = recipe.getDynamicResultCell();
-        if (!cell.isEmpty()) SiJei.output(builder, x, ROW_Y).addItemStack(cell);
+        if (!view.cell().isEmpty()) SiJei.output(builder, x, ROW_Y).addItemStack(view.cell());
         SiJei.contents(builder, RecipeIngredientRole.INPUT, java.util.List.of(recipe.getMaterialIngredient().getItems()));
     }
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, MixRecipe recipe, IFocusGroup focuses) {
+        MachineRecipeViews.Mixing view = MachineRecipeViews.mixing(recipe);
         builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
-        SiJei.arrow(builder, ARROW_X, ROW_Y, recipe.getProcessingTime());
-        SiJei.line(builder, SiJei.cost(recipe.getProcessingTime(), recipe.getEnergyPerTick()), WIDTH, LINES_Y);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, view.ticks());
+        for (int i = 0; i < view.lines().size(); i++) SiJei.line(builder, view.lines().get(i), WIDTH, LINES_Y + i * SiJei.LINE_HEIGHT);
     }
 }

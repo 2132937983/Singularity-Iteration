@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
@@ -18,6 +19,7 @@ import java.util.List;
 /**
  * One item in, one item out ({@link SiJei} look): input, arrow over the processing time, 26 px output,
  * then the info lines (by default the time and energy line).
+ * 0.1.11.217: the stacks, time, energy and lines come from {@link MachineRecipeViews}, which the native EMI pages use too.
  * <pre>
  *        [in]  ====>  [ out ]
  *       15 s · 2 EU/t · 600 EU
@@ -43,20 +45,8 @@ public abstract class SiItemMachineCategory<T extends Recipe<?>> extends Abstrac
         this.lineCount = lineCount;
     }
 
-    /** The input stacks (with the recipe's count); empty for no input slot. */
-    protected abstract List<ItemStack> inputs(T recipe);
-
-    protected abstract ItemStack result(T recipe);
-
-    /** Ticks per operation; 0 when the time is not fixed (the arrow then does not animate). */
-    protected abstract int ticks(T recipe);
-
-    protected abstract long euPerTick(T recipe);
-
-    /** The lines under the recipe, at most the category's line count. Default: time and energy. */
-    protected List<Component> lines(T recipe) {
-        return List.of(SiJei.cost(ticks(recipe), euPerTick(recipe)));
-    }
+    /** What the page shows: the input stacks with the recipe's count, the result, the time and energy, the lines. */
+    protected abstract MachineRecipeViews.ItemMachine view(T recipe);
 
     @Override
     public RecipeType<RecipeHolder<T>> getRecipeType() {
@@ -85,8 +75,9 @@ public abstract class SiItemMachineCategory<T extends Recipe<?>> extends Abstrac
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, T recipe, IFocusGroup focuses) {
-        List<ItemStack> inputs = inputs(recipe);
-        ItemStack result = result(recipe);
+        MachineRecipeViews.ItemMachine view = view(recipe);
+        List<ItemStack> inputs = view.inputs();
+        ItemStack result = view.result();
         if (!inputs.isEmpty()) SiJei.input(builder, IN_X, IN_Y).addItemStacks(inputs);
         SiJei.mainOutput(builder, OUT_X, OUT_Y).addItemStack(result);
         // a cell in or out (e.g. Compressor: Empty Cell -> Compressed Air Cell) also counts as its fluid
@@ -96,8 +87,9 @@ public abstract class SiItemMachineCategory<T extends Recipe<?>> extends Abstrac
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, T recipe, IFocusGroup focuses) {
-        SiJei.arrow(builder, ARROW_X, ARROW_Y, ticks(recipe));
-        List<Component> lines = lines(recipe);
+        MachineRecipeViews.ItemMachine view = view(recipe);
+        SiJei.arrow(builder, ARROW_X, ARROW_Y, view.ticks());
+        List<Component> lines = view.lines();
         for (int i = 0; i < Math.min(lineCount, lines.size()); i++) {
             SiJei.line(builder, lines.get(i), WIDTH, LINES_Y + i * SiJei.LINE_HEIGHT);
         }

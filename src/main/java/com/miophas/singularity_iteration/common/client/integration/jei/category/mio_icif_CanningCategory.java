@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.recipe.canner.canning.CanningRecipe;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
@@ -44,18 +45,19 @@ public class mio_icif_CanningCategory extends AbstractJeiRecipeCategory<CanningR
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, CanningRecipe recipe, IFocusGroup focuses) {
-        var ingredients = recipe.getIngredients();
-        if (ingredients.size() > 0) SiJei.input(builder, CAN_X, ROW_Y).addIngredients(ingredients.get(0));
-        if (ingredients.size() > 1) SiJei.input(builder, FOOD_X, ROW_Y).addIngredients(ingredients.get(1));
-        SiJei.mainOutput(builder, OUT_X, ROW_Y).addItemStack(recipe.getResult());
-        for (var ingredient : ingredients) SiJei.contents(builder, mezz.jei.api.recipe.RecipeIngredientRole.INPUT, java.util.List.of(ingredient.getItems()));
-        SiJei.contents(builder, mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT, java.util.List.of(recipe.getResult()));
+        MachineRecipeViews.Canning view = MachineRecipeViews.canning(recipe);
+        if (!view.can().isEmpty()) SiJei.input(builder, CAN_X, ROW_Y).addIngredients(view.can());
+        if (!view.material().isEmpty()) SiJei.input(builder, FOOD_X, ROW_Y).addIngredients(view.material());
+        SiJei.mainOutput(builder, OUT_X, ROW_Y).addItemStack(view.result());
+        for (var ingredient : recipe.getIngredients()) SiJei.contents(builder, mezz.jei.api.recipe.RecipeIngredientRole.INPUT, java.util.List.of(ingredient.getItems()));
+        SiJei.contents(builder, mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT, java.util.List.of(view.result()));
     }
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, CanningRecipe recipe, IFocusGroup focuses) {
+        MachineRecipeViews.Canning view = MachineRecipeViews.canning(recipe);
         builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
-        SiJei.arrow(builder, ARROW_X, ROW_Y, recipe.getProcessingTime());
-        SiJei.line(builder, SiJei.cost(recipe.getProcessingTime(), recipe.getEnergyPerTick()), WIDTH, LINES_Y);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, view.ticks());
+        for (int i = 0; i < view.lines().size(); i++) SiJei.line(builder, view.lines().get(i), WIDTH, LINES_Y + i * SiJei.LINE_HEIGHT);
     }
 }

@@ -1,7 +1,7 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_washer_elc;
 import com.miophas.singularity_iteration.common.recipe.washer.mio_icif_WasherRecipe;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -50,26 +49,20 @@ public class mio_icif_WasherCategory extends AbstractJeiRecipeCategory<mio_icif_
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_WasherRecipe recipe, IFocusGroup focuses) {
-        SiJei.input(builder, ORE_X, ROW_Y).addIngredients(recipe.getIngredient());
-        if (recipe.getWaterAmount() > 0) {
-            SiJei.fluid(builder, RecipeIngredientRole.INPUT, WATER_X, ROW_Y, new FluidStack(Fluids.WATER, recipe.getWaterAmount()));
+        MachineRecipeViews.Separation view = MachineRecipeViews.washer(recipe);
+        SiJei.input(builder, ORE_X, ROW_Y).addIngredients(view.input());
+        if (view.water() > 0) {
+            SiJei.fluid(builder, RecipeIngredientRole.INPUT, WATER_X, ROW_Y, new FluidStack(Fluids.WATER, view.water()));
         }
-        ItemStack[] results = {
-            recipe.getPrimaryResult().copyWithCount(recipe.getPrimaryCount()),
-            recipe.getSecondaryCount() > 0 ? recipe.getSecondaryResult().copyWithCount(recipe.getSecondaryCount()) : ItemStack.EMPTY,
-            recipe.getTertiaryCount() > 0 ? recipe.getTertiaryResult().copyWithCount(recipe.getTertiaryCount()) : ItemStack.EMPTY};
-        for (int i = 0; i < results.length; i++) {
-            if (!results[i].isEmpty()) SiJei.output(builder, OUT_X + i * 18, ROW_Y).addItemStack(results[i]);
+        for (int i = 0; i < view.results().size(); i++) {
+            if (!view.results().get(i).isEmpty()) SiJei.output(builder, OUT_X + i * 18, ROW_Y).addItemStack(view.results().get(i));
         }
     }
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, mio_icif_WasherRecipe recipe, IFocusGroup focuses) {
-        int ticks = mio_icif_washer_elc.ticksOf(recipe);   // 0.1.11.117: as the machine runs it
-        SiJei.arrow(builder, ARROW_X, ROW_Y, ticks);
-        SiJei.line(builder, SiJei.cost(ticks, mio_icif_washer_elc.powerOf(recipe)), WIDTH, LINES_Y);
-        if (recipe.getWaterAmount() > 0) {
-            SiJei.line(builder, Component.translatable("jei.mio_icif.washer.water", SiJei.number(recipe.getWaterAmount())), WIDTH, LINES_Y + SiJei.LINE_HEIGHT);
-        }
+        MachineRecipeViews.Separation view = MachineRecipeViews.washer(recipe);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, view.ticks());
+        for (int i = 0; i < view.lines().size(); i++) SiJei.line(builder, view.lines().get(i), WIDTH, LINES_Y + i * SiJei.LINE_HEIGHT);
     }
 }

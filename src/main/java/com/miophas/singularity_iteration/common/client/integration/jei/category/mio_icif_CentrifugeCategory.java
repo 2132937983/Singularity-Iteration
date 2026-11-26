@@ -1,7 +1,7 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_centrifuge_elc;
 import com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipe;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -12,7 +12,6 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,21 +47,17 @@ public class mio_icif_CentrifugeCategory extends AbstractJeiRecipeCategory<mio_i
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_CentrifugeRecipe recipe, IFocusGroup focuses) {
-        SiJei.input(builder, IN_X, ROW_Y).addIngredients(recipe.getIngredient());
-        ItemStack[] results = {
-            recipe.getPrimaryResult().copyWithCount(recipe.getPrimaryCount()),
-            recipe.getSecondaryCount() > 0 ? recipe.getSecondaryResult().copyWithCount(recipe.getSecondaryCount()) : ItemStack.EMPTY,
-            recipe.getTertiaryCount() > 0 ? recipe.getTertiaryResult().copyWithCount(recipe.getTertiaryCount()) : ItemStack.EMPTY};
-        for (int i = 0; i < results.length; i++) {
-            if (!results[i].isEmpty()) SiJei.output(builder, OUT_X + i * 18, ROW_Y).addItemStack(results[i]);
+        MachineRecipeViews.Separation view = MachineRecipeViews.centrifuge(recipe);
+        SiJei.input(builder, IN_X, ROW_Y).addIngredients(view.input());
+        for (int i = 0; i < view.results().size(); i++) {
+            if (!view.results().get(i).isEmpty()) SiJei.output(builder, OUT_X + i * 18, ROW_Y).addItemStack(view.results().get(i));
         }
     }
 
     @Override
     protected void createExtrasFor(IRecipeExtrasBuilder builder, mio_icif_CentrifugeRecipe recipe, IFocusGroup focuses) {
-        int ticks = mio_icif_centrifuge_elc.DEFAULT_WORK_TIME;
-        SiJei.arrow(builder, ARROW_X, ROW_Y, ticks);
-        SiJei.line(builder, Component.translatable("jei.mio_icif.centrifuge.heat", SiJei.number(recipe.getMinHeatRequired())), WIDTH, LINES_Y);
-        SiJei.line(builder, SiJei.cost(ticks, mio_icif_centrifuge_elc.DEFAULT_ENERGY_PER_TICK), WIDTH, LINES_Y + SiJei.LINE_HEIGHT);
+        MachineRecipeViews.Separation view = MachineRecipeViews.centrifuge(recipe);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, view.ticks());
+        for (int i = 0; i < view.lines().size(); i++) SiJei.line(builder, view.lines().get(i), WIDTH, LINES_Y + i * SiJei.LINE_HEIGHT);
     }
 }

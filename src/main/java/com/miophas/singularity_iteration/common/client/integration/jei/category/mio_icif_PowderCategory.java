@@ -3,14 +3,11 @@ package com.miophas.singularity_iteration.common.client.integration.jei.category
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe;
+import com.miophas.singularity_iteration.common.client.integration.MachineRecipeViews;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-
-import java.util.List;
 
 /**
  * Macerator: 2 EU/t; 0.1.11.108: the time follows the input's Bond work index (synced material table), or the recipe's
@@ -27,25 +24,7 @@ public class mio_icif_PowderCategory extends SiItemMachineCategory<mio_icif_Powd
     }
 
     @Override
-    protected List<ItemStack> inputs(mio_icif_PowderRecipe recipe) {
-        return SiJei.withCount(recipe.getIngredient(), recipe.getIngredientCount());
-    }
-
-    @Override
-    protected ItemStack result(mio_icif_PowderRecipe recipe) {
-        return recipe.getResult();
-    }
-
-    @Override
-    protected int ticks(mio_icif_PowderRecipe recipe) {
-        ItemStack[] items = recipe.getIngredient().getItems();
-        ItemStack input = items.length > 0 ? items[0] : ItemStack.EMPTY;
-        return com.miophas.singularity_iteration.common.processing.Comminution.maceratorCost(input, recipe,
-            com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_powder_elc.DEFAULT_ENERGY_PER_TICK, 1.0).ticks();
-    }
-
-    @Override
-    protected long euPerTick(mio_icif_PowderRecipe recipe) {
-        return com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_powder_elc.DEFAULT_ENERGY_PER_TICK;
+    protected MachineRecipeViews.ItemMachine view(mio_icif_PowderRecipe recipe) {
+        return MachineRecipeViews.powder(recipe);
     }
 }

@@ -77,7 +77,9 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock implements c
         "generator/block_solar_generator", "generator/block_advanced_solar_panel", "generator/block_hybrid_solar_panel",
         "generator/block_ultimate_hybrid_solar_panel", "generator/block_quantum_solar_panel",
         "generator/block_mets_advanced_solar_generator", "generator/block_photon_resonance_solar_generator",
-        "generator/block_ultimate_photon_resonance_solar_generator");
+        "generator/block_ultimate_photon_resonance_solar_generator",
+        // 0.1.11.212 (MT1): the molecular transformer's four-corner chamber is open at the sides
+        "producer/block_molecular_transformer");
     private Boolean machineModel;
 
     protected boolean usesMachineModel() {

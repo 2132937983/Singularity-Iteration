@@ -49,6 +49,20 @@ public class mio_icif_block_molecular_transformer extends mio_icif_entity_block 
         return CODEC;
     }
 
+    /**
+     * 0.1.11.212 (MT1): the four-corner chamber model does not fill the cell. Outline and collision: the lower layer
+     * (corner clamps and closure, y 0..3), the 8x8 glass chamber (y 3..13) and the upper layer (y 13..16). The 2-wide notches
+     * in the middle of each edge are left solid. The model is symmetric, so the shape does not turn with FACING.
+     */
+    public static final net.minecraft.world.phys.shapes.VoxelShape SHAPE = net.minecraft.world.phys.shapes.Shapes.or(
+        Block.box(0, 0, 0, 16, 3, 16), Block.box(4, 3, 4, 12, 13, 12), Block.box(0, 13, 0, 16, 16, 16));
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState state, net.minecraft.world.level.BlockGetter level,
+                                                                  BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
+    }
+
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;

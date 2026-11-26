@@ -56,4 +56,9 @@
 
 ## 5. 当前批次
 
-[MOD1 第二轮：修改清单](batches/MOD1-r2.md)。第一轮的完整清单见 [MOD1：套装模块图标](batches/MOD1-suit-modules.md)（69 张）。
+暂无。新批次开始时，这里会写明批次说明和分支。
+
+已完成：
+
+- [MT1：分子重组仪](batches/MT1.md)（Blockbench 机器模型），选用四角约束腔、青蓝配色，0.1.11.212 接入。结果见 [`mt1/README.md`](mt1/README.md)。
+- MOD1 套装模块图标（[第一轮清单](batches/MOD1-suit-modules.md)，69 张；[第二轮修改清单](batches/MOD1-r2.md)），0.1.11.192 接入。

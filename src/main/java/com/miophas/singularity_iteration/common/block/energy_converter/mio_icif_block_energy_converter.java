@@ -24,8 +24,9 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,12 +36,20 @@ import java.util.List;
  * 0.1.11.1: the grid-tie interface (the Energy Converter until 0.1.11.0; same id). The front faces the network of
  * another mod, the other faces join the SI grid. Sneak + right-click cycles the mode (export, import, bidirectional
  * 10 / 25 / 50 %), right-click cycles the limit (32, 128, 512, 2,048 EU/t). See {@link mio_icif_energy_converter_entity}.
+ * 0.1.11.216: the model shows both (SCXSYGL's models): the faces that send energy are lit, the faces that take it dark,
+ * and the colour is the limit (grey 32, red 128, yellow 512, cyan 2,048 EU/t).
  */
 @SuppressWarnings("null")
 public class mio_icif_block_energy_converter extends mio_icif_entity_block {
 
-    /** False for export, true for import and bidirectional (the model of the block). */
-    public static final BooleanProperty MODE = BooleanProperty.create("mode");
+    /**
+     * 0.1.11.216: the mode (which faces of the model are lit). Until 0.1.11.215 a flag (true for import and
+     * bidirectional); a saved flag reads as the default and the interface sets the state on its first tick.
+     */
+    public static final EnumProperty<mio_icif_energy_converter_entity.Mode> MODE =
+        EnumProperty.create("mode", mio_icif_energy_converter_entity.Mode.class);
+    /** 0.1.11.216: the limit as an index of {@link mio_icif_energy_converter_entity#LIMITS} (the colour of the model). */
+    public static final IntegerProperty LIMIT = IntegerProperty.create("limit", 0, mio_icif_energy_converter_entity.LIMITS.length - 1);
     /** All six directions: the front faces the other network. */
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -51,12 +60,13 @@ public class mio_icif_block_energy_converter extends mio_icif_entity_block {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
-            .setValue(MODE, false));
+            .setValue(MODE, mio_icif_energy_converter_entity.Mode.EXPORT)
+            .setValue(LIMIT, mio_icif_energy_converter_entity.LIMITS.length - 1));   // the defaults of the interface
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, MODE);
+        builder.add(FACING, MODE, LIMIT);
     }
 
     @Override

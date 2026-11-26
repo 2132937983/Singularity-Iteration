@@ -25,6 +25,7 @@ SI cables do not take FE and do not connect to the cables of other mods. The gri
 - Import: the interface takes FE at the front, and supplies the SI grid as a generator.
 - Bidirectional: the interface keeps its buffer near half charge. Above the dead band it gives FE at the front. Below the dead band it takes FE at the front. On the SI side it takes only the surplus of generators and supplies only loads. Thus energy does not go back and forth through SI storage.
 - The limit (32, 128, 512 or 2,048 EU/t) applies to each direction. The SI input and the FE input share one limit per tick. The SI output and the FE output share one limit per tick.
+- Look: the faces that send energy are bright, the faces that take it are dark (the front in export, the other five faces in import, all faces in bidirectional mode). The colour shows the limit: grey 32, red 128, yellow 512, cyan 2,048 EU/t.
 
 ## Power data
 

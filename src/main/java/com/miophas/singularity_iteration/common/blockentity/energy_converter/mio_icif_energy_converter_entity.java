@@ -21,6 +21,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -60,8 +61,13 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity
     /** The dead bands of the bidirectional mode in percent of the buffer, in cycle order. */
     public static final int[] BANDS = {10, 25, 50};
 
-    /** The direction of the energy across the interface. */
-    public enum Mode { EXPORT, IMPORT, BIDIRECTIONAL }
+    /** The direction of the energy across the interface (0.1.11.216: also the {@code mode} property of the block state). */
+    public enum Mode implements StringRepresentable {
+        EXPORT, IMPORT, BIDIRECTIONAL;
+
+        @Override
+        public String getSerializedName() { return name().toLowerCase(java.util.Locale.ROOT); }
+    }
 
     private Mode mode = Mode.EXPORT;
     private int band = 25;
@@ -86,7 +92,13 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity
     public int band() { return band; }
     public long limit() { return limit; }
 
-    /** The mode flag of the block state: false for export, true for import and bidirectional. */
+    /** The index of the limit in {@link #LIMITS} (the {@code limit} property of the block state). */
+    public int limitIndex() {
+        for (int i = 0; i < LIMITS.length; i++) if (LIMITS[i] == limit) return i;
+        return LIMITS.length - 1;
+    }
+
+    /** The old mode flag (the block state until 0.1.11.215, still in the client tag): false for export, true otherwise. */
     public boolean getMode() { return mode != Mode.EXPORT; }
 
     /** Sets the mode and the dead band (10, 25 or 50; other values become 25). */
@@ -143,15 +155,28 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity
     private void changedSettings() {
         setChanged();
         if (level != null && !level.isClientSide) {
-            BlockState state = getBlockState();
-            if (state.hasProperty(mio_icif_block_energy_converter.MODE) && state.getValue(mio_icif_block_energy_converter.MODE) != getMode()) {
-                level.setBlock(worldPosition, state.setValue(mio_icif_block_energy_converter.MODE, getMode()), 3);
-            } else {
+            if (!syncState()) {
+                BlockState state = getBlockState();
                 level.sendBlockUpdated(worldPosition, state, state, 3);
             }
             // new SI faces, budgets or packet size: the grid reads the endpoint again
             refreshRegistration();
         }
+    }
+
+    /**
+     * 0.1.11.216: the block state shows the mode and the limit (the model). Also checked every tick, so a state that
+     * does not match (saved before 0.1.11.216, placed by a blueprint or a command) follows the interface at once.
+     *
+     * @return whether the state had to change
+     */
+    private boolean syncState() {
+        BlockState state = getBlockState();
+        if (level == null || !state.hasProperty(mio_icif_block_energy_converter.MODE) || !state.hasProperty(mio_icif_block_energy_converter.LIMIT)) return false;
+        BlockState next = state.setValue(mio_icif_block_energy_converter.MODE, mode).setValue(mio_icif_block_energy_converter.LIMIT, limitIndex());
+        if (next == state) return false;
+        level.setBlock(worldPosition, next, 3);
+        return true;
     }
 
     /** The lower edge of the bidirectional band in EU. */
@@ -214,6 +239,7 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity
 
     public void tick() {
         if (!(level instanceof ServerLevel server) || isRemoved()) return;
+        syncState();
         long now = server.getGameTime();
         if (now < frontFaultUntil) return;
         // 0.1.11.3: an output whose receipt never came (the foreign block threw or answered out of range) stays debited

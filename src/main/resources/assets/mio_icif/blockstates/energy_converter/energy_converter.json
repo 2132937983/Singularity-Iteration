@@ -1,49 +1,279 @@
 {
   "variants": {
-    "facing=north,mode=false": {
-      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe"
+    "facing=north,limit=0,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_0"
     },
-    "facing=south,mode=false": {
-      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+    "facing=north,limit=1,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_1"
+    },
+    "facing=north,limit=2,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_2"
+    },
+    "facing=north,limit=3,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_3"
+    },
+    "facing=north,limit=0,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_0"
+    },
+    "facing=north,limit=1,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_1"
+    },
+    "facing=north,limit=2,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_2"
+    },
+    "facing=north,limit=3,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_3"
+    },
+    "facing=north,limit=0,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_0"
+    },
+    "facing=north,limit=1,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_1"
+    },
+    "facing=north,limit=2,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_2"
+    },
+    "facing=north,limit=3,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_3"
+    },
+    "facing=south,limit=0,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_0",
       "y": 180
     },
-    "facing=east,mode=false": {
-      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+    "facing=south,limit=1,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_1",
+      "y": 180
+    },
+    "facing=south,limit=2,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_2",
+      "y": 180
+    },
+    "facing=south,limit=3,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_3",
+      "y": 180
+    },
+    "facing=south,limit=0,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_0",
+      "y": 180
+    },
+    "facing=south,limit=1,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_1",
+      "y": 180
+    },
+    "facing=south,limit=2,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_2",
+      "y": 180
+    },
+    "facing=south,limit=3,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_3",
+      "y": 180
+    },
+    "facing=south,limit=0,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_0",
+      "y": 180
+    },
+    "facing=south,limit=1,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_1",
+      "y": 180
+    },
+    "facing=south,limit=2,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_2",
+      "y": 180
+    },
+    "facing=south,limit=3,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_3",
+      "y": 180
+    },
+    "facing=east,limit=0,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_0",
       "y": 90
     },
-    "facing=west,mode=false": {
-      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+    "facing=east,limit=1,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_1",
+      "y": 90
+    },
+    "facing=east,limit=2,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_2",
+      "y": 90
+    },
+    "facing=east,limit=3,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_3",
+      "y": 90
+    },
+    "facing=east,limit=0,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_0",
+      "y": 90
+    },
+    "facing=east,limit=1,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_1",
+      "y": 90
+    },
+    "facing=east,limit=2,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_2",
+      "y": 90
+    },
+    "facing=east,limit=3,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_3",
+      "y": 90
+    },
+    "facing=east,limit=0,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_0",
+      "y": 90
+    },
+    "facing=east,limit=1,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_1",
+      "y": 90
+    },
+    "facing=east,limit=2,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_2",
+      "y": 90
+    },
+    "facing=east,limit=3,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_3",
+      "y": 90
+    },
+    "facing=west,limit=0,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_0",
       "y": 270
     },
-    "facing=up,mode=false": {
-      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+    "facing=west,limit=1,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_1",
+      "y": 270
+    },
+    "facing=west,limit=2,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_2",
+      "y": 270
+    },
+    "facing=west,limit=3,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_3",
+      "y": 270
+    },
+    "facing=west,limit=0,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_0",
+      "y": 270
+    },
+    "facing=west,limit=1,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_1",
+      "y": 270
+    },
+    "facing=west,limit=2,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_2",
+      "y": 270
+    },
+    "facing=west,limit=3,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_3",
+      "y": 270
+    },
+    "facing=west,limit=0,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_0",
+      "y": 270
+    },
+    "facing=west,limit=1,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_1",
+      "y": 270
+    },
+    "facing=west,limit=2,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_2",
+      "y": 270
+    },
+    "facing=west,limit=3,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_3",
+      "y": 270
+    },
+    "facing=up,limit=0,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_0",
       "x": 270
     },
-    "facing=down,mode=false": {
-      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+    "facing=up,limit=1,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_1",
+      "x": 270
+    },
+    "facing=up,limit=2,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_2",
+      "x": 270
+    },
+    "facing=up,limit=3,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_3",
+      "x": 270
+    },
+    "facing=up,limit=0,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_0",
+      "x": 270
+    },
+    "facing=up,limit=1,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_1",
+      "x": 270
+    },
+    "facing=up,limit=2,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_2",
+      "x": 270
+    },
+    "facing=up,limit=3,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_3",
+      "x": 270
+    },
+    "facing=up,limit=0,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_0",
+      "x": 270
+    },
+    "facing=up,limit=1,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_1",
+      "x": 270
+    },
+    "facing=up,limit=2,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_2",
+      "x": 270
+    },
+    "facing=up,limit=3,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_3",
+      "x": 270
+    },
+    "facing=down,limit=0,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_0",
       "x": 90
     },
-    "facing=north,mode=true": {
-      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu"
+    "facing=down,limit=1,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_1",
+      "x": 90
     },
-    "facing=south,mode=true": {
-      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
-      "y": 180
+    "facing=down,limit=2,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_2",
+      "x": 90
     },
-    "facing=east,mode=true": {
-      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
-      "y": 90
+    "facing=down,limit=3,mode=export": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe_3",
+      "x": 90
     },
-    "facing=west,mode=true": {
-      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
-      "y": 270
+    "facing=down,limit=0,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_0",
+      "x": 90
     },
-    "facing=up,mode=true": {
-      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
-      "x": 270
+    "facing=down,limit=1,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_1",
+      "x": 90
     },
-    "facing=down,mode=true": {
-      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
+    "facing=down,limit=2,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_2",
+      "x": 90
+    },
+    "facing=down,limit=3,mode=import": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu_3",
+      "x": 90
+    },
+    "facing=down,limit=0,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_0",
+      "x": 90
+    },
+    "facing=down,limit=1,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_1",
+      "x": 90
+    },
+    "facing=down,limit=2,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_2",
+      "x": 90
+    },
+    "facing=down,limit=3,mode=bidirectional": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_eu_3",
       "x": 90
     }
   }

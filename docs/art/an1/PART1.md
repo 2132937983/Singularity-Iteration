@@ -1,6 +1,6 @@
 # AN1 第一部分 · 僚机移动、待机与受击
 
-[24 个动作总览](../previews/AN1.png) · [Blockbench 工程](../../../tools/models/si_humanoid_rig.bbmodel) · [共用骨架](../../../src/main/resources/assets/mio_icif/geo/entity/si_humanoid_rig.geo.json) · [僚机动画 JSON](../../../src/main/resources/assets/mio_icif/animations/entity/wingman.animation.json)
+[僚机动作总览（含本批 24 项）](../previews/AN1.png) · [Blockbench 工程](../../../tools/models/si_humanoid_rig.bbmodel) · [共用骨架](../../../src/main/resources/assets/mio_icif/geo/entity/si_humanoid_rig.geo.json) · [僚机动画 JSON](../../../src/main/resources/assets/mio_icif/animations/entity/wingman.animation.json)
 
 下表的动图由导出的游戏 JSON 绘制。正面用来看左右换重，侧面用来看脚掌和地面、上身前倾及落地缓冲。标记帧有红色轮廓，标签显示契约事件。
 

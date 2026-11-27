@@ -1,4 +1,4 @@
-"""Author AN1's idle, reaction and power clips, and export the part-one runtime JSON.
+"""Author AN1's idle, reaction and power clips, and export the wingman runtime JSON.
 
 Authoring space has Y up, the mannequin faces -Z, and positive angles are
 right handed. The two animation-axis sign changes are made only at export.
@@ -11,6 +11,9 @@ import re
 from pathlib import Path
 
 from an1_locomotion import simplify, tracks as locomotion_tracks
+from an1_melee import build_melee
+from an1_ranged import build_ranged
+from an1_tactics import tracks as tactics_tracks
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -212,12 +215,13 @@ def encode(tracks):
 
 def main():
     spec = json.loads((ROOT / "docs/art/an1/spec.json").read_bytes())
-    clips = {**idle_and_calibration(), **recovery_clips(), **locomotion_tracks()}
+    clips = {**idle_and_calibration(), **recovery_clips(), **locomotion_tracks(),
+             **build_melee(), **build_ranged(), **tactics_tracks()}
     for name, directions in (("front",(1,0)),("back",(-1,0)),("left",(0,1)),("right",(0,-1))):
         clips["hit_"+name] = hit(*directions)
-    entries = [a for a in spec["animations"] if a["part"]==1]
+    entries = [a for a in spec["animations"] if a["file"] == "wingman"]
     if set(clips) != {e["name"] for e in entries}:
-        raise ValueError("Authored clips differ from the part-one contract")
+        raise ValueError("Authored clips differ from the wingman contract")
     file = spec["files"]["wingman"]
     animations = {}
     for entry in entries:

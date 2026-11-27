@@ -85,7 +85,11 @@ public final class Round11546GameTests {
         h.succeed();
     }
 
-    /** After a hit the Wingman pauses ({@code hitPause}), then boosts away. */
+    /**
+     * After a hit the Wingman pauses ({@code hitPause}), then boosts away. 0.1.11.229 (AN1 part 2): only after the combo's
+     * finisher, which winds up first and lands on its fifth tick (the first two cuts chain on without a pause); the dive slam
+     * is kept off here.
+     */
     @GameTest(template = "empty", batch = "round11546_pause", timeoutTicks = 20)
     public static void meleeHitPausesBeforeTheBoost(GameTestHelper h) {
         ServerPlayer owner = Round33GameTests.survivalPlayer(h);
@@ -95,8 +99,14 @@ public final class Round11546GameTests {
         zombie.moveTo(w.getX() + 1.0, w.getY(), w.getZ());
         zombie.setNoAi(true);
         h.getLevel().addFreshEntity(zombie);
+        setIntField(w, "slamCooldown", 1000);
+        setIntField(w, "comboStep", 2);              // the next strike is the finisher
+        setIntField(w, "lastStrikeAt", w.tickCount); // within the combo
         int boosts = (Integer) Round33GameTests.call(w, "boostCount");
-        Round33GameTests.call(w, "engageMelee", zombie, owner);
+        Round33GameTests.call(w, "engageMelee", zombie, owner);   // the wind-up starts
+        h.assertTrue(intField(w, "hitPause") == 0 && ((Enum<?>) Round33GameTests.call(w, "action")).name().equals("MELEE_3"),
+            "the finisher does not wind up: pause " + intField(w, "hitPause") + ", action " + Round33GameTests.call(w, "action"));
+        for (int i = 0; i < 5; i++) Round33GameTests.call(w, "engageMelee", zombie, owner);   // it lands on the fifth tick
         h.assertTrue(intField(w, "hitPause") == 3 && (Integer) Round33GameTests.call(w, "boostCount") == boosts,
             "after the hit: pause " + intField(w, "hitPause") + ", boosts " + Round33GameTests.call(w, "boostCount"));
         for (int i = 0; i < 3; i++) Round33GameTests.call(w, "engageMelee", zombie, owner);
@@ -140,6 +150,16 @@ public final class Round11546GameTests {
         h.assertTrue(java.nio.file.Files.exists(modFile.findResource("assets/mio_icif/textures/entity/wingman_endoskeleton_glow.png")),
             "missing wingman_endoskeleton_glow.png");
         h.succeed();
+    }
+
+    private static void setIntField(Object o, String name, int v) {
+        try {
+            java.lang.reflect.Field f = o.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            f.setInt(o, v);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(name, e);
+        }
     }
 
     private static int intField(Object target, String name) {

@@ -254,13 +254,17 @@ public final class WingmanTactics {
         // best score. The result is the same as before (the first of equal scores wins).
         double[] bounds = new double[n];
         boolean[] room = new boolean[n];
+        // 0.1.11.229 (decision seven A): on foot a station beside cover (a block at the waist towards the target) scores more
+        double[] cover = new double[n];
+        boolean foot = heights == HEIGHTS_FOOT;
         for (int i = 0; i < n; i++) {
             room[i] = free(level, points[i]);
-            bounds[i] = room[i] ? stationRest(0, self, owner, c, points[i], flank, dirs[i], hs[i], lookFlat, near) : -1.0E6;
+            if (foot && room[i] && coverSide(level, points[i].add(0, -FOOT_DROP, 0), c) != 0) cover[i] = COVER_BONUS;
+            bounds[i] = room[i] ? stationRest(0, self, owner, c, points[i], flank, dirs[i], hs[i], lookFlat, near) + cover[i] : -1.0E6;
         }
         double[] top = new double[1];
         int pick = bestIndex(bounds, -1.0E9, i -> !room[i] || clear(level, points[i].add(0, 0.2, 0), c, self) ? bounds[i]
-            : stationRest(-120, self, owner, c, points[i], flank, dirs[i], hs[i], lookFlat, near), top);
+            : stationRest(-120, self, owner, c, points[i], flank, dirs[i], hs[i], lookFlat, near) + cover[i], top);
         Vec3 best = pick < 0 ? null : points[pick];
         double bestScore = top[0];
         if (previous != null && best != null) {
@@ -269,6 +273,31 @@ public final class WingmanTactics {
             if (prevScore > bestScore - 8) return previous;
         }
         return best == null ? c.add(0, 4, 0) : best;
+    }
+
+    /** 0.1.11.229 (decision seven A): score of a station beside cover; how far a foot station lies above the floor (the target's middle). */
+    static final double COVER_BONUS = 10, FOOT_DROP = 1.2;
+
+    /**
+     * 0.1.11.229 (decision seven A): the side a Wingman standing at {@code feet} leans out of its cover to shoot at
+     * {@code target}: 0 without cover (no block at the waist a block towards the target), 1 to its left, 2 to its right (the
+     * side that is open at the waist; the right when both are).
+     */
+    static byte coverSide(Level level, Vec3 feet, Vec3 target) {
+        Vec3 d = new Vec3(target.x - feet.x, 0, target.z - feet.z);
+        if (d.lengthSqr() < 1.0E-4) return 0;
+        d = d.normalize();
+        Vec3 waist = feet.add(0, 0.6, 0);
+        if (!solid(level, waist.add(d))) return 0;
+        Vec3 right = new Vec3(-d.z, 0, d.x);
+        if (!solid(level, waist.add(right.scale(0.9)).add(d))) return 2;
+        if (!solid(level, waist.add(right.scale(-0.9)).add(d))) return 1;
+        return 0;
+    }
+
+    private static boolean solid(Level level, Vec3 p) {
+        BlockPos b = BlockPos.containing(p);
+        return level.isLoaded(b) && !level.getBlockState(b).getCollisionShape(level, b).isEmpty();
     }
 
     /** 0.1.10.8: the Wingmen (not this one) and the hostiles (not the target) near the stations of one choice. */

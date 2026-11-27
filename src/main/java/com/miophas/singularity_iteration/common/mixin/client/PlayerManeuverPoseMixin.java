@@ -29,7 +29,12 @@ public abstract class PlayerManeuverPoseMixin<T extends LivingEntity> {
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("TAIL"))
     private void mio_icif$maneuverPose(T entity, float limbSwing, float limbSwingAmount, float age, float headYaw, float headPitch, CallbackInfo ci) {
         boolean hand = FirstPersonArm.isHandSetup(limbSwing, limbSwingAmount, age, headYaw, headPitch);
-        if (!hand && !FirstPersonArm.active() && entity instanceof Player player) ManeuverModeClient.applyLimbPose((HumanoidModel<?>) (Object) this, player);
+        if (!hand && !FirstPersonArm.active() && entity instanceof Player player) {
+            ManeuverModeClient.applyLimbPose((HumanoidModel<?>) (Object) this, player);
+            // 0.1.11.229 (AN1 part 3): the suit's keyframe moments (third person; GeckoLib only)
+            com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.pose(player, (HumanoidModel<?>) (Object) this,
+                net.minecraft.util.Mth.clamp(age - player.tickCount, 0, 1));
+        }
         if (hand) FirstPersonArm.exit();
     }
 }

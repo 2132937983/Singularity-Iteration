@@ -73,6 +73,52 @@ public final class WingmanKeyframeChoice {
 
     private static float clamp(float v, float lo, float hi) { return Math.max(lo, Math.min(hi, v)); }
 
+    /** 0.1.11.229: an action animation and its trigger (a new trigger starts it again; 0 for a pose that just holds or loops). */
+    public record Act(String name, int trigger) { }
+
+    /** Ticks of the glare (0.3 s), of a recoil (light 0.15 s, heavy 0.35 s), of the bow's release (0.3 s) and of the trident's throw (0.6 s). */
+    public static final int GLARE_TICKS = 6, RECOIL_TICKS = 3, HEAVY_RECOIL_TICKS = 7, RELEASE_TICKS = 6, THROW_TICKS = 12;
+    /** Ticks before a shot at which a Wingman in cover leans out, and after it before it ducks back. */
+    public static final int PEEK_BEFORE = 8, PEEK_AFTER = 4;
+
+    /**
+     * 0.1.11.229 (AN1 part 2): the action animation of a Wingman, played over its gait or its flight pose, or null.
+     *
+     * <ul>
+     *   <li>A combat action of the server ({@link WingmanStrikes.Action}: the combo cuts, the heavy blow, the kick, the dash
+     *       stab, the dive slam, the shove, the intercept, the flourish) for its length.</li>
+     *   <li>Otherwise the stare at a new lock ({@code glare}).</li>
+     *   <li>With a ranged weapon in a fight: the bow's release after a shot, then its draw; the crossbow's reload after a
+     *       shot; the trident's throw; a gun's recoil (heavy for a splash gun) after a shot, else its aim. On foot behind
+     *       cover a gun crouches between shots and leans out to the open side a moment before and after each.</li>
+     *   <li>A blade (SlashBlade has its own motion) and a melee weapon between strikes: none.</li>
+     * </ul>
+     *
+     * @param shotAt the tick of the last shot (its trigger)
+     */
+    @Nullable
+    public static Act action(WingmanPose.Hold hold, boolean heavyGun, float combat, float shotAge, int shotAt, int cooldown,
+                             WingmanStrikes.Action act, float sinceAction, int actionAt, float sinceGlare, int glareAt, byte cover, boolean onFloor) {
+        if (hold == WingmanPose.Hold.BLADE) return null;
+        if (act != WingmanStrikes.Action.NONE && act.animation != null && sinceAction < act.length) return new Act(act.animation, actionAt);
+        if (sinceGlare < GLARE_TICKS) return new Act("glare", glareAt);
+        if (combat < 0.3F) return null;
+        switch (hold) {
+            case BOW -> { return shotAge < RELEASE_TICKS ? new Act("bow_release", shotAt) : new Act("bow_draw", shotAt + 1); }
+            case CROSSBOW -> { return shotAge < cooldown ? new Act("crossbow_reload", shotAt) : new Act("aim_rifle", 0); }
+            case SPEAR -> { return shotAge < THROW_TICKS ? new Act("spear_throw", shotAt) : new Act("aim_pistol", 0); }
+            case RANGED -> {
+                if (cover != 0 && onFloor) {
+                    boolean out = shotAge < PEEK_AFTER || cooldown - shotAge <= PEEK_BEFORE;
+                    return out ? new Act(cover == 1 ? "peek_left" : "peek_right", shotAt) : new Act("cover_crouch", 0);
+                }
+                if (shotAge < (heavyGun ? HEAVY_RECOIL_TICKS : RECOIL_TICKS)) return new Act(heavyGun ? "recoil_heavy" : "recoil_light", shotAt);
+                return new Act("aim_rifle", 0);
+            }
+            default -> { return null; }
+        }
+    }
+
     /**
      * The hit reaction (short name) for a hit from {@code fromYawDeg} (the direction the blow came from, degrees, Minecraft
      * yaw) on a Wingman facing {@code bodyYawDeg}: front, back, left or right of the Wingman.

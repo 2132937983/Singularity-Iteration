@@ -3754,6 +3754,71 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "wingman_combat" (-Dsi.capture.scene=wingman_combat), 0.1.11.229 (AN1 parts 2 and 3): a sword Wingman fights an
+     * invulnerable zombie in the open, seen from the side (frames every 2 ticks: the dive slam, the combo, the finisher); then
+     * the owner in a quantum suit plays its suit-up and an order from a camera in front of it (third person).
+     */
+    private static void sceneWingmanCombat() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, -6.5, 0, 8);
+            sp.getAbilities().flying = false;
+            sp.getAbilities().invulnerable = true;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[] suit = {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
+                    new ItemStack(Items.IRON_BOOTS), new ItemStack(Items.IRON_SWORD), ItemStack.EMPTY};
+                for (int c = 0; c < 6; c++) if (!suit[c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
+                com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0, com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+            }
+            lightTrailCamera(sp, 0.5, -59.0, 4.5, 8.5, -59.0, 4.5);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; });
+        client(3, CaptureDirector::attachCaptureCamera);
+        server(30, sp -> {
+            var z = mob(sp.serverLevel(), net.minecraft.world.entity.EntityType.ZOMBIE, 8.5, -60, 9.5, true, sp);
+            z.setHealth(z.getMaxHealth());
+            z.setInvulnerable(true);
+            z.setTarget(sp);
+            lightTrailCamera(sp, 8.5, -59.0, 2.0, 8.5, -59.0, 9.5);
+        });
+        client(2, CaptureDirector::attachCaptureCamera);
+        for (int f = 0; f < 70; f++) shot(2, String.format("wingman_combat/fight_%02d", f));
+        server(1, sp -> {
+            for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class, sp.getBoundingBox().inflate(60))) e.discard();
+            sp.setItemSlot(EquipmentSlot.HEAD, item("armor/item_armor_quantum_helmet"));
+            sp.setItemSlot(EquipmentSlot.CHEST, item("armor/item_armor_quantum_chestplate"));
+            sp.setItemSlot(EquipmentSlot.LEGS, item("armor/item_armor_quantum_leggings"));
+            sp.setItemSlot(EquipmentSlot.FEET, item("armor/item_armor_quantum_boots"));
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.setCameraEntity(mc.player); mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
+            com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.mark(mc.player, com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.Kind.SUIT_UP); });
+        for (int f = 0; f < 10; f++) shot(3, String.format("wingman_combat/suit_up_%02d", f));
+        client(2, () -> com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.mark(Minecraft.getInstance().player,
+            com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.Kind.POINT));
+        for (int f = 0; f < 4; f++) shot(3, String.format("wingman_combat/point_%02d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_combat".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanCombat();
+        }
+    }
+
+    /**
      * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
      * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;
      * 0.1.11.53 (P1): on its own AI (the combo chains), a frame every 2 ticks. Without SlashBlade the scene shows nothing

@@ -78,6 +78,7 @@ public class Singularity_Iteration_Client {
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         com.miophas.singularity_iteration.common.client.armory.WingmanKeyframes.init();   // 0.1.11.225: GeckoLib keyframes, when installed
+        com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.init();          // 0.1.11.229: the suited player's
         // Some client setup code
         Singularity_Iteration.LOGGER.debug("HELLO FROM CLIENT SETUP");
         // 0.1.9.1: registry lookup for the machine contents of crafting remainders on the client side

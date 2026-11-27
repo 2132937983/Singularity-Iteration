@@ -921,6 +921,12 @@ public final class ManeuverModeClient {
      *   <li>The head turns up by 1.25 rad in cruise, so the flyer looks forward while it lies flat.</li>
      * </ul>
      */
+    /** 0.1.11.229 (AN1 part 3): true while {@code p} hovers in maneuver flight (in the air, nearly still). */
+    public static boolean hovering(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis != null && vis.transition > 0.6F && !vis.grounded && !p.onGround() && vis.speed < 0.15;
+    }
+
     public static void applyLimbPose(net.minecraft.client.model.HumanoidModel<?> model, Player p) {
         Visual vis = VISUALS.get(p.getId());
         if (vis == null || vis.transition <= 0.001F) return;

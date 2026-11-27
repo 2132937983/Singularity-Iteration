@@ -56,6 +56,7 @@ public final class FlightImpactClient {
     }
 
     public static void hardLanding(Player p, float strength) {
+        SuitKeyframes.mark(p, SuitKeyframes.Kind.LAND_HEAVY);   // 0.1.11.229 (AN1 part 3)
         Vec3 at = p.position();
         if (!FcsClientConfig.classicFlightFx()) PhaseBursts.hardLanding(at, strength);
         p.level().playLocalSound(at.x, at.y, at.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS,
@@ -64,6 +65,7 @@ public final class FlightImpactClient {
     }
 
     public static void takeoff(Player p) {
+        SuitKeyframes.mark(p, SuitKeyframes.Kind.TAKEOFF);   // 0.1.11.229
         if (!FcsClientConfig.classicFlightFx()) PhaseBursts.takeoffBurst(p.position());
         shakeFrom(p, 0.22F);
     }
@@ -76,10 +78,12 @@ public final class FlightImpactClient {
     }
 
     public static void boost(Player p) {
+        SuitKeyframes.mark(p, SuitKeyframes.Kind.BOOST);   // 0.1.11.229
         if (local(p)) boostAt = now();
     }
 
     public static void brake(Player p, float size) {
+        SuitKeyframes.mark(p, SuitKeyframes.Kind.BRAKE);   // 0.1.11.229
         if (!local(p)) return;
         brakeAt = now();
         brakeSize = Math.max(0F, Math.min(1F, size));

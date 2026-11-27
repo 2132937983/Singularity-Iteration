@@ -102,6 +102,9 @@ public class WingmanEntity extends Mob {
     /** 0.1.11.226 (G3): on foot (the ground form), and the hop counter (bit 0: the last hop was a thrust hop). */
     private static final EntityDataAccessor<Boolean> DATA_GROUND = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_HOPS = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    /** 0.1.11.229 (AN1 part 2): the combat action counter (low bits: {@link WingmanStrikes.Action}), and the cover side (0 none, 1 left, 2 right). */
+    private static final EntityDataAccessor<Integer> DATA_ACTION = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Byte> DATA_COVER = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
     public static final int SLASH_COMBO = 0, SLASH_DASH = 1, SLASH_ARTS = 2;
 
     // server state (saved)
@@ -228,6 +231,8 @@ public class WingmanEntity extends Mob {
         builder.define(DATA_FIRE_CD, 20);
         builder.define(DATA_GROUND, false);
         builder.define(DATA_HOPS, 0);
+        builder.define(DATA_ACTION, 0);
+        builder.define(DATA_COVER, (byte) 0);
     }
 
     // ------------------------------------------------------------------ accessors
@@ -506,6 +511,9 @@ public class WingmanEntity extends Mob {
         if (attackCooldown > 0) attackCooldown--;
         if (deflectCooldown > 0) deflectCooldown--;
         if (boostCooldown > 0) boostCooldown--;
+        if (dashCooldown > 0) dashCooldown--;    // 0.1.11.229
+        if (kickCooldown > 0) kickCooldown--;
+        if (slamCooldown > 0) slamCooldown--;
         syncTarget(world);
         WingmanNavDebug.tick(this, world);   // 0.1.11.220: the cave debug view (-Dsi.wingman.navDebug=true)
         if (artsCooldown > 0) artsCooldown--;
@@ -1091,6 +1099,7 @@ public class WingmanEntity extends Mob {
                 world.sendParticles(ParticleTypes.ELECTRIC_SPARK, to.x, to.y, to.z, 10, 0.15, 0.15, 0.15, 0.2);
                 world.playSound(null, to.x, to.y, to.z, SoundEvents.SHIELD_BLOCK, SoundSource.NEUTRAL, 0.8F, 1.3F);
                 threat.discard();
+                act(WingmanStrikes.Action.INTERCEPT);   // 0.1.11.229: the arm snaps up at it
                 WingmanCallouts.say(this, WingmanCallouts.Kind.INTERCEPT);
                 deflectCooldown = WingmanSuitSynergy.interceptCooldown(this);
             } else {
@@ -1733,6 +1742,7 @@ public class WingmanEntity extends Mob {
     int glareTicks() { return glareTicks; }
 
     private void engage(LivingEntity enemy, ServerPlayer player) {
+        if (weaponKind() != WeaponKind.RANGED && entityData.get(DATA_COVER) != 0) entityData.set(DATA_COVER, (byte) 0);   // 0.1.11.229
         // 0.1.11.223 (G4, decision four A): a target nobody sees now is hunted at its last known place; found there or not, it
         // is forgotten when the Wingman gets there without seeing it (a focus order chases its target wherever it is)
         if (order != WingmanOrder.FOCUS) {
@@ -1779,6 +1789,9 @@ public class WingmanEntity extends Mob {
         }
         Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
         faceSmooth(enemy.getEyePosition(), 35);
+        // 0.1.11.229 (AN1 part 2): a strike winds up, then lands on its impact tick; a dive slam falls on the target
+        if (strike != WingmanStrikes.Action.NONE) { tickStrike(enemy, player); return; }
+        if (slamPhase > 0) { tickSlam(enemy, player); return; }
         // 0.1.11.46 (M2): after a hit the Wingman stays a moment (the follow-through of the cut), then boosts away
         if (hitPause > 0) {
             setDeltaMovement(getDeltaMovement().scale(0.45));
@@ -1797,28 +1810,161 @@ public class WingmanEntity extends Mob {
             Vec3 look = enemy.getViewVector(1.0F);
             approach = approach.add(new Vec3(-look.x, 0, -look.z).scale(1.5)).add(sideOf(enemy).scale(1.5));
         }
-        steer(approach, COMBAT, player);
         armElectric();                                          // 0.1.10.4: switch the nanosaber on
-        if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) {
-            swing(InteractionHand.MAIN_HAND);
-            meleeImpact(enemy, doHurtTarget(enemy));
-            double speed = Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED));
-            attackCooldown = Mth.ceil(20.0 / speed);
-            // a creeper is thrown away from the owner
-            if (enemy instanceof net.minecraft.world.entity.monster.Creeper) {
-                Vec3 away = enemy.position().subtract(player.position());
-                enemy.knockback(1.6, -away.x, -away.z);
-            }
-            // 0.1.9.1 hit and away: if the target is already down, snap straight to the next hostile instead of circling
-            if (!enemy.isAlive()) {
-                hitPause = 0;
-                retreatTicks = 0;
-            } else {
-                hitPause = HIT_PAUSE;
-                retreatTicks = 8;
-            }
+        double d = distanceTo(enemy);
+        // 0.1.11.229: a dive slam from above in open air, a dash stab from a few blocks off
+        if (!ground() && slamCooldown == 0 && attackCooldown == 0 && d < SLAM_FROM && standsOnFloor(enemy) && !WingmanSpace.of(this).kind().confined()) {
+            slamPhase = 1;
+            slamTicks = 0;
+            tickSlam(enemy, player);
+            return;
+        }
+        if (dashCooldown == 0 && attackCooldown == 0 && d > DASH_MIN && d < DASH_MAX && hasLineOfSight(enemy)) {
+            boostCooldown = 0;
+            boost(enemy.position().subtract(position()));
+            dashCooldown = DASH_COOLDOWN;
+            startStrike(WingmanStrikes.Action.DASH);
+            return;
+        }
+        steer(approach, COMBAT, player);
+        if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) startStrike(pickStrike(enemy, player));
+    }
+
+    // ---- strikes with a wind-up (0.1.11.229, Wingman motion, AN1 part 2)
+
+    /** Chance of a flourish after a kill with no next target; blocks of a dash stab; blocks for a slam; cooldowns. */
+    static final float FLOURISH_CHANCE = 0.35F, KICK_CHANCE = 0.25F;
+    static final double DASH_MIN = 3.2, DASH_MAX = 6.5, SLAM_FROM = 6.0, SLAM_HEIGHT = 4.0, SLAM_RADIUS = 3.0;
+    static final int DASH_COOLDOWN = 60, KICK_COOLDOWN = 60, SLAM_COOLDOWN = 100, SLAM_SETUP_TICKS = 30;
+    private WingmanStrikes.Action strike = WingmanStrikes.Action.NONE;
+    private int strikeTicks, comboStep, lastStrikeAt = -1000, dashCooldown, kickCooldown, slamCooldown, slamPhase, slamTicks;
+    @Nullable private Vec3 shoveFrom;
+
+    /** Publishes a combat action: every client starts its animation (0.1.11.229). */
+    private void act(WingmanStrikes.Action action) { entityData.set(DATA_ACTION, WingmanStrikes.next(entityData.get(DATA_ACTION), action)); }
+
+    /** 0.1.11.229: the last combat action (client and server). */
+    public WingmanStrikes.Action action() { return WingmanStrikes.kindOf(entityData.get(DATA_ACTION)); }
+
+    /** 0.1.11.229 (decision seven A): the side a ranged Wingman on foot leans out of its cover (0 none, 1 left, 2 right). */
+    public byte coverSide() { return entityData.get(DATA_COVER); }
+
+    /**
+     * The next strike: a heavy weapon swings its overhead blow; an escort shoves a mob off its owner; on foot now and then a
+     * kick (never a creeper); otherwise the three-hit combo, started over after a pause of {@link WingmanStrikes#COMBO_GAP}.
+     */
+    private WingmanStrikes.Action pickStrike(LivingEntity enemy, ServerPlayer player) {
+        if (heftOf(getMainHandItem()) == Heft.HEAVY) return WingmanStrikes.Action.HEAVY;
+        if (mode() == WingmanMode.ESCORT && enemy.distanceTo(player) < 3.5) { shoveFrom = player.position(); return WingmanStrikes.Action.SHOVE; }
+        if (ground() && onGround() && enemy.onGround() && kickCooldown == 0 && !(enemy instanceof net.minecraft.world.entity.monster.Creeper)
+            && getRandom().nextFloat() < KICK_CHANCE) {
+            kickCooldown = KICK_COOLDOWN;
+            return WingmanStrikes.Action.KICK;
+        }
+        if (tickCount - lastStrikeAt > WingmanStrikes.COMBO_GAP) comboStep = 0;
+        return WingmanStrikes.combo(comboStep++);
+    }
+
+    private void startStrike(WingmanStrikes.Action a) {
+        strike = a;
+        strikeTicks = 0;
+        lastStrikeAt = tickCount;
+        act(a);
+        double speed = Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED));
+        attackCooldown = Math.max(a.impact + 2, Mth.ceil(20.0 / speed));   // the hits per second of the weapon stay
+    }
+
+    /** One tick of a strike: the wind-up holds the Wingman on the enemy (a dash keeps its speed); the blow lands on its impact tick. */
+    private void tickStrike(LivingEntity enemy, ServerPlayer player) {
+        WingmanStrikes.Action a = strike;
+        if (a != WingmanStrikes.Action.DASH) setDeltaMovement(getDeltaMovement().scale(0.6));
+        if (++strikeTicks < a.impact) return;
+        strike = WingmanStrikes.Action.NONE;
+        boolean reach = isWithinMeleeAttackRange(enemy) || distanceTo(enemy) < (a == WingmanStrikes.Action.DASH ? 3.6 : 3.0);
+        swing(InteractionHand.MAIN_HAND);
+        boolean hit = reach && land(enemy, a.damage);
+        meleeImpact(enemy, hit);
+        if (hit && a.knockback > 0) {
+            Vec3 from = a == WingmanStrikes.Action.SHOVE && shoveFrom != null ? shoveFrom : position();
+            Vec3 away = enemy.position().subtract(from);
+            enemy.knockback(a.knockback, -away.x, -away.z);
+        }
+        // a creeper is thrown away from the owner
+        if (hit && enemy instanceof net.minecraft.world.entity.monster.Creeper) {
+            Vec3 away = enemy.position().subtract(player.position());
+            enemy.knockback(1.6, -away.x, -away.z);
+        }
+        // 0.1.9.1 hit and away, 0.1.11.229: after the combo's finisher (the first two cuts chain on); none when the target is down
+        if (!enemy.isAlive() || !a.finisher) {
+            hitPause = 0;
+            retreatTicks = 0;
+        } else {
+            hitPause = HIT_PAUSE;
+            retreatTicks = 8;
             strafeSign = -strafeSign;
         }
+    }
+
+    /** The blow of a strike with a damage factor (the finisher hits harder, a kick or a shove softer). */
+    private boolean land(LivingEntity enemy, double factor) {
+        if (factor == 1.0) return doHurtTarget(enemy);
+        var damage = getAttribute(Attributes.ATTACK_DAMAGE);
+        net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+            com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID, "wingman_strike");
+        if (damage != null) damage.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, factor - 1,
+            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        try {
+            return doHurtTarget(enemy);
+        } finally {
+            if (damage != null) damage.removeModifier(id);
+        }
+    }
+
+    /**
+     * The dive slam (in open air only): up to {@link #SLAM_HEIGHT} blocks above the target, then a straight fall onto it; at the
+     * bottom the blow (x1.5) and a ring of knockback on the hostiles within {@link #SLAM_RADIUS}. A setup that takes longer than
+     * {@link #SLAM_SETUP_TICKS} is given up.
+     */
+    private void tickSlam(LivingEntity enemy, ServerPlayer player) {
+        slamTicks++;
+        if (slamPhase == 1) {
+            Vec3 top = enemy.position().add(0, SLAM_HEIGHT, 0);
+            if (slamTicks > SLAM_SETUP_TICKS || WingmanSpace.headroom(level(), this) < 1.0) { slamPhase = 0; slamCooldown = SLAM_COOLDOWN / 2; return; }
+            if (top.distanceToSqr(position()) < 1.2 * 1.2 || getY() > enemy.getY() + SLAM_HEIGHT - 0.5 && horizontalDistanceTo(enemy) < 1.2) {
+                slamPhase = 2;
+                slamTicks = 0;
+                act(WingmanStrikes.Action.SLAM_FALL);
+            } else steerTo(top, COMBAT * 1.2, player);
+            return;
+        }
+        Vec3 to = enemy.position().subtract(position());
+        setDeltaMovement(to.x * 0.3, -1.1, to.z * 0.3);
+        faceSmooth(enemy.getEyePosition(), 45);
+        if (!(onGround() || verticalCollision || getY() - enemy.getY() < 1.0 || slamTicks > 25)) return;
+        slamPhase = 0;
+        slamCooldown = SLAM_COOLDOWN;
+        act(WingmanStrikes.Action.SLAM_IMPACT);
+        swing(InteractionHand.MAIN_HAND);
+        boolean hit = distanceTo(enemy) < 2.8 && land(enemy, WingmanStrikes.Action.SLAM_IMPACT.damage);
+        meleeImpact(enemy, hit);
+        if (level() instanceof ServerLevel world) {
+            world.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 0.2, getZ(), 1, 0, 0, 0, 0);
+            world.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.1, getZ(), 14, 1.0, 0.05, 1.0, 0.05);
+            world.playSound(null, getX(), getY(), getZ(), SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.NEUTRAL, 1.0F, 0.9F);
+            for (Mob m : world.getEntitiesOfClass(Mob.class, getBoundingBox().inflate(SLAM_RADIUS),
+                    m -> m instanceof net.minecraft.world.entity.monster.Enemy && m.isAlive() && !isAlliedTo(m))) {
+                Vec3 away = m.position().subtract(position());
+                m.knockback(WingmanStrikes.Action.SLAM_IMPACT.knockback, -away.x, -away.z);
+            }
+        }
+        setDeltaMovement(Vec3.ZERO);
+        hitPause = enemy.isAlive() ? HIT_PAUSE + 3 : 0;
+        retreatTicks = enemy.isAlive() ? 8 : 0;
+    }
+
+    private double horizontalDistanceTo(Entity e) {
+        double dx = e.getX() - getX(), dz = e.getZ() - getZ();
+        return Math.sqrt(dx * dx + dz * dz);
     }
 
     /** 0.1.11.61 (Q0): the weight class of a melee weapon, for its sounds. */
@@ -2257,8 +2403,12 @@ public class WingmanEntity extends Mob {
             stationTicks = STATION_TICKS;
             if (blockedTicks > 10) blockedTicks = 0;
         }
-        // drift around the station so the drone never hangs still
-        Vec3 stand = station.add(sideOf(enemy).scale(0.9 * Mth.sin(tickCount * 0.09F)));
+        // 0.1.11.229 (decision seven A): on foot at its station, behind cover, it crouches and leans out to shoot (the clients' pose)
+        byte side = ground() && onGround() && station.distanceToSqr(position()) < 1.5 * 1.5
+            ? WingmanTactics.coverSide(level(), position(), enemy.position().add(0, enemy.getBbHeight() * 0.6, 0)) : 0;
+        if (side != entityData.get(DATA_COVER)) entityData.set(DATA_COVER, side);
+        // drift around the station so the drone never hangs still (0.1.11.229: not when it holds a cover)
+        Vec3 stand = side != 0 ? station : station.add(sideOf(enemy).scale(0.9 * Mth.sin(tickCount * 0.09F)));
         steer(stand, CRUISE * 1.15, player);
         Vec3 muzzle = getEyePosition();
         Vec3 aim = lead(enemy, muzzle, projectileSpeed(weapon));
@@ -2335,6 +2485,9 @@ public class WingmanEntity extends Mob {
     }
 
     /** True for a weapon whose shot explodes (rockets, the plasma gun). */
+    /** 0.1.11.229: a gun with a splash (its recoil animation is the heavy one). */
+    public static boolean heavyGun(ItemStack weapon) { return splash(weapon); }
+
     private static boolean splash(ItemStack weapon) {
         return weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_rocket_launcher
             || weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_electric_plasma_gun;
@@ -2568,7 +2721,10 @@ public class WingmanEntity extends Mob {
         boolean fresh = id >= 0 && tickCount - lastGlare >= GLARE_REST;
         // 0.1.11.58 (P6): the kill of the last target and a new lock are called
         int before = entityData.get(DATA_TARGET);
-        if (before >= 0 && world.getEntity(before) instanceof LivingEntity old && old.isDeadOrDying()) WingmanCallouts.say(this, WingmanCallouts.Kind.KILL, old.getName());
+        if (before >= 0 && world.getEntity(before) instanceof LivingEntity old && old.isDeadOrDying()) {
+            WingmanCallouts.say(this, WingmanCallouts.Kind.KILL, old.getName());
+            if (id < 0 && getRandom().nextFloat() < FLOURISH_CHANCE) act(WingmanStrikes.Action.FLOURISH);   // 0.1.11.229: now and then a flourish
+        }
         if (id >= 0 && target != null) WingmanCallouts.say(this, WingmanCallouts.Kind.LOCK, target.getName());
         entityData.set(DATA_TARGET, id);
         // 0.1.11.52 (P0, decision one A): a new lock starts with a stare: the Wingman stops, turns its head on the enemy and
@@ -2584,6 +2740,9 @@ public class WingmanEntity extends Mob {
         if (id < 0 || urgent) glareTicks = 0;
         station = null;
         hitPause = 0;   // 0.1.11.46: a new target starts without the pause of the last hit
+        strike = WingmanStrikes.Action.NONE;   // 0.1.11.229: a wind-up does not carry over to the next target
+        if (id < 0) entityData.set(DATA_COVER, (byte) 0);
+        slamPhase = 0;
         if (id >= 0) world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_LOCK.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
     }
 
@@ -3009,7 +3168,30 @@ public class WingmanEntity extends Mob {
         if (onFloor) fallSpeed = 0;
         wasOnFloor = onFloor;
         footSpeed += ((float) Math.sqrt((getX() - xo) * (getX() - xo) + (getZ() - zo) * (getZ() - zo)) - footSpeed) * 0.5F;
+        // 0.1.11.229 (AN1 part 2): the combat actions and the stare at a new lock, for the animations
+        int act = entityData.get(DATA_ACTION);
+        if (act != seenAction) {
+            if (seenAction != Integer.MIN_VALUE) actionAt = tickCount;
+            seenAction = act;
+        }
+        int lock = lockedTargetId();
+        if (lock != seenLock) {
+            if (lock >= 0 && seenLock != Integer.MIN_VALUE) glareAt = tickCount;
+            seenLock = lock;
+        }
     }
+
+    private int seenAction = Integer.MIN_VALUE, seenLock = Integer.MIN_VALUE, actionAt = -1000, glareAt = -1000;
+
+    /** Ticks since the last combat action started (client), and the tick it started (the animation restarts on a new one). */
+    public float sinceAction(float partialTick) { return tickCount - actionAt + partialTick; }
+
+    public int actionAt() { return actionAt; }
+
+    /** Ticks since the last new lock (client), and its tick. */
+    public float sinceGlare(float partialTick) { return tickCount - glareAt + partialTick; }
+
+    public int glareAt() { return glareAt; }
 
     // 0.1.11.226 (G3): the client's view of the ground form, for the animations
     private int seenHops = Integer.MIN_VALUE, hopAt = -1000, touchAt = -1000;

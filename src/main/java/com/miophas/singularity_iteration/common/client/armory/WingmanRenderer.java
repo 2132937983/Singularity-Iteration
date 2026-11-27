@@ -234,9 +234,15 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             }
             // 0.1.11.225 (A0): with GeckoLib, a Wingman on the ground plays the AN1 keyframes (stand, look round, landing, hits);
             // they replace the six parts, and the head still looks where the Wingman looks
-            // 0.1.11.226 (G3): on foot in a fight (a target, a swing, a recent shot) the arms keep their weapon poses: the legs only
-            boolean upper = !(entity.ground() && (combat > 0.3F || attack > 0 || shotAge < 20));
-            if (WingmanKeyframes.pose(entity, this, partial, upper) && upper) {
+            // 0.1.11.226 (G3): on foot in a fight (a target, a swing, a recent shot) the arms keep their weapon poses: the legs only;
+            // 0.1.11.229 (AN1 part 2): an action animation (a strike, a shot, the aim) poses the arms over the gait, or in flight
+            // the upper body over the flight pose
+            boolean act = WingmanKeyframes.actionActive(entity, partial);
+            WingmanKeyframes.Mask mask = entity.ground() && !entity.landed()
+                ? (combat > 0.3F || attack > 0 || shotAge < 20) && !act ? WingmanKeyframes.Mask.LEGS : WingmanKeyframes.Mask.FULL
+                : entity.landed() ? WingmanKeyframes.Mask.FULL : WingmanKeyframes.Mask.UPPER;
+            boolean upper = mask != WingmanKeyframes.Mask.LEGS;
+            if (WingmanKeyframes.pose(entity, this, partial, mask) && upper) {
                 head.yRot += netHeadYaw * Mth.DEG_TO_RAD;
                 head.xRot += headPitch * Mth.DEG_TO_RAD;
             }

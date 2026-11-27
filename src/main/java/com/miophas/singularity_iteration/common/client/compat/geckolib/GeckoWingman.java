@@ -58,6 +58,17 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
         return ONCE.computeIfAbsent(name, n -> RawAnimation.begin().thenPlay(WingmanKeyframeChoice.PREFIX + n));
     }
 
+    /** 0.1.11.229: action animations that loop, and those that hold their last frame. */
+    private static final java.util.Set<String> ACTION_LOOPS = java.util.Set.of("aim_rifle", "aim_pistol", "cover_crouch", "slam_fall"),
+        ACTION_HOLDS = java.util.Set.of("bow_draw", "peek_left", "peek_right");
+    private static final Map<String, RawAnimation> ACTIONS = new HashMap<>();
+
+    private static RawAnimation action(String name) {
+        return ACTIONS.computeIfAbsent(name, n -> ACTION_LOOPS.contains(n) ? RawAnimation.begin().thenLoop(WingmanKeyframeChoice.PREFIX + n)
+            : ACTION_HOLDS.contains(n) ? RawAnimation.begin().thenPlayAndHold(WingmanKeyframeChoice.PREFIX + n)
+            : RawAnimation.begin().thenPlay(WingmanKeyframeChoice.PREFIX + n));
+    }
+
     /** Animations that loop by themselves (0.1.11.226: the gaits and the air). */
     private static final java.util.Set<String> LOOPS = java.util.Set.of("idle_stand", "walk", "run", "skate", "air_rise", "air_fall", "cover_crouch");
 
@@ -84,6 +95,7 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
         @Override
         public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
             controllers.add(new AnimationController<>(this, "base", 3, this::base));
+            controllers.add(new AnimationController<>(this, "action", 2, this::action));   // 0.1.11.229: over the gait
             controllers.add(new AnimationController<>(this, "react", 1, this::react));
         }
 
@@ -100,6 +112,18 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
             String name = WingmanKeyframeChoice.base(w.landed(), w.sinceLanding(pt), w.getId(), w.tickCount);
             if (name == null) return PlayState.STOP;
             return state.setAndContinue(GeckoWingman.base(name));
+        }
+
+        /** The last trigger each Wingman's action controller started (a new one restarts the animation). */
+        private final java.util.Map<Integer, Integer> triggers = new java.util.HashMap<>();
+
+        private PlayState action(AnimationState<Animatable> state) {
+            if (!(state.getData(DataTickets.ENTITY) instanceof WingmanEntity w)) return PlayState.STOP;
+            WingmanKeyframeChoice.Act act = WingmanKeyframes.action(w, state.getPartialTick());
+            if (act == null) { triggers.remove(w.getId()); return PlayState.STOP; }
+            Integer last = triggers.put(w.getId(), act.trigger());
+            if (last == null || last != act.trigger()) state.getController().forceAnimationReset();
+            return state.setAndContinue(GeckoWingman.action(act.name()));
         }
 
         private PlayState react(AnimationState<Animatable> state) {
@@ -120,8 +144,9 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
     }
 
     @Override
-    public boolean pose(WingmanEntity entity, HumanoidModel<?> target, float partialTick, boolean upper) {
-        if (!WingmanKeyframes.active(entity, partialTick)) return false;
+    public boolean pose(WingmanEntity entity, HumanoidModel<?> target, float partialTick, WingmanKeyframes.Mask mask) {
+        if (!WingmanKeyframes.active(entity, partialTick) && !WingmanKeyframes.actionActive(entity, partialTick)) return false;
+        boolean upper = mask != WingmanKeyframes.Mask.LEGS, legs = mask != WingmanKeyframes.Mask.UPPER;
         model.getBakedModel(MODEL);
         AnimationState<Animatable> state = new AnimationState<>(animatable, 0, 0, partialTick, false);
         state.setData(DataTickets.TICK, (double) entity.tickCount);
@@ -138,7 +163,7 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
             px[b][1] = bone.getPosY();
             px[b][2] = bone.getPosZ();
         }
-        if (!upper) { deg[WingmanRig.ROOT] = new float[3]; px[WingmanRig.ROOT] = new float[3]; }   // the legs alone: no whole-body offset
+        if (mask != WingmanKeyframes.Mask.FULL) { deg[WingmanRig.ROOT] = new float[3]; px[WingmanRig.ROOT] = new float[3]; }   // a part alone: no whole-body offset
         float[][][] local = WingmanRig.fromAuthored(deg, px);
         WingmanRig.Part[] parts = WingmanRig.flatten(local[0], local[1]);
         if (upper) {
@@ -147,8 +172,10 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
             set(target.rightArm, parts[WingmanRig.RIGHT_ARM]);
             set(target.leftArm, parts[WingmanRig.LEFT_ARM]);
         }
-        set(target.rightLeg, parts[WingmanRig.RIGHT_LEG]);
-        set(target.leftLeg, parts[WingmanRig.LEFT_LEG]);
+        if (legs) {
+            set(target.rightLeg, parts[WingmanRig.RIGHT_LEG]);
+            set(target.leftLeg, parts[WingmanRig.LEFT_LEG]);
+        }
         return true;
     }
 

@@ -200,6 +200,19 @@ public final class SquadClient {
 
     /** Sends one command (nothing when the server does not have the channel). */
     public static void send(byte action, UUID unit, byte arg, @Nullable Vec3 point, int target) {
+        // 0.1.11.229 (AN1 part 3): the own suit points an order, waves the squad back, suits up or sends the suit off
+        var me = net.minecraft.client.Minecraft.getInstance().player;
+        switch (action) {
+            case com.miophas.singularity_iteration.common.armory.WingmanCommands.A_MOVE, com.miophas.singularity_iteration.common.armory.WingmanCommands.A_HOLD, com.miophas.singularity_iteration.common.armory.WingmanCommands.A_SUPPRESS, com.miophas.singularity_iteration.common.armory.WingmanCommands.A_FOCUS ->
+                com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.mark(me, com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.Kind.POINT);
+            case com.miophas.singularity_iteration.common.armory.WingmanCommands.A_FORM_UP, com.miophas.singularity_iteration.common.armory.WingmanCommands.A_RETURN, com.miophas.singularity_iteration.common.armory.WingmanCommands.A_QUANTUM_RECALL ->
+                com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.mark(me, com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.Kind.RECALL);
+            case com.miophas.singularity_iteration.common.armory.WingmanCommands.A_SUIT_UP ->
+                com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.mark(me, com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.Kind.SUIT_UP);
+            case com.miophas.singularity_iteration.common.armory.WingmanCommands.A_EJECT ->
+                com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.mark(me, com.miophas.singularity_iteration.common.client.suit.SuitKeyframes.Kind.EJECT);
+            default -> { }
+        }
         var connection = Minecraft.getInstance().getConnection();
         Vec3 p = point == null ? Vec3.ZERO : point;
         var payload = new WingmanCommandPackets.Command(action, unit, arg, p.x, p.y, p.z, target);

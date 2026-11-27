@@ -23,10 +23,18 @@ public final class BladeResources {
 
     /** One tick of a blade that a living entity carries: the nano edge vents, the singularity's containment takes EU. */
     public static BladeCore tick(BladeCore c, CollabBlade kind) {
+        return tick(c, kind, 1);
+    }
+
+    /**
+     * 0.1.11.237 (B5): one tick, the nano edge venting {@code ventFactor} times as fast (2 when the wielder wears the nano
+     * suit: the edge dumps its heat into the suit's sinks).
+     */
+    public static BladeCore tick(BladeCore c, CollabBlade kind, float ventFactor) {
         switch (kind) {
             case NANO -> {
                 if (c.heat() <= 0 && !c.overheated()) return c;
-                float heat = Math.max(0, c.heat() - CollabBlade.NANO_VENT);
+                float heat = Math.max(0, c.heat() - CollabBlade.NANO_VENT * ventFactor);
                 boolean over = c.overheated() && heat > CollabBlade.NANO_RESUME;
                 return c.withHeat(heat, over);
             }
@@ -114,6 +122,14 @@ public final class BladeResources {
     /** 0.1.11.236 (B4): the tidal shear of a singularity blade hit: mass / 20 extra damage, at most 5. */
     public static float tidalDamage(BladeCore c) {
         return Math.min(5F, Math.max(0, c.mass()) / 20F);
+    }
+
+    /**
+     * 0.1.11.237 (B5): true when the blade can pay its slash art from its own resources (the way a Wingman pays: the quantum
+     * blade with EU), so a Wingman does not swing an art that would be refused. Any other stack: true.
+     */
+    public static boolean affordable(BladeCore c, CollabBlade kind) {
+        return slashArt(c, kind, Coherence.NO_CORE).ok();
     }
 
     /** EU the blade can still take. */

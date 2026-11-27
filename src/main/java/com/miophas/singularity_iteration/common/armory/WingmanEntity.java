@@ -2219,7 +2219,7 @@ public class WingmanEntity extends Mob {
         }
         // between chains: a Slash Art when it is ready (Dragon prefers 2+ hostiles ahead; Duelist fires on cooldown)
         boolean saGood = style == WingmanBladeStyle.Style.DUELIST || nearby >= 2 || d < 5.0;
-        if (artsCooldown == 0 && saGood && d < 7 && hasLineOfSight(enemy)) {
+        if (artsCooldown == 0 && saGood && d < 7 && hasLineOfSight(enemy) && artAffordable()) {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
                 slash(SLASH_ARTS);
                 artsCooldown = ARTS_INTERVAL;
@@ -3377,5 +3377,17 @@ public class WingmanEntity extends Mob {
         List<ItemStack> out = new java.util.ArrayList<>();
         for (ArmoryPiece p : ArmoryPiece.COLUMNS) out.add(getItemBySlot(p.slot));
         return out;
+    }
+
+    /**
+     * 0.1.11.237 (SlashBlade collab B5): a collab blade's slash art is fired only when the blade can pay it (EU, the nano
+     * edge's heat, the singularity's mass; a Wingman pays the quantum collapse with EU), else it would be refused after the
+     * swing. Any other blade: true.
+     */
+    private boolean artAffordable() {
+        ItemStack blade = getMainHandItem();
+        var kind = com.miophas.singularity_iteration.common.armory.blade.CollabBlade.of(blade);
+        return kind == null || com.miophas.singularity_iteration.common.armory.blade.BladeResources.affordable(
+            com.miophas.singularity_iteration.common.armory.blade.CollabBlade.core(blade), kind);
     }
 }

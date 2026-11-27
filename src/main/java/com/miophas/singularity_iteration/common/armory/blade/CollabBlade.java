@@ -55,6 +55,10 @@ public enum CollabBlade {
     public static final long NANO_MEND_EU = 400;
     /** 0.1.11.235 (B3): the collapse cut strikes at most this many targets, locked or entangled ones within this range. */
     public static final int COLLAPSE_MAX = 6;
+    /** 0.1.11.237 (B5): with a quantum core the collapse cut strikes up to this many. */
+    public static final int COLLAPSE_MAX_CORE = 8;
+    /** 0.1.11.237 (B5): the nano edge vents this many times as fast when the wielder wears the nano suit. */
+    public static final float NANO_SUIT_VENT = 2;
     public static final double COLLAPSE_RANGE = 32, COLLAPSE_FALLBACK_RANGE = 12;
     // quantum: coherence of one slash art when the wearer has a quantum core
     public static final float QUANTUM_SA_COHERENCE = 30;

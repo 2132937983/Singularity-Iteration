@@ -86,14 +86,17 @@ final class SiQuantumBlade {
     /** The suit's locks and the blade's entangled targets; else the nearest enemies ahead. */
     static List<LivingEntity> choose(LivingEntity user, ServerLevel level) {
         List<LivingEntity> out = new ArrayList<>();
+        // 0.1.11.237 (B5): with a quantum core the superposition spans more targets
+        int max = user instanceof ServerPlayer p && com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.corePiece(p) != null
+            ? CollabBlade.COLLAPSE_MAX_CORE : CollabBlade.COLLAPSE_MAX;
         if (user instanceof ServerPlayer player) {
             List<Integer> ids = Entanglement.targets(SmartGuidance.locks(player),
-                Entanglement.of(player.getUUID()).live(level.getGameTime()), CollabBlade.COLLAPSE_MAX * 2);
+                Entanglement.of(player.getUUID()).live(level.getGameTime()), max * 2);
             for (int id : ids) {
                 Entity e = level.getEntity(id);
                 if (e instanceof LivingEntity living && living.isAlive() && living != user && SmartGuidance.valid(player, e)
                     && living.distanceToSqr(user) <= CollabBlade.COLLAPSE_RANGE * CollabBlade.COLLAPSE_RANGE
-                    && out.size() < CollabBlade.COLLAPSE_MAX) out.add(living);
+                    && out.size() < max) out.add(living);
             }
         }
         if (!out.isEmpty()) return out;
@@ -103,7 +106,7 @@ final class SiQuantumBlade {
             e -> e != user && e.isAlive() && e instanceof Enemy && e.distanceToSqr(user) <= r * r
                 && e.position().subtract(user.position()).normalize().dot(look) >= 0.3));
         near.sort(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(user)));
-        for (LivingEntity e : near) if (out.size() < CollabBlade.COLLAPSE_MAX) out.add(e);
+        for (LivingEntity e : near) if (out.size() < max) out.add(e);
         return out;
     }
 

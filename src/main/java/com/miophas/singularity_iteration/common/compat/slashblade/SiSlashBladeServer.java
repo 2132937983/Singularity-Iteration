@@ -78,13 +78,45 @@ final class SiSlashBladeServer {
     @SubscribeEvent
     static void onUpdate(SlashBladeEvent.UpdateEvent event) {
         if (event.getLevel().isClientSide) return;
-        ItemStack stack = event.getBlade();
+        tickBlade(event.getBlade(), event.getEntity() instanceof LivingEntity l ? l : null);
+    }
+
+    /**
+     * 0.1.11.237 (B5): SlashBlade ticks the blades in a player's inventory only; a Wingman's (or any mob's) blade in the
+     * hand ticks here, so its edge cools and its containment draws.
+     */
+    @SubscribeEvent
+    static void onMobTick(net.neoforged.neoforge.event.tick.EntityTickEvent.Post event) {
+        if (!(event.getEntity() instanceof net.minecraft.world.entity.Mob mob) || mob.level().isClientSide) return;
+        ItemStack stack = mob.getMainHandItem();
+        if (stack.getItem() instanceof ItemSlashBlade) tickBlade(stack, mob);
+    }
+
+    /** One tick of a carried collab blade, with the suit synergies of its wielder (0.1.11.237, B5). */
+    static void tickBlade(ItemStack stack, LivingEntity holder) {
         CollabBlade kind = CollabBlade.of(stack);
         if (kind == null) return;
         BladeCore before = stack.get(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.BLADE_CORE.get());
         BladeCore c = CollabBlade.core(stack);
-        BladeCore after = BladeResources.tick(c, kind);
+        float vent = 1;
+        if (holder instanceof Player p) {
+            // nano: the edge dumps its heat into the nano suit's sinks
+            if (kind == CollabBlade.NANO && com.miophas.singularity_iteration.common.suit.nano.NanoSuit.wearsNano(p)) vent = CollabBlade.NANO_SUIT_VENT;
+            // singularity: an empty blade's containment is powered by the suit
+            if (kind == CollabBlade.SINGULARITY && c.mass() > 0 && c.eu() < CollabBlade.CONTAINMENT_EU) c = suitPowered(p, c);
+        }
+        BladeCore after = BladeResources.tick(c, kind, vent);
         if (before == null || !after.equals(before)) CollabBlade.set(stack, after);
+    }
+
+    /** The containment's EU of this tick from the wielder's suit (the chestplate's pool), when it can pay. */
+    private static BladeCore suitPowered(Player p, BladeCore c) {
+        ItemStack chest = p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+        if (chest.isEmpty()) return c;
+        long need = CollabBlade.CONTAINMENT_EU - c.eu();
+        if (!com.miophas.singularity_iteration.common.suit.SuitModules.canPay(p, chest, need)) return c;
+        long got = com.miophas.singularity_iteration.common.suit.SuitModules.extract(p, chest, need);
+        return got > 0 ? c.withEu(c.eu() + got) : c;
     }
 
     @SubscribeEvent

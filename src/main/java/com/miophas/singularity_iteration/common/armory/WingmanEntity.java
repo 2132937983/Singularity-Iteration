@@ -239,6 +239,42 @@ public class WingmanEntity extends Mob {
 
     /** 0.1.11.220: the last outcome of the obstacle avoidance, for the cave GameTests. */
     public WingmanNavDebug.Probe navProbe() { return navProbe; }
+
+    /** 0.1.11.221 (G1): the measures of the Wingman's place and the tick they were taken ({@link WingmanSpace#of}). Not saved. */
+    @Nullable WingmanSpace.Room room;
+    int roomAt;
+
+    /**
+     * 0.1.11.221 (G1): the velocity after a tick into a wall or a ceiling. Before, any wall hit added 0.3 upwards, and nothing
+     * stopped the climb at the ceiling, so in a cave the Wingman pressed against the roof. Now it climbs a wall only when that
+     * helps: under the open sky with room above, or under a ceiling where a ledge of at most 1.1 blocks can be stepped onto.
+     * The upward speed never takes the head into the ceiling.
+     */
+    private Vec3 wallAndCeiling(Vec3 v) {
+        if (horizontalCollision) {
+            WingmanSpace.Room here = WingmanSpace.of(this);
+            boolean climb;
+            if (!here.kind().confined()) climb = here.headroom() > 1.0;
+            else {
+                Vec3 flat = new Vec3(v.x, 0, v.z);
+                climb = flat.lengthSqr() > 1.0E-4 && level().noCollision(this, getBoundingBox().move(0, 1.1, 0))
+                    && level().noCollision(this, getBoundingBox().move(flat.normalize().scale(0.6)).move(0, 1.1, 0));
+            }
+            if (climb) { v = v.add(0, 0.3, 0); WingmanNavDebug.record(this, WingmanNavDebug.Probe.WALL_CLIMB); }
+        }
+        if (v.y > 0) {
+            double limit = WingmanSpace.upLimit(WingmanSpace.headroom(level(), this));
+            if (v.y > limit) v = new Vec3(v.x, limit, v.z);
+        }
+        return v;
+    }
+
+    /** 0.1.11.221 (G1): {@code up} blocks above {@code at} for the Wingman's feet, cut so that its head stays 0.3 under the ceiling there. */
+    private double riseAt(Vec3 at, double up) {
+        double ceiling = WingmanSpace.ceilingAbove(level(), at, at.y);
+        if (ceiling < 0) return up;
+        return Math.max(0, Math.min(up, ceiling - getBbHeight() - 0.3));
+    }
     /** Client: the locked target id (-1 none), the shot and boost counters (effects start when they change). */
     public int lockedTargetId() { return entityData.get(DATA_TARGET); }
     public int shotCount() { return entityData.get(DATA_SHOTS); }
@@ -628,7 +664,7 @@ public class WingmanEntity extends Mob {
         Vec3 to = post.subtract(position());   // with the owner's velocity flown this tick, it is at the next place
         Vec3 want = WingmanTactics.avoid(this, WingmanFlight.want(to, carry, cap).add(separation()));
         Vec3 v = WingmanFlight.accelerate(getDeltaMovement(), want, accel);
-        if (horizontalCollision) { v = v.add(0, 0.3, 0); WingmanNavDebug.record(this, WingmanNavDebug.Probe.WALL_CLIMB); }
+        v = wallAndCeiling(v);   // 0.1.11.221: climb only where it helps, never into the ceiling
         setDeltaMovement(v);
         if (WingmanConfig.upkeepEuPerSecond() > 0) speedDue += WingmanFlight.speedCost(v.length(), CRUISE) * WingmanConfig.speedCostFactor();
         faceFlight(v, player);
@@ -1525,7 +1561,7 @@ public class WingmanEntity extends Mob {
         }
         if (retreatTicks > 0) {                                   // peel off: sideways and up, then return
             retreatTicks--;
-            Vec3 side = sideOf(enemy).scale(3.2).add(0, 1.6, 0);
+            Vec3 side = sideOf(enemy).scale(3.2).add(0, riseAt(aim, 1.6), 0);   // 0.1.11.221: not into the ceiling
             steer(aim.add(side), COMBAT, player);
             return;
         }
@@ -2198,7 +2234,7 @@ public class WingmanEntity extends Mob {
         Vec3 dv = want.subtract(v);
         if (dv.lengthSqr() > ACCEL * ACCEL) dv = dv.normalize().scale(ACCEL);
         v = v.add(dv);
-        if (horizontalCollision) { v = v.add(0, 0.3, 0); WingmanNavDebug.record(this, WingmanNavDebug.Probe.WALL_CLIMB); }
+        v = wallAndCeiling(v);   // 0.1.11.221: climb only where it helps, never into the ceiling
         setDeltaMovement(v);
         faceFlight(v, player);
     }
@@ -2245,7 +2281,10 @@ public class WingmanEntity extends Mob {
         if (boostCooldown > 0) return;
         Vec3 flat = new Vec3(dir.x, 0, dir.z);
         if (flat.lengthSqr() < 1.0E-4) flat = new Vec3(strafeSign, 0, 0);
-        Vec3 impulse = WingmanTactics.avoid(this, flat.normalize().scale(1.1).add(0, 0.38, 0));
+        // 0.1.11.221 (G1): the upward kick only as far as the room above allows (it hit the ceiling in a cave)
+        WingmanSpace.Room here = WingmanSpace.of(this);
+        double up = here.kind().confined() ? Math.min(0.38, Math.max(0, here.headroom() - 0.5) * 0.3) : 0.38;
+        Vec3 impulse = WingmanTactics.avoid(this, flat.normalize().scale(1.1).add(0, up, 0));
         setDeltaMovement(getDeltaMovement().scale(0.3).add(impulse));
         boostCooldown = BOOST_COOLDOWN;
         entityData.set(DATA_BOOSTS, entityData.get(DATA_BOOSTS) + 1);

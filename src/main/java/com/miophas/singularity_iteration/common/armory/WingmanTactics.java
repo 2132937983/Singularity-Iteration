@@ -45,7 +45,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * <h2>Evasion and obstacles</h2>
  * A hostile that comes within the danger radius triggers a thruster boost away from it. The
- * flight path is checked ahead; a wall makes the Wingman climb or slide along it.
+ * flight path is checked ahead with the whole body; when it is blocked the Wingman takes the best free heading (context
+ * steering, 0.1.11.221), and under a ceiling going up costs extra.
  */
 public final class WingmanTactics {
     private WingmanTactics() {}
@@ -356,34 +357,76 @@ public final class WingmanTactics {
         return best;
     }
 
+    /** 0.1.11.221 (G1): headings of the context steering, degrees from the wanted heading, and pitches (degrees, up positive). */
+    static final int HEADINGS = 16;
+    static final double[] PITCHES = {-35, 0, 35, 60};
+    /** Interest lost per unit of upward direction in a tunnel and in a room (the open sky costs nothing). */
+    static final double UP_COST_TUNNEL = 0.45, UP_COST_INDOOR = 0.2;
+    /** Below this score no heading is worth taking: the Wingman brakes instead of drifting. */
+    static final double NO_WAY = 0.05;
+
     /**
-     * Adds an avoidance term to a wanted velocity: probes the path ahead; a wall makes the Wingman
-     * climb, duck under a low lintel/ceiling, or slide laterally (whichever way is clear).
+     * Turns a wanted velocity into one the Wingman's body can fly. 0.1.11.221 (cave overhaul G1): context steering.
+     *
+     * <p>Before, a thin ray from the middle of the body looked ahead; when it was blocked the Wingman tried up first, then
+     * down, then the sides, and when everything was blocked it still drifted up. In a cave the way ahead is nearly always
+     * blocked, so it climbed to the ceiling and stuck there. Now the whole body box is swept along the wanted heading
+     * ({@link WingmanSpace#sweep}); when it does not fit, {@link #HEADINGS} headings at each of {@link #PITCHES} are scored:
+     * the interest is how close a heading is to the wanted one, scaled by how far the body gets along it, less a cost for
+     * going up under a ceiling ({@link #UP_COST_TUNNEL}, {@link #UP_COST_INDOOR}). The best one keeps the wanted speed,
+     * slower when its way is short. When no heading is worth taking the Wingman brakes (no upward drift).
      */
     static Vec3 avoid(WingmanEntity self, Vec3 want) {
         if (want.lengthSqr() < 1.0E-4) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLEAR); return want; }
         Level level = self.level();
-        Vec3 from = self.position().add(0, self.getBbHeight() * 0.5, 0);
-        Vec3 dir = want.normalize();
         double speed = want.length();
-        // 0.1.11.50 (F1): the look-ahead covers about 4 ticks of flight at escort speed (it stopped at 4 blocks, one tick at
-        // 4 blocks per tick), and the ways round grow with the speed
-        double k = Math.max(1.0, speed / 0.9);
-        Vec3 ahead = from.add(dir.scale(Math.min(Math.max(4.0, speed * 4), 1.5 + speed * 6)));
-        if (clear(level, from, ahead, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLEAR); return want; }
-        Vec3 up = from.add(0, 2.5 * k, 0).add(dir.scale(2.5 * k));
-        if (clear(level, from, up, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLIMB); return want.add(0, 0.35 * k, 0); }
-        // Indoor / doorway duck: if climbing is blocked by a ceiling or lintel, probe downward before sliding
-        Vec3 down = from.add(0, -1.6, 0).add(dir.scale(2.0 * k));
-        if (clear(level, from, down, self) && free(level, self.position().add(0, -0.8, 0))) {
-            WingmanNavDebug.record(self, WingmanNavDebug.Probe.DUCK);
-            return want.add(0, -0.32 * k, 0);
+        Vec3 dir = want.scale(1 / speed);
+        // 0.1.11.50 (F1): the look-ahead covers about 4 ticks of flight at escort speed
+        double look = Math.min(Math.max(4.0, speed * 4), 1.5 + speed * 6);
+        AABB box = self.getBoundingBox();
+        if (WingmanSpace.sweep(level, self, box, dir, look) >= look) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLEAR); return want; }
+        WingmanSpace.Room room = WingmanSpace.of(self);
+        double upCost = room.kind() == WingmanSpace.Kind.TUNNEL ? UP_COST_TUNNEL : room.kind() == WingmanSpace.Kind.INDOOR ? UP_COST_INDOOR : 0;
+        if (room.headroom() < 1.0) upCost += 0.5;
+        Vec3 flat = new Vec3(dir.x, 0, dir.z);
+        if (flat.lengthSqr() < 1.0E-4) {
+            double yaw = Math.toRadians(self.getYRot());
+            flat = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
         }
-        Vec3 side = new Vec3(-dir.z, 0, dir.x);
-        Vec3 left = from.add(side.scale(2.5 * k)).add(dir.scale(1.5 * k)), right = from.add(side.scale(-2.5 * k)).add(dir.scale(1.5 * k));
-        if (clear(level, from, left, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.SLIDE); return want.add(side.scale(0.35 * k)); }
-        if (clear(level, from, right, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.SLIDE); return want.add(side.scale(-0.35 * k)); }
-        WingmanNavDebug.record(self, WingmanNavDebug.Probe.BLOCKED);
-        return want.add(0, 0.15, 0).scale(0.5);
+        flat = flat.normalize();
+        int n = HEADINGS * PITCHES.length;
+        Vec3[] dirs = new Vec3[n];
+        double[] interest = new double[n], cost = new double[n], bounds = new double[n];
+        int[] heading = new int[n];
+        for (int h = 0; h < HEADINGS; h++) {
+            double a = Math.toRadians(h * 360.0 / HEADINGS);
+            double cx = flat.x * Math.cos(a) - flat.z * Math.sin(a), cz = flat.x * Math.sin(a) + flat.z * Math.cos(a);
+            for (int p = 0; p < PITCHES.length; p++) {
+                int i = h * PITCHES.length + p;
+                double pitch = Math.toRadians(PITCHES[p]);
+                Vec3 d = new Vec3(cx * Math.cos(pitch), Math.sin(pitch), cz * Math.cos(pitch));
+                dirs[i] = d;
+                heading[i] = h;
+                interest[i] = (1 + d.dot(dir)) * 0.5;
+                cost[i] = d.y > 0.2 ? upCost * d.y : 0;
+                bounds[i] = interest[i] - cost[i];
+            }
+        }
+        double[] top = new double[1];
+        double[] reach = new double[n];
+        int pick = bestIndex(bounds, NO_WAY, i -> {
+            reach[i] = WingmanSpace.sweep(level, self, box, dirs[i], look) / look;
+            return interest[i] * reach[i] - cost[i];
+        }, top);
+        if (pick < 0) {
+            WingmanNavDebug.record(self, WingmanNavDebug.Probe.BLOCKED);
+            Vec3 slow = want.scale(0.3);
+            return room.kind().confined() && slow.y > 0 ? new Vec3(slow.x, 0, slow.z) : slow;
+        }
+        Vec3 d = dirs[pick];
+        boolean ahead = heading[pick] == 0;
+        WingmanNavDebug.record(self, ahead && d.y > dir.y + 0.15 ? WingmanNavDebug.Probe.CLIMB
+            : ahead && d.y < dir.y - 0.15 ? WingmanNavDebug.Probe.DUCK : WingmanNavDebug.Probe.SLIDE);
+        return d.scale(speed * Math.max(0.35, reach[pick]));
     }
 }

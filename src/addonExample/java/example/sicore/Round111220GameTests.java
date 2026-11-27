@@ -39,8 +39,11 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * ticks on a wrong target (one behind rock while a reachable one is there), the tick of the first hit, kills, and the mean
  * air below its feet. The numbers go to the log and to {@code wingman_nav_baseline.txt} in the run folder.
  *
- * <p>G0 only records (the scenes must run, the Wingman must stay in its scene); the later batches turn the numbers into
- * assertions. The WingmanEntity is reached by reflection (the addon module may only use the core API).
+ * <p>G0 only recorded (the scenes must run, the Wingman must stay in its scene); each later batch adds the limits it
+ * reaches to the scene ({@link Run#limits}). 0.1.11.221 (G1): no scene keeps the head against the ceiling for more than a
+ * tenth of the run (the tunnel a fifth: its target is above the 2-high spot through the rock, and without a path the
+ * Wingman lingers there until G2), and in the cavern and in the open the first hit comes within 80 ticks. The WingmanEntity is reached by
+ * reflection (the addon module may only use the core API).
  */
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
@@ -153,8 +156,19 @@ public final class Round111220GameTests {
                 scene, ticks, ceiling, stuck, upward, wrongTicks, firstHit, kills(), enemies.size(), airSamples == 0 ? 0 : airBelow / airSamples, hits);
         }
 
+        /** The limits of the scene, checked after the run (G0: none). */
+        java.util.function.Consumer<Run> limits = r -> { };
+
+        /** The report taken at the end of the run, before the scene is cleared. */
+        String last = "";
+
+        void limit(boolean ok, String what) {
+            if (!ok) throw new net.minecraft.gametest.framework.GameTestAssertException(scene + ": " + what + " (" + last + ")");
+        }
+
         void finish(GameTestHelper h) {
-            String line = "[wingman-nav G0 baseline] " + report();
+            last = report();
+            String line = "[wingman-nav] " + last;
             System.out.println(line);
             try {
                 Files.writeString(Path.of("wingman_nav_baseline.txt"), line + System.lineSeparator(), StandardCharsets.UTF_8,
@@ -169,9 +183,18 @@ public final class Round111220GameTests {
             Round33GameTests.remove(owner);
             h.assertTrue(ticks == TICKS, scene + ": ran " + ticks + " of " + TICKS + " ticks");
             h.assertTrue(home, scene + ": the Wingman left its scene (at " + wingman.position() + ")");
+            limits.accept(this);
             h.succeed();
         }
     }
+
+    /** 0.1.11.221 (G1): the head against the ceiling at most a tenth of the run. */
+    static void notOnTheCeiling(Run r) { underTheCeiling(r, TICKS / 10); }
+
+    static void underTheCeiling(Run r, int most) { r.limit(r.ceiling <= most, "the head is against the ceiling for " + r.ceiling + " ticks"); }
+
+    /** 0.1.11.221 (G1): the open scenes keep their old pace: the first hit within 80 ticks. */
+    static void hitsSoon(Run r) { r.limit(r.firstHit > 0 && r.firstHit <= 80, "the first hit came at tick " + r.firstHit); }
 
     static void play(GameTestHelper h, Run run) {
         h.onEachTick(() -> run.tick(h));
@@ -195,6 +218,7 @@ public final class Round111220GameTests {
         carve(h, 14, 10, 4, 35, 12, 6);
         fill(h, 15, 4, 4, 15, 4, 6, Blocks.STONE.defaultBlockState());
         Run run = new Run(h, "tunnel", OWNER, WINGMAN);
+        run.limits = r -> underTheCeiling(r, TICKS / 5);   // G2 (pathing) takes it to a tenth
         run.add(zombie(h, 18.5, 10, 5.5, run.owner));
         play(h, run);
     }
@@ -210,6 +234,7 @@ public final class Round111220GameTests {
         carve(h, 3, 9, 4, 41, 11, 6);
         carve(h, 40, 5, 4, 41, 8, 6);
         Run run = new Run(h, "layers", OWNER, WINGMAN);
+        run.limits = Round111220GameTests::notOnTheCeiling;
         run.wrong.add(run.add(zombie(h, 9.5, 9, 5.5, null)));
         run.add(zombie(h, 26.5, 2, 5.5, null));
         play(h, run);
@@ -229,6 +254,7 @@ public final class Round111220GameTests {
         fill(h, 30, 7, 2, 32, 13, 8, stone);
         fill(h, 19, 2, 2, 20, 2, 8, stone);
         Run run = new Run(h, "cavern", OWNER, WINGMAN);
+        run.limits = r -> { notOnTheCeiling(r); hitsSoon(r); };
         run.add(zombie(h, 16.5, 2, 5.5, run.owner));
         run.add(zombie(h, 37.5, 2, 5.5, null));
         play(h, run);
@@ -242,6 +268,7 @@ public final class Round111220GameTests {
         fill(h, 21, 2, 4, 21, 4, 6, Blocks.GLASS.defaultBlockState());
         carve(h, 22, 2, 4, 26, 4, 6);
         Run run = new Run(h, "deadend", OWNER, WINGMAN);
+        run.limits = Round111220GameTests::notOnTheCeiling;
         run.add(zombie(h, 24.5, 2, 5.5, run.owner));
         play(h, run);
     }
@@ -251,6 +278,7 @@ public final class Round111220GameTests {
     public static void openGround(GameTestHelper h) {
         shell(h, false);
         Run run = new Run(h, "open", OWNER, WINGMAN);
+        run.limits = r -> { notOnTheCeiling(r); hitsSoon(r); };
         run.add(zombie(h, 24.5, 2, 5.5, run.owner));
         play(h, run);
     }

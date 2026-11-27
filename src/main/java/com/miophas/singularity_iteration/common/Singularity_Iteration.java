@@ -173,6 +173,9 @@ public class Singularity_Iteration {
             com.miophas.singularity_iteration.common.integration.EnderIOFarmIntegration.register(modEventBus);
         }
 
+        // 0.1.11.233: SlashBlade collab blades (resources, Armory charging, charge glow); only with SlashBlade: Resharped
+        com.miophas.singularity_iteration.common.compat.slashblade.SiSlashBlade.init(modEventBus);
+
         // Register tree decorators
         mio_icif_tree_decorators.register(modEventBus);
 

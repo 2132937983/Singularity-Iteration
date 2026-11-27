@@ -250,6 +250,11 @@ dependencies {
     compileOnly files("libs/compile-only/geckolib-neoforge-1.21.1-${geckolib_version}.jar")
     localRuntime files("libs/compile-only/geckolib-neoforge-1.21.1-${geckolib_version}.jar")
 
+    // 0.1.11.233: SlashBlade: Resharped, optional: the collab blades' resources, HUD and charge glow (the classes in
+    // common.compat.slashblade load only when it is installed). Local copy of maven.modrinth:slashblade-resharped:2.2.1-1.21.1
+    // (sha1 b5e4d02f9f893719b97220117c694a10c0a688e9). Not on the dev runs: 2.2.1 asks for NeoForge 21.1.228 or newer.
+    compileOnly files("libs/compile-only/slashblade-resharped-2.2.1-1.21.1.jar")
+
 }
 
 tasks.named('jar').configure {

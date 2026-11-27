@@ -6250,5 +6250,17 @@
   "item.mio_icif.quantum_blade": "Квантовый клинок",
   "item.mio_icif.quantum_blade.desc": "Клинок в состоянии суперпозиции.\nКоллапсирует на цели, отмеченные вашим костюмом.",
   "item.mio_icif.singularity_blade": "Клинок сингулярности",
-  "item.mio_icif.singularity_blade.desc": "В гарде заключена микросингулярность.\nEU удерживает её, убийства питают её массу."
+  "item.mio_icif.singularity_blade.desc": "В гарде заключена микросингулярность.\nEU удерживает её, убийства питают её массу.",
+  "message.mio_icif.blade.no_eu": "В клинке не хватает EU: приём не сработал",
+  "message.mio_icif.blade.overheated": "Пьезокромка перегрета: дайте ей остыть",
+  "message.mio_icif.blade.no_mass": "Не хватает массы сингулярности (нужно 10): сначала убивайте этим клинком",
+  "message.mio_icif.blade.no_coherence": "Мало когерентности квантового костюма или декогеренция: коллапс не удался",
+  "hud.mio_icif.blade.heat": "Нагрев %s",
+  "hud.mio_icif.blade.overheated": "Перегрев %s",
+  "hud.mio_icif.blade.coherence": "Когерентность %s",
+  "hud.mio_icif.blade.decoherent": "Декогеренция",
+  "hud.mio_icif.blade.no_core": "Нет квантового ядра: коллапс за EU",
+  "hud.mio_icif.blade.mass": "Масса %s",
+  "hud.mio_icif.blade.unstable": "Удержание сорвано! Масса %s утекает",
+  "hud.mio_icif.blade.contained": "Масса %s · удержание %s"
 }

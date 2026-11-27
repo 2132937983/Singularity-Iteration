@@ -6250,5 +6250,17 @@
   "item.mio_icif.quantum_blade": "量子刃",
   "item.mio_icif.quantum_blade.desc": "处在叠加态的刀\n出刀时坍缩到战甲标记过的目标上",
   "item.mio_icif.singularity_blade": "奇点刃",
-  "item.mio_icif.singularity_blade.desc": "刀镡里约束着一颗微型奇点\n以电能维持约束，以击杀喂养质量"
+  "item.mio_icif.singularity_blade.desc": "刀镡里约束着一颗微型奇点\n以电能维持约束，以击杀喂养质量",
+  "message.mio_icif.blade.no_eu": "刀内电能不足，拔刀技未发动",
+  "message.mio_icif.blade.overheated": "压电刃过热，冷却后才能发动拔刀技",
+  "message.mio_icif.blade.no_mass": "奇点质量不足（需要 10），先用奇点刃击杀敌人",
+  "message.mio_icif.blade.no_coherence": "量子战甲相干度不足或已退相干，坍缩失败",
+  "hud.mio_icif.blade.heat": "刃温 %s",
+  "hud.mio_icif.blade.overheated": "过热 %s",
+  "hud.mio_icif.blade.coherence": "相干 %s",
+  "hud.mio_icif.blade.decoherent": "退相干",
+  "hud.mio_icif.blade.no_core": "无量子核心：以电能坍缩",
+  "hud.mio_icif.blade.mass": "质量 %s",
+  "hud.mio_icif.blade.unstable": "约束失效！质量 %s 正在泄漏",
+  "hud.mio_icif.blade.contained": "质量 %s · 约束 %s"
 }

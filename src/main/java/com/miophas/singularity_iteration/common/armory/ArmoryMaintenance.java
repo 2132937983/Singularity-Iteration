@@ -120,6 +120,7 @@ public final class ArmoryMaintenance {
                 spent += points * REPAIR_EU_PER_POINT;
                 repairedPoints += points;
                 repairedThisTick = true;
+                afterRepair.accept(stack);
             }
         }
         long offer = Math.min(CHARGE_EU_PER_TICK, budget - spent);
@@ -137,6 +138,12 @@ public final class ArmoryMaintenance {
         spentThisTick += spent;
         return spent;
     }
+
+    /**
+     * 0.1.11.233: called after a repair step on a stack (SlashBlade sets it: a fully repaired SlashBlade is no longer
+     * broken). Must not throw.
+     */
+    public static volatile java.util.function.Consumer<ItemStack> afterRepair = stack -> { };
 
     static boolean needsRepair(ItemStack stack) {
         return stack.isDamageableItem() && stack.isDamaged() && stack.getCount() == 1;

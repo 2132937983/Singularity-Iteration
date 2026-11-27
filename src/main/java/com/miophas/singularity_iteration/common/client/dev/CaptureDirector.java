@@ -3901,8 +3901,15 @@ public final class CaptureDirector {
         for (int i = 0; i < blades.length; i++) {
             final int slot = i;
             final String name = blades[i].replace("_blade", "");
-            client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.getInventory().selected = slot; mc.options.hideGui = true; });
-            server(5, sp -> { sp.getInventory().selected = slot; look(sp, 0.5, -60, 0.5, 0, 0); sp.getAbilities().flying = false; sp.onUpdateAbilities(); });
+            // the blade alone in slot 0: with another slot selected SlashBlade also draws the slot 0 blade at the waist
+            server(5, sp -> {
+                for (int k = 0; k < blades.length; k++) sp.getInventory().setItem(k, k == 0 ? namedBlade(sp.serverLevel(), blades[slot]) : ItemStack.EMPTY);
+                sp.getInventory().selected = 0;
+                look(sp, 0.5, -60, 0.5, 0, 0);
+                sp.getAbilities().flying = false;
+                sp.onUpdateAbilities();
+            });
+            client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.getInventory().selected = 0; mc.options.hideGui = true; });
             client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
             shot(30, "sb1_blades/" + name + "_0_front");
             client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
@@ -3925,7 +3932,10 @@ public final class CaptureDirector {
             client(30, () -> Minecraft.getInstance().options.keyAttack.setDown(false));
         }
         // the hotbar and the inventory
-        server(1, sp -> look(sp, 0.5, -60, 0.5, 0, 0));
+        server(1, sp -> {
+            for (int k = 0; k < blades.length; k++) sp.getInventory().setItem(k, namedBlade(sp.serverLevel(), blades[k]));
+            look(sp, 0.5, -60, 0.5, 0, 0);
+        });
         client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.hideGui = false; });
         shot(20, "sb1_blades/3_hotbar");
         client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
@@ -3935,6 +3945,33 @@ public final class CaptureDirector {
         server(1, sp -> { look(sp, 0.5, -59.6, 5.3, 0, 0); sp.getAbilities().flying = true; sp.onUpdateAbilities(); });
         client(5, () -> Minecraft.getInstance().options.hideGui = true);
         shot(30, "sb1_blades/5_frames");
+        // 0.1.11.233 (B1): the blade card right of the hotbar, for each blade with some resources; the Armory's charge path
+        server(1, sp -> {
+            var c = com.miophas.singularity_iteration.common.armory.blade.BladeCore.class;
+            Object[][] cores = {
+                {new com.miophas.singularity_iteration.common.armory.blade.BladeCore("nano_blade", 150_000, 72, false, 0, false)},
+                {new com.miophas.singularity_iteration.common.armory.blade.BladeCore("quantum_blade", 300_000, 0, false, 0, false)},
+                {new com.miophas.singularity_iteration.common.armory.blade.BladeCore("singularity_blade", 1_200_000, 0, false, 42, false)}};
+            for (int k = 0; k < blades.length; k++) {
+                ItemStack b = sp.getInventory().getItem(k);
+                Singularity_Iteration.LOGGER.info("capture sb1: {} is {}, Armory room before {} EU", blades[k],
+                    com.miophas.singularity_iteration.common.armory.blade.CollabBlade.of(b),
+                    com.miophas.singularity_iteration.common.armory.ArmoryItemEnergy.room(b));
+                com.miophas.singularity_iteration.common.armory.blade.CollabBlade.set(b,
+                    (com.miophas.singularity_iteration.common.armory.blade.BladeCore) cores[k][0]);
+                Singularity_Iteration.LOGGER.info("capture sb1: {} charged by the Armory path: {} EU", blades[k],
+                    com.miophas.singularity_iteration.common.armory.ArmoryItemEnergy.charge(b, 1000, false));
+            }
+            look(sp, 0.5, -60, 0.5, 0, 10);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        for (int i = 0; i < blades.length; i++) {
+            final int slot = i;
+            client(5, () -> Minecraft.getInstance().player.getInventory().selected = slot);
+            shot(20, "sb1_blades/6_hud_" + blades[i].replace("_blade", ""));
+        }
         client(10, () -> Minecraft.getInstance().stop());
     }
 

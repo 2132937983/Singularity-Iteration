@@ -89,4 +89,10 @@ public class mio_icif_data_components {
         DATA_COMPONENTS.registerComponentType("suit_palette",
             builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.SuitPalette.CODEC)
                 .networkSynchronized(com.miophas.singularity_iteration.common.suit.SuitPalette.STREAM_CODEC));
+
+    /** 0.1.11.233: the resources of a SlashBlade collab blade (EU, the nano edge's heat, the singularity's mass). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.armory.blade.BladeCore>> BLADE_CORE =
+        DATA_COMPONENTS.registerComponentType("blade_core",
+            builder -> builder.persistent(com.miophas.singularity_iteration.common.armory.blade.BladeCore.CODEC)
+                .networkSynchronized(com.miophas.singularity_iteration.common.armory.blade.BladeCore.STREAM_CODEC));
 }

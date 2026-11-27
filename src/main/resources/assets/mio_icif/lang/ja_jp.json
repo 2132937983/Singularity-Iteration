@@ -6250,5 +6250,17 @@
   "item.mio_icif.quantum_blade": "量子ブレード",
   "item.mio_icif.quantum_blade.desc": "重ね合わせ状態にある刀\n抜けばスーツが標的にした敵の上へ収縮する",
   "item.mio_icif.singularity_blade": "特異点ブレード",
-  "item.mio_icif.singularity_blade.desc": "鍔に微小な特異点を閉じ込めた刀\nEUで閉じ込め続け、撃破で質量を蓄える"
+  "item.mio_icif.singularity_blade.desc": "鍔に微小な特異点を閉じ込めた刀\nEUで閉じ込め続け、撃破で質量を蓄える",
+  "message.mio_icif.blade.no_eu": "刀の電力が足りず、抜刀技が出なかった",
+  "message.mio_icif.blade.overheated": "圧電刃が過熱している。冷えるまで抜刀技は使えない",
+  "message.mio_icif.blade.no_mass": "特異点の質量が足りない（10 必要）。先にこの刀で敵を倒す",
+  "message.mio_icif.blade.no_coherence": "量子スーツのコヒーレンス不足、またはデコヒーレンス中。収縮に失敗した",
+  "hud.mio_icif.blade.heat": "刃温 %s",
+  "hud.mio_icif.blade.overheated": "過熱 %s",
+  "hud.mio_icif.blade.coherence": "コヒーレンス %s",
+  "hud.mio_icif.blade.decoherent": "デコヒーレンス",
+  "hud.mio_icif.blade.no_core": "量子コアなし：電力で収縮",
+  "hud.mio_icif.blade.mass": "質量 %s",
+  "hud.mio_icif.blade.unstable": "閉じ込め失敗！質量 %s が漏れている",
+  "hud.mio_icif.blade.contained": "質量 %s · 閉じ込め %s"
 }

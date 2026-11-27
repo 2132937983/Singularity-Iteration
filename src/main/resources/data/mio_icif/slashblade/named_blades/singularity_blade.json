@@ -9,9 +9,12 @@
   "properties": {
     "attack_base": 11.0,
     "max_damage": 120,
-    "slash_art": "slashblade:judgement_cut",
+    "slash_art": "mio_icif:event_horizon",
     "sword_type": [
       "bewitched"
+    ],
+    "special_effects": [
+      "mio_icif:tidal_shear"
     ]
   },
   "enchantments": [

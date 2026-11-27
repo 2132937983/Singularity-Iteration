@@ -6270,5 +6270,9 @@
   "slash_art.mio_icif.collapse_cut": "収縮斬",
   "slash_art.mio_icif.collapse_cut.desc": "刀は重ね合わせ状態。スーツがロックした敵と絡み合った敵それぞれに確率雲が開き、干渉縞が収束すると全員の上へ同時に収縮する",
   "se.mio_icif.entangle": "量子もつれ",
-  "se.mio_icif.entangle.desc": "命中した敵と 10 秒もつれる（最大 6 体）。スーツのロックがなくても収縮斬が見つけ出す"
+  "se.mio_icif.entangle.desc": "命中した敵と 10 秒もつれる（最大 6 体）。スーツのロックがなくても収縮斬が見つけ出す",
+  "slash_art.mio_icif.event_horizon": "事象の地平線",
+  "slash_art.mio_icif.event_horizon.desc": "閉じ込めが一瞬開き、視線の先に微小特異点が放たれる。景色はアインシュタインリングに曲がり、降着円盤が回り、8 ブロック以内のものを引き込んで引き裂き、最後はマゼンタのホーキング放射となって蒸発する",
+  "se.mio_icif.tidal_shear": "潮汐剪断",
+  "se.mio_icif.tidal_shear.desc": "命中に質量 ÷ 20 の魔法ダメージ（最大 5）を加え、対象を使い手のほうへ引き寄せる"
 }

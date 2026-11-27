@@ -6270,5 +6270,9 @@
   "slash_art.mio_icif.collapse_cut": "Collapse Cut",
   "slash_art.mio_icif.collapse_cut.desc": "The blade is in superposition: a probability cloud opens on every target the suit locked or the blade entangled, the interference fringes close in, and it collapses onto all of them at once",
   "se.mio_icif.entangle": "Entanglement",
-  "se.mio_icif.entangle.desc": "Each hit entangles the target for 10 seconds (at most 6); the Collapse Cut finds them even without the suit's locks"
+  "se.mio_icif.entangle.desc": "Each hit entangles the target for 10 seconds (at most 6); the Collapse Cut finds them even without the suit's locks",
+  "slash_art.mio_icif.event_horizon": "Event Horizon",
+  "slash_art.mio_icif.event_horizon.desc": "The containment opens for a moment and the micro-singularity is set loose where you look: the view bends round it into an Einstein ring, an accretion disk turns, everything within 8 blocks is pulled in and torn, and it evaporates in a magenta Hawking burst",
+  "se.mio_icif.tidal_shear": "Tidal Shear",
+  "se.mio_icif.tidal_shear.desc": "Hits add magic damage of mass ÷ 20 (at most 5) and draw the target toward the wielder"
 }

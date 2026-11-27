@@ -4010,9 +4010,9 @@ public final class CaptureDirector {
                     sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class, sp.getBoundingBox().inflate(12)).size(), before,
                     com.miophas.singularity_iteration.common.armory.blade.CollabBlade.core(sp.getMainHandItem()));
             });
-            for (int f = 0; f < 24; f++) {
+            for (int f = 0; f < 36; f++) {
                 // two ticks in, the camera turns 75 degrees: the standing wave along the first look is seen from the side
-                if (f == 2) client(0, () -> { var p = Minecraft.getInstance().player; p.setYRot(p.getYRot() + 75); p.yRotO = p.getYRot(); });
+                if (f == 2 && slot == 0) client(0, () -> { var p = Minecraft.getInstance().player; p.setYRot(p.getYRot() + 75); p.yRotO = p.getYRot(); });
                 client(0, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
                 shot(1, String.format("sb1_blades/7_art_%s_%02d", name, f));
             }

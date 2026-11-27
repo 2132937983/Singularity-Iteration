@@ -121,6 +121,8 @@ public class mio_icif_Network {
         // Suit sensors and Special Maneuver Mode: six payloads, see SuitPackets.
         com.miophas.singularity_iteration.common.suit.SuitPackets.register(registrar);
         com.miophas.singularity_iteration.common.armory.WingmanDeployFxPacket.register(registrar);
+        // 0.1.11.236: the singularity blade's event horizon (SlashBlade collab B4)
+        com.miophas.singularity_iteration.common.armory.blade.SingularityFxPacket.register(registrar);
 
         // 0.1.10.21: the exchange panel of the futures machine (request / action C2S, view S2C).
         com.miophas.singularity_iteration.common.exchange.ExchangePackets.register(registrar);

@@ -6270,5 +6270,9 @@
   "slash_art.mio_icif.collapse_cut": "坍缩斩",
   "slash_art.mio_icif.collapse_cut.desc": "刀身处在叠加态：战甲锁定与纠缠的每个目标上张开概率云，干涉条纹收拢后同时坍缩，次元斩落在所有目标身上",
   "se.mio_icif.entangle": "量子纠缠",
-  "se.mio_icif.entangle.desc": "每次命中与目标纠缠 10 秒（最多 6 个）；坍缩斩不靠战甲锁定也能找到它们"
+  "se.mio_icif.entangle.desc": "每次命中与目标纠缠 10 秒（最多 6 个）；坍缩斩不靠战甲锁定也能找到它们",
+  "slash_art.mio_icif.event_horizon": "事件视界",
+  "slash_art.mio_icif.event_horizon.desc": "约束短暂打开，微型奇点在视线处放出：画面绕它弯成爱因斯坦环，吸积盘旋转，8 格内的一切被吸入撕扯，最后蒸发成品红色的霍金辐射爆发",
+  "se.mio_icif.tidal_shear": "潮汐剪切",
+  "se.mio_icif.tidal_shear.desc": "命中附加质量 ÷ 20 的魔法伤害（最多 5），并把目标拉向持刀者"
 }

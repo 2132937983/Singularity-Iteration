@@ -57,7 +57,15 @@ final class SiSlashBladeContent {
     static final DeferredHolder<SpecialEffect, SpecialEffect> ENTANGLE = SPECIAL_EFFECTS.register("entangle",
         () -> new SpecialEffect(0, false, false));
 
+    /** 0.1.11.236 (B4): the singularity blade's slash art (event horizon) and special effect (tidal shear). */
+    static final DeferredHolder<SlashArts, SlashArts> EVENT_HORIZON = SLASH_ARTS.register("event_horizon",
+        () -> new SlashArts(user -> id("event_horizon")).setComboStateJust(user -> id("event_horizon_just"))
+            .setComboStateSuper(user -> id("event_horizon_super")));
+    static final DeferredHolder<SpecialEffect, SpecialEffect> TIDAL_SHEAR = SPECIAL_EFFECTS.register("tidal_shear",
+        () -> new SpecialEffect(0, false, false));
+
     static void register(IEventBus modEventBus) {
+        for (Variant v : Variant.values()) COMBO_STATES.register("event_horizon" + v.suffix, () -> SiSingularityBlade.eventHorizon(v));
         for (Variant v : Variant.values()) COMBO_STATES.register("piezo_cleave" + v.suffix, () -> SiNanoBlade.piezoCleave(v));
         for (Variant v : Variant.values()) COMBO_STATES.register("collapse_cut" + v.suffix, () -> SiQuantumBlade.collapseCut(v));
         SLASH_ARTS.register(modEventBus);

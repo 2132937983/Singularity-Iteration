@@ -111,6 +111,11 @@ public final class BladeResources {
         return c.withEu(c.eu() - CollabBlade.NANO_MEND_EU);
     }
 
+    /** 0.1.11.236 (B4): the tidal shear of a singularity blade hit: mass / 20 extra damage, at most 5. */
+    public static float tidalDamage(BladeCore c) {
+        return Math.min(5F, Math.max(0, c.mass()) / 20F);
+    }
+
     /** EU the blade can still take. */
     public static long room(BladeCore c, CollabBlade kind) {
         return Math.max(0, kind.euMax - c.eu());

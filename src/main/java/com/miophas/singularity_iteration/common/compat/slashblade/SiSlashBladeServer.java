@@ -52,6 +52,7 @@ final class SiSlashBladeServer {
         SiSlashBladeContent.register(modEventBus);
         NeoForge.EVENT_BUS.register(SiNanoBlade.class);
         NeoForge.EVENT_BUS.register(SiQuantumBlade.class);
+        NeoForge.EVENT_BUS.register(SiSingularityBlade.class);
     }
 
     static CollabBlade resolve(ItemStack stack) {

@@ -966,6 +966,7 @@ public class WingmanEntity extends Mob {
         boolean roomFight = room.kind().confined() && target != null && target.isAlive() && standsOnFloor(target);
         boolean open = !room.kind().confined() || room.span() > GROUND_SPAN_OUT && !roomFight;
         boolean want = ground() ? !(open || ownerFast || targetUp) : (low || roomFight) && !ownerFast && !targetUp;
+        if (stance == STANCE_AUTO && !WingmanConfig.groundForm()) want = false;   // 0.1.11.228: the config turns the automatic ground form off
         // 0.1.11.227 (G3b): the wheel's stance: always in the air, or on foot (unless the owner flies off fast)
         if (stance == STANCE_AIR) want = false;
         else if (stance == STANCE_GROUND) want = !ownerFast;

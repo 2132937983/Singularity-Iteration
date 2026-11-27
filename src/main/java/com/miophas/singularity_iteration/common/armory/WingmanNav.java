@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * <ul>
  *   <li>When the body fits all along the straight line to the goal (a body sweep, kept {@link #DIRECT_TICKS} ticks), the
  *       answer is the goal: in the open nothing changes.</li>
+ *   <li>0.1.11.228: the budgets come from the config ({@code Wingmen.pathNodesPerTick}, 256 by default; the server's is 8
+ *       times that).</li>
  *   <li>Otherwise it searches a path ({@link WingmanPathing}) to the goal's cell, a slice of at most {@link #TICK_BUDGET}
  *       nodes per tick and {@link #SERVER_BUDGET} for all Wingmen of a server tick, and follows it: the answer is the
  *       farthest of the next {@link #LOOK_AHEAD} waypoints that the body reaches in a straight line (the path pulled tight).
@@ -115,7 +117,7 @@ public final class WingmanNav {
 
     private static int take(Level level, int want) {
         long now = level.getGameTime();
-        if (now != budgetTick) { budgetTick = now; budgetLeft = SERVER_BUDGET; }
+        if (now != budgetTick) { budgetTick = now; budgetLeft = WingmanConfig.pathNodesPerTick() * 8; }   // 0.1.11.228: from the config
         int n = Math.min(want, budgetLeft);
         budgetLeft -= n;
         return n;
@@ -149,7 +151,7 @@ public final class WingmanNav {
                 searches++;
                 if (search == null) { lose(goalCell); return goal; }
             }
-            int budget = take(level, TICK_BUDGET);
+            int budget = take(level, WingmanConfig.pathNodesPerTick());
             if (budget > 0) {
                 WingmanPathing.Status s = search.step(budget);
                 if (s == WingmanPathing.Status.FOUND) {

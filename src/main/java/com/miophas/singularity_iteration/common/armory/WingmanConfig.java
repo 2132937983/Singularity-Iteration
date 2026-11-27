@@ -15,8 +15,8 @@ public final class WingmanConfig {
     public static final int MAX_LIMIT = 8;
 
     private static ModConfigSpec spec;
-    private static ModConfigSpec.BooleanValue emergencyRescue;
-    private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash, reserveMinutes, speedCostPercent;
+    private static ModConfigSpec.BooleanValue emergencyRescue, groundForm;
+    private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash, reserveMinutes, speedCostPercent, pathNodes;
 
     /** Defines the section entries (called once while the common spec is built). */
     public static void define(ModConfigSpec.Builder b) {
@@ -46,6 +46,14 @@ public final class WingmanConfig {
                 "who wears fewer than two armour pieces (the nearest Wingman, at most once a minute each).",
                 "0.1.11.56：主人致命坠落时僚机接住他；主人濒死且身上盔甲不足两件时僚机飞来换装（由最近的僚机执行，每架每分钟最多一次）。")
             .translation("mio_icif.configuration.wingmen.emergencyRescue").define("emergencyRescue", true);
+        groundForm = b.comment("0.1.11.228: a Wingman with the automatic stance sets down and goes on foot in low places (floor to ceiling at most",
+                "6 blocks) and in rooms where its target stands on the floor. Off: only the wheel's \"on foot\" stance sets it down.",
+                "0.1.11.228：自动立场的僚机在低矮处（地面到天花板不超过 6 格）以及目标站在地上的室内落地步行。关闭后只有轮盘的“地面”立场会让它落地。")
+            .translation("mio_icif.configuration.wingmen.groundForm").define("groundForm", true);
+        pathNodes = b.comment("0.1.11.228: grid cells one Wingman's path search may expand per tick (all Wingmen of a server together: 8 times as many).",
+                "Fewer costs less server time; a long way round then takes more ticks to find.",
+                "0.1.11.228：单架僚机寻路每 tick 最多展开多少格（全服所有僚机合计为它的 8 倍）。越少越省服务器时间，但绕远路时要多花几 tick 才找到路线。")
+            .translation("mio_icif.configuration.wingmen.pathNodesPerTick").defineInRange("pathNodesPerTick", 256, 32, 2048);
     }
 
     /** Called after the spec is built. */
@@ -75,4 +83,8 @@ public final class WingmanConfig {
     /** 0.1.11.50: the factor of the escort speed cost (1 = the maneuver flight's). */
     public static double speedCostFactor() { return get(speedCostPercent, 100) / 100.0; }
     public static double leash() { return Math.max(scanRange(), get(leash, 28)); }
+    /** 0.1.11.228: true when the automatic stance may set a Wingman down (the ground form of 0.1.11.226). */
+    public static boolean groundForm() { return get(groundForm, true); }
+    /** 0.1.11.228: grid cells one Wingman's path search may expand per tick. */
+    public static int pathNodesPerTick() { return get(pathNodes, 256); }
 }

@@ -3666,6 +3666,94 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "wingman_cave" (-Dsi.capture.scene=wingman_cave), 0.1.11.228 (cave overhaul G6): a 3-high stone tunnel with a glass
+     * side wall, the owner at one end, a sword Wingman, and a zombie (hunting the owner) 16 blocks down the tunnel with a
+     * 1-block step between them. A camera outside the glass follows the fight (frames every 3 ticks): the Wingman sets down,
+     * skates and runs in on foot, steps up and fights on the floor. Last, the command wheel with the control fan open on the
+     * new stance entries.
+     */
+    private static void sceneWingmanCave() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        int x0 = -2, x1 = 26, z = 6;   // the tunnel runs along x at z = 5..7, floor y = -61, air y = -60 .. -58
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            BlockState stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), glass = net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState(),
+                air = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+            for (int x = x0 - 1; x <= x1 + 1; x++) for (int y = -61; y <= -57; y++) for (int zz = z - 2; zz <= z + 2; zz++) {
+                boolean inside = x >= x0 && x <= x1 && y >= -60 && y <= -58 && zz >= z - 1 && zz <= z + 1;
+                level.setBlock(new BlockPos(x, y, zz), inside ? air : zz == z - 2 && y >= -60 && y <= -58 && x >= x0 && x <= x1 ? glass : stone, 3);
+            }
+            for (int x = 13; x <= x1; x++) for (int zz = z - 1; zz <= z + 1; zz++) level.setBlock(new BlockPos(x, -60, zz), stone, 3);   // the step
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.teleportTo(level, x0 + 1.5, -60, z + 0.5, -90, 5);
+            sp.getAbilities().flying = false;
+            sp.getAbilities().invulnerable = true;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[] suit = {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
+                    new ItemStack(Items.IRON_BOOTS), new ItemStack(Items.IRON_SWORD), ItemStack.EMPTY};
+                for (int c = 0; c < 6; c++) if (!suit[c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
+                Singularity_Iteration.LOGGER.info("capture cave deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+            var w = level.getEntitiesOfClass(com.miophas.singularity_iteration.common.armory.WingmanEntity.class, sp.getBoundingBox().inflate(40)).stream().findFirst().orElse(null);
+            if (w != null) w.teleportTo(x0 + 3.5, -60, z + 0.5);   // into the tunnel at once (the deploy places it by the owner)
+            lightTrailCamera(sp, 9.5, -59.2, z - 7.5, 9.5, -59.2, z + 0.5);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; });
+        client(3, CaptureDirector::attachCaptureCamera);
+        shot(40, "wingman_cave/00_set_down");
+        server(1, sp -> {
+            var zombie = mob(sp.serverLevel(), net.minecraft.world.entity.EntityType.ZOMBIE, 22.5, -59, z + 0.5, true, sp);
+            zombie.setTarget(sp);
+            zombie.setHealth(zombie.getMaxHealth());
+            zombie.setInvulnerable(true);
+        });
+        for (int f = 0; f < 50; f++) shot(3, String.format("wingman_cave/fight_%02d", f));
+        server(1, sp -> {
+            for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class, sp.getBoundingBox().inflate(60))) e.discard();
+            var w = sp.serverLevel().getEntitiesOfClass(com.miophas.singularity_iteration.common.armory.WingmanEntity.class, sp.getBoundingBox().inflate(60)).stream().findFirst().orElse(null);
+            if (w != null) Singularity_Iteration.LOGGER.info("capture cave: Wingman at {} ground {} onGround {} hops {}", w.position(), w.ground(), w.onGround(), w.hops());
+        });
+        for (int f = 0; f < 10; f++) shot(10, String.format("wingman_cave/back_%02d", f));
+        // the command wheel, the control fan open on the stance entries
+        client(2, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+            mc.setCameraEntity(mc.player);
+            var target = new com.miophas.singularity_iteration.common.client.armory.CommandWheelClient.Target(mc.player.position(), false, -1, null, 8);
+            var screen = new com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen(target);
+            mc.setScreen(screen);
+            try {
+                Class<?> k = screen.getClass();
+                Class<?> entry = Class.forName(k.getName() + "$Entry");
+                Object control = java.util.Arrays.stream(entry.getEnumConstants()).filter(e -> ((Enum<?>) e).name().equals("CONTROL")).findFirst().orElseThrow();
+                var hover = k.getDeclaredField("hover"); hover.setAccessible(true); hover.setInt(screen, ((Enum<?>) control).ordinal());
+                var fan = k.getDeclaredField("fanOwner"); fan.setAccessible(true); fan.set(screen, control);
+                var sub = k.getDeclaredField("sub"); sub.setAccessible(true); sub.setInt(screen, 6);
+            } catch (ReflectiveOperationException e) { Singularity_Iteration.LOGGER.warn("capture cave: wheel fan", e); }
+        });
+        shot(15, "wingman_cave/wheel_stance");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_cave".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanCave();
+        }
+    }
+
+    /**
      * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
      * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;
      * 0.1.11.53 (P1): on its own AI (the combo chains), a frame every 2 ticks. Without SlashBlade the scene shows nothing

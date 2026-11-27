@@ -233,6 +233,12 @@ public class WingmanEntity extends Mob {
     @Nullable public UUID owner() { return owner; }
     /** Server: the current target. */
     @Nullable LivingEntity currentTarget() { return target; }
+
+    /** 0.1.11.220 (cave overhaul G0): what the obstacle avoidance did last ({@link WingmanNavDebug}). Not saved. */
+    WingmanNavDebug.Probe navProbe = WingmanNavDebug.Probe.CLEAR;
+
+    /** 0.1.11.220: the last outcome of the obstacle avoidance, for the cave GameTests. */
+    public WingmanNavDebug.Probe navProbe() { return navProbe; }
     /** Client: the locked target id (-1 none), the shot and boost counters (effects start when they change). */
     public int lockedTargetId() { return entityData.get(DATA_TARGET); }
     public int shotCount() { return entityData.get(DATA_SHOTS); }
@@ -442,6 +448,7 @@ public class WingmanEntity extends Mob {
         if (deflectCooldown > 0) deflectCooldown--;
         if (boostCooldown > 0) boostCooldown--;
         syncTarget(world);
+        WingmanNavDebug.tick(this, world);   // 0.1.11.220: the cave debug view (-Dsi.wingman.navDebug=true)
         if (artsCooldown > 0) artsCooldown--;
         if (rapidSlashCooldown > 0) rapidSlashCooldown--;
         if (state() == ACTIVE) SlashBladeCombat.tick(this);   // a blade's combo actions run on the wielder's tick
@@ -621,7 +628,7 @@ public class WingmanEntity extends Mob {
         Vec3 to = post.subtract(position());   // with the owner's velocity flown this tick, it is at the next place
         Vec3 want = WingmanTactics.avoid(this, WingmanFlight.want(to, carry, cap).add(separation()));
         Vec3 v = WingmanFlight.accelerate(getDeltaMovement(), want, accel);
-        if (horizontalCollision) v = v.add(0, 0.3, 0);
+        if (horizontalCollision) { v = v.add(0, 0.3, 0); WingmanNavDebug.record(this, WingmanNavDebug.Probe.WALL_CLIMB); }
         setDeltaMovement(v);
         if (WingmanConfig.upkeepEuPerSecond() > 0) speedDue += WingmanFlight.speedCost(v.length(), CRUISE) * WingmanConfig.speedCostFactor();
         faceFlight(v, player);
@@ -2191,7 +2198,7 @@ public class WingmanEntity extends Mob {
         Vec3 dv = want.subtract(v);
         if (dv.lengthSqr() > ACCEL * ACCEL) dv = dv.normalize().scale(ACCEL);
         v = v.add(dv);
-        if (horizontalCollision) v = v.add(0, 0.3, 0);
+        if (horizontalCollision) { v = v.add(0, 0.3, 0); WingmanNavDebug.record(this, WingmanNavDebug.Probe.WALL_CLIMB); }
         setDeltaMovement(v);
         faceFlight(v, player);
     }

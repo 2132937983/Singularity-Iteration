@@ -361,7 +361,7 @@ public final class WingmanTactics {
      * climb, duck under a low lintel/ceiling, or slide laterally (whichever way is clear).
      */
     static Vec3 avoid(WingmanEntity self, Vec3 want) {
-        if (want.lengthSqr() < 1.0E-4) return want;
+        if (want.lengthSqr() < 1.0E-4) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLEAR); return want; }
         Level level = self.level();
         Vec3 from = self.position().add(0, self.getBbHeight() * 0.5, 0);
         Vec3 dir = want.normalize();
@@ -370,16 +370,20 @@ public final class WingmanTactics {
         // 4 blocks per tick), and the ways round grow with the speed
         double k = Math.max(1.0, speed / 0.9);
         Vec3 ahead = from.add(dir.scale(Math.min(Math.max(4.0, speed * 4), 1.5 + speed * 6)));
-        if (clear(level, from, ahead, self)) return want;
+        if (clear(level, from, ahead, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLEAR); return want; }
         Vec3 up = from.add(0, 2.5 * k, 0).add(dir.scale(2.5 * k));
-        if (clear(level, from, up, self)) return want.add(0, 0.35 * k, 0);
+        if (clear(level, from, up, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.CLIMB); return want.add(0, 0.35 * k, 0); }
         // Indoor / doorway duck: if climbing is blocked by a ceiling or lintel, probe downward before sliding
         Vec3 down = from.add(0, -1.6, 0).add(dir.scale(2.0 * k));
-        if (clear(level, from, down, self) && free(level, self.position().add(0, -0.8, 0))) return want.add(0, -0.32 * k, 0);
+        if (clear(level, from, down, self) && free(level, self.position().add(0, -0.8, 0))) {
+            WingmanNavDebug.record(self, WingmanNavDebug.Probe.DUCK);
+            return want.add(0, -0.32 * k, 0);
+        }
         Vec3 side = new Vec3(-dir.z, 0, dir.x);
         Vec3 left = from.add(side.scale(2.5 * k)).add(dir.scale(1.5 * k)), right = from.add(side.scale(-2.5 * k)).add(dir.scale(1.5 * k));
-        if (clear(level, from, left, self)) return want.add(side.scale(0.35 * k));
-        if (clear(level, from, right, self)) return want.add(side.scale(-0.35 * k));
+        if (clear(level, from, left, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.SLIDE); return want.add(side.scale(0.35 * k)); }
+        if (clear(level, from, right, self)) { WingmanNavDebug.record(self, WingmanNavDebug.Probe.SLIDE); return want.add(side.scale(-0.35 * k)); }
+        WingmanNavDebug.record(self, WingmanNavDebug.Probe.BLOCKED);
         return want.add(0, 0.15, 0).scale(0.5);
     }
 }

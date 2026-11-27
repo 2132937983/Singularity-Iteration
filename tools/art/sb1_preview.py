@@ -414,6 +414,12 @@ def broken(m):
 
 def charge(m):
     im = page(1230,735,f"{m.title}   /   蓄力流光","鞘体与蓄力层")
+    cam = rotation(12,-5,1)
+    shell = m.lit("sheath") + m.parts("effect")
+    projected = np.concatenate([part.xyz.reshape(-1,3) for part in shell]) @ cam.T
+    extent = np.ptp(projected,axis=0)
+    scale = min(1071/extent[0],103/extent[1])
+    center = (projected.max(axis=0)+projected.min(axis=0))[:2]/2
     for i,(label,phase) in enumerate([("静止刀鞘",None),("蓄力 · 初始相位",0),("蓄力 · 流光前移",.08)]):
         top = 110 + i*198
         panel(im,(36,top,1194,top+179),m.background)
@@ -421,7 +427,7 @@ def charge(m):
         scene = m.lit("sheath")
         if phase is not None:
             scene += m.parts("effect")
-        paste(im,m.raster(scene,(1085,117),rotation(12,-5,1),phase=phase or 0,
+        paste(im,m.raster(scene,(1085,117),cam,pixels=scale,center=center,phase=phase or 0,
                           supersample=2),(73,top+43))
     m.save(im,"charge")
 

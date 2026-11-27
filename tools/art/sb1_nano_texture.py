@@ -65,15 +65,15 @@ def blade(image):
         draw.line((x + 1, 9, x + 4, 5), fill="#444D54")
     draw.polygon([(0, 11), (146, 10), (xmax, 9), (xmax, 15), (0, 15)], fill="#323941")
     draw.line([(9, 11), (146, 10), (xmax, 9)], fill="#49525B")
-    # Three inspection windows interrupt the sealed lower band. Each reveals
-    # just two recessed ceramic contacts. The final window ends before the tip.
+    # Small PZT contacts repeat under three lengths of cover. The few exposed
+    # pixels are cooler and dimmer than the orange line; the tip stays bare.
     draw.rectangle((0, 12, xmax, 15), fill="#1A1F25")
-    for x in (53, 121, 183):
-        draw.polygon([(x, 15), (x + 2, 12), (x + 13, 12), (x + 11, 15)], fill=SEAM)
-        for contact in (x + 3, x + 8):
+    for x in (11,83,155):
+        draw.polygon([(x,15),(x+2,12),(x+57,12),(x+55,15)], fill=SEAM)
+        for contact in range(x+4,x+54,12):
             draw.rectangle((contact, 13, contact + 2, 14), fill="#78848D")
-            draw.line((contact, 13, contact + 2, 13), fill="#A4ABB1")
-        draw.line((x + 2, 15, x + 10, 15), fill="#3B454E")
+            draw.line((contact, 13, contact + 2, 13), fill="#B6BDC4")
+        draw.line((x+2,15,x+53,15), fill="#313B44")
     # Keep the substrate dark under the additive ribbon. A second bright
     # orange layer here would saturate to pale yellow in the in-game pass.
     draw.rectangle((0, 16, xmax, 17), fill="#4F1F0D")
@@ -129,8 +129,12 @@ def grip(image):
     draw = ImageDraw.Draw(image)
     xmax, ymax = image.width - 1, image.height - 1
     carbon_field(image, (0, 0, xmax, ymax))
-    # Broad diagonal wrap, with a single bright selvedge and a tucked shadow.
-    for x in range(-15, image.width, 11):
+    # The returning band passes underneath. Gaps between both diagonals
+    # leave small carbon diamonds through the middle of the grip.
+    for x in range(-15, image.width+9, 16):
+        draw.polygon([(x+8,0),(x+11,0),(x+3,ymax),(x,ymax)], fill="#32373D")
+        draw.line((x+8,0,x,ymax), fill="#454C53")
+    for x in range(-15, image.width, 16):
         band = [(x, 0), (x + 4, 0), (x + 11, ymax), (x + 7, ymax)]
         draw.polygon(band, fill="#373C43")
         draw.line((x, 0, x + 7, ymax), fill="#525862")

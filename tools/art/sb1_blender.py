@@ -1,19 +1,22 @@
 """Open the authored SB1 game meshes as a portable, editable Blender project.
 
-Run with Blender 4.4+: blender -b --factory-startup --python tools/art/sb1_blender.py
+Run with Blender 4.4+: blender -b --factory-startup --python tools/art/sb1_blender.py -- nano
 The mesh retains the reference template's local XYZ and its Y-up OBJ to Z-up
 Blender object transform. Toggle a collection to edit another state.
 """
 from math import radians
 from pathlib import Path
+import argparse
+import sys
 
 import bpy
 from mathutils import Euler
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ASSETS = ROOT / "src/main/resources/assets/mio_icif/model/slashblade/nano"
-OUTPUT = ROOT / "docs/art/sb1/blender/nano.blend"
+ASSETS = ROOT / "src/main/resources/assets/mio_icif/model/slashblade"
+BLENDS = ROOT / "docs/art/sb1/blender"
+MATERIALS = {"nano": "Carbon and ceramic", "quantum": "Glazed ceramic", "singularity": "Dark matter and coils"}
 GROUPS = (
     ("Blade", "blade"),
     ("Sheath", "sheath"),
@@ -56,20 +59,23 @@ def material(name, image, luminous=False):
     return mat
 
 
-def main():
+def build(kind):
+    folder = ASSETS / kind
+    output = BLENDS / (kind + ".blend")
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.context.preferences.filepaths.save_version = 0
-    bpy.ops.wm.obj_import(filepath=str(ASSETS / "model.obj"), forward_axis="NEGATIVE_Z", up_axis="Y",
+    bpy.ops.wm.obj_import(filepath=str(folder / "model.obj"), forward_axis="NEGATIVE_Z", up_axis="Y",
                           use_split_objects=True, use_split_groups=False)
     images = {}
     for name in ("texture.png", "charge.png"):
-        image = bpy.data.images.load(str(ASSETS / name))
+        image = bpy.data.images.load(str(folder / name))
         image.pack()
-        image.filepath_raw = bpy.path.relpath(str(ASSETS / name), start=str(OUTPUT.parent))
+        image.filepath_raw = bpy.path.relpath(str(folder / name), start=str(output.parent))
         images[name] = image
-    body = material("Nano | Carbon and ceramic", images["texture.png"])
-    emitter = material("Nano | Luminous trim", images["texture.png"], luminous=True)
-    charge = material("Nano | Charge scroll", images["charge.png"], luminous=True)
+    prefix = kind.title() + " | "
+    body = material(prefix + MATERIALS[kind], images["texture.png"])
+    emitter = material(prefix + "Luminous trim", images["texture.png"], luminous=True)
+    charge = material(prefix + "Charge scroll", images["charge.png"], luminous=True)
     scene = bpy.context.scene
     edit_layer = bpy.context.view_layer
     edit_layer.name = "Edit - drawn"
@@ -107,9 +113,12 @@ def main():
                 view.region_3d.view_location = (-125, 0, -4)
                 view.clip_end = 2000
                 view.overlay.show_overlays = False
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), compress=True, relative_remap=False)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(output), compress=True, relative_remap=False)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("kind", choices=tuple(MATERIALS), nargs="?", default="nano")
+    args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    build(args.kind)

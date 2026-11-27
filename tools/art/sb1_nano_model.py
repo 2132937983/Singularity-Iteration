@@ -1,10 +1,10 @@
 """Build the original Nano blade's game meshes in SlashBlade OBJ space.
 
-X points toward the grip end, Y toward the spine, Z toward the front face.
+X points toward the grip end, Y toward the cutting edge, Z toward the front face.
 Dimensions below are model coordinates from the game's brief.
 """
 from dataclasses import dataclass
-from math import cos, radians, sin, sqrt
+from math import hypot, sqrt
 from pathlib import Path
 
 from sb1_nano_texture import atlas_uv
@@ -79,21 +79,29 @@ def line(rows, x):
     return rows[-1]
 
 
-BODY = [
-    Station(-32, 5.1, -8.7, 1.75), Station(-53, 5.2, -9.6, 1.75),
-    Station(-110, 3.9, -10.8, 1.70), Station(-170, 2.3, -12.0, 1.55),
-    Station(-221, .7, -13.2, 1.45), Station(-254, -.5, -14.40, 1.70),
-]
 BREAK = -110
-# In front view the back runs almost straight to the point. Only the lower
-# outline sweeps up. The transverse seam is seven units farther forward at
-# the back, so the two broad facets also separate when seen from the side.
-YOKOTE = BODY[-1].x
-TIP_X, TIP_Y = -300, -1.8
-TIP_EDGE = [(YOKOTE, BODY[-1].low), (-266, -13.55), (-278, -11.10),
-            (-289, -7.48), (-296, -4.22), (TIP_X, TIP_Y)]
+TIP_X = -300
+YOKOTE = -274
 
-BLADE_RING = ((0,.60),(.18,1),(.77,.92),(1,0),(.77,-.92),(.18,-1),(0,-.60))
+
+def blade_station(x):
+    # Original centreline in holder coordinates. The shallow root changes
+    # gradually into the sharper fall at the tip in the game's XY plane.
+    s = (-32-x)/(-32-TIP_X)
+    centre = 3.1 - 2.7*s - 26*s*s
+    height = lerp(10.05,9.05,s)
+    return Station(x, centre+height/2, centre-height/2, lerp(.78,.63,s))
+
+
+BODY = [blade_station(x) for x in (-32,-58,BREAK,-157,-204,-245,YOKOTE)]
+TIP_Y = blade_station(TIP_X).low + .35
+TIP_EDGE = [(YOKOTE,BODY[-1].top),(-282,blade_station(-282).top-.5),
+            (-291,blade_station(-291).top-3.2),(-297,blade_station(-297).top-6.8),
+            (TIP_X,TIP_Y)]
+
+# t progresses from the dark spine to the +Y edge. Starting on the -Z
+# side keeps outward winding on both faces after the change of edge side.
+BLADE_RING = ((0,-.64),(.18,-1),(.77,-.90),(1,0),(.77,.90),(.18,1),(0,.64))
 
 
 def fracture_shift(t):
@@ -108,20 +116,19 @@ def blade_point(x, t, w):
     if x > YOKOTE:
         row = line(BODY, x)
         bx = x + (fracture_shift(t) if x == BREAK else 0)
-        return bx, lerp(row.top,row.low,t), row.width*w
+        return bx, lerp(row.low,row.top,t), row.width*w
 
-    # All points from the back ridge to the lower arris lie in triangular
-    # fans ending at one apex. The curved lower outline opens up the bevel
-    # beneath that plane, changing its lighting across the transverse seam.
+    # The cold-grey tip plane starts at a diagonal boundary. The single
+    # positive-Y orange edge then converges with the spine at one vertex.
     root = BODY[-1]
     s = (YOKOTE-x)/(YOKOTE-TIP_X)
-    bx = lerp(YOKOTE-7*(1-t), TIP_X, s)
-    by = lerp(lerp(root.top,root.low,t), TIP_Y, s)
+    bx = lerp(YOKOTE-4*(1-t), TIP_X, s)
+    by = lerp(lerp(root.low,root.top,t), TIP_Y, s)
     if t > .77:
         for (xa,ya),(xb,yb) in zip(TIP_EDGE,TIP_EDGE[1:]):
             if x >= xb:
                 edge = lerp(ya,yb,(xa-x)/(xa-xb))
-                ridge = lerp(lerp(root.top,root.low,.77),TIP_Y,s)
+                ridge = lerp(lerp(root.low,root.top,.77),TIP_Y,s)
                 by = lerp(ridge,edge,(t-.77)/.23)
                 break
     return bx, by, (1-s)*root.width*w
@@ -140,13 +147,13 @@ def clip_plane(poly, axis, boundary, keep_above):
     return out
 
 
-def edge_trace(glow, points, across, side, part):
+def edge_trace(glow, points, across, side, part, band):
     # Crop the emissive strip out of the same two triangles as the base.
     # At the transverse facet break, an independent flat quad would cut
     # through the bevel and leave a dark notch in the orange line.
     root = BREAK-3.6 if part == 'tip' else -35
     end = BREAK+3.5 if part == 'hilt' else TIP_X+.3
-    ta,tb=.819,.939
+    ta,tb=band
     for indices in ((0,1,2),(0,2,3)):
         polygon=[(*points[i],across[i]) for i in indices]
         for axis,bound,above in ((3,ta,True),(3,tb,False),(0,end,True),(0,root,False)):
@@ -159,12 +166,15 @@ def edge_trace(glow, points, across, side, part):
             glow.face(layer,uv,'edge_glow')
 
 
-def blade_shell(mesh, glow, part):
+def blade_shell(mesh, glow, part, inventory):
     stations = [r.x for r in BODY] + [x for x,_ in TIP_EDGE[1:]]
     stations = [x for x in stations if (part != 'hilt' or x >= BREAK)
                 and (part != 'tip' or x <= BREAK)]
     rings = [[blade_point(x,t,w) for t,w in BLADE_RING] for x in stations]
     start, end = BODY[0].x, TIP_X
+    # On a 32px GUI render the in-hand line is subpixel. A wider strip
+    # follows the same existing bevel faces on the dedicated item meshes.
+    band=(.61,.974) if inventory else (.819,.939)
     for xa,xb,aa,bb in zip(stations,stations[1:],rings,rings[1:]):
         for i,(t,_) in enumerate(BLADE_RING):
             j=(i+1)%len(aa)
@@ -180,8 +190,8 @@ def blade_shell(mesh, glow, part):
                 tile='blade'
                 uv=[((start-p[0])/(start-end),v) for p,v in zip(pts,(t,t,tj,tj))]
             mesh.face(pts,uv,tile)
-            if min(t,tj)==.77 and max(t,tj)==1:
-                edge_trace(glow,pts,(t,t,tj,tj),1 if t<tj else -1,part)
+            if min(t,tj)<band[1] and max(t,tj)>band[0]:
+                edge_trace(glow,pts,(t,t,tj,tj),-1 if t<tj else 1,part,band)
     if part == 'tip':
         cap(mesh,rings[0],'fracture')
     else:
@@ -262,7 +272,13 @@ def fittings(mesh, inventory):
              (-11.3,-3.3),(-7.3,-6.4),(9.6,-6.4),(15.8,-2.9)]
     rings=[]
     for depth,scale in ((3.05,.91),(2.15,1),(-2.15,1),(-3.05,.91)):
-        rings.append([(-31.35-.125*y+.078*z+depth,y*scale,z*scale) for y,z in outline])
+        ring=[]
+        for i,(y,z) in enumerate(outline):
+            # Two clipped corners come forward from the rim without
+            # increasing its y/z outline or filling the sheath opening.
+            lip = 4.2 if depth < 0 and i in (0,4) else 0
+            ring.append((-31.35-.125*y+.078*z+depth-lip,y*scale,z*scale))
+        rings.append(ring)
     cap(mesh,rings[0],'guard')
     cap(mesh,rings[-1],'guard',True)
     for k,(aa,bb) in enumerate(zip(rings,rings[1:])):
@@ -274,16 +290,22 @@ def fittings(mesh, inventory):
 
 def make_blade(part, inventory=False):
     mesh,glow=Mesh(),Mesh()
-    blade_shell(mesh,glow,part)
+    blade_shell(mesh,glow,part,inventory)
     if part != 'tip':
         fittings(mesh,inventory)
     return mesh,glow
 
 
-SAYA = [Station(-35,11.1,-13.5,5.15),Station(-49,10.8,-13.4,5.35),
-        Station(-127,9.5,-14.4,4.95),Station(-212,5.8,-16.1,4.65),
-        Station(-266,3.4,-19,4.15),Station(-287,2.0,-12.8,3.75),
-        Station(-307,1.3,-4.0,2.45),Station(-313,3.9,1.7,.93)]
+def sheath_station(x,width=3.35):
+    row=blade_station(x)
+    return Station(x,row.top+2.6,row.low-2.9,width)
+
+
+SAYA = [sheath_station(x,w) for x,w in
+        [(-35,3.60),(-49,3.55),(-119,3.49),(-188,3.35),(-246,3.25),(-277,3.12)]]
+SAYA += [Station(-299,TIP_Y+5.5,TIP_Y-2.7,2.90),
+         Station(-306,TIP_Y+.4,TIP_Y-4.9,2.20),
+         Station(-313,TIP_Y-6.2,TIP_Y-7.2,.68)]
 
 
 def make_sheath():
@@ -291,13 +313,17 @@ def make_sheath():
     # A single open faceted ferrule meets the transverse guard. Its bevel
     # rolls into the existing armour without extending past the mouth.
     join=line(SAYA,-44.8)
-    lip=[Station(-35,11.55,-13.85,5.46),Station(-36.5,11.90,-14.2,5.70),
-         Station(-43.2,11.42,-14.0,5.50),join]
+    lip=[]
+    for x,margin,width in ((-35,.42,3.95),(-36.5,.72,4.15),(-43.2,.45,3.95)):
+        wall=line(SAYA,x)
+        lip.append(Station(x,wall.top+margin,wall.low-margin,width))
+    lip.append(join)
     outer=oct_body(mesh,lip,'sheath_cap','metal','metal',False,False)[0]
     oct_body(mesh,[join,*SAYA[1:]],'sheath','dark','metal',False,True,
              uv_span=(SAYA[0].x,SAYA[-1].x))
-    inner=oct_ring(Station(-35,8.8,-10.7,3.40))
-    tunnel=oct_ring(Station(-51,8.4,-10.9,3.18))
+    mouth,end=blade_station(-35),blade_station(-51)
+    inner=oct_ring(Station(-35,mouth.top+1.1,mouth.low-1.1,2.18))
+    tunnel=oct_ring(Station(-51,end.top+.95,end.low-.95,2.06))
     for i in range(8):
         j=(i+1)%8
         mesh.face((outer[i],outer[j],inner[j],inner[i]),RECT,'metal')
@@ -315,20 +341,23 @@ def make_sheath():
             pp=[facepos(s,t,side,.105) for s,t in coords]
             glow.face(pp,RECT,'rail_glow',side<0)
     # The dorsal rail tracks the top ridge uninterrupted between the fittings.
-    steps=[-51,-127,-212,-266,-285]
+    steps=[-51,-119,-188,-246,-277,-288]
     for a,b in zip(steps,steps[1:]):
-        pp=[(x,line(SAYA,x).top+.11,z) for x,z in ((a,-.70),(b,-.70),(b,.70),(a,.70))]
-        glow.face(pp,RECT,'rail_glow')
+        pp=[(x,line(SAYA,x).low-.11,z) for x,z in ((a,-.65),(b,-.65),(b,.65),(a,.65))]
+        glow.face(pp,RECT,'rail_glow',True)
     return mesh,glow
 
 
 def make_effect():
     # Seven contour rings include the swept tip and carry a continuous UV belt.
     # Offset the outer ferrule, armour and tail.
-    rows=[Station(-33.8,13.16,-15.50,6.98),Station(-46.5,12.65,-15.12,6.78),
-          Station(-128,10.7,-15.7,6.15),Station(-265.8,4.8,-20.35,5.43),
-          Station(-287.1,3.35,-14.15,5.05),Station(-306.5,2.7,-5.45,3.85),
-          Station(-314.3,5.37,.18,2.15)]
+    rows=[]
+    for x,up,down,out in [(-33.8,2.10,2.13,2.03),(-117,1.65,1.78,1.39),
+                          (-187,1.55,1.58,1.36),(-246,1.55,1.55,1.36),
+                          (-277,1.59,1.65,1.35),(-300,2.05,1.96,1.55),
+                          (-314.2,2.10,1.55,1.30)]:
+        row=line(SAYA,x)
+        rows.append(Station(x,row.top+up,row.low-down,row.width+out))
     mesh=Mesh()
     rings=[oct_ring(r) for r in rows]
     for aa,bb in zip(rings,rings[1:]):
@@ -346,25 +375,24 @@ def make_effect():
 def item_pose(p, is_sheath, damaged):
     x,y,z=p
     if is_sheath:
-        ax,ay,az,angle,ux,uy,uz=-174, -3, 12, -42, .59, .76, .80
-        cx,cy=-3.7,2
+        near,far=SAYA[0],SAYA[-1]
+        a=(near.x,(near.top+near.low)/2)
+        b=(far.x,(far.top+far.low)/2)
+        origin,end= ((63,-71),(-65,45)) if damaged else ((63,-63),(-79,45))
+        across,depth=1.23,10.4
     else:
-        ax,ay,az,angle,ux,uy,uz=-129, -2.9, 22, -133, .55, .79, .89
-        cx,cy=-6,4.5
-    a,b=(x-ax)*ux,(y-ay)*uy
-    theta=radians(angle)
-    # The GUI item transform already offsets up and to the right. Keep the
-    # asymmetric projection clear of the slot edge and its durability strip.
-    x = cx + a*cos(theta) - b*sin(theta) - 15
-    y = .77*(cy + a*sin(theta) + b*cos(theta)) - 19
-    z = az + z*uz
-    if damaged:
-        # The broken item's slot has a narrower X frame and more space below.
-        return x+15, y-6, z
-    # Enlarge the complete item about its low left corner, staying inside
-    # both the model frame and the rotated GUI projection. Bare uses it too.
-    scale=1.11
-    return -75+(x+75)*scale, -72+(y+72)*scale, 18+(z-18)*scale
+        a,b=(41.74,2.4),(TIP_X,TIP_Y)
+        origin,end= ((-54,-64),(82,80)) if damaged else ((-81,-65),(68,76))
+        across,depth=1.15,21.4 if damaged else 23.4
+    # Stage the original strokes on opposite diagonals. Their curvature
+    # and coloured cross-sections survive the final 32px GUI projection.
+    dx,dy=b[0]-a[0],b[1]-a[1]
+    length=hypot(dx,dy)
+    along=((x-a[0])*dx+(y-a[1])*dy)/(length*length)
+    cross=((y-a[1])*dx-(x-a[0])*dy)/length
+    sx,sy=end[0]-origin[0],end[1]-origin[1]
+    width=cross*across/hypot(sx,sy)
+    return origin[0]+along*sx-width*sy,origin[1]+along*sy+width*sx,depth+.89*z
 
 
 def inventory(name):
@@ -391,10 +419,10 @@ def build():
     return meshes
 
 
-def export(meshes, path):
+def export(meshes, path, title='Nano'):
     # Separate position, UV and flat normal tables keep OBJ hard edges cheap.
     # Indices are shared within an object, while named states remain editable.
-    lines=['# SB1 | Nano blade | original game mesh']
+    lines=[f'# SB1 | {title} blade | original game mesh']
     offsets=[0,0,0]
     for name,mesh in meshes.items():
         tables=[{}, {}, {}]

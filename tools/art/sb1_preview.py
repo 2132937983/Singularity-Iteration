@@ -79,10 +79,14 @@ class Mesh:
 
 
 def meshes(path):
+    return meshes_from_lines(path.read_text(encoding="utf-8-sig").splitlines())
+
+
+def meshes_from_lines(lines):
     vertices, texcoords = [], []
     triangles = defaultdict(list)
     current = None
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
+    for line in lines:
         words = line.split()
         if not words:
             continue
@@ -119,6 +123,7 @@ class Model:
     def __init__(self, kind):
         self.kind = kind
         self.title = NAMES[kind]
+        self.background = "#D1DAD7" if kind == "quantum" else PANEL
         folder = ASSETS / kind
         self.objects = meshes(folder / "model.obj")
         self.atlas = np.asarray(Image.open(folder / "texture.png").convert("RGBA"))
@@ -249,11 +254,16 @@ def views(m):
     im = page(1400, 1282, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
     blade = m.lit("blade")
     closed = m.lit("blade", "sheath")
-    front, edge, back, oblique = rotation(), rotation(90), rotation(y=180), rotation(20,-24,-6)
+    front, edge, back, oblique = rotation(), rotation(-90), rotation(y=180), rotation(20,-24,-6)
+    hero = rotation(14,-5,1)
+    bounds = np.concatenate([mesh.xyz.reshape(-1,3) for mesh in closed]) @ hero.T
+    span = np.ptp(bounds,axis=0)
+    hero_scale = min(886/span[0],106/span[1])
+    hero_center = (bounds.min(axis=0)+bounds.max(axis=0))[:2]/2
     for top, label, scene in [(110,"出鞘",blade),(300,"入鞘",closed)]:
-        panel(im,(36,top,995,top+171))
+        panel(im,(36,top,995,top+171),m.background)
         text(im,57,top+18,label,20,bold=True)
-        stamp = m.raster(scene,(910,130), rotation(14,-5,1), pad=12, supersample=2)
+        stamp = m.raster(scene,(910,130), hero,pixels=hero_scale,center=hero_center,supersample=2)
         paste(im,stamp,(58,top+35))
     panel(im,(1013,110,1364,471))
     text(im,1036,128,"物品栏",20,bold=True)
@@ -268,18 +278,24 @@ def views(m):
     tip_x = blade_vertices[:,0].min()
     near_tip = blade_vertices[blade_vertices[:,0] < tip_x+60]
     tip = np.array([tip_x + 31, (near_tip[:,1].max()+near_tip[:,1].min())/2, 0])
-    details = [("刀尖 · 正面", front, tip, 5.4),
-               ("刀尖 · 斜视", rotation(-35,-26,-9), tip, 5.4),
-               ("刀镡 · 斜视", rotation(12,53,-3), (-32,1,0), 3.5)]
-    for i,(label,cam,focus,magnification) in enumerate(details):
+    tip_views = [("刀尖 · 正面",front),("刀尖 · 斜视",rotation(-35,-26,-9))]
+    ends = blade_vertices[blade_vertices[:,0] <= tip_x+45]
+    tip_scale = min(5.4, *(96/max(np.ptp((ends @ cam.T)[:,1]),1) for _,cam in tip_views))
+    details = []
+    for label,cam in tip_views:
+        ey = (ends @ cam.T)[:,1]
+        details.append((label,cam,((cam @ tip)[0],(ey.min()+ey.max())/2),tip_scale))
+    guard_view = rotation(12,53,-3)
+    details.append(("刀镡 · 斜视",guard_view,(guard_view @ [-32,1,0])[:2],3.5))
+    for i,(label,cam,center,magnification) in enumerate(details):
         left = 36 + 447*i
         panel(im,(left,554,left+433,742))
         text(im,left+16,571,label,18,INK,bold=True)
         # The rest of the blade naturally continues out through this window.
         box = (left+13,609,left+420,730)
-        ImageDraw.Draw(im).rectangle(box,fill="#E0E6E2",outline=LINE)
+        ImageDraw.Draw(im).rectangle(box,fill=m.background if m.kind == "quantum" else "#E0E6E2",outline=LINE)
         stamp = m.raster(blade, (405,119), cam, pixels=magnification,
-                         center=(cam @ focus)[:2], supersample=2)
+                         center=center, supersample=2)
         paste(im,stamp,(box[0]+1,box[1]+1))
 
     text(im,37,772,"四视图",25,bold=True)
@@ -288,7 +304,7 @@ def views(m):
         text(im,left+158,826,label,18,MUTED,anchor="mm")
         for j,state in enumerate(("出鞘","入鞘")):
             top = 854+j*193
-            panel(im,(left,top,left+318,top+164))
+            panel(im,(left,top,left+318,top+164),m.background)
             text(im,left+12,top+13,state,15,MUTED)
             if j == 0:
                 # Show both parts separately. Offset each normal to the image
@@ -315,7 +331,7 @@ def parts(m):
         for i,name in enumerate(row):
             x = 36+i*447
             emission = name.endswith("_luminous") or name=="effect"
-            panel(im,(x,top,x+430,top+173), "#253132" if emission else PANEL)
+            panel(im,(x,top,x+430,top+173), "#253132" if emission else m.background)
             view = rotation(15,-25,-5) if name.startswith("item_") else rotation(13,-13,-4)
             paste(im,m.raster(m.parts(name),(407,127),view,supersample=2),(x+11,top+10))
             text(im,x+13,top+141,name,17,"#EBEEEA" if emission else INK)
@@ -363,7 +379,7 @@ def inventory(m):
 def broken(m):
     im = page(1220,705,f"{m.title}   /   断刀与碎片","断刀持握与碎片落地")
     for x,title in [(36,"手持断刀"),(628,"落地碎片")]:
-        panel(im,(x,113,x+555,668))
+        panel(im,(x,113,x+555,668),m.background)
         text(im,x+20,135,title,23,bold=True)
     glove = [cube((1,-17,-9),(19,3,2),"#485757"), cube((1,-31,-9),(19,-19,4),"#536768"),
              cube((0,-20,-10),(20,-14,5),"#324548"), cube((1,-24,3),(19,-22,5),"#84938D"),
@@ -400,7 +416,7 @@ def charge(m):
     im = page(1230,735,f"{m.title}   /   蓄力流光","鞘体与蓄力层")
     for i,(label,phase) in enumerate([("静止刀鞘",None),("蓄力 · 初始相位",0),("蓄力 · 流光前移",.08)]):
         top = 110 + i*198
-        panel(im,(36,top,1194,top+179))
+        panel(im,(36,top,1194,top+179),m.background)
         text(im,56,top+17,label,20,bold=True)
         scene = m.lit("sheath")
         if phase is not None:

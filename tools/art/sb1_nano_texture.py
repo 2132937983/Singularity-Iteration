@@ -11,12 +11,13 @@ SIZE = (128, 256)
 # down the atlas; painting them horizontally makes the two material axes clear.
 REGIONS = {
     "blade": (2, 2, 252, 20), "sheath": (25, 2, 252, 24),
-    "grip": (52, 2, 72, 14), "guard": (69, 2, 55, 18),
+    "grip": (52, 2, 72, 14), "guard": (69, 2, 25, 18),
     "metal": (91, 2, 49, 12), "bevel": (106, 2, 49, 7),
     "dark": (117, 2, 49, 8), "fracture": (52, 80, 24, 14),
     "edge_glow": (71, 65, 48, 8), "rail_glow": (82, 65, 48, 8),
     "ceramic": (94, 65, 20, 10), "edge": (107, 65, 50, 6),
     "spine": (116, 65, 50, 9), "sheath_cap": (52, 119, 36, 14),
+    "kissaki": (71, 120, 41, 20),
 }
 
 
@@ -55,26 +56,46 @@ def blade(image):
     draw = ImageDraw.Draw(image)
     xmax = image.width - 1
     carbon_field(image, (0, 1, xmax, 10))
-    # The upper longitudinal facet narrows into the angular point.
-    draw.polygon([(0, 0), (xmax, 0), (225, 2), (91, 4), (12, 4)], fill="#333940")
-    draw.line([(0, 0), (168, 0), (xmax, 0)], fill=BEVEL)
+    draw.polygon([(0, 0), (xmax, 0), (xmax, 2), (91, 4), (12, 4)], fill="#333940")
+    draw.line((0, 0, xmax, 0), fill=BEVEL)
     draw.line([(5, 4), (86, 4), (109, 3)], fill="#41474F")
-    draw.polygon([(0, 10), (201, 10), (xmax, 7), (xmax, 14), (0, 14)], fill="#373D45")
-    draw.line([(10, 10), (200, 10), (236, 8)], fill="#535A64")
-    # Ceramic elements sit in a recessed graphite rail; the last block is
-    # intentionally set back from the point so the orange edge can run alone.
-    draw.rectangle((0, 12, xmax, 16), fill=SEAM)
-    for x in range(5, 242, 9):
-        draw.rectangle((x, 12, x + 4, 14), fill=PZT_SHADE)
-        draw.line((x + 1, 12, x + 4, 12), fill=PZT)
-        draw.line((x + 1, 13, x + 4, 13), fill="#B3B9C1")
-        draw.line((x + 5, 13, x + 5, 14), fill="#5C646E")
+    # Flush thermal grooves occupy the blade root, below the unbroken spine.
+    for x in (15, 23, 31):
+        draw.line((x, 9, x + 3, 5), fill=SEAM, width=2)
+        draw.line((x + 1, 9, x + 4, 5), fill="#444D54")
+    draw.polygon([(0, 11), (146, 10), (xmax, 9), (xmax, 15), (0, 15)], fill="#323941")
+    draw.line([(9, 11), (146, 10), (xmax, 9)], fill="#49525B")
+    # Three inspection windows interrupt the sealed lower band. Each reveals
+    # just two recessed ceramic contacts. The final window ends before the tip.
+    draw.rectangle((0, 12, xmax, 15), fill="#1A1F25")
+    for x in (53, 121, 183):
+        draw.polygon([(x, 15), (x + 2, 12), (x + 13, 12), (x + 11, 15)], fill=SEAM)
+        for contact in (x + 3, x + 8):
+            draw.rectangle((contact, 13, contact + 2, 14), fill="#78848D")
+            draw.line((contact, 13, contact + 2, 13), fill="#A4ABB1")
+        draw.line((x + 2, 15, x + 10, 15), fill="#3B454E")
     # Keep the substrate dark under the additive ribbon. A second bright
     # orange layer here would saturate to pale yellow in the in-game pass.
     draw.rectangle((0, 16, xmax, 17), fill="#4F1F0D")
     draw.line((0, 17, xmax, 17), fill="#381708")
     draw.line((0, 18, xmax, 18), fill="#676D77")
     draw.line((0, 19, xmax, 19), fill="#92979C")
+
+
+def kissaki(image):
+    # Separate tip UV island, viewed from either broad side. The diagonal
+    # facet is visible even with the emission pass disabled.
+    draw = ImageDraw.Draw(image)
+    xmax, ymax = image.width - 1, image.height - 1
+    draw.rectangle((0, 0, xmax, ymax), fill="#424B56")
+    draw.polygon([(0, 0), (xmax, 0), (xmax, 3), (0, 8)], fill="#303944")
+    draw.line([(0, 8), (8, 7), (22, 5), (xmax, 3)], fill="#515C68")
+    draw.polygon([(0, 12), (xmax, 5), (xmax, 14), (0, 15)], fill="#535D68")
+    # The only warm feature on this island lies against the single cutting edge.
+    draw.rectangle((0, 16, xmax, 17), fill="#4F1F0D")
+    draw.line((0, 17, xmax, 17), fill="#381708")
+    draw.line((0, 18, xmax, 18), fill="#646D77")
+    draw.line((0, 19, xmax, 19), fill="#77818B")
 
 
 def sheath(image):
@@ -120,13 +141,13 @@ def grip(image):
 def guard(image):
     draw = ImageDraw.Draw(image)
     xmax, ymax = image.width - 1, image.height - 1
-    draw.rectangle((0, 0, xmax, ymax), fill="#343A42")
-    draw.polygon([(0, 1), (xmax, 1), (xmax - 7, 5), (14, 6), (4, 9), (0, 9)], fill="#4A515B")
-    draw.line([(0, 1), (33, 1), (xmax - 4, 0)], fill="#77808A")
-    draw.line([(4, 10), (14, 7), (xmax - 7, 6)], fill="#252A31")
-    draw.polygon([(0, 13), (21, 12), (29, 9), (xmax, 9), (xmax, ymax), (0, ymax)], fill="#262B32")
-    draw.line([(6, 15), (22, 14), (30, 11)], fill="#555D68")
-    draw.line((0, ymax, xmax, ymax), fill=SHADE)
+    draw.rectangle((0, 0, xmax, ymax), fill="#2D343C")
+    draw.polygon([(1, 5), (6, 1), (19, 1), (23, 5), (23, 12), (18, 16),
+                  (6, 16), (1, 12)], fill="#414951")
+    draw.polygon([(3, 6), (7, 3), (18, 3), (21, 6), (21, 11), (17, 14),
+                  (7, 14), (3, 11)], fill="#323941")
+    draw.line([(1, 9), (1, 5), (6, 1), (16, 1)], fill="#65707A")
+    draw.line([(23, 8), (23, 12), (18, 16), (9, 16)], fill="#20252C")
 
 
 def fracture(image):
@@ -171,7 +192,8 @@ def texture():
         "sheath_cap": ((0, GLINT), (.12, "#777F89"), (.36, "#58616B"), (.59, "#6B737D"),
                        (.73, "#434950"), (.91, "#282E35")),
     }
-    painters = {"blade": blade, "sheath": sheath, "grip": grip, "guard": guard, "fracture": fracture}
+    painters = {"blade": blade, "kissaki": kissaki, "sheath": sheath, "grip": grip,
+                "guard": guard, "fracture": fracture}
     for name, (x, y, length, width) in REGIONS.items():
         image = Image.new("RGBA", (length, width))
         if name in painters:

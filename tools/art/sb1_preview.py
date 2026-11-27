@@ -8,6 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -218,7 +219,13 @@ class Model:
                            origin=(res*(.5+2/16),res*(.5-3/16)), gui_light=True)
 
     def save(self, img, kind):
-        img.save(PREVIEWS / f"SB1-{self.kind}_{kind}.png", optimize=True)
+        # Windows viewers can keep an existing PNG memory-mapped. Replace it
+        # after encoding so the preview can stay open while adjusting the model.
+        target = PREVIEWS / f"SB1-{self.kind}_{kind}.png"
+        with TemporaryDirectory(dir=PREVIEWS) as folder:
+            rendered = Path(folder) / target.name
+            img.save(rendered, optimize=True)
+            rendered.replace(target)
 
 
 def paste(im, stamp, xy):
@@ -239,7 +246,7 @@ def slot(im, xy, stamp, zoom=1):
 
 
 def views(m):
-    im = page(1400, 1020, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
+    im = page(1400, 1282, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
     blade = m.lit("blade")
     closed = m.lit("blade", "sheath")
     front, edge, back, oblique = rotation(), rotation(90), rotation(y=180), rotation(20,-24,-6)
@@ -253,12 +260,34 @@ def views(m):
     text(im,1340,139,"128 px · 2×",15,MUTED,anchor="rm")
     slot(im,(1061,177),m.gui("item_blade",128),2)
 
-    text(im,37,508,"四视图",25,bold=True)
+    # Keep the tip at the same model-space focus and pixels per unit in
+    # both close-ups. The oblique view looks along the cutting-edge facet.
+    text(im,37,507,"局部对照",25,bold=True)
+    text(im,1363,520,"刀尖两图采用相同倍率",15,MUTED,anchor="rm")
+    blade_vertices = m.objects["blade"].xyz.reshape(-1,3)
+    tip_x = blade_vertices[:,0].min()
+    near_tip = blade_vertices[blade_vertices[:,0] < tip_x+60]
+    tip = np.array([tip_x + 31, (near_tip[:,1].max()+near_tip[:,1].min())/2, 0])
+    details = [("刀尖 · 正面", front, tip, 5.4),
+               ("刀尖 · 斜视", rotation(-35,-26,-9), tip, 5.4),
+               ("刀镡 · 斜视", rotation(12,53,-3), (-32,1,0), 3.5)]
+    for i,(label,cam,focus,magnification) in enumerate(details):
+        left = 36 + 447*i
+        panel(im,(left,554,left+433,742))
+        text(im,left+16,571,label,18,INK,bold=True)
+        # The rest of the blade naturally continues out through this window.
+        box = (left+13,609,left+420,730)
+        ImageDraw.Draw(im).rectangle(box,fill="#E0E6E2",outline=LINE)
+        stamp = m.raster(blade, (405,119), cam, pixels=magnification,
+                         center=(cam @ focus)[:2], supersample=2)
+        paste(im,stamp,(box[0]+1,box[1]+1))
+
+    text(im,37,772,"四视图",25,bold=True)
     for i,(label,cam) in enumerate([("正面",front),("侧面 · 刀背",edge),("背面",back),("斜视",oblique)]):
         left = 36+i*336
-        text(im,left+158,562,label,18,MUTED,anchor="mm")
+        text(im,left+158,826,label,18,MUTED,anchor="mm")
         for j,state in enumerate(("出鞘","入鞘")):
-            top = 590+j*193
+            top = 854+j*193
             panel(im,(left,top,left+318,top+164))
             text(im,left+12,top+13,state,15,MUTED)
             if j == 0:

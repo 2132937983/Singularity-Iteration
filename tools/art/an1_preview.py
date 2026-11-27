@@ -38,7 +38,7 @@ STAGE, GROUND, EVENT = "#dbe4de", "#6d8781", "#e1363e"
 UI_FONT = None
 
 # The overview keeps full exported clip names under the representative poses.
-ROWS = (
+WINGMAN_ROWS = (
     ("校准与待机", ("calibrate", "idle_stand", "idle_look", "idle_check")),
     ("地面移动", ("walk", "run", "skate", "cover_crouch")),
     ("起跳与腾空", ("jump_takeoff", "thrust_hop", "air_rise", "air_fall")),
@@ -52,7 +52,12 @@ ROWS = (
     ("装填与弓弩", ("reload", "crossbow_reload", "bow_draw", "bow_release")),
     ("投掷与反应", ("spear_throw", "intercept", "kill_flourish")),
 )
-ZH = dict(zip((key for _, row in ROWS for key in row), (
+SUIT_ROWS = (
+    ("战甲起降", ("hover", "takeoff", "land_heavy")),
+    ("战甲推进", ("boost", "brake", "suit_up", "eject")),
+    ("战甲指令", ("command_point", "command_recall")),
+)
+ZH = dict(zip((key for _, row in WINGMAN_ROWS for key in row), (
     "坐标校准", "站立呼吸", "环顾", "系统自检", "步行", "跑步", "推进滑行", "掩体半蹲",
     "普通起跳", "推进跳", "上升", "下落", "轻落地", "重落地", "跨台阶", "踉跄回稳",
     "左转", "右转", "低电量跪落", "重新上电", "正面受击", "背面受击", "左侧受击", "右侧受击",
@@ -63,6 +68,9 @@ ZH = dict(zip((key for _, row in ROWS for key in row), (
     "更换弹匣", "弩上弦", "拉弓", "松弦",
     "投掷三叉戟", "拦截", "收势点头",
 )))
+ZH.update({"hover": "悬停", "takeoff": "起飞", "boost": "加力冲刺", "brake": "急刹",
+           "suit_up": "换装扣盔", "eject": "脱甲出击", "command_point": "指向目标",
+           "command_recall": "召回集合"})
 
 
 @lru_cache(maxsize=None)
@@ -286,16 +294,18 @@ def fit(poses, size, ground, max_scale):
     return min(max_scale, (ground - 9) / height, (size[0] / 2 - 7) / radius)
 
 
-def representative(name, channels, samples, length):
-    # Strike contacts must use the event frame even if the recoil or compression
-    # that follows has greater joint displacement (notably slam_impact at 0 s).
+def representative(full_name, channels, samples, length):
+    # Read cues at their exported time, including the zero-time slam impact.
+    suit = full_name.startswith("animation.suit.")
+    events = {"order", "helmet", "release"} if suit else {"impact"}
     for i, (_, event, _) in enumerate(samples):
-        if event and "impact" in event[0].split(" + "):
+        if event and events.intersection(event[0].split(" + ")):
             return i
     times = [frame[0] for frame in samples]
     # Pick readable contacts, anticipation and departures. Use maximum joint
     # displacement for clips without a designated pose in the contact sheet.
-    chosen = {
+    name = full_name.rsplit(".", 1)[1]
+    chosen = {"hover": .75, "takeoff": .20, "land_heavy": .15, "boost": .15, "brake": .15} if suit else {
         "calibrate": length, "lowpower_slump": length, "lowpower_wake": length * 0.42,
         "land_heavy": 0.20, "land_light": 0.10, "walk": 0.0, "run": 0.25,
         "jump_takeoff": 0.20, "thrust_hop": 0.10, "step_up": 0.20,
@@ -314,12 +324,12 @@ def representative(name, channels, samples, length):
     return max(range(len(times)), key=lambda i: energy(times[i]))
 
 
-def animation_frame(name, info, pose, scale, index, total, length):
+def animation_frame(full_name, info, pose, scale, index, total, length):
     t,event,hold=info
     frame=Image.new("RGB",(544,338),CANVAS)
     draw=ImageDraw.Draw(frame)
     draw.rectangle((0,0,543,44),fill=TOP)
-    draw.text((14,22),"animation.wingman."+name,font=font(17,True,True),fill="#eff5ec",anchor="lm")
+    draw.text((14,22),full_name,font=font(17,True,True),fill="#eff5ec",anchor="lm")
     if event:
         draw.text((529,22),f"{event[0]} @ {event[1]:.2f}s",font=font(15,True,True),fill="#ff8584",anchor="rm")
     panels=((FRONT,"正面"),(RIGHT,"右侧面"))
@@ -339,13 +349,13 @@ def animation_frame(name, info, pose, scale, index, total, length):
     return frame
 
 
-def gif(directory, name, clip, rig, channels, samples):
+def gif(path, full_name, clip, rig, channels, samples):
     seconds = sorted({frame[0] for frame in samples})
     unique = {t: posed_cubes(rig, channels, t) for t in seconds}
     poses = [unique[frame[0]] for frame in samples]
     scale = fit(unique.values(), (261, 247), 222, 6.1)
     length = clip["animation_length"]
-    frames = [animation_frame(name, info, pose, scale, i, len(samples), length)
+    frames = [animation_frame(full_name, info, pose, scale, i, len(samples), length)
               for i, (info, pose) in enumerate(zip(samples, poses))]
     # A common palette prevents flicker. Include light/dark poses, frame text,
     # and bright event outlines even if the first frame has no event.
@@ -356,28 +366,37 @@ def gif(directory, name, clip, rig, channels, samples):
         swatches.paste(frame.resize((160, 120), Image.Resampling.NEAREST), (0, 120 * i))
     palette = swatches.quantize(240)
     indexed = [frame.quantize(palette=palette, dither=Image.Dither.NONE) for frame in frames]
-    indexed[0].save(directory / f"wingman_{name}.gif", save_all=True, append_images=indexed[1:],
+    indexed[0].save(path, save_all=True, append_images=indexed[1:],
                     duration=1000 // FPS, loop=0, optimize=False, disposal=1)
 
 
 def overview(data):
-    rows = [(group, [name for name in names if name in data]) for group, names in ROWS]
-    rows = [(group, names) for group, names in rows if names]
+    rows = []
+    for prefix, layout in (("animation.wingman.", WINGMAN_ROWS), ("animation.suit.", SUIT_ROWS)):
+        for group, names in layout:
+            present = [name for name in names if prefix + name in data]
+            if present:
+                rows.append((group, prefix, present))
     w, h = 1370, 120 + 205 * len(rows)
     page=Image.new("RGB",(w,h),CANVAS)
     pen=ImageDraw.Draw(page)
     pen.rectangle((0,0,w,89),fill=TOP)
-    pen.text((25,38),"僚机动作",font=font(36,True),fill="#ecf3ec",anchor="lm")
-    subtitle = "移动、待机与受击" if "melee_1" not in data else "移动、待机、受击与战斗"
-    pen.text((205,42),subtitle,font=font(23),fill="#bdd0ca",anchor="lm")
+    suits = any(name.startswith("animation.suit.") for name in data)
+    title = "僚机与玩家战甲" if suits else "僚机动作"
+    subtitle = "移动、战斗、装甲与指令" if suits else (
+        "移动、待机、受击与战斗" if "animation.wingman.melee_1" in data else "移动、待机与受击")
+    pen.text((25,38),title,font=font(36,True),fill="#ecf3ec",anchor="lm")
+    pen.text((310 if suits else 205,42),subtitle,font=font(23),fill="#bdd0ca",anchor="lm")
     pen.text((1344,43),f"AN1   /   {len(data)} 组关键帧",font=font(18),fill="#d3dfda",anchor="rm")
-    for r,(group,names) in enumerate(rows):
+    for r,(group,prefix,names) in enumerate(rows):
         y=100+r*205
         pen.text((27,y+13),group,font=font(18,True),fill=INK,anchor="lm")
-        if group == "原地转向":
-            pen.text((699,y+13),"动力状态",font=font(18,True),fill=INK,anchor="lm")
+        secondary = {"原地转向": "动力状态", "战甲推进": "穿甲与脱甲"}.get(group)
+        if secondary:
+            pen.text((699,y+13),secondary,font=font(18,True),fill=INK,anchor="lm")
         for col,name in enumerate(names):
-            pose, t, event = data[name]
+            full_name = prefix + name
+            pose, t, event = data[full_name]
             left=25+col*335
             pen.rounded_rectangle((left,y+32,left+314,y+191),radius=5,fill="#fbfcf8",outline=RULE)
             scale=fit([pose],(148,108),98,2.75)
@@ -387,7 +406,7 @@ def overview(data):
             pen.text((left+9,y+163),ZH[name],font=font(15,True),fill=INK,anchor="lm")
             stamp = f"{event[0]}  {t:.2f} s" if event else f"{t:.2f} s"
             pen.text((left+305,y+163),stamp,font=font(12,mono=True),fill=MUTE,anchor="rm")
-            pen.text((left+9,y+182),"animation.wingman."+name,font=font(12,mono=True),fill=MUTE,anchor="lm")
+            pen.text((left+9,y+182),full_name,font=font(12,mono=True),fill=MUTE,anchor="lm")
     pen.text((26,h-20),"每格依次为正面、右侧面。琥珀色标示右肢，青色标示左肢。",font=font(15),fill=MUTE,anchor="lm")
     return page
 
@@ -397,36 +416,48 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--font",help="Chinese TrueType/OpenType font for preview captions")
     selection = parser.add_mutually_exclusive_group()
-    selection.add_argument("--part", type=int, choices=(1, 2), help="Only rewrite the GIFs in this part")
-    selection.add_argument("--clip", nargs="+", metavar="NAME", help="Only rewrite the named GIFs")
+    selection.add_argument("--part", type=int, choices=(1, 2, 3), help="Only rewrite the GIFs in this part")
+    selection.add_argument("--clip", nargs="+", metavar="NAME",
+                           help="Only rewrite the named GIFs, e.g. suit.land_heavy or command_recall")
     args=parser.parse_args()
     UI_FONT=args.font
     spec=load_json(SPEC)
     rig=rig_geometry(load_json(ROOT/spec["rig"]["file"]))
-    clips=load_json(ROOT/spec["files"]["wingman"]["path"])["animations"]
+    clips = {}
+    for info in spec["files"].values():
+        path = ROOT/info["path"]
+        if path.is_file():
+            clips.update(load_json(path)["animations"])
     dest=PREVIEWS/"AN1"
     dest.mkdir(parents=True,exist_ok=True)
-    prefix = spec["files"]["wingman"]["prefix"]
-    entries = [e for e in spec["animations"] if e["file"] == "wingman" and prefix + e["name"] in clips]
-    names = {e["name"] for e in entries}
-    selected = names if args.clip is None else set(args.clip)
-    if missing := selected - names:
-        parser.error("No exported wingman clip named " + ", ".join(sorted(missing)))
+    entries = {spec["files"][e["file"]]["prefix"] + e["name"]: e for e in spec["animations"]}
+    entries = {full_name: entry for full_name, entry in entries.items() if full_name in clips}
+    selected = set(entries)
+    if args.clip:
+        selected = set()
+        for token in args.clip:
+            matches = [key for key, entry in entries.items()
+                       if token in (key, key.removeprefix("animation."), entry["name"])]
+            if not matches:
+                parser.error("No exported clip named " + token)
+            if len(matches) > 1:
+                parser.error(f"{token} matches multiple clips: " + ", ".join(matches))
+            selected.add(matches[0])
     if args.part:
-        selected = {e["name"] for e in entries if e["part"] == args.part}
+        selected = {key for key, entry in entries.items() if entry["part"] == args.part}
         if not selected:
-            parser.error(f"No exported wingman clips for part {args.part}")
+            parser.error(f"No exported clips for part {args.part}")
     data = {}
-    for entry in entries:
-        name = entry["name"]
-        clip = clips[prefix + name]
+    for full_name, entry in entries.items():
+        clip = clips[full_name]
         channels = tracks(clip)
         samples = timeline(clip)
-        if name in selected:
-            gif(dest, name, clip, rig, channels, samples)
-        index = representative(name, channels, samples, clip["animation_length"])
+        if full_name in selected:
+            path = dest / f"{entry['file']}_{entry['name']}.gif"
+            gif(path, full_name, clip, rig, channels, samples)
+        index = representative(full_name, channels, samples, clip["animation_length"])
         t, event, _ = samples[index]
-        data[name] = posed_cubes(rig, channels, t), t, event
+        data[full_name] = posed_cubes(rig, channels, t), t, event
     overview(data).save(PREVIEWS/"AN1.png",optimize=True)
 
 

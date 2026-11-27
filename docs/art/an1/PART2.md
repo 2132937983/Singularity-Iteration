@@ -1,6 +1,6 @@
 # AN1 第二部分 · 僚机战斗
 
-本批增加 23 个战斗动作。前两批共用同一副七骨人偶，47 个动作都在同一份 [Blockbench 工程](../../../tools/models/si_humanoid_rig.bbmodel) 和[僚机动画 JSON](../../../src/main/resources/assets/mio_icif/animations/entity/wingman.animation.json) 里。下表每个动作都链接到从游戏资源渲染的动图。[47 项总览](../previews/AN1.png)
+本批增加 23 个战斗动作。前两批共用同一副七骨人偶，47 个动作都在同一份 [Blockbench 工程](../../../tools/models/si_humanoid_rig.bbmodel) 和[僚机动画 JSON](../../../src/main/resources/assets/mio_icif/animations/entity/wingman.animation.json) 里。下表每个动作都链接到从游戏资源渲染的动图。[动作总览（含 47 项僚机动作）](../previews/AN1.png)
 
 ## 近战与下砸
 

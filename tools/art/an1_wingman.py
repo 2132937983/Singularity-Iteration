@@ -213,16 +213,13 @@ def encode(tracks):
     return result
 
 
-def main():
+def write_runtime(actor, clips):
+    """Write one actor's clips in contract order using the shared seven-bone rig."""
     spec = json.loads((ROOT / "docs/art/an1/spec.json").read_bytes())
-    clips = {**idle_and_calibration(), **recovery_clips(), **locomotion_tracks(),
-             **build_melee(), **build_ranged(), **tactics_tracks()}
-    for name, directions in (("front",(1,0)),("back",(-1,0)),("left",(0,1)),("right",(0,-1))):
-        clips["hit_"+name] = hit(*directions)
-    entries = [a for a in spec["animations"] if a["file"] == "wingman"]
+    entries = [a for a in spec["animations"] if a["file"] == actor]
     if set(clips) != {e["name"] for e in entries}:
-        raise ValueError("Authored clips differ from the wingman contract")
-    file = spec["files"]["wingman"]
+        raise ValueError(f"Authored clips differ from the {actor} contract")
+    file = spec["files"][actor]
     animations = {}
     for entry in entries:
         mode = entry["loop"]
@@ -238,6 +235,14 @@ def main():
     serialized = re.sub(r'\[\s*([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\s*\]',
                         r'[\1, \2, \3]', json.dumps(data, indent=2, allow_nan=False))
     output.write_text(serialized+"\n", encoding="utf8", newline="\n")
+
+
+def main():
+    clips = {**idle_and_calibration(), **recovery_clips(), **locomotion_tracks(),
+             **build_melee(), **build_ranged(), **tactics_tracks()}
+    for name, directions in (("front",(1,0)),("back",(-1,0)),("left",(0,1)),("right",(0,-1))):
+        clips["hit_"+name] = hit(*directions)
+    write_runtime("wingman", clips)
 
 
 if __name__ == "__main__":

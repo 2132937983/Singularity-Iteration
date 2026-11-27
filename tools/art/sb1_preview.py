@@ -251,7 +251,8 @@ def slot(im, xy, stamp, zoom=1):
 
 
 def views(m):
-    im = page(1400, 1282, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
+    height = 1496 if m.kind == "singularity" else 1282
+    im = page(1400, height, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
     blade = m.lit("blade")
     closed = m.lit("blade", "sheath")
     front, edge, back, oblique = rotation(), rotation(-90), rotation(y=180), rotation(20,-24,-6)
@@ -316,6 +317,18 @@ def views(m):
             else:
                 scene = closed
             paste(im,m.raster(scene,(296,113),cam,pad=6,supersample=2),(left+11,top+35))
+    if m.kind == "singularity":
+        # Look toward the ends so the dark core and the three separate jaws
+        # can be inspected without changing the assembled game geometry.
+        for left,label,name,cam,focus,zoom in (
+            (36,"约束环与暗芯","blade",rotation(18,69,4),(-34,0,0),5.0),
+            (710,"鞘尾三爪","sheath",rotation(-12,47,-6),(-330,-28,0),7.0),
+        ):
+            panel(im,(left,1242,left+651,1458))
+            text(im,left+17,1260,label,18,INK,bold=True)
+            detail = m.raster(m.lit(name),(615,153),cam,pixels=zoom,
+                              center=(cam @ focus)[:2],supersample=2)
+            paste(im,detail,(left+18,1291))
     m.save(im,"views")
 
 

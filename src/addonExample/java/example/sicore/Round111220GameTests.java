@@ -42,7 +42,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * <p>G0 only recorded (the scenes must run, the Wingman must stay in its scene); each later batch adds the limits it
  * reaches to the scene ({@link Run#limits}). 0.1.11.221 (G1): no scene keeps the head against the ceiling for more than a
  * tenth of the run (the tunnel a fifth: its target is above the 2-high spot through the rock, and without a path the
- * Wingman lingers there until G2), and in the cavern and in the open the first hit comes within 80 ticks. The WingmanEntity is reached by
+ * Wingman lingered there until G2), and in the cavern and in the open the first hit comes within 80 ticks. 0.1.11.222 (G2):
+ * the tunnel is back to a tenth, and the Wingman flies up the shaft and hits the hunter within 150 ticks. The WingmanEntity is reached by
  * reflection (the addon module may only use the core API).
  */
 @GameTestHolder(CoreExampleMod.ID)
@@ -107,8 +108,11 @@ public final class Round111220GameTests {
         final int[] hurtAt = {-1, -1, -1, -1, -1, -1, -1, -1};
         final String[] cause = new String[8];
 
+        final BlockPos origin;
+
         Run(GameTestHelper h, String scene, Vec3 owner, Vec3 wingman) {
             this.scene = scene;
+            this.origin = h.absolutePos(BlockPos.ZERO);
             this.owner = Round33GameTests.survivalPlayer(h);
             this.owner.moveTo(h.absoluteVec(owner));
             this.owner.getAbilities().invulnerable = true;
@@ -152,8 +156,26 @@ public final class Round111220GameTests {
         String report() {
             StringBuilder hits = new StringBuilder();
             for (int i = 0; i < enemies.size(); i++) hits.append(i == 0 ? "" : ",").append(hurtAt[i]).append(hurtAt[i] < 0 ? "" : ":" + cause[i]);
-            return String.format("scene=%s ticks=%d ceiling=%d stuck=%d upward=%d wrongTarget=%d firstHit=%d kills=%d/%d airBelow=%.2f hits=[%s]",
-                scene, ticks, ceiling, stuck, upward, wrongTicks, firstHit, kills(), enemies.size(), airSamples == 0 ? 0 : airBelow / airSamples, hits);
+            Vec3 at = wingman.position().subtract(Vec3.atLowerCornerOf(origin));
+            return String.format("scene=%s ticks=%d ceiling=%d stuck=%d upward=%d wrongTarget=%d firstHit=%d kills=%d/%d airBelow=%.2f hits=[%s] end=(%.1f,%.1f,%.1f) nav=%s",
+                scene, ticks, ceiling, stuck, upward, wrongTicks, firstHit, kills(), enemies.size(), airSamples == 0 ? 0 : airBelow / airSamples, hits,
+                at.x, at.y, at.z, navCounts());
+        }
+
+        /** Searches started / found / failed by the Wingman's navigator (0.1.11.222). */
+        String navCounts() {
+            try {
+                Object nav = Round33GameTests.call(wingman, "nav");
+                StringBuilder b = new StringBuilder();
+                for (String f : new String[]{"searches", "found", "failed"}) {
+                    java.lang.reflect.Field field = nav.getClass().getDeclaredField(f);
+                    field.setAccessible(true);
+                    b.append(b.length() == 0 ? "" : "/").append(field.getInt(nav));
+                }
+                return b.toString();
+            } catch (ReflectiveOperationException | AssertionError e) {
+                return "-";
+            }
         }
 
         /** The limits of the scene, checked after the run (G0: none). */
@@ -218,7 +240,7 @@ public final class Round111220GameTests {
         carve(h, 14, 10, 4, 35, 12, 6);
         fill(h, 15, 4, 4, 15, 4, 6, Blocks.STONE.defaultBlockState());
         Run run = new Run(h, "tunnel", OWNER, WINGMAN);
-        run.limits = r -> underTheCeiling(r, TICKS / 5);   // G2 (pathing) takes it to a tenth
+        run.limits = r -> { notOnTheCeiling(r); r.limit(r.firstHit > 0 && r.firstHit <= 150, "the hunter up the shaft is hit at tick " + r.firstHit); };   // 0.1.11.222 (G2): up the shaft
         run.add(zombie(h, 18.5, 10, 5.5, run.owner));
         play(h, run);
     }

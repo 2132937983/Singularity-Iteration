@@ -244,6 +244,12 @@ public class WingmanEntity extends Mob {
     @Nullable WingmanSpace.Room room;
     int roomAt;
 
+    /** 0.1.11.222 (G2): the navigator (straight flight or a grid path to a goal). Not saved. */
+    final WingmanNav nav = new WingmanNav(this);
+
+    /** 0.1.11.222: the navigator, for the cave GameTests. */
+    public WingmanNav nav() { return nav; }
+
     /**
      * 0.1.11.221 (G1): the velocity after a tick into a wall or a ceiling. Before, any wall hit added 0.3 upwards, and nothing
      * stopped the climb at the ceiling, so in a cave the Wingman pressed against the roof. Now it climbs a wall only when that
@@ -662,14 +668,24 @@ public class WingmanEntity extends Mob {
         double ownerSpeed = carry.length();
         double cap = WingmanFlight.cap(ownerSpeed, CRUISE), accel = WingmanFlight.accel(ownerSpeed, ACCEL);
         Vec3 to = post.subtract(position());   // with the owner's velocity flown this tick, it is at the next place
+        // 0.1.11.222 (G2): a place behind a wall or round a corner is flown to along a path (at the escort speed limit)
+        Vec3 aim = nav.aim(post);
+        if (aim != post) {
+            steerTo(aim, cap, player, nav.remaining(post));
+            trackStuck(to.length(), player);
+            return;
+        }
         Vec3 want = WingmanTactics.avoid(this, WingmanFlight.want(to, carry, cap).add(separation()));
         Vec3 v = WingmanFlight.accelerate(getDeltaMovement(), want, accel);
         v = wallAndCeiling(v);   // 0.1.11.221: climb only where it helps, never into the ceiling
         setDeltaMovement(v);
         if (WingmanConfig.upkeepEuPerSecond() > 0) speedDue += WingmanFlight.speedCost(v.length(), CRUISE) * WingmanConfig.speedCostFactor();
         faceFlight(v, player);
-        // stuck behind terrain: far from the place and not closing in for STUCK_TICKS
-        double dist = to.length();
+        trackStuck(to.length(), player);
+    }
+
+    /** Stuck behind terrain: far from the place and not closing in for STUCK_TICKS: the catch-up jump. */
+    private void trackStuck(double dist, ServerPlayer player) {
         if (dist <= STUCK_DISTANCE || speedStarved) { stuckTicks = 0; stuckBest = Double.MAX_VALUE; return; }
         if (dist < stuckBest - 0.5) { stuckBest = dist; stuckTicks = 0; }
         else if (++stuckTicks >= STUCK_TICKS) catchUp(player);
@@ -2224,11 +2240,26 @@ public class WingmanEntity extends Mob {
         return post;
     }
 
-    /** Steers the velocity to {@code goal} with a limited acceleration; climbs over obstacles. */
+    /**
+     * Steers the velocity to {@code goal} with a limited acceleration; climbs over obstacles. 0.1.11.222 (G2): by way of the
+     * navigator: straight when the body fits along the line, else along a grid path ({@link WingmanNav}).
+     */
     private void steer(Vec3 goal, double speed, @Nullable ServerPlayer player) {
+        Vec3 aim = nav.aim(goal);
+        steerTo(aim, speed, player, aim == goal ? -1 : nav.remaining(goal));
+    }
+
+    private void steerTo(Vec3 goal, double speed, @Nullable ServerPlayer player) { steerTo(goal, speed, player, -1); }
+
+    /**
+     * The steer to a point the body reaches (a goal or a waypoint the navigator gave). {@code left}: the distance left along
+     * the path when {@code goal} is a waypoint (the Wingman brakes for the end of the path, not for each waypoint), or -1.
+     */
+    private void steerTo(Vec3 goal, double speed, @Nullable ServerPlayer player, double left) {
         Vec3 to = goal.subtract(position());
         double dist = to.length();
-        Vec3 want = dist < 1.0E-3 ? Vec3.ZERO : to.scale(Math.min(speed, dist * 0.3) / dist);
+        double brake = left > dist ? left : dist;
+        Vec3 want = dist < 1.0E-3 ? Vec3.ZERO : to.scale(Math.min(speed, brake * 0.3) / dist);
         want = WingmanTactics.avoid(this, want.add(separation()));   // 0.1.9.1: look ahead, climb or slide past walls
         Vec3 v = getDeltaMovement();
         Vec3 dv = want.subtract(v);
@@ -2326,6 +2357,7 @@ public class WingmanEntity extends Mob {
             at = safe;
         }
         teleportTo(at.x, at.y, at.z);
+        nav.reset();   // 0.1.11.222: the old path starts somewhere else
         setDeltaMovement(ownerVelocity);   // 0.1.11.50: it arrives at the owner's speed (it stopped dead before and fell behind again)
         stuckTicks = 0;
         stuckBest = Double.MAX_VALUE;

@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory;
 /**
  * 0.1.11.220 (cave overhaul G0): what the Wingman's obstacle avoidance did this tick, for the cave GameTests and for a
  * debug view. With {@code -Dsi.wingman.navDebug=true} every Wingman logs its place, target and last avoidance once a second,
- * draws a line of particles to its target and a red mark over its head while the avoidance pushes it up or finds no way.
+ * draws a line of particles to its target, its grid path (0.1.11.222) and a red mark over its head while the avoidance pushes
+ * it up or finds no way.
  */
 public final class WingmanNavDebug {
     private WingmanNavDebug() {}
@@ -57,6 +58,13 @@ public final class WingmanNavDebug {
             for (int i = 1; i < 8; i++) {
                 Vec3 p = eye.lerp(to, i / 8.0);
                 world.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 1, 0, 0, 0, 0);
+            }
+        }
+        var path = w.nav.path();
+        if (w.tickCount % 5 == 0 && path != null) {
+            for (int i = w.nav.index(); i < path.size(); i++) {
+                Vec3 p = path.get(i);
+                world.sendParticles(ParticleTypes.HAPPY_VILLAGER, p.x, p.y + 0.2, p.z, 1, 0, 0, 0, 0);
             }
         }
         if (w.navProbe.upward()) {

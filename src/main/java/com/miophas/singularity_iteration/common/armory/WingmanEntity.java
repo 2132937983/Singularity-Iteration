@@ -928,6 +928,14 @@ public class WingmanEntity extends Mob {
     private static final net.minecraft.resources.ResourceLocation GROUND_STEP_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID, "wingman_ground_step");
     private int groundVote, hopCooldown;
 
+    /** 0.1.11.227 (G3b, decision three A): the stance of the command wheel: automatic, always in the air, or on foot. Saved. */
+    public static final byte STANCE_AUTO = 0, STANCE_AIR = 1, STANCE_GROUND = 2;
+    private byte stance = STANCE_AUTO;
+
+    public byte stance() { return stance; }
+
+    public void setStance(byte s) { stance = s < STANCE_AUTO || s > STANCE_GROUND ? STANCE_AUTO : s; groundVote = 0; }
+
     /** 0.1.11.226 (G3): true while the Wingman goes on foot. */
     public boolean ground() { return entityData.get(DATA_GROUND); }
 
@@ -958,6 +966,9 @@ public class WingmanEntity extends Mob {
         boolean roomFight = room.kind().confined() && target != null && target.isAlive() && standsOnFloor(target);
         boolean open = !room.kind().confined() || room.span() > GROUND_SPAN_OUT && !roomFight;
         boolean want = ground() ? !(open || ownerFast || targetUp) : (low || roomFight) && !ownerFast && !targetUp;
+        // 0.1.11.227 (G3b): the wheel's stance: always in the air, or on foot (unless the owner flies off fast)
+        if (stance == STANCE_AIR) want = false;
+        else if (stance == STANCE_GROUND) want = !ownerFast;
         if (want == ground()) { groundVote = 0; return; }
         if (++groundVote >= GROUND_VOTE) setGround(want);
     }
@@ -3104,6 +3115,7 @@ public class WingmanEntity extends Mob {
         if (owner != null) tag.putUUID("Owner", owner);
         if (armory != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, armory).result().ifPresent(t -> tag.put("Armory", t));
         tag.putInt("Set", set);
+        if (stance != STANCE_AUTO) tag.putByte("Stance", stance);   // 0.1.11.227
         if (sortie != null) tag.putUUID("Sortie", sortie);   // 0.1.10.5
         tag.putLong("Reserve", reserve);                       // 0.1.11.41
         tag.putByte("Mode", entityData.get(DATA_MODE));
@@ -3136,6 +3148,7 @@ public class WingmanEntity extends Mob {
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         armory = tag.contains("Armory") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Armory")).result().orElse(null) : null;
         set = tag.getInt("Set");
+        setStance(tag.getByte("Stance"));   // 0.1.11.227 (absent: automatic)
         sortie = tag.hasUUID("Sortie") ? tag.getUUID("Sortie") : null;
         reserve = Math.max(0, tag.getLong("Reserve"));   // 0.1.11.41 (absent in older saves: no reserve)
         entityData.set(DATA_MODE, (byte) WingmanMode.byId(tag.getByte("Mode")).ordinal());   // 0.1.11.43: Fulton (3) loads as Escort

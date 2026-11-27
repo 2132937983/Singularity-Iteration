@@ -70,7 +70,7 @@ public final class WingmanCommands {
 
     public static final byte A_MOVE = 0, A_HOLD = 1, A_SUPPRESS = 2, A_FOCUS = 3, A_FORM_UP = 4, A_MODE = 5, A_SQUAD = 6,
         A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11, A_EJECT = 12, A_CLEAN_SLATE = 13,
-        A_PILOT = 14, A_PILOT_EXIT = 15;
+        A_PILOT = 14, A_PILOT_EXIT = 15, A_STANCE = 16;
     /** Cooldown key of the quantum recall in the nano core cooldown map. */
     public static final String RECALL_KEY = "mio_icif:quantum_recall";
     /** Ticks of the chunk ticket of an unloaded Wingman's recall. */
@@ -179,6 +179,10 @@ public final class WingmanCommands {
                 name = "MODE";
             }
             case A_SQUAD -> name = "SQUAD";
+            case A_STANCE -> {   // 0.1.11.227 (G3b, decision three A): auto, in the air, or on foot
+                if (c.arg() < 0 || c.arg() > WingmanEntity.STANCE_GROUND) return;
+                name = "STANCE";
+            }
             case A_RETURN -> name = "RETURN";
             case A_PILOT -> {
                 // 0.1.11.60 (P8): the owner flies one Wingman: the selected one, or with "all" the nearest
@@ -214,6 +218,7 @@ public final class WingmanCommands {
                     w.order(WingmanOrder.FOCUS, null, focus);
                 }
                 case A_FORM_UP -> w.clearOrder();
+                case A_STANCE -> w.setStance(c.arg());
                 case A_MODE -> {
                     // Setting a squad-wide stance unifies every Wingman (clears individual lock);
                     // setting a single Wingman's stance only changes that unit.

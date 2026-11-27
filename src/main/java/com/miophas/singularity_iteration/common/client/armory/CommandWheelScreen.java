@@ -47,9 +47,11 @@ public final class CommandWheelScreen extends Screen {
      * Squad stance fan: the three tactical stances + return to Armory.
      * Setting a stance for ALL now applies uniformly to every Wingman (no hidden individual-lock toggle).
      */
-    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0x9B7CFF};
+    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0x9B7CFF, 0xC8D2DC, 0x8FD3FF, 0xC9A36B};
     private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
-        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.return"};
+        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.return",
+        // 0.1.11.227 (G3b, decision three A): the stance: automatic, in the air, on foot
+        "gui.mio_icif.command.sub.stance_auto", "gui.mio_icif.command.sub.stance_air", "gui.mio_icif.command.sub.stance_ground"};
     private static final int SUB_RETURN = WingmanMode.VALUES.length;
     /** 0.1.11.65 (Q4): the suit fan: swap suits (P2), send the suit (P3), pilot (P8), Clean Slate (P7). */
     private static final int[] SUIT_COLORS = {0xFFD24D, 0xFF8A3D, 0x6FF3D6, 0xFF4D8A};
@@ -438,7 +440,8 @@ public final class CommandWheelScreen extends Screen {
             case CONTROL -> {
                 if (sub < 0) { done = false; return; }                     // the fan stays open until a choice
                 if (sub < WingmanMode.VALUES.length) SquadClient.send(WingmanCommands.A_MODE, unit, (byte) sub, null, -1);
-                else SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
+                else if (sub == SUB_RETURN) SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
+                else SquadClient.send(WingmanCommands.A_STANCE, unit, (byte) (sub - SUB_RETURN - 1), null, -1);
             }
             case SUIT -> {
                 if (sub < 0) { done = false; return; }                     // the fan stays open until a choice

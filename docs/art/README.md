@@ -2,7 +2,7 @@
 
 奇点迭代（Singularity Iteration，mod id `mio_icif`，NeoForge 1.21.1）这一轮的套装模块美术由你（GPT）来画，代码和接入由 Claude 负责。本文是你的入口：先读它，再读它点名的文件，然后按“批次”交付。
 
-> **当前批次是 [AN1：僚机与战甲的 GeckoLib 关键帧动作](batches/AN1.md)，由 Codex 来做。** 它不画贴图，交付的是 Blockbench 骨架和 GeckoLib 动画 JSON。下面第 0 到 3 节是为贴图批次写的，AN1 的文件、格式、检查脚本（`tools/art/check_an1.py`）和预览都以 AN1 说明为准；第 4 节的分支、推送和报告规矩照常适用。
+> **当前批次是 [SB1：三把联动拔刀](batches/SB1.md)，由 Codex 来做。** 它不画 16×16 图标，交付的是拔刀剑（SlashBlade Resharped）读取的 OBJ 模型、贴图和蓄力流光贴图。下面第 0 到 3 节是为图标批次写的，SB1 的文件、格式、检查脚本（`tools/art/check_sb1.py`）和预览都以 SB1 说明为准；第 4 节的分支、推送和报告规矩照常适用。
 
 ## 0. 你负责什么
 
@@ -58,9 +58,10 @@
 
 ## 5. 当前批次
 
-[AN1：僚机与战甲的 GeckoLib 关键帧动作](batches/AN1.md)，契约文件 [`an1/spec.json`](an1/spec.json)。从分支 `art/an1-brief` 切新分支 `art/an1`，每交一部分就提交并推送 `art/an1` 到同一个仓库，不开 PR，不改其他分支。交付前运行 `python3 tools/art/check_an1.py --part <部分>`，要输出 `OK`。
+[SB1：三把联动拔刀](batches/SB1.md)（纳米刃、量子刃、奇点刃）。从分支 `art/sb1-brief` 切新分支 `art/sb1`，先交纳米刃，每交一把就提交并推送 `art/sb1` 到同一个仓库，不开 PR，不改其他分支。交付前运行 `python3 tools/art/check_sb1.py <刀>`，要输出 `OK`。
 
 已完成：
 
+- [AN1：僚机与战甲的 GeckoLib 关键帧动作](batches/AN1.md)，契约文件 [`an1/spec.json`](an1/spec.json)，第一到三部分在 0.1.11.225～229 接入。
 - [MT1：分子重组仪](batches/MT1.md)（Blockbench 机器模型），选用四角约束腔、青蓝配色，0.1.11.212 接入。结果见 [`mt1/README.md`](mt1/README.md)。
 - MOD1 套装模块图标（[第一轮清单](batches/MOD1-suit-modules.md)，69 张；[第二轮修改清单](batches/MOD1-r2.md)），0.1.11.192 接入。

@@ -467,6 +467,9 @@ public class mio_icif_gui_armor_features extends Screen {
         String effective = sync == null ? "" : slot == 0 ? sync.primaryKey() : sync.secondaryKey();
         String name = effective.isEmpty() ? Component.translatable("gui.mio_icif.equipment_console.burst_none").getString()
             : Component.translatable(burstNameKey(effective)).getString();
+        // 0.1.11.230 (key consolidation): the frame core's arc discharge on this key
+        if (com.miophas.singularity_iteration.common.suit.nano.NanoSuit.CORE_BURST.equals(choice))
+            name = Component.translatable("gui.mio_icif.equipment_console.burst_core").getString();
         if (choice.isEmpty() && !effective.isEmpty()) name = name + " " + Component.translatable("gui.mio_icif.equipment_console.burst_auto").getString();
         String label = "\u25C0 " + font.plainSubstrByWidth(name, PW - 96) + " \u25B6";
         g.drawString(font, label, x + PW - 10 - font.width(label), ry + 1, SiGuiTheme.ACCENT, false);
@@ -542,6 +545,10 @@ public class mio_icif_gui_armor_features extends Screen {
         List<String> options = new ArrayList<>();
         options.add("");
         for (var unit : com.miophas.singularity_iteration.common.suit.nano.NanoSuit.availableBursts(minecraft.player)) options.add(unit.key());
+        // 0.1.11.230 (key consolidation): the core burst, with a propulsion core in the chestplate
+        var chest = minecraft.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+        if (com.miophas.singularity_iteration.common.suit.core.FrameCores.core(chest) == com.miophas.singularity_iteration.common.suit.core.FrameCore.PROPULSION)
+            options.add(com.miophas.singularity_iteration.common.suit.nano.NanoSuit.CORE_BURST);
         options.add("-");
         String current = sync == null ? "" : slot == 0 ? sync.primaryChoice() : sync.secondaryChoice();
         int i = Math.max(0, options.indexOf(current));

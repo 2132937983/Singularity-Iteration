@@ -55,6 +55,13 @@ public class mio_icif_ClientEvents {
     // 防呆按键（默认右Alt）- 取出高压升级时需要按住
     public static KeyMapping SAFETY_KEY;
 
+    /** 0.1.11.230: ticks the panel key has been held (a tap opens the panel, a hold shows the detail view). */
+    private static int armorHold;
+    public static final int ARMOR_TAP_TICKS = 5;
+
+    /** 0.1.11.230: true while the panel key is held long enough for the detail view. */
+    public static boolean armorFeaturesHeld() { return armorHold >= ARMOR_TAP_TICKS; }
+
     // 泡沫遮挡叠加层纹理（类似南瓜头效果）
     private static final ResourceLocation FOAM_OVERLAY_TEXTURE = ResourceLocation.fromNamespaceAndPath(
         Singularity_Iteration.MOD_ID, "textures/misc/foam_overlay.png"
@@ -74,9 +81,12 @@ public class mio_icif_ClientEvents {
      */
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        // 0.1.11.230 (key consolidation): unbound by default; the command wheel's gear fan switches the mode
         JETPACK_MODE_KEY = new KeyMapping(
             "key.mio_icif.jetpack_mode",
-            GLFW.GLFW_KEY_K,
+            net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            InputConstants.UNKNOWN.getValue(),
             "key.category.mio_icif"
         );
         event.register(JETPACK_MODE_KEY);
@@ -92,16 +102,22 @@ public class mio_icif_ClientEvents {
         event.register(TOOL_TOGGLE_KEY);
 
         // IC2RIn120原版：Boost键（对应IC2的boostKey，默认左Control）
+        // 0.1.11.230: unbound by default (it was left Control, the sprint key's default): the sprint key boosts as well
         BOOST_KEY = new KeyMapping(
             "key.mio_icif.boost",
-            GLFW.GLFW_KEY_LEFT_CONTROL,
+            net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            InputConstants.UNKNOWN.getValue(),
             "key.category.mio_icif"
         );
         event.register(BOOST_KEY);
 
         // H键 - 打开装备特性管理GUI（默认左Alt）
+        // 0.1.11.230: a tap opens the panel, a hold shows the suit's detail view (the detail key is unbound by default)
         ARMOR_FEATURES_KEY = new KeyMapping(
             "key.mio_icif.armor_features",
+            net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_LEFT_ALT,
             "key.category.mio_icif"
         );
@@ -157,9 +173,15 @@ public class mio_icif_ClientEvents {
         }
 
         // 检测装备特性管理GUI按键
-        if (ARMOR_FEATURES_KEY != null && ARMOR_FEATURES_KEY.consumeClick() && minecraft.screen == null) {
-            // 按键按下且没有GUI打开时，打开装备特性管理GUI
-            minecraft.setScreen(new mio_icif_gui_armor_features());
+        // 0.1.11.230 (key consolidation): a tap (released within ARMOR_TAP_TICKS) opens the panel, a hold shows the detail view
+        if (ARMOR_FEATURES_KEY != null) {
+            while (ARMOR_FEATURES_KEY.consumeClick()) { }
+            boolean down = ARMOR_FEATURES_KEY.isDown() && minecraft.screen == null;
+            if (down) armorHold++;
+            else {
+                if (armorHold > 0 && armorHold < ARMOR_TAP_TICKS && minecraft.screen == null) minecraft.setScreen(new mio_icif_gui_armor_features());
+                armorHold = 0;
+            }
         }
 
         // IC2RIn120原版：发送按键状态到服务端
@@ -189,8 +211,8 @@ public class mio_icif_ClientEvents {
                 currentKeyState |= 1 << 0;
             }
 
-            // 检测Boost键（左Control） 对应IC2 Key.boost
-            if (BOOST_KEY != null && BOOST_KEY.isDown()) {
+            // 检测Boost键 对应IC2 Key.boost（0.1.11.230：疾跑键同样算加速）
+            if (BOOST_KEY != null && BOOST_KEY.isDown() || mc.options.keySprint.isDown()) {
                 currentKeyState |= 1 << 1;
             }
 

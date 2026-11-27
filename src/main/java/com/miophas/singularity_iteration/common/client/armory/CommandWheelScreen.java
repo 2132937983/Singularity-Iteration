@@ -37,7 +37,7 @@ public final class CommandWheelScreen extends Screen {
 
     enum Entry {
         MOVE(0x5CEBFF), SUPPRESS(0xFF6A4D), FOCUS(0xFF4D6D), FORM_UP(0xB8D8FF),
-        CONTROL(0xB98CFF), SUIT(0xFF5A4A), HOLO(0x4DE1C1), RECALL(0x9B7CFF);
+        CONTROL(0xB98CFF), SUIT(0xFF5A4A), GEAR(0x4DE1C1), FAVORITES(0xB98CFF);   // 0.1.11.230: GEAR and FAVORITES replace HOLO and RECALL
         final int color;
         Entry(int color) { this.color = color; }
         String key() { return "gui.mio_icif.command.entry." + name().toLowerCase(Locale.ROOT); }
@@ -48,20 +48,19 @@ public final class CommandWheelScreen extends Screen {
      * Setting a stance for ALL now applies uniformly to every Wingman (no hidden individual-lock toggle).
      */
     private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0x9B7CFF, 0xC8D2DC, 0x8FD3FF, 0xC9A36B};
-    private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
-        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.return",
-        // 0.1.11.227 (G3b, decision three A): the stance: automatic, in the air, on foot
-        "gui.mio_icif.command.sub.stance_auto", "gui.mio_icif.command.sub.stance_air", "gui.mio_icif.command.sub.stance_ground"};
     private static final int SUB_RETURN = WingmanMode.VALUES.length;
-    /** 0.1.11.65 (Q4): the suit fan: swap suits (P2), send the suit (P3), pilot (P8), Clean Slate (P7). */
-    private static final int[] SUIT_COLORS = {0xFFD24D, 0xFF8A3D, 0x6FF3D6, 0xFF4D8A};
-    private static final String[] SUIT_KEYS = {"gui.mio_icif.command.sub.suit_up", "gui.mio_icif.command.sub.eject",
-        "gui.mio_icif.command.sub.pilot", "gui.mio_icif.command.sub.clean_slate"};
-    private static final int SUIT_SWAP = 0, SUIT_EJECT = 1, SUIT_PILOT = 2, SUIT_CLEAN_SLATE = 3;
+    /** 0.1.11.230: the items of a fan (the control, suit and gear fans, and the favourites). */
+    private static List<WheelAction> fanItems(Entry e) {
+        return switch (e) {
+            case CONTROL -> WheelAction.of(WheelAction.Group.CONTROL);
+            case SUIT -> WheelAction.of(WheelAction.Group.SUIT);
+            case GEAR -> WheelAction.of(WheelAction.Group.GEAR);
+            case FAVORITES -> WheelAction.favorites();
+            default -> List.of();
+        };
+    }
 
-    private static String[] fanKeys(Entry e) { return e == Entry.SUIT ? SUIT_KEYS : SUB_KEYS; }
-
-    private static int[] fanColors(Entry e) { return e == Entry.SUIT ? SUIT_COLORS : SUB_COLORS; }
+    private static boolean hasFan(Entry e) { return e == Entry.CONTROL || e == Entry.SUIT || e == Entry.GEAR || e == Entry.FAVORITES; }
 
     private static final float SUB_STEP = (float) Math.toRadians(23);
 
@@ -134,8 +133,8 @@ public final class CommandWheelScreen extends Screen {
             case SUIT -> true;   // suit fan holds suit eject, which needs no Wingman
             case FOCUS -> anyOrderable && target.entityId() >= 0;
             case FORM_UP -> sel.stream().anyMatch(u -> SquadClient.order(u) != WingmanOrder.NONE);
-            case HOLO -> HoloTable.available();
-            case RECALL -> SquadClient.recallCooldown() <= 0 && !SquadClient.units().isEmpty();
+            case GEAR -> true;                                  // 0.1.11.230: the suit's own screens, for anyone
+            case FAVORITES -> !WheelAction.favorites().isEmpty();
         };
     }
 
@@ -168,19 +167,19 @@ public final class CommandWheelScreen extends Screen {
         sub = -1;
         if (r < R_IN * 0.7F) { fanOwner = null; return; }
         if (fanOwner != null) {
-            String[] keys = fanKeys(fanOwner);
+            int n = fanItems(fanOwner).size();
             float fanCentre = centre(fanOwner.ordinal());
-            float fanHalf = SUB_STEP * keys.length / 2;
+            float fanHalf = SUB_STEP * n / 2;
             float off = Mth.wrapDegrees((float) Math.toDegrees(a - fanCentre));
             if (r >= R_SUB_IN * 0.92F && Math.abs(off) <= Math.toDegrees(fanHalf)) {
-                sub = Mth.clamp((int) ((Math.toRadians(off) + fanHalf) / SUB_STEP), 0, keys.length - 1);
+                sub = Mth.clamp((int) ((Math.toRadians(off) + fanHalf) / SUB_STEP), 0, n - 1);
                 hover = fanOwner.ordinal();
                 return;
             }
         }
         hover = Math.floorMod(Math.round(a / STEP), SECTORS);
         Entry h = Entry.values()[hover];
-        fanOwner = (h == Entry.CONTROL || h == Entry.SUIT) && enabled(h) ? h : null;
+        fanOwner = hasFan(h) && enabled(h) ? h : null;
     }
 
     // ------------------------------------------------------------------ render
@@ -248,11 +247,6 @@ public final class CommandWheelScreen extends Screen {
             float mx = cx + (float) Math.sin(centre(i)) * (R_IN - 6), my = cy - (float) Math.cos(centre(i)) * (R_IN - 6);
             FcsDraw.line(g, cx, cy, mx, my, 1F, FcsDraw.argb(col, 0.6F));
         }
-        // the recall cooldown sweeps the sector
-        if (e == Entry.RECALL && SquadClient.recallCooldown() > 0) {
-            float f = Mth.clamp(SquadClient.recallCooldown() / (float) Math.max(1, SquadClient.recallCooldownMax()), 0, 1);   // 0.1.11.40 (U-8)
-            FcsDraw.sector(g, cx, cy, R_IN, R_IN + (R_OUT - R_IN) * f, a0, a1, FcsDraw.argb(0x000000, 0.35F));
-        }
         float rm = (R_IN + R_OUT) / 2 + lift;
         float ix = cx + (float) Math.sin(centre(i)) * rm, iy = cy - (float) Math.cos(centre(i)) * rm - 4;
         icon(g, e, ix, iy, 8.5F, FcsDraw.argb(on ? (hot ? 0xFFFFFF : col) : 0x6A7680, k), t);
@@ -261,28 +255,34 @@ public final class CommandWheelScreen extends Screen {
     }
 
     private void fan(GuiGraphics g, float cx, float cy, float t) {
-        String[] keys = fanKeys(fanOwner);
-        int[] colors = fanColors(fanOwner);
+        List<WheelAction> items = fanItems(fanOwner);
         float fanCentre = centre(fanOwner.ordinal());
-        float start = fanCentre - SUB_STEP * keys.length / 2;
+        float start = fanCentre - SUB_STEP * items.size() / 2;
         Unit one = SquadClient.selectedUnit();
         int current = fanOwner != Entry.CONTROL ? -1 : one != null ? one.mode() : SquadClient.squadMode();
-        for (int s = 0; s < keys.length; s++) {
+        boolean orderable = !selection().isEmpty();
+        for (int s = 0; s < items.size(); s++) {
+            WheelAction it = items.get(s);
             float a0 = start + s * SUB_STEP + 0.02F, a1 = start + (s + 1) * SUB_STEP - 0.02F;
-            boolean hot = sub == s;
-            int col = colors[s];
-            FcsDraw.sector(g, cx, cy, R_SUB_IN, R_SUB_OUT + (hot ? 4 : 0), a0, a1, FcsDraw.argb(col, hot ? 0.45F : 0.15F));
+            boolean hot = sub == s, on = it.enabled(orderable);
+            int col = on ? it.color : 0x5A6670;
+            FcsDraw.sector(g, cx, cy, R_SUB_IN, R_SUB_OUT + (hot ? 4 : 0), a0, a1, FcsDraw.argb(col, hot ? 0.45F : on ? 0.15F : 0.07F));
             FcsDraw.arc(g, cx, cy, R_SUB_OUT + (hot ? 4 : 0), a0, a1, hot ? 2F : 1F, FcsDraw.argb(col, hot ? 1F : 0.6F));
-            if (s < SUB_RETURN && s == current) FcsDraw.arc(g, cx, cy, R_SUB_IN + 2, a0, a1, 2F, FcsDraw.argb(0xFFFFFF, 0.8F));
+            if (it.group == WheelAction.Group.CONTROL && it.ordinal() < SUB_RETURN && it.ordinal() == current)
+                FcsDraw.arc(g, cx, cy, R_SUB_IN + 2, a0, a1, 2F, FcsDraw.argb(0xFFFFFF, 0.8F));
             float am = (a0 + a1) / 2, rm = (R_SUB_IN + R_SUB_OUT) / 2;
             float x = cx + (float) Math.sin(am) * rm, y = cy - (float) Math.cos(am) * rm;
-            String label = Component.translatable(keys[s]).getString();
+            String label = Component.translatable(it.key).getString();
             // 0.1.11.40 (U-9): a label longer than its fan sector (about 44 units) is drawn smaller
             float size = Math.min(0.45F, 44F / Math.max(1F, FcsDraw.width(label, 1F)));
             FcsDraw.textCentered(g, label, x, y - 2, FcsDraw.argb(hot ? 0xFFFFFF : col, 1F), size);
+            if (fanOwner != Entry.FAVORITES && it.favorite()) {   // 0.1.11.230: a pinned item carries a star
+                float sx = cx + (float) Math.sin(am) * (R_SUB_OUT - 5), sy = cy - (float) Math.cos(am) * (R_SUB_OUT - 5);
+                FcsDraw.textCentered(g, "\u2605", sx, sy - 2, FcsDraw.argb(0xB98CFF, 0.9F), 0.4F);
+            }
         }
         // a bracket joins the fan to its sector
-        FcsDraw.arc(g, cx, cy, R_SUB_IN - 3, start, start + SUB_STEP * keys.length, 0.8F, FcsDraw.argb(fanOwner.color, 0.5F));
+        FcsDraw.arc(g, cx, cy, R_SUB_IN - 3, start, start + SUB_STEP * items.size(), 0.8F, FcsDraw.argb(fanOwner.color, 0.5F));
     }
 
     private void centrePanel(GuiGraphics g, float cx, float cy, float t, float a) {
@@ -293,7 +293,7 @@ public final class CommandWheelScreen extends Screen {
         FcsDraw.textCentered(g, who, cx, cy - 10, FcsDraw.argb(0xDFFBFF, a), 0.55F);
         String what;
         if (hover < 0) what = Component.translatable("gui.mio_icif.command.cancel").getString();
-        else if (sub >= 0 && hover >= 0) what = Component.translatable(fanKeys(Entry.values()[hover])[sub]).getString();
+        else if (sub >= 0 && hover >= 0) what = Component.translatable(fanItems(Entry.values()[hover]).get(sub).key).getString();
         else what = Component.translatable(Entry.values()[hover].key()).getString();
         FcsDraw.textCentered(g, what, cx, cy - 2, FcsDraw.argb(hover >= 0 ? Entry.values()[hover].color : 0x9AA8B0, a), 0.5F);
         String tgt = target.entityId() >= 0 && target.entityName() != null
@@ -347,6 +347,7 @@ public final class CommandWheelScreen extends Screen {
         String ping = Component.translatable("gui.mio_icif.command.ping_hint",
             CommandWheelClient.KEY != null ? CommandWheelClient.KEY.getTranslatedKeyMessage() : Component.literal("X")).getString();
         FcsDraw.textCentered(g, ping, cx, y, FcsDraw.argb(0x6FF3D6, 0.85F * a), 0.45F);
+        FcsDraw.textCentered(g, Component.translatable("gui.mio_icif.command.fav_hint").getString(), cx, y - 8, FcsDraw.argb(0xB98CFF, 0.7F * a), 0.4F);
         int cd = SquadClient.recallCooldown();
         if (cd > 0) FcsDraw.textCentered(g, Component.translatable("gui.mio_icif.command.recall_cd", (cd + 19) / 20).getString(), cx, y + 8,
             FcsDraw.argb(0x9B7CFF, 0.85F * a), 0.45F);
@@ -404,7 +405,7 @@ public final class CommandWheelScreen extends Screen {
                 FcsDraw.line(g, x, y + s * 0.85F, x - s * 0.75F, y - s * 0.15F, 1.3F, c);
                 FcsDraw.line(g, x - s * 0.45F, y + s * 0.05F, x + s * 0.45F, y + s * 0.05F, 1.8F, c);   // the visor
             }
-            case HOLO -> {
+            case GEAR -> {
                 float h = s * 0.6F;
                 float[][] top = {{0, -s}, {s, -s + h * 0.6F}, {0, -s + h * 1.2F}, {-s, -s + h * 0.6F}};
                 for (int k = 0; k < 4; k++) {
@@ -414,11 +415,15 @@ public final class CommandWheelScreen extends Screen {
                     FcsDraw.line(g, x + p[0], y + p[1], x + p[0], y + p[1] + s, 0.7F, c);
                 }
             }
-            case RECALL -> {
-                FcsDraw.arc(g, x, y, s * 0.8F, 0.6F, (float) (Math.PI * 2 - 0.6), 1.2F, c);
-                FcsDraw.line(g, x, y - s, x, y + s * 0.3F, 1.3F, c);
-                FcsDraw.line(g, x - s * 0.35F, y - s * 0.05F, x, y + s * 0.35F, 1.3F, c);
-                FcsDraw.line(g, x + s * 0.35F, y - s * 0.05F, x, y + s * 0.35F, 1.3F, c);
+            case FAVORITES -> {   // 0.1.11.230: a five-pointed star
+                float[] px = new float[10], py = new float[10];
+                for (int k = 0; k < 10; k++) {
+                    double ang = k * Math.PI / 5;
+                    float r = k % 2 == 0 ? s : s * 0.45F;
+                    px[k] = x + (float) Math.sin(ang) * r;
+                    py[k] = y - (float) Math.cos(ang) * r;
+                }
+                for (int k = 0; k < 10; k++) FcsDraw.line(g, px[k], py[k], px[(k + 1) % 10], py[(k + 1) % 10], 1.2F, c);
             }
         }
     }
@@ -437,27 +442,18 @@ public final class CommandWheelScreen extends Screen {
             case SUPPRESS -> SquadClient.send(WingmanCommands.A_SUPPRESS, unit, (byte) 0, target.point(), -1);
             case FOCUS -> SquadClient.send(WingmanCommands.A_FOCUS, unit, (byte) 0, null, target.entityId());
             case FORM_UP -> SquadClient.send(WingmanCommands.A_FORM_UP, unit, (byte) 0, null, -1);
-            case CONTROL -> {
+            case CONTROL, SUIT, GEAR, FAVORITES -> {
                 if (sub < 0) { done = false; return; }                     // the fan stays open until a choice
-                if (sub < WingmanMode.VALUES.length) SquadClient.send(WingmanCommands.A_MODE, unit, (byte) sub, null, -1);
-                else if (sub == SUB_RETURN) SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
-                else SquadClient.send(WingmanCommands.A_STANCE, unit, (byte) (sub - SUB_RETURN - 1), null, -1);
-            }
-            case SUIT -> {
-                if (sub < 0) { done = false; return; }                     // the fan stays open until a choice
-                switch (sub) {
-                    case SUIT_SWAP -> SquadClient.send(WingmanCommands.A_SUIT_UP, unit, (byte) 0, null, -1);
-                    case SUIT_EJECT -> SquadClient.send(WingmanCommands.A_EJECT, WingmanCommandPackets.ALL, (byte) 0, null, -1);
-                    case SUIT_PILOT -> SquadClient.send(WingmanCommands.A_PILOT, unit, (byte) 0, null, -1);
-                    default -> SquadClient.send(WingmanCommands.A_CLEAN_SLATE, WingmanCommandPackets.ALL, (byte) 0, null, -1);
-                }
-            }
-            case HOLO -> {
+                // 0.1.11.230: a fan item (WheelAction): the wheel closes first, then it runs (it may open a screen)
+                WheelAction it = fanItems(e).get(sub);
                 onClose();
-                HoloTable.open();
+                if (!it.enabled(!selection().isEmpty())) {
+                    if (minecraft != null && minecraft.player != null) minecraft.player.displayClientMessage(it.refusal(), true);
+                    return;
+                }
+                it.run(unit);
                 return;
             }
-            case RECALL -> SquadClient.send(WingmanCommands.A_QUANTUM_RECALL, WingmanCommandPackets.ALL, (byte) 0, null, -1);
         }
         onClose();
     }
@@ -495,7 +491,24 @@ public final class CommandWheelScreen extends Screen {
             }
         }
         if (button == 0) { updateHover(mouseX, mouseY); run(); return true; }
-        if (button == 1) { onClose(); return true; }
+        if (button == 1) {
+            // 0.1.11.230: a right click on a fan item pins it to the favourites or unpins it; elsewhere it closes the wheel
+            updateHover(mouseX, mouseY);
+            if (hover >= 0 && sub >= 0 && hasFan(Entry.values()[hover])) {
+                WheelAction it = fanItems(Entry.values()[hover]).get(sub);
+                boolean was = it.favorite();
+                if (!it.toggleFavorite()) {
+                    if (minecraft != null && minecraft.player != null)
+                        minecraft.player.displayClientMessage(Component.translatable("gui.mio_icif.command.fav_full", WheelAction.MAX_FAVORITES), true);
+                } else if (minecraft != null && minecraft.player != null)
+                    minecraft.player.displayClientMessage(Component.translatable(was ? "gui.mio_icif.command.fav_removed" : "gui.mio_icif.command.fav_added",
+                        Component.translatable(it.key)), true);
+                play(mio_icif_sounds.WHEEL_SELECT.get(), was ? 0.8F : 1.6F, 0.4F);
+                return true;
+            }
+            onClose();
+            return true;
+        }
         return super.mouseClicked(screenX, screenY, button);
     }
 

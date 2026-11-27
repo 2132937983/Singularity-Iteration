@@ -42,7 +42,7 @@ Diamonds on stalks show creatures within 24 blocks at their height. A white arro
 
 ## Mk.II
 
-The Mk.II holomap also projects the **3D holo table**: hold the tactical map key or choose HOLO TABLE on the command wheel (see Quantum command).
+The Mk.II holomap also projects the **3D holo table**: choose Holo table in the command wheel's Gear fan, or hold the tactical map key (unbound by default) (see Quantum command).
 
 ## Recipe
 

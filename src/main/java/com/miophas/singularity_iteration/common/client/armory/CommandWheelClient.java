@@ -113,14 +113,9 @@ public final class CommandWheelClient {
                 return;
             }
             boolean down = HeldKeys.down(KEY);
-            if (pressedThisTick && holdTicks == 0) {
-                if (!SquadClient.commander()) {
-                    if (wearsQuantum(player)) player.displayClientMessage(Component.translatable("message.mio_icif.command.no_relay"), true);
-                    waitRelease = down;
-                    return;
-                }
-                holdTicks = 1;
-            }
+            // 0.1.11.230 (key consolidation): the wheel opens for anyone (its gear and favourites fans need no command link;
+            // the squad sectors are grey without one); only the tap (Smart Ping) needs the link
+            if (pressedThisTick && holdTicks == 0) holdTicks = 1;
             if (holdTicks > 0) {
                 if (down) {
                     if (++holdTicks >= HOLD_TICKS) {
@@ -159,7 +154,10 @@ public final class CommandWheelClient {
 
     /** Instant context-sensitive Smart Ping (tap command key without opening the wheel). */
     static void smartPing(LocalPlayer player) {
-        if (!SquadClient.commander()) return;
+        if (!SquadClient.commander()) {
+            if (wearsQuantum(player)) player.displayClientMessage(Component.translatable("message.mio_icif.command.no_relay"), true);
+            return;
+        }
         WingmanCommandPackets.Unit one = SquadClient.selectedUnit();
         List<WingmanCommandPackets.Unit> sel = new ArrayList<>();
         for (WingmanCommandPackets.Unit u : SquadClient.orderable()) {

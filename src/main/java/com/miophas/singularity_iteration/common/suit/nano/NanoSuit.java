@@ -277,9 +277,15 @@ public final class NanoSuit {
         return resolve(list, secondaryChoice, primary);
     }
 
+    /**
+     * 0.1.11.230 (key consolidation, decision two A): the choice of a burst key that fires the frame core's arc discharge
+     * (it had the R key of its own). The client sends the core burst for it; on the server the key holds no unit.
+     */
+    public static final String CORE_BURST = "core_burst";
+
     @Nullable
     private static UnitRef resolve(List<UnitRef> list, String choice, @Nullable UnitRef taken) {
-        if ("-".equals(choice)) return null;
+        if ("-".equals(choice) || CORE_BURST.equals(choice)) return null;
         if (choice != null && !choice.isEmpty()) {
             for (UnitRef u : list) if (u.key().equals(choice) && free(u, taken)) return u;
         }

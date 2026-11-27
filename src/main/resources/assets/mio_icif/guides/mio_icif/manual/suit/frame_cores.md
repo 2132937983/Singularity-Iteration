@@ -39,7 +39,7 @@ Turn it off for one piece with its "Core exterior (3D)" switch in the Singularit
 
 ## Core burst
 
-With the Advanced Propulsion core, press **R** (core burst): a high-voltage arc discharge hits every creature around you and a shock wave throws them back. It costs 1,500,000 EU and has an 8 s cooldown (server config section FrameCores).
+With the Advanced Propulsion core, put "Core burst (arc discharge)" on **V** or **B** in the Singularity panel and press that key (since 0.1.11.230 it no longer has the R key of its own): a high-voltage arc discharge hits every creature around you and a shock wave throws them back. It costs 1,500,000 EU and has an 8 s cooldown (server config section FrameCores).
 
 ## Retired items
 

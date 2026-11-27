@@ -103,6 +103,9 @@ public final class FcsClientConfig {
     /** 0.1.10.2: squad panel, order markers, holo table cells, propulsion effects. */
     public static final ModConfigSpec.BooleanValue SQUAD_HUD;
     public static final ModConfigSpec.BooleanValue ORDER_MARKERS;
+    /** 0.1.11.230 (key consolidation): the command wheel's favourites (item ids), and the key layout the bindings were moved to. */
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> WHEEL_FAVORITES;
+    public static final ModConfigSpec.IntValue KEY_LAYOUT;
     public static final ModConfigSpec.IntValue HOLO_TABLE_CELLS;
     /** 0.1.10.30: the light of the worn nano and quantum suits (glow layer) and its strength. */
     public static final ModConfigSpec.BooleanValue SUIT_GLOW;
@@ -218,6 +221,11 @@ public final class FcsClientConfig {
             .define("decoherence_glitch", true);
         SQUAD_HUD = b.comment("Squad panel and the edge markers of off-screen Wingmen while the quantum command link works.").define("squad_hud", true);
         ORDER_MARKERS = b.comment("World markers of your Wingmen's orders: hold points, suppression rings, focus brackets.").define("order_markers", true);
+        WHEEL_FAVORITES = b.comment("The command wheel's favourites fan: up to 3 item ids (right-click an item in the wheel to pin or unpin it).")
+            .defineListAllowEmpty("wheel_favorites", com.miophas.singularity_iteration.common.client.armory.WheelAction.DEFAULT_FAVORITES,
+                () -> "", o -> o instanceof String);
+        KEY_LAYOUT = b.comment("Internal: the key layout this client's bindings were moved to (1 = the consolidated keys of 0.1.11.230).")
+            .defineInRange("key_layout", 0, 0, 100);
         HOLO_TABLE_CELLS = b.comment("Terrain cells per side of the 3D holo table (more = finer, slower).")
             .defineInRange("holo_table_cells", 49, 25, 65);
         b.pop();
@@ -318,6 +326,20 @@ public final class FcsClientConfig {
         if (!loaded()) return;
         VISOR_GLASS.set(on);
         SPEC.save();
+    }
+
+    /** 0.1.11.230: the command wheel's favourites (ids). */
+    public static java.util.List<String> wheelFavorites() {
+        if (!loaded()) return com.miophas.singularity_iteration.common.client.armory.WheelAction.DEFAULT_FAVORITES;
+        java.util.List<String> out = new java.util.ArrayList<>();
+        for (Object o : WHEEL_FAVORITES.get()) if (o instanceof String s) out.add(s);
+        return out;
+    }
+
+    public static void setWheelFavorites(java.util.List<String> ids) {
+        if (!loaded()) return;
+        WHEEL_FAVORITES.set(new java.util.ArrayList<>(ids));
+        save();
     }
 
     public static void save() {

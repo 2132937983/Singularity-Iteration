@@ -38,7 +38,8 @@ public final class TacticalMapClient {
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {
-            KEY = new KeyMapping("key.mio_icif.tactical_map", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, "key.category.mio_icif");
+            // 0.1.11.230 (key consolidation): unbound by default; the command wheel's gear fan opens the map
+            KEY = new KeyMapping("key.mio_icif.tactical_map", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
             event.register(KEY);
         }
     }

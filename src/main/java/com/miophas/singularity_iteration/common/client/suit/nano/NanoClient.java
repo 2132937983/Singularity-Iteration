@@ -74,6 +74,15 @@ public final class NanoClient {
      * first three characters. An unbound key reads "-"; {@code fallback} is used before the key
      * mappings are registered.
      */
+    /** 0.1.11.230: the key that fires the core burst: V or B when the panel put it there, else its own key (unbound by default). */
+    public static String coreKeyLabel() {
+        NanoPackets.CoreSync s = sync;
+        String core = com.miophas.singularity_iteration.common.suit.nano.NanoSuit.CORE_BURST;
+        if (s != null && core.equals(s.primaryChoice())) return keyLabel(PRIMARY_KEY, "V");
+        if (s != null && core.equals(s.secondaryChoice())) return keyLabel(SECONDARY_KEY, "B");
+        return keyLabel(CORE_KEY, "-");
+    }
+
     public static String keyLabel(@Nullable KeyMapping key, String fallback) {
         if (key == null) return fallback;
         if (key.isUnbound()) return "-";
@@ -104,9 +113,10 @@ public final class NanoClient {
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {
-            PRIMARY_KEY = new KeyMapping("key.mio_icif.nano_burst_primary", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.category.mio_icif");
-            SECONDARY_KEY = new KeyMapping("key.mio_icif.nano_burst_secondary", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "key.category.mio_icif");
-            CORE_KEY = new KeyMapping("key.mio_icif.core_burst", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.category.mio_icif");
+            PRIMARY_KEY = new KeyMapping("key.mio_icif.nano_burst_primary", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.category.mio_icif");
+            SECONDARY_KEY = new KeyMapping("key.mio_icif.nano_burst_secondary", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "key.category.mio_icif");
+            // 0.1.11.230 (key consolidation): unbound by default; the core burst is an action the panel puts on V or B
+            CORE_KEY = new KeyMapping("key.mio_icif.core_burst", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
             event.register(PRIMARY_KEY);
             event.register(SECONDARY_KEY);
             event.register(CORE_KEY);
@@ -333,6 +343,11 @@ public final class NanoClient {
         if (mc.screen != null || player.isSpectator()) return;
         lastSlot = slot;
         NanoPackets.CoreSync s = sync;
+        // 0.1.11.230 (key consolidation): a key set to the core burst fires the arc discharge (no nano core needed)
+        if (s != null && com.miophas.singularity_iteration.common.suit.nano.NanoSuit.CORE_BURST.equals(slot == 0 ? s.primaryChoice() : s.secondaryChoice())) {
+            pressCore(mc, player);
+            return;
+        }
         // 0.1.10.0: the keys also serve the quantum actions (no nano core needed for those)
         if (s == null || !s.online() && !s.quantum()) {
             player.displayClientMessage(Component.translatable("hud.mio_icif.nano.no_core"), true);

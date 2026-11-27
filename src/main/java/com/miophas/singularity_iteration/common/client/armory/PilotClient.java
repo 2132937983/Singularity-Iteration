@@ -68,7 +68,8 @@ public final class PilotClient {
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {
-            KEY = new KeyMapping("key.mio_icif.pilot", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, "key.category.mio_icif");
+            // 0.1.11.230 (key consolidation): unbound by default; the command wheel's suit fan starts the pilot
+            KEY = new KeyMapping("key.mio_icif.pilot", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
             event.register(KEY);
         }
 

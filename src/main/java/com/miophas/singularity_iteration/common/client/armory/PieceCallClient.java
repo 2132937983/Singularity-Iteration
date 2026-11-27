@@ -26,7 +26,8 @@ public final class PieceCallClient {
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {
-            KEY = new KeyMapping("key.mio_icif.piece_call", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J,
+            // 0.1.11.230 (key consolidation): unbound by default; the command wheel's suit fan opens the piece call
+            KEY = new KeyMapping("key.mio_icif.piece_call", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(),
                 "key.category.mio_icif");
             event.register(KEY);
         }

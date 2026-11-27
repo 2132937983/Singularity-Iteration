@@ -3819,6 +3819,35 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "wheel_gear" (-Dsi.capture.scene=wheel_gear), 0.1.11.230 (key consolidation): a player without Wingmen or a relay
+     * opens the command wheel (the squad sectors grey), then its gear fan and its favourites fan.
+     */
+    private static void sceneWheelGear() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> { sp.setGameMode(GameType.SURVIVAL); look(sp, 0.5, -60, 0.5, 0, 10); });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            var target = new com.miophas.singularity_iteration.common.client.armory.CommandWheelClient.Target(mc.player.position(), false, -1, null, 8);
+            mc.setScreen(new com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen(target));
+        });
+        shot(15, "wheel_gear/0_wheel");
+        client(1, () -> { if (Minecraft.getInstance().screen instanceof com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen w) w.previewFan("GEAR"); });
+        shot(5, "wheel_gear/1_gear");
+        client(1, () -> { if (Minecraft.getInstance().screen instanceof com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen w) w.previewFan("FAVORITES"); });
+        shot(5, "wheel_gear/2_favorites");
+        client(1, () -> { if (Minecraft.getInstance().screen instanceof com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen w) w.previewFan("SUIT"); });
+        shot(5, "wheel_gear/3_suit");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wheel_gear".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWheelGear();
+        }
+    }
+
+    /**
      * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
      * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;
      * 0.1.11.53 (P1): on its own AI (the combo chains), a frame every 2 ticks. Without SlashBlade the scene shows nothing

@@ -394,7 +394,7 @@ public final class NanoHud {
         int cd = NanoClient.dischargeCooldownLeft(), cdMax = Math.max(1, com.miophas.singularity_iteration.common.suit.core.CoreConfig.dischargeCooldown());
         float sinceDeny = t - NanoClient.coreDeniedAt;
         VisorHudPrimitives.glassCard(g, x0, y, cw, ch, sinceDeny < 10 ? RED : col, cd <= 0 ? 0.80F : 0.35F, 0.62F);
-        String key = NanoClient.keyLabel(NanoClient.CORE_KEY, "R");
+        String key = NanoClient.coreKeyLabel();   // 0.1.11.230: V or B when the panel put the core burst there
         g.fill((int) x0 + 2, (int) y + 2, (int) x0 + 9, (int) y + 10, FcsDraw.argb(col, 0.90F));
         float ks = keyScale(key, 0.45F);
         FcsDraw.textCentered(g, key, x0 + 5.5F, y + 3.2F + (0.45F - ks) * 3.5F, FcsDraw.argb(0x140A02, 0.95F), ks);

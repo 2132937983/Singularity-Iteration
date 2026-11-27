@@ -687,8 +687,10 @@ public final class FcsHud {
         }
         float gap = AsciiHud.width("  ", sc);
         Component title = Component.translatable("hud.mio_icif.detail.title");
-        Component hint = Component.translatable("hud.mio_icif.detail.hold", FcsClient.DETAIL_KEY == null ? Component.literal("Alt")
-            : FcsClient.DETAIL_KEY.getTranslatedKeyMessage());
+        // 0.1.11.230: the detail key, or (unbound by default) the panel key held
+        var detailKey = FcsClient.DETAIL_KEY != null && !FcsClient.DETAIL_KEY.isUnbound() ? FcsClient.DETAIL_KEY
+            : com.miophas.singularity_iteration.common.client.mio_icif_ClientEvents.ARMOR_FEATURES_KEY;
+        Component hint = Component.translatable("hud.mio_icif.detail.hold", detailKey == null ? Component.literal("Alt") : detailKey.getTranslatedKeyMessage());
         float pw = Math.max(side * 2 + labelW + gap + valueW + gap + rightW, AsciiHud.width(title, sc) + AsciiHud.width(hint, sc) + side * 4);
         float ph = lh * (rows.size() + 3);
         float x = 12, y = 34;

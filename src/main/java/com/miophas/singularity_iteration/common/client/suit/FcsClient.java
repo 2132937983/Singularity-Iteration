@@ -48,6 +48,16 @@ import org.lwjgl.glfw.GLFW;
 public final class FcsClient {
     private FcsClient() {}
 
+    /** 0.1.11.230: switches the FCS HUD on or off (the HUD key, the command wheel). */
+    public static void toggleHud(net.minecraft.world.entity.player.Player player) {
+        boolean next = !FcsClientConfig.hudEnabled();
+        if (FcsClientConfig.loaded()) {
+            FcsClientConfig.HUD_ENABLED.set(next);
+            FcsClientConfig.save();
+        }
+        player.displayClientMessage(Component.translatable(next ? "hud.mio_icif.fcs.on" : "hud.mio_icif.fcs.off"), true);
+    }
+
     public static KeyMapping HUD_KEY;
     public static KeyMapping LAYOUT_KEY;
     /** 0.1.11.5 (H3): held, it opens the suit's detail view (the large holomap). Left Alt by default. */
@@ -61,9 +71,11 @@ public final class FcsClient {
 
     @SubscribeEvent
     public static void onKeys(RegisterKeyMappingsEvent event) {
-        HUD_KEY = new KeyMapping("key.mio_icif.fcs_hud", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.category.mio_icif");
-        LAYOUT_KEY = new KeyMapping("key.mio_icif.hud_layout", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
-        DETAIL_KEY = new KeyMapping("key.mio_icif.hud_detail", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.category.mio_icif");
+        // 0.1.11.230 (key consolidation): unbound by default; the command wheel's gear fan has the HUD and its layout, and a
+        // hold of the panel key (left Alt) shows the detail view
+        HUD_KEY = new KeyMapping("key.mio_icif.fcs_hud", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
+        LAYOUT_KEY = new KeyMapping("key.mio_icif.hud_layout", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
+        DETAIL_KEY = new KeyMapping("key.mio_icif.hud_detail", net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
         event.register(HUD_KEY);
         event.register(LAYOUT_KEY);
         event.register(DETAIL_KEY);
@@ -72,7 +84,8 @@ public final class FcsClient {
     /** 0.1.11.5 (H3): true while the detail view is held open (no screen open). */
     public static boolean detailHeld() {
         if (forceDetail) return true;
-        return DETAIL_KEY != null && Minecraft.getInstance().screen == null && DETAIL_KEY.isDown();
+        return Minecraft.getInstance().screen == null
+            && (DETAIL_KEY != null && DETAIL_KEY.isDown() || com.miophas.singularity_iteration.common.client.mio_icif_ClientEvents.armorFeaturesHeld());
     }
 
     /** 0.1.11.5 (H3): the mouse wheel zooms the detail holomap (Shift + wheel: elevation) instead of changing the slot. */
@@ -120,14 +133,7 @@ public final class FcsClient {
             visorOn = false;
             return;
         }
-        while (HUD_KEY != null && HUD_KEY.consumeClick()) {
-            boolean next = !FcsClientConfig.hudEnabled();
-            if (FcsClientConfig.loaded()) {
-                FcsClientConfig.HUD_ENABLED.set(next);
-                FcsClientConfig.save();
-            }
-            player.displayClientMessage(Component.translatable(next ? "hud.mio_icif.fcs.on" : "hud.mio_icif.fcs.off"), true);
-        }
+        while (HUD_KEY != null && HUD_KEY.consumeClick()) toggleHud(player);
         while (LAYOUT_KEY != null && LAYOUT_KEY.consumeClick()) {
             if (mc.screen == null) mc.setScreen(new HudLayoutScreen(null));
         }

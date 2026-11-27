@@ -3980,9 +3980,12 @@ public final class CaptureDirector {
             sp.getAbilities().flying = false;
             sp.onUpdateAbilities();
             level.getServer().setDifficulty(Difficulty.NORMAL, true);
-            var husk = mob(level, net.minecraft.world.entity.EntityType.HUSK, 0.5, -60, -8.5, true, sp);
-            husk.setInvulnerable(true);
-            husk.setNoAi(true);
+            // 0.1.11.235 (B3): three still husks, so the collapse cut falls on several targets
+            for (double[] at : new double[][]{{0.5, -8.5}, {-3.5, -7.5}, {4.5, -9.5}}) {
+                var husk = mob(level, net.minecraft.world.entity.EntityType.HUSK, at[0], -60, at[1], true, sp);
+                husk.setInvulnerable(true);
+                husk.setNoAi(true);
+            }
         });
         client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); });
         for (int i = 0; i < blades.length; i++) {
@@ -4003,12 +4006,14 @@ public final class CaptureDirector {
                 net.minecraft.world.entity.Entity target = sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class,
                     sp.getBoundingBox().inflate(12)).stream().findFirst().orElse(null);
                 var combo = com.miophas.singularity_iteration.common.armory.SlashBladeCombat.slashArts(sp, target);
-                Singularity_Iteration.LOGGER.info("capture sb1 art: {} -> combo {}, core {} -> {}", blades[slot], combo, before,
+                Singularity_Iteration.LOGGER.info("capture sb1 art: {} -> combo {}, {} husks near, core {} -> {}", blades[slot], combo,
+                    sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class, sp.getBoundingBox().inflate(12)).size(), before,
                     com.miophas.singularity_iteration.common.armory.blade.CollabBlade.core(sp.getMainHandItem()));
             });
             for (int f = 0; f < 24; f++) {
                 // two ticks in, the camera turns 75 degrees: the standing wave along the first look is seen from the side
                 if (f == 2) client(0, () -> { var p = Minecraft.getInstance().player; p.setYRot(p.getYRot() + 75); p.yRotO = p.getYRot(); });
+                client(0, () -> { if (Minecraft.getInstance().screen != null) Minecraft.getInstance().setScreen(null); });
                 shot(1, String.format("sb1_blades/7_art_%s_%02d", name, f));
             }
             client(20, () -> { var p = Minecraft.getInstance().player; p.setYRot(180); p.yRotO = 180; });

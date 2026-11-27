@@ -6266,5 +6266,9 @@
   "slash_art.mio_icif.piezo_cleave": "Piezo Cleave",
   "slash_art.mio_icif.piezo_cleave.desc": "The piezo stack rings a standing wave along the cut, and three afterimages strike almost at once",
   "se.mio_icif.piezo_edge": "Piezo Edge",
-  "se.mio_icif.piezo_edge.desc": "With EU in the blade, hits add armour-piercing vibration damage that grows with edge heat; at 70 heat they set the target on fire. Carried, nanobots mend the blade with its own EU"
+  "se.mio_icif.piezo_edge.desc": "With EU in the blade, hits add armour-piercing vibration damage that grows with edge heat; at 70 heat they set the target on fire. Carried, nanobots mend the blade with its own EU",
+  "slash_art.mio_icif.collapse_cut": "Collapse Cut",
+  "slash_art.mio_icif.collapse_cut.desc": "The blade is in superposition: a probability cloud opens on every target the suit locked or the blade entangled, the interference fringes close in, and it collapses onto all of them at once",
+  "se.mio_icif.entangle": "Entanglement",
+  "se.mio_icif.entangle.desc": "Each hit entangles the target for 10 seconds (at most 6); the Collapse Cut finds them even without the suit's locks"
 }

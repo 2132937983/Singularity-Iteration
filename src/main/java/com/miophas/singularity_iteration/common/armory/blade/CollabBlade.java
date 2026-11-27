@@ -53,6 +53,9 @@ public enum CollabBlade {
     /** Nanobot self-repair: 1 durability every this many ticks while carried, for this much EU. */
     public static final int NANO_MEND_INTERVAL = 40;
     public static final long NANO_MEND_EU = 400;
+    /** 0.1.11.235 (B3): the collapse cut strikes at most this many targets, locked or entangled ones within this range. */
+    public static final int COLLAPSE_MAX = 6;
+    public static final double COLLAPSE_RANGE = 32, COLLAPSE_FALLBACK_RANGE = 12;
     // quantum: coherence of one slash art when the wearer has a quantum core
     public static final float QUANTUM_SA_COHERENCE = 30;
     // singularity: mass and containment

@@ -6266,5 +6266,9 @@
   "slash_art.mio_icif.piezo_cleave": "压电振动斩",
   "slash_art.mio_icif.piezo_cleave.desc": "压电陶瓷在刀线上激起驻波，三道残影几乎同时斩出",
   "se.mio_icif.piezo_edge": "压电刃",
-  "se.mio_icif.piezo_edge.desc": "有电时命中附加无视护甲的振动伤害，刃越热伤害越高；刃温 70 以上点燃目标；携带时纳米机器人以刀内电能修复耐久"
+  "se.mio_icif.piezo_edge.desc": "有电时命中附加无视护甲的振动伤害，刃越热伤害越高；刃温 70 以上点燃目标；携带时纳米机器人以刀内电能修复耐久",
+  "slash_art.mio_icif.collapse_cut": "坍缩斩",
+  "slash_art.mio_icif.collapse_cut.desc": "刀身处在叠加态：战甲锁定与纠缠的每个目标上张开概率云，干涉条纹收拢后同时坍缩，次元斩落在所有目标身上",
+  "se.mio_icif.entangle": "量子纠缠",
+  "se.mio_icif.entangle.desc": "每次命中与目标纠缠 10 秒（最多 6 个）；坍缩斩不靠战甲锁定也能找到它们"
 }

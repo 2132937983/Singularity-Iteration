@@ -50,8 +50,16 @@ final class SiSlashBladeContent {
     static final DeferredHolder<SpecialEffect, SpecialEffect> PIEZO_EDGE = SPECIAL_EFFECTS.register("piezo_edge",
         () -> new SpecialEffect(0, false, false));
 
+    /** 0.1.11.235 (B3): the quantum blade's slash art (collapse cut) and special effect (entanglement). */
+    static final DeferredHolder<SlashArts, SlashArts> COLLAPSE_CUT = SLASH_ARTS.register("collapse_cut",
+        () -> new SlashArts(user -> id("collapse_cut")).setComboStateJust(user -> id("collapse_cut_just"))
+            .setComboStateSuper(user -> id("collapse_cut_super")));
+    static final DeferredHolder<SpecialEffect, SpecialEffect> ENTANGLE = SPECIAL_EFFECTS.register("entangle",
+        () -> new SpecialEffect(0, false, false));
+
     static void register(IEventBus modEventBus) {
         for (Variant v : Variant.values()) COMBO_STATES.register("piezo_cleave" + v.suffix, () -> SiNanoBlade.piezoCleave(v));
+        for (Variant v : Variant.values()) COMBO_STATES.register("collapse_cut" + v.suffix, () -> SiQuantumBlade.collapseCut(v));
         SLASH_ARTS.register(modEventBus);
         SPECIAL_EFFECTS.register(modEventBus);
         COMBO_STATES.register(modEventBus);

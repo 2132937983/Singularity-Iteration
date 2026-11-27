@@ -51,6 +51,7 @@ final class SiSlashBladeServer {
         // 0.1.11.234 (B2): slash arts, special effects and their combo states
         SiSlashBladeContent.register(modEventBus);
         NeoForge.EVENT_BUS.register(SiNanoBlade.class);
+        NeoForge.EVENT_BUS.register(SiQuantumBlade.class);
     }
 
     static CollabBlade resolve(ItemStack stack) {

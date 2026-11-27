@@ -9,9 +9,12 @@
   "properties": {
     "attack_base": 8.0,
     "max_damage": 80,
-    "slash_art": "slashblade:circle_slash",
+    "slash_art": "mio_icif:collapse_cut",
     "sword_type": [
       "bewitched"
+    ],
+    "special_effects": [
+      "mio_icif:entangle"
     ]
   },
   "enchantments": [

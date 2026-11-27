@@ -308,6 +308,29 @@ SAYA += [Station(-299,TIP_Y+5.5,TIP_Y-2.7,2.90),
          Station(-313,TIP_Y-6.2,TIP_Y-7.2,.68)]
 
 
+def charge_port(mesh, glow):
+    # Only the outboard face carries a kurigata. Its dark oblong socket has
+    # a real recessed wall; the short lamp is set into the adjoining cheek.
+    def point(s,t,height):
+        x=lerp(-77,-90,s)
+        row=line(SAYA,x)
+        return x,(row.top+row.low)/2+(0.5-t)*5.9,row.width+height
+    outer=((0,.26),(.13,0),(.82,0),(1,.23),(1,.78),(.84,1),(.12,1),(0,.76))
+    hole=((.17,.40),(.23,.27),(.62,.27),(.68,.39),
+          (.68,.61),(.62,.72),(.22,.72),(.17,.62))
+    face_height=.53
+    for i in range(len(outer)):
+        j=(i+1)%len(outer)
+        a,b,c,d=outer[i],outer[j],hole[j],hole[i]
+        mesh.face((point(*a,face_height),point(*b,face_height),point(*c,face_height),point(*d,face_height)),
+                  (a,b,c,d),'charge_port')
+        mesh.face((point(*a,-.02),point(*b,-.02),point(*b,face_height),point(*a,face_height)),RECT,'bevel')
+        mesh.face((point(*d,.08),point(*d,face_height),point(*c,face_height),point(*c,.08)),RECT,'dark')
+    mesh.face([point(*p,.08) for p in hole],hole,'charge_port')
+    lamp=((.769,.390),(.850,.390),(.850,.595),(.769,.595))
+    glow.face([point(*p,face_height+.07) for p in lamp],RECT,'rail_glow')
+
+
 def make_sheath():
     mesh,glow=Mesh(),Mesh()
     # A single open faceted ferrule meets the transverse guard. Its bevel
@@ -324,11 +347,16 @@ def make_sheath():
     mouth,end=blade_station(-35),blade_station(-51)
     inner=oct_ring(Station(-35,mouth.top+1.1,mouth.low-1.1,2.18))
     tunnel=oct_ring(Station(-51,end.top+.95,end.low-.95,2.06))
+    perimeter=[0.]
+    for a,b in zip(inner,inner[1:]+inner[:1]):
+        perimeter.append(perimeter[-1]+hypot(b[1]-a[1],b[2]-a[2]))
     for i in range(8):
         j=(i+1)%8
-        mesh.face((outer[i],outer[j],inner[j],inner[i]),RECT,'metal')
-        mesh.face((inner[j],tunnel[j],tunnel[i],inner[i]),RECT,'dark')
+        a,b=perimeter[i]/perimeter[-1],perimeter[i+1]/perimeter[-1]
+        mesh.face((outer[i],outer[j],inner[j],inner[i]),((a,0),(b,0),(b,.5),(a,.5)),'repair_comb')
+        mesh.face((inner[j],tunnel[j],tunnel[i],inner[i]),((b,.5),(b,1),(a,1),(a,.5)),'repair_comb')
     cap(mesh,tunnel,'dark')
+    charge_port(mesh,glow)
     def facepos(s,t,sign,offset=0):
         x=lerp(SAYA[0].x,SAYA[-1].x,s)
         row=line(SAYA,x)

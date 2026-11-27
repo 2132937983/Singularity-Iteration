@@ -18,6 +18,7 @@ REGIONS = {
     "ceramic": (94, 65, 20, 10), "edge": (107, 65, 50, 6),
     "spine": (116, 65, 50, 9), "sheath_cap": (52, 119, 36, 14),
     "kissaki": (71, 120, 41, 20),
+    "repair_comb": (94, 121, 64, 12), "charge_port": (107, 121, 26, 12),
 }
 
 
@@ -39,6 +40,9 @@ PZT_SHADE = "#8E959E"
 EMBER = "#FF5A14"
 ORANGE = "#FF7A1F"
 HOT = "#FFC46B"
+# Longitudinal atlas texels. The world-space blade uses the same coordinates
+# on both broad faces, so the optional B2 animation can land on the contacts.
+PZT_NODES = (*range(15, 76, 20), *range(91, 148, 14), *range(160, 221, 9))
 
 
 def carbon_field(image, box):
@@ -65,37 +69,76 @@ def blade(image):
         draw.line((x + 1, 9, x + 4, 5), fill="#444D54")
     draw.polygon([(0, 11), (146, 10), (xmax, 9), (xmax, 15), (0, 15)], fill="#323941")
     draw.line([(9, 11), (146, 10), (xmax, 9)], fill="#49525B")
-    # Small PZT contacts repeat under three lengths of cover. The few exposed
-    # pixels are cooler and dimmer than the orange line; the tip stays bare.
+    # The three windows have successively finer contact pitches. Each ceramic
+    # pad has a pale top and a graphite inset below, separate from the hot edge.
     draw.rectangle((0, 12, xmax, 15), fill="#1A1F25")
-    for x in (11,83,155):
-        draw.polygon([(x,15),(x+2,12),(x+57,12),(x+55,15)], fill=SEAM)
-        for contact in range(x+4,x+54,12):
-            draw.rectangle((contact, 13, contact + 2, 14), fill="#78848D")
-            draw.line((contact, 13, contact + 2, 13), fill="#B6BDC4")
-        draw.line((x+2,15,x+53,15), fill="#313B44")
+    for start, end in ((10,82),(87,154),(156,224)):
+        draw.polygon([(start,15),(start+2,12),(end,12),(end-2,15)], fill=SEAM)
+        draw.line((start+2,15,end-3,15), fill="#313B44")
+    for contact in PZT_NODES:
+        draw.rectangle((contact,13,contact+2,14), fill=PZT_SHADE)
+        draw.line((contact,13,contact+2,13), fill=PZT)
+    # Three one-texel temper lines move toward the centre in hard steps.
+    # Their staggered starts keep the graphite root and its three vents legible.
+    for first, last, row in ((27,64,12),(65,111,11),(112,154,10),(155,195,9),(196,228,8)):
+        for start,offset,colour in ((27,0,"#D9B45A"),(45,1,"#7A5A9E"),(58,2,"#4A6FA8")):
+            if last >= start:
+                draw.line((max(first,start),row-offset,last,row-offset),fill=colour)
     # Keep the substrate dark under the additive ribbon. A second bright
     # orange layer here would saturate to pale yellow in the in-game pass.
     draw.rectangle((0, 16, xmax, 17), fill="#4F1F0D")
     draw.line((0, 17, xmax, 17), fill="#381708")
     draw.line((0, 18, xmax, 18), fill="#676D77")
     draw.line((0, 19, xmax, 19), fill="#92979C")
+    # Pixel marks on the outermost texel of the first 25 model units. Their
+    # dark and bright steps sit outside the uninterrupted additive ribbon.
+    for x in range(4,26,3):
+        draw.point((x,19),fill="#252B33")
+        draw.point((x+1,18),fill="#D4C9B1")
 
 
 def kissaki(image):
-    # Separate tip UV island, viewed from either broad side. The diagonal
-    # facet is visible even with the emission pass disabled.
+    # A ceramic cap follows the existing tip planes on both broad sides.
     draw = ImageDraw.Draw(image)
     xmax, ymax = image.width - 1, image.height - 1
-    draw.rectangle((0, 0, xmax, ymax), fill="#424B56")
-    draw.polygon([(0, 0), (xmax, 0), (xmax, 3), (0, 8)], fill="#303944")
-    draw.line([(0, 8), (8, 7), (22, 5), (xmax, 3)], fill="#515C68")
-    draw.polygon([(0, 12), (xmax, 5), (xmax, 14), (0, 15)], fill="#535D68")
+    draw.rectangle((0,0,xmax,ymax),fill=PZT)
+    draw.polygon([(0,0),(xmax,0),(xmax,3),(0,8)],fill="#949EAA")
+    draw.line([(0,8),(8,7),(22,5),(xmax,3)],fill="#E3E5E6")
+    draw.polygon([(0,12),(xmax,5),(xmax,14),(0,15)],fill="#AFB8C2")
+    draw.line((0,1,0,15),fill="#747F8D")
     # The only warm feature on this island lies against the single cutting edge.
     draw.rectangle((0, 16, xmax, 17), fill="#4F1F0D")
     draw.line((0, 17, xmax, 17), fill="#381708")
-    draw.line((0, 18, xmax, 18), fill="#646D77")
-    draw.line((0, 19, xmax, 19), fill="#77818B")
+    draw.line((0, 18, xmax, 18), fill="#A6AFBB")
+    draw.line((0, 19, xmax, 19), fill="#D4D8DA")
+
+
+def repair_comb(image):
+    # The first half wraps the lip, the second turns into the throat.
+    draw=ImageDraw.Draw(image)
+    draw.rectangle((0,0,63,11),fill="#242930")
+    draw.rectangle((0,0,63,2),fill="#56606B")
+    draw.line((0,0,63,0),fill="#919AA3")
+    draw.line((0,3,63,3),fill="#3B444F")
+    draw.line((0,8,63,8),fill="#13181D")
+    for x in range(1,64,4):
+        draw.rectangle((x,3,x+1,6),fill="#9DA8B2")
+        draw.line((x,3,x,6),fill="#D2D6D5")
+        draw.point((x,7),fill="#697681")
+
+
+def charge_port(image):
+    draw=ImageDraw.Draw(image)
+    draw.rectangle((0,0,25,11),fill="#414950")
+    draw.line((2,1,21,1),fill="#8B949D")
+    draw.line((2,2,18,2),fill="#5E6973")
+    draw.rectangle((4,3,17,8),fill="#171B21")
+    draw.line((6,7,14,7),fill="#59616B")
+    for x in (6,9):
+        draw.line((x,5,x+1,5),fill="#AD9672")
+    draw.rectangle((19,4,22,7),fill="#15191E")
+    draw.line((20,5,21,5),fill="#A7461D")
+    draw.line((3,10,22,10),fill="#262C32")
 
 
 def sheath(image):
@@ -197,7 +240,8 @@ def texture():
                        (.73, "#434950"), (.91, "#282E35")),
     }
     painters = {"blade": blade, "kissaki": kissaki, "sheath": sheath, "grip": grip,
-                "guard": guard, "fracture": fracture}
+                "guard": guard, "fracture": fracture, "repair_comb": repair_comb,
+                "charge_port": charge_port}
     for name, (x, y, length, width) in REGIONS.items():
         image = Image.new("RGBA", (length, width))
         if name in painters:

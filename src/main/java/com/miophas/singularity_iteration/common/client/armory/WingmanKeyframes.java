@@ -25,8 +25,11 @@ public final class WingmanKeyframes {
 
     /** Poses a model from keyframes. */
     public interface Driver {
-        /** Poses the six parts of {@code model} for {@code entity}; false when it has no keyframe animation now. */
-        boolean pose(WingmanEntity entity, HumanoidModel<?> model, float partialTick);
+        /**
+         * Poses the six parts of {@code model} for {@code entity}; false when it has no keyframe animation now. Without
+         * {@code upper} only the legs are posed (0.1.11.226: on foot in a fight the arms keep their weapon poses).
+         */
+        boolean pose(WingmanEntity entity, HumanoidModel<?> model, float partialTick, boolean upper);
     }
 
     @Nullable private static Driver driver;
@@ -48,15 +51,16 @@ public final class WingmanKeyframes {
 
     /** True when a keyframe animation poses {@code entity} now (the renderer then skips its code-driven touch-down dip). */
     public static boolean active(WingmanEntity entity, float partialTick) {
-        return driver != null && WingmanKeyframeChoice.base(entity.landed(), entity.sinceLanding(partialTick), entity.getId(), entity.tickCount) != null;
+        return driver != null && (entity.ground()
+            || WingmanKeyframeChoice.base(entity.landed(), entity.sinceLanding(partialTick), entity.getId(), entity.tickCount) != null);
     }
 
     /** Poses {@code model} from keyframes; false (nothing changed) without a driver or a keyframe animation. */
-    static boolean pose(WingmanEntity entity, HumanoidModel<?> model, float partialTick) {
+    static boolean pose(WingmanEntity entity, HumanoidModel<?> model, float partialTick, boolean upper) {
         Driver d = driver;
         if (d == null) return false;
         try {
-            return d.pose(entity, model, partialTick);
+            return d.pose(entity, model, partialTick, upper);
         } catch (Throwable t) {
             LOG.warn("The Wingman keyframe driver failed; code-driven poses from now on", t);
             driver = null;

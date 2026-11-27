@@ -40,6 +40,39 @@ public final class WingmanKeyframeChoice {
         return "idle_stand";
     }
 
+    /** 0.1.11.226 (G3): an animation and its playback speed. */
+    public record Pick(String name, float speed) { }
+
+    /** Reference speeds (blocks per tick) of {@code walk} (4.3 m/s) and {@code run} (7 m/s) in batch AN1. */
+    public static final float WALK_REF = 0.215F, RUN_REF = 0.35F, SKATE_REF = 0.6F;
+    /** Foot speeds (blocks per tick) above which the Wingman walks, and runs. */
+    public static final float WALKS = 0.03F, RUNS = 0.27F, SKATES = 0.45F;
+    /** Ticks of a hop's take-off ({@code jump_takeoff} 0.25 s, {@code thrust_hop} 0.4 s) and of a heavy landing (0.8 s). */
+    public static final int JUMP_TICKS = 5, THRUST_TICKS = 8, HEAVY_TICKS = 16;
+
+    /**
+     * 0.1.11.226 (G3): the base animation of a Wingman on foot. In the air: the take-off of its last hop ({@code thrust_hop}
+     * with the thrusters, else {@code jump_takeoff}), then {@code air_rise} or {@code air_fall}. On the floor: the landing
+     * ({@code land_heavy} after a fall faster than the heavy touch-down speed, else {@code land_light}), then {@code skate} (the
+     * thruster skate), {@code run},
+     * {@code walk} (played at the speed it moves at, against the AN1 reference speeds) or the idles of {@link #base}.
+     */
+    public static Pick onFoot(boolean onFloor, float footSpeed, double vy, float sinceHop, boolean thrust, float sinceTouch, boolean heavy,
+                              int id, int tick) {
+        if (!onFloor) {
+            if (sinceHop < (thrust ? THRUST_TICKS : JUMP_TICKS)) return new Pick(thrust ? "thrust_hop" : "jump_takeoff", 1);
+            return new Pick(vy > 0.02 ? "air_rise" : "air_fall", 1);
+        }
+        if (sinceTouch < (heavy ? HEAVY_TICKS : LAND_TICKS)) return new Pick(heavy ? "land_heavy" : "land_light", 1);
+        if (footSpeed > SKATES) return new Pick("skate", clamp(footSpeed / SKATE_REF, 0.7F, 1.5F));
+        if (footSpeed > RUNS) return new Pick("run", clamp(footSpeed / RUN_REF, 0.6F, 1.8F));
+        if (footSpeed > WALKS) return new Pick("walk", clamp(footSpeed / WALK_REF, 0.5F, 1.8F));
+        String idle = base(true, LAND_TICKS, id, tick);
+        return new Pick(idle == null ? "idle_stand" : idle, 1);
+    }
+
+    private static float clamp(float v, float lo, float hi) { return Math.max(lo, Math.min(hi, v)); }
+
     /**
      * The hit reaction (short name) for a hit from {@code fromYawDeg} (the direction the blow came from, degrees, Minecraft
      * yaw) on a Wingman facing {@code bodyYawDeg}: front, back, left or right of the Wingman.

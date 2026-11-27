@@ -99,6 +99,9 @@ public class WingmanEntity extends Mob {
     private static final EntityDataAccessor<Integer> DATA_SLASH = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
     /** 0.1.11.46 (motion audit M2): ticks until the held ranged weapon fires again, set at each shot (the draw, the reload). */
     private static final EntityDataAccessor<Integer> DATA_FIRE_CD = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    /** 0.1.11.226 (G3): on foot (the ground form), and the hop counter (bit 0: the last hop was a thrust hop). */
+    private static final EntityDataAccessor<Boolean> DATA_GROUND = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_HOPS = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
     public static final int SLASH_COMBO = 0, SLASH_DASH = 1, SLASH_ARTS = 2;
 
     // server state (saved)
@@ -223,6 +226,8 @@ public class WingmanEntity extends Mob {
         builder.define(DATA_LANDED, false);
         builder.define(DATA_SLASH, 0);
         builder.define(DATA_FIRE_CD, 20);
+        builder.define(DATA_GROUND, false);
+        builder.define(DATA_HOPS, 0);
     }
 
     // ------------------------------------------------------------------ accessors
@@ -525,14 +530,17 @@ public class WingmanEntity extends Mob {
         idleThisTick = false;
         try {
             switch (state()) {
-                case RETURNING -> tickReturn(world);
+                case RETURNING -> { setGround(false); tickReturn(world); }
                 default -> {
                     if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
                     if (!ownerHere && swapPhase == SWAP_NONE && !rescuing() && cleanSlate < 0) return;
+                    // 0.1.11.226 (G3): the special flights are flown, never walked
+                    if (pilot != null || cleanSlate >= 0 || rescuing() || swapPhase != SWAP_NONE) setGround(false);
                     if (pilot != null) { tickPiloted(); return; }                            // 0.1.11.60: flown by its owner
                     if (cleanSlate >= 0) { tickCleanSlate(); return; }                     // 0.1.11.59: the Clean Slate protocol
                     if (rescuing()) { tickRescue(player, ownerHere); return; }             // 0.1.11.56: an emergency rescue
                     if (swapPhase != SWAP_NONE) { tickSwap(player, ownerHere); return; }   // 0.1.11.54: a suit swap
+                    updateGround(player);   // 0.1.11.226 (G3, decision three A): on foot in a low place
                     // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
                     if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
                     if (distanceToSqr(player) > CATCH_UP * CATCH_UP) catchUp(player);
@@ -549,6 +557,8 @@ public class WingmanEntity extends Mob {
                 quietTicks = 0;
                 if (landed()) takeOff();
             }
+            if (ground() && !landed()) groundPhysics();   // 0.1.11.226 (G3): on foot, gravity
+            if (hopCooldown > 0) hopCooldown--;
         }
     }
 
@@ -636,6 +646,20 @@ public class WingmanEntity extends Mob {
     private void idle(Vec3 post, ServerPlayer player, boolean anchored) {
         idleThisTick = true;
         quietTicks++;
+        if (ground() && !landed()) {
+            // 0.1.11.226 (G3): on foot it walks to its place on the floor and stands there (no landing flight)
+            Vec3 spot = groundPost(post, player);
+            Vec3 to = spot.subtract(position());
+            if (onGround() && to.horizontalDistanceSqr() < 1.0) {
+                setDeltaMovement(getDeltaMovement().multiply(0.5, 1, 0.5));
+                if (quietTicks >= GROUND_SETTLE) { landSpot = null; touchDownOnFoot(player); }
+                return;
+            }
+            quietTicks = Math.min(quietTicks, 1);
+            if (anchored) steer(spot, CRUISE, player);
+            else follow(post, player);
+            return;
+        }
         if (landed()) {
             boolean stay = anchored ? landPost != null && post.distanceToSqr(landPost) < 2.0 * 2.0
                 : landOwner != null && player.position().distanceToSqr(landOwner) < LAND_STAY * LAND_STAY
@@ -676,6 +700,12 @@ public class WingmanEntity extends Mob {
      * upkeep. When it could not be paid, or the owner stands, this is the old flight to the place at cruise speed.
      */
     private void follow(Vec3 post, ServerPlayer player) {
+        if (ground()) {   // 0.1.11.226 (G3): on foot to the place on the floor under the formation place; runs when far
+            Vec3 spot = groundPost(post, player);
+            steer(spot, spot.distanceTo(position()) > 6 ? COMBAT : CRUISE, player);
+            trackStuck(spot.distanceTo(position()), player);
+            return;
+        }
         Vec3 carry = speedStarved ? Vec3.ZERO : ownerVelocity;
         double ownerSpeed = carry.length();
         double cap = WingmanFlight.cap(ownerSpeed, CRUISE), accel = WingmanFlight.accel(ownerSpeed, ACCEL);
@@ -777,7 +807,7 @@ public class WingmanEntity extends Mob {
         landSpot = null;
         landPost = null;
         quietTicks = 0;
-        setDeltaMovement(getDeltaMovement().add(0, 0.22, 0));
+        if (!ground()) setDeltaMovement(getDeltaMovement().add(0, 0.22, 0));   // 0.1.11.226: on foot it just walks on
     }
 
     private void upkeep(ServerLevel world, @Nullable ServerPlayer player) {
@@ -871,6 +901,138 @@ public class WingmanEntity extends Mob {
         ServerLevel level = world.getServer().getLevel(armory.dimension());
         if (level == null || !level.isLoaded(armory.pos())) return null;
         return level.getBlockEntity(armory.pos()) instanceof mio_icif_armory a ? a : null;
+    }
+
+    // ---- the ground form (0.1.11.226, cave overhaul G3, decisions two B and three A)
+    //
+    // In a low place (floor to ceiling at most GROUND_SPAN_IN blocks), or in a room with the target standing on the floor,
+    // the Wingman sets down and goes on foot: gravity, a walk or a run (a step of one block is climbed by the step height),
+    // a jump or a thruster hop up to a higher waypoint, a thruster skate instead of the boost, retreats along the floor and
+    // firing stations on the floor. It flies again when the place opens up (above GROUND_SPAN_OUT), when the owner flies fast,
+    // or when its target is in the air; the switch waits GROUND_VOTE ticks either way so it does not flicker.
+
+    /** Floor-to-ceiling heights (blocks) under which the Wingman goes on foot, and above which it flies again. */
+    static final double GROUND_SPAN_IN = 6.0, GROUND_SPAN_OUT = 8.5;
+    /** Ticks a reason to switch must last. */
+    static final int GROUND_VOTE = 8;
+    /** Walk and run speeds (blocks per tick; 4.4 and 7 m/s) and the acceleration on foot. */
+    static final double GROUND_WALK = 0.22, GROUND_RUN = 0.35, GROUND_ACCEL = 0.12, GRAVITY = 0.08;
+    /** The thruster skate (12 m/s) that closes in on a target farther than {@link #SKATE_FROM} blocks, on foot. */
+    static final double GROUND_SKATE = 0.6, SKATE_FROM = 8;
+    /** Owner speed (blocks per tick) at which the Wingman takes to the air to keep up. */
+    static final double GROUND_OWNER_FAST = 0.6;
+    /** Ticks standing still at its place before it settles (landed: the low-power standby). */
+    static final int GROUND_SETTLE = 10;
+    /** Step height on foot (one block and a little). */
+    static final double GROUND_STEP = 1.05;
+    private static final net.minecraft.resources.ResourceLocation GROUND_STEP_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID, "wingman_ground_step");
+    private int groundVote, hopCooldown;
+
+    /** 0.1.11.226 (G3): true while the Wingman goes on foot. */
+    public boolean ground() { return entityData.get(DATA_GROUND); }
+
+    /** 0.1.11.226: the hop counter (bit 0: the last hop used the thrusters), for the animations. */
+    public int hops() { return entityData.get(DATA_HOPS); }
+
+    void setGround(boolean on) {
+        if (on == ground()) return;
+        entityData.set(DATA_GROUND, on);
+        groundVote = 0;
+        nav.reset();
+        stuck.reset();
+        var step = getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
+        if (step != null) {
+            step.removeModifier(GROUND_STEP_ID);
+            if (on) step.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(GROUND_STEP_ID,
+                GROUND_STEP - step.getBaseValue(), net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+        }
+        if (!on && !landed()) setDeltaMovement(getDeltaMovement().add(0, 0.22, 0));   // back into the air
+    }
+
+    /** Decides each tick between flight and the ground form (decision three A: automatic). */
+    private void updateGround(ServerPlayer player) {
+        WingmanSpace.Room room = WingmanSpace.of(this);
+        boolean ownerFast = player.isFallFlying() || ownerVelocity.length() > GROUND_OWNER_FAST;
+        boolean targetUp = target != null && target.isAlive() && !standsOnFloor(target);
+        boolean low = room.kind().confined() && room.span() <= GROUND_SPAN_IN;
+        boolean roomFight = room.kind().confined() && target != null && target.isAlive() && standsOnFloor(target);
+        boolean open = !room.kind().confined() || room.span() > GROUND_SPAN_OUT && !roomFight;
+        boolean want = ground() ? !(open || ownerFast || targetUp) : (low || roomFight) && !ownerFast && !targetUp;
+        if (want == ground()) { groundVote = 0; return; }
+        if (++groundVote >= GROUND_VOTE) setGround(want);
+    }
+
+    /** One tick of gravity on foot (the Wingman has no vanilla gravity: its travel only moves it by its velocity). */
+    private void groundPhysics() {
+        Vec3 v = getDeltaMovement();
+        setDeltaMovement(v.x, Math.max(-2.0, (v.y - GRAVITY) * 0.98), v.z);
+    }
+
+    /** The place on the floor under {@code post} (the formation place is at shoulder height), or at the owner's feet level. */
+    private Vec3 groundPost(Vec3 post, @Nullable ServerPlayer player) {
+        // a post inside a block (an order point under a low ceiling): down to the first place with room for the body
+        BlockPos at = BlockPos.containing(post.x, post.y + 0.5, post.z);
+        for (int i = 0; i < 8 && !(free(level(), at) && free(level(), at.above())); i++) at = at.below();
+        Vec3 floor = findLandingColumn(new Vec3(post.x, Math.min(post.y + 0.5, at.getY() + 0.5), post.z));
+        if (floor != null) return floor;
+        return new Vec3(post.x, player != null ? Math.min(post.y, player.getY()) : post.y, post.z);
+    }
+
+    private void touchDownOnFoot(ServerPlayer player) {
+        setDeltaMovement(Vec3.ZERO);
+        entityData.set(DATA_LANDED, true);
+        holdLanded(player);
+    }
+
+    /**
+     * The steer on foot: the horizontal velocity to {@code goal} at a walk (a run in a fight or when far), the vertical one
+     * left to gravity; a waypoint above the feet, near, is reached with a jump (up to 1.3 blocks) or a thruster hop (higher),
+     * and in a shaft the thrusters lift the Wingman on while the way goes up. A target farther than {@link #SKATE_FROM} blocks
+     * is closed in on with the thruster skate ({@link #GROUND_SKATE}), then it runs.
+     */
+    private void steerOnFoot(Vec3 goal, double speed, @Nullable ServerPlayer player, double left) {
+        Vec3 to = goal.subtract(position());
+        Vec3 flat = new Vec3(to.x, 0, to.z);
+        double dist = flat.length();
+        double far = Math.max(left, dist);
+        double top = target != null && speed >= COMBAT - 1.0E-3 && far > SKATE_FROM ? GROUND_SKATE
+            : speed >= COMBAT - 1.0E-3 || far > 6 ? GROUND_RUN : GROUND_WALK;
+        double brake = Math.max(left, dist);
+        Vec3 want = dist < 1.0E-3 ? Vec3.ZERO : flat.scale(Math.min(top, brake * 0.3) / dist);
+        Vec3 push = separation();
+        want = want.add(push.x, 0, push.z);
+        Vec3 v = getDeltaMovement();
+        double ax = want.x - v.x, az = want.z - v.z, a = Math.sqrt(ax * ax + az * az);
+        if (a > GROUND_ACCEL) { ax *= GROUND_ACCEL / a; az *= GROUND_ACCEL / a; }
+        double vy = v.y;
+        // a waypoint's height is where the way goes; a plain goal (a target, a post) counts by the floor under it
+        double rise = left >= 0 ? to.y : groundPost(goal, null).y - getY();
+        if (onGround() && hopCooldown == 0 && (rise > 1.2 && dist < 2.5 || horizontalCollision && rise > 0.6)) vy = hop(rise);
+        else if (!onGround() && rise > 0.4 && dist < 2.5 && vy < 0.2) {
+            // a shaft or a ledge out of a jump's reach: the thrusters carry it on up
+            vy = Math.max(vy, 0.42);
+            if (hopCooldown == 0) hopped(true);
+        }
+        Vec3 nv = new Vec3(v.x + ax, vy, v.z + az);
+        setDeltaMovement(nv);
+        faceFlight(new Vec3(nv.x, 0, nv.z), player);
+    }
+
+    /** The upward speed of a jump or a thruster hop to {@code rise} blocks above the feet (and the sound, the counter). */
+    private double hop(double rise) {
+        double h = Mth.clamp(rise + 0.5, 1.0, 7.5);
+        boolean thrust = rise > 1.3;
+        hopped(thrust);
+        return Math.sqrt(2 * GRAVITY * h) * 1.08;
+    }
+
+    private void hopped(boolean thrust) {
+        hopCooldown = 10;
+        entityData.set(DATA_HOPS, ((entityData.get(DATA_HOPS) >> 1) + 1 << 1) | (thrust ? 1 : 0));
+        if (thrust) {
+            level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_BOOST.get(), SoundSource.NEUTRAL, 0.6F, 1.15F);
+            if (level() instanceof ServerLevel world) world.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.05, getZ(), 6, 0.2, 0.02, 0.2, 0.03);
+        }
     }
 
     // ---- modes
@@ -1448,6 +1610,7 @@ public class WingmanEntity extends Mob {
             double spread = slotCount > 1 ? ORDER_SPREAD : 0;
             post = anchor.add(Math.cos(a) * spread, ORDER_HEIGHT, Math.sin(a) * spread);
         }
+        if (ground()) post = groundPost(post, player);   // 0.1.11.226 (G3): on foot the post is on the floor
         boolean travelling = order == WingmanOrder.MOVE && target == null && position().distanceToSqr(post) > 6 * 6;
         if (!travelling && (tickCount % 5 == 0 || !guards(target, player, anchor, radius + 6))) {
             target = WingmanTactics.select(this, player, anchor, radius, guards(target, player, anchor, radius + 6) ? target : null,
@@ -1612,7 +1775,7 @@ public class WingmanEntity extends Mob {
         }
         if (retreatTicks > 0) {                                   // peel off: sideways and up, then return
             retreatTicks--;
-            Vec3 side = sideOf(enemy).scale(3.2).add(0, riseAt(aim, 1.6), 0);   // 0.1.11.221: not into the ceiling
+            Vec3 side = sideOf(enemy).scale(3.2).add(0, ground() ? 0 : riseAt(aim, 1.6), 0);   // 0.1.11.221: not into the ceiling; 0.1.11.226: along the floor on foot
             steer(aim.add(side), COMBAT, player);
             return;
         }
@@ -2076,7 +2239,9 @@ public class WingmanEntity extends Mob {
         }
         // 0.1.9.1: tactical firing station (line of fire, flank, height, owner clear), re-planned every 8 ticks
         if (station == null || --stationTicks <= 0 || blockedTicks > 10) {
-            station = WingmanTactics.station(this, enemy, player, band, blockedTicks > 10 ? null : station);
+            station = WingmanTactics.station(this, enemy, player, band, blockedTicks > 10 ? null : station,
+                ground() ? WingmanTactics.HEIGHTS_FOOT : WingmanTactics.HEIGHTS_AIR);
+            if (ground()) station = groundPost(station, player);   // 0.1.11.226 (G3, decision seven A): stand on the floor
             stationTicks = STATION_TICKS;
             if (blockedTicks > 10) blockedTicks = 0;
         }
@@ -2315,6 +2480,7 @@ public class WingmanEntity extends Mob {
      * the path when {@code goal} is a waypoint (the Wingman brakes for the end of the path, not for each waypoint), or -1.
      */
     private void steerTo(Vec3 goal, double speed, @Nullable ServerPlayer player, double left) {
+        if (ground()) { steerOnFoot(goal, speed, player, left); return; }   // 0.1.11.226 (G3)
         Vec3 to = goal.subtract(position());
         double dist = to.length();
         double brake = left > dist ? left : dist;
@@ -2369,6 +2535,7 @@ public class WingmanEntity extends Mob {
      */
     private void boost(Vec3 dir) {
         if (boostCooldown > 0) return;
+        if (ground() && onGround()) { groundSkate(dir, 0.9, 6); return; }   // 0.1.11.226 (G3): on foot a thruster skate
         Vec3 flat = new Vec3(dir.x, 0, dir.z);
         if (flat.lengthSqr() < 1.0E-4) flat = new Vec3(strafeSign, 0, 0);
         // 0.1.11.221 (G1): the upward kick only as far as the room above allows (it hit the ceiling in a cave)
@@ -2817,7 +2984,42 @@ public class WingmanEntity extends Mob {
             if (seenSlash != Integer.MIN_VALUE) { slashStart = tickCount; slashKind = s & 3; }
             seenSlash = s;
         }
+        // 0.1.11.226 (G3): on foot: the hops, the touch-downs (and how hard), the speed on the floor
+        int hopsNow = entityData.get(DATA_HOPS);
+        if (hopsNow != seenHops) {
+            if (seenHops != Integer.MIN_VALUE) { hopAt = tickCount; hopThrust = (hopsNow & 1) != 0; }
+            seenHops = hopsNow;
+        }
+        boolean onFloor = onGround();
+        double vy = getY() - yo;
+        if (!onFloor) fallSpeed = Math.max(fallSpeed, -vy);
+        if (onFloor && !wasOnFloor) { touchAt = tickCount; heavyTouch = fallSpeed > HEAVY_TOUCH; fallSpeed = 0; }
+        if (onFloor) fallSpeed = 0;
+        wasOnFloor = onFloor;
+        footSpeed += ((float) Math.sqrt((getX() - xo) * (getX() - xo) + (getZ() - zo) * (getZ() - zo)) - footSpeed) * 0.5F;
     }
+
+    // 0.1.11.226 (G3): the client's view of the ground form, for the animations
+    private int seenHops = Integer.MIN_VALUE, hopAt = -1000, touchAt = -1000;
+    private boolean hopThrust, wasOnFloor = true, heavyTouch;
+    private double fallSpeed;
+    private float footSpeed;
+    /** Falling faster than this (blocks per tick) makes a touch-down a heavy one. */
+    static final double HEAVY_TOUCH = 0.6;
+
+    /** Ticks since the last hop (client). */
+    public float sinceHop(float partialTick) { return tickCount - hopAt + partialTick; }
+
+    /** True when the last hop used the thrusters (client). */
+    public boolean hopThrust() { return hopThrust; }
+
+    /** Ticks since it last touched the floor (client), and whether that touch-down was heavy. */
+    public float sinceTouch(float partialTick) { return tickCount - touchAt + partialTick; }
+
+    public boolean heavyTouch() { return heavyTouch; }
+
+    /** Horizontal speed on foot, smoothed (client; blocks per tick). */
+    public float footSpeed() { return footSpeed; }
 
     /** Client: ticks since the last shot, with the partial tick (0.1.11.46: the draw, the reload, the throw). */
     public float shotAge(float partialTick) { return tickCount - lastShot + partialTick; }

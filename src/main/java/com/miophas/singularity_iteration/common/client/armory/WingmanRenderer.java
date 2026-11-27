@@ -81,6 +81,7 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
                 pose.translate(0, -0.7F, 0);
             }
         }
+        if (entity.ground() && entity.onGround()) return;   // 0.1.11.226 (G3): on foot no flight tilt
         float[] lean = entity.lean(partialTick);
         // 0.1.11.58 (P6): a badly damaged suit flies unsteadily
         float[] shake = entity.damageShake(partialTick);
@@ -134,11 +135,13 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             // no walking swing and no vanilla attack pose: both are replaced below
             float attack = attackTime;
             attackTime = 0;
-            super.setupAnim(entity, 0, 0, age, netHeadYaw, headPitch);
+            // 0.1.11.226 (G3): on foot the legs keep the vanilla walking swing (the keyframe walk replaces it with GeckoLib)
+            boolean foot = entity.ground() && entity.onGround();
+            super.setupAnim(entity, foot ? limbSwing : 0, foot ? limbSwingAmount : 0, age, netHeadYaw, headPitch);
             attackTime = attack;
             float partial = Mth.clamp(age - entity.tickCount, 0, 1);
-            float f = flightFactor(entity, partial);
-            float landed = entity.landBlend(partial);
+            float f = entity.ground() ? 0 : flightFactor(entity, partial);
+            float landed = entity.ground() ? 1 : entity.landBlend(partial);
             float air = 1 - landed;
             float sway = Mth.sin(age * 0.08F) * 0.05F * air;
             boolean leftHanded = entity.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
@@ -197,6 +200,7 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             leftArm.z = -Mth.sin(twist) * 5.0F;
             leftArm.x = Mth.cos(twist) * 5.0F;
             // 0.1.11.45 (M1): the legs trail with speed, spread in a slide or bank, tuck in a boost; straight when landed
+            float[] vanillaLegs = {rightLeg.xRot, rightLeg.zRot, leftLeg.xRot, leftLeg.zRot};
             float[] legs = WingmanPose.proneLegs(WingmanPose.legs(f, air, sway, entity.lean(partial)[1], entity.boostAge(partial)),
                 entity.proneBlend(partial));
             rightLeg.xRot = legs[WingmanPose.LEG_RX];
@@ -205,6 +209,10 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             leftLeg.yRot = 0;
             rightLeg.zRot = legs[WingmanPose.LEG_RZ];
             leftLeg.zRot = legs[WingmanPose.LEG_LZ];
+            if (foot) {   // 0.1.11.226 (G3): the walking swing, not the flight legs
+                rightLeg.xRot = vanillaLegs[0]; rightLeg.zRot = vanillaLegs[1];
+                leftLeg.xRot = vanillaLegs[2]; leftLeg.zRot = vanillaLegs[3];
+            }
             // 0.1.11.48 (M3): with a SlashBlade blade, the arms and legs follow SlashBlade's own player motion of the combo
             // (the blade layer draws the blade from the same combo); without the bridge the key frames above stay
             if (hold == WingmanPose.Hold.BLADE) {
@@ -226,7 +234,9 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             }
             // 0.1.11.225 (A0): with GeckoLib, a Wingman on the ground plays the AN1 keyframes (stand, look round, landing, hits);
             // they replace the six parts, and the head still looks where the Wingman looks
-            if (WingmanKeyframes.pose(entity, this, partial)) {
+            // 0.1.11.226 (G3): on foot in a fight (a target, a swing, a recent shot) the arms keep their weapon poses: the legs only
+            boolean upper = !(entity.ground() && (combat > 0.3F || attack > 0 || shotAge < 20));
+            if (WingmanKeyframes.pose(entity, this, partial, upper) && upper) {
                 head.yRot += netHeadYaw * Mth.DEG_TO_RAD;
                 head.xRot += headPitch * Mth.DEG_TO_RAD;
             }

@@ -205,13 +205,21 @@ public final class WingmanTactics {
      * best of 36 candidates, or {@code previous} when it still scores within 8 points of the best
      * (no jitter between equal places).
      */
+    /** 0.1.11.226 (G3): station heights above the target's middle: in flight (indoor-friendly), and on foot (the Wingman stands on the floor below). */
+    static final double[] HEIGHTS_AIR = {0.8, 2.2, 4.5}, HEIGHTS_FOOT = {0, 0, 0};
+
     static Vec3 station(WingmanEntity self, LivingEntity target, ServerPlayer owner, double[] band, @Nullable Vec3 previous) {
+        return station(self, target, owner, band, previous, HEIGHTS_AIR);
+    }
+
+    /** 0.1.11.226: the same with the station heights given ({@link #HEIGHTS_AIR}, {@link #HEIGHTS_FOOT}). */
+    static Vec3 station(WingmanEntity self, LivingEntity target, ServerPlayer owner, double[] band, @Nullable Vec3 previous, double[] heights) {
         Level level = self.level();
         Vec3 c = target.position().add(0, target.getBbHeight() * 0.6, 0);
         double mid = (band[0] + band[1]) * 0.5;
         double[] radii = {band[0] + 1.0, mid, band[1] - 1.0};
         // Indoor-friendly heights (0.8, 2.2, 4.5) so ranged Wingmen find clear firing stations in 3-4 block caves/rooms too
-        double[] heights = {0.8, 2.2, 4.5};
+        // (0.1.11.226: on foot all at the target's middle, and the Wingman stands on the floor below)
         Vec3 fromOwner = new Vec3(c.x - owner.getX(), 0, c.z - owner.getZ());
         Vec3 flank = fromOwner.lengthSqr() < 1.0E-4 ? Vec3.ZERO : fromOwner.normalize();
         Vec3[] points = new Vec3[36], dirs = new Vec3[36];

@@ -58,8 +58,14 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
         return ONCE.computeIfAbsent(name, n -> RawAnimation.begin().thenPlay(WingmanKeyframeChoice.PREFIX + n));
     }
 
+    /** Animations that loop by themselves (0.1.11.226: the gaits and the air). */
+    private static final java.util.Set<String> LOOPS = java.util.Set.of("idle_stand", "walk", "run", "skate", "air_rise", "air_fall", "cover_crouch");
+
     private static RawAnimation base(String name) {
         // the landing plays once into the stand; the idles loop (idle_look and idle_check play once, then stand)
+        if (LOOPS.contains(name) && !name.equals("idle_stand")) return LOOP.computeIfAbsent(name, n -> RawAnimation.begin().thenLoop(WingmanKeyframeChoice.PREFIX + n));
+        if (name.equals("thrust_hop") || name.equals("jump_takeoff"))   // the take-off rises into the air pose
+            return LOOP.computeIfAbsent(name, n -> RawAnimation.begin().thenPlay(WingmanKeyframeChoice.PREFIX + n).thenLoop(WingmanKeyframeChoice.PREFIX + "air_rise"));
         if (name.equals(WingmanKeyframeChoice.FORCED)) return LOOP.computeIfAbsent(name, n -> RawAnimation.begin().thenPlayAndHold(WingmanKeyframeChoice.PREFIX + n));
         return LOOP.computeIfAbsent(name, n -> n.equals("idle_stand") ? RawAnimation.begin().thenLoop(WingmanKeyframeChoice.PREFIX + n)
             : RawAnimation.begin().thenPlay(WingmanKeyframeChoice.PREFIX + n).thenLoop(WingmanKeyframeChoice.PREFIX + "idle_stand"));
@@ -83,7 +89,15 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
 
         private PlayState base(AnimationState<Animatable> state) {
             if (!(state.getData(DataTickets.ENTITY) instanceof WingmanEntity w)) return PlayState.STOP;
-            String name = WingmanKeyframeChoice.base(w.landed(), w.sinceLanding(state.getPartialTick()), w.getId(), w.tickCount);
+            float pt = state.getPartialTick();
+            if (w.ground() && !w.landed()) {   // 0.1.11.226 (G3): on foot
+                WingmanKeyframeChoice.Pick pick = WingmanKeyframeChoice.onFoot(w.onGround(), w.footSpeed(), w.getY() - w.yo, w.sinceHop(pt), w.hopThrust(),
+                    w.sinceTouch(pt), w.heavyTouch(), w.getId(), w.tickCount);
+                state.setControllerSpeed(pick.speed());
+                return state.setAndContinue(GeckoWingman.base(pick.name()));
+            }
+            state.setControllerSpeed(1);
+            String name = WingmanKeyframeChoice.base(w.landed(), w.sinceLanding(pt), w.getId(), w.tickCount);
             if (name == null) return PlayState.STOP;
             return state.setAndContinue(GeckoWingman.base(name));
         }
@@ -106,7 +120,7 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
     }
 
     @Override
-    public boolean pose(WingmanEntity entity, HumanoidModel<?> target, float partialTick) {
+    public boolean pose(WingmanEntity entity, HumanoidModel<?> target, float partialTick, boolean upper) {
         if (!WingmanKeyframes.active(entity, partialTick)) return false;
         model.getBakedModel(MODEL);
         AnimationState<Animatable> state = new AnimationState<>(animatable, 0, 0, partialTick, false);
@@ -124,12 +138,15 @@ public final class GeckoWingman implements WingmanKeyframes.Driver {
             px[b][1] = bone.getPosY();
             px[b][2] = bone.getPosZ();
         }
+        if (!upper) { deg[WingmanRig.ROOT] = new float[3]; px[WingmanRig.ROOT] = new float[3]; }   // the legs alone: no whole-body offset
         float[][][] local = WingmanRig.fromAuthored(deg, px);
         WingmanRig.Part[] parts = WingmanRig.flatten(local[0], local[1]);
-        set(target.body, parts[WingmanRig.BODY]);
-        set(target.head, parts[WingmanRig.HEAD]);
-        set(target.rightArm, parts[WingmanRig.RIGHT_ARM]);
-        set(target.leftArm, parts[WingmanRig.LEFT_ARM]);
+        if (upper) {
+            set(target.body, parts[WingmanRig.BODY]);
+            set(target.head, parts[WingmanRig.HEAD]);
+            set(target.rightArm, parts[WingmanRig.RIGHT_ARM]);
+            set(target.leftArm, parts[WingmanRig.LEFT_ARM]);
+        }
         set(target.rightLeg, parts[WingmanRig.RIGHT_LEG]);
         set(target.leftLeg, parts[WingmanRig.LEFT_LEG]);
         return true;

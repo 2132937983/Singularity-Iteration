@@ -45,7 +45,9 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * Wingman lingered there until G2), and in the cavern and in the open the first hit comes within 80 ticks. 0.1.11.222 (G2):
  * the tunnel is back to a tenth, and the Wingman flies up the shaft and hits the hunter within 150 ticks.
  * 0.1.11.223 (G4): in the two tunnels the husk through the rock is no target and the one down the tunnel is hit within 60
- * ticks; at the dead end the Wingman does not wait at the glass. The WingmanEntity is reached by
+ * ticks; at the dead end the Wingman does not wait at the glass.
+ * 0.1.11.226 (G3): in the 3-high tunnels the Wingman goes on foot for at least two thirds of the run with its feet on the
+ * floor (up the shaft on its thrusters), and never in the open. The WingmanEntity is reached by
  * reflection (the addon module may only use the core API).
  */
 @GameTestHolder(CoreExampleMod.ID)
@@ -104,7 +106,7 @@ public final class Round111220GameTests {
         final List<Zombie> enemies = new ArrayList<>();
         /** Targets that count as wrong while a right one is alive (behind rock). */
         final List<Zombie> wrong = new ArrayList<>();
-        int ticks, ceiling, stuck, upward, wrongTicks, firstHit = -1, airSamples;
+        int ticks, ceiling, stuck, upward, wrongTicks, firstHit = -1, airSamples, groundTicks;
         double airBelow;
         final float[] health = new float[8];
         final int[] hurtAt = {-1, -1, -1, -1, -1, -1, -1, -1};
@@ -131,6 +133,7 @@ public final class Round111220GameTests {
             ServerLevel level = h.getLevel();
             AABB box = wingman.getBoundingBox();
             if (!level.noCollision(wingman, box.move(0, 0.06, 0))) ceiling++;
+            if ((Boolean) Round33GameTests.call(wingman, "ground")) groundTicks++;   // 0.1.11.226 (G3): on foot
             Object probe = Round33GameTests.call(wingman, "navProbe");
             if ((Boolean) Round33GameTests.call(probe, "upward")) upward++;
             LivingEntity target = (LivingEntity) Round33GameTests.call(wingman, "currentTarget");
@@ -159,8 +162,8 @@ public final class Round111220GameTests {
             StringBuilder hits = new StringBuilder();
             for (int i = 0; i < enemies.size(); i++) hits.append(i == 0 ? "" : ",").append(hurtAt[i]).append(hurtAt[i] < 0 ? "" : ":" + cause[i]);
             Vec3 at = wingman.position().subtract(Vec3.atLowerCornerOf(origin));
-            return String.format("scene=%s ticks=%d ceiling=%d stuck=%d upward=%d wrongTarget=%d firstHit=%d kills=%d/%d airBelow=%.2f hits=[%s] end=(%.1f,%.1f,%.1f) nav=%s",
-                scene, ticks, ceiling, stuck, upward, wrongTicks, firstHit, kills(), enemies.size(), airSamples == 0 ? 0 : airBelow / airSamples, hits,
+            return String.format("scene=%s ticks=%d ceiling=%d stuck=%d upward=%d wrongTarget=%d firstHit=%d kills=%d/%d airBelow=%.2f ground=%d hits=[%s] end=(%.1f,%.1f,%.1f) nav=%s",
+                scene, ticks, ceiling, stuck, upward, wrongTicks, firstHit, kills(), enemies.size(), airSamples == 0 ? 0 : airBelow / airSamples, groundTicks, hits,
                 at.x, at.y, at.z, navCounts());
         }
 
@@ -212,6 +215,12 @@ public final class Round111220GameTests {
         }
     }
 
+    /** 0.1.11.226 (G3): in a 3-high tunnel the Wingman goes on foot (most of the run) with its feet on the floor. */
+    static void onFoot(Run r, double air) {
+        r.limit(r.groundTicks >= TICKS * 2 / 3, "on foot only " + r.groundTicks + " ticks in a 3-high tunnel");
+        r.limit(r.airBelow / Math.max(1, r.airSamples) <= air, "the feet are " + r.airBelow / Math.max(1, r.airSamples) + " above the floor on average");
+    }
+
     /** 0.1.11.221 (G1): the head against the ceiling at most a tenth of the run. */
     static void notOnTheCeiling(Run r) { underTheCeiling(r, TICKS / 10); }
 
@@ -242,7 +251,11 @@ public final class Round111220GameTests {
         carve(h, 14, 10, 4, 35, 12, 6);
         fill(h, 15, 4, 4, 15, 4, 6, Blocks.STONE.defaultBlockState());
         Run run = new Run(h, "tunnel", OWNER, WINGMAN);
-        run.limits = r -> { notOnTheCeiling(r); r.limit(r.firstHit > 0 && r.firstHit <= 150, "the hunter up the shaft is hit at tick " + r.firstHit); };   // 0.1.11.222 (G2): up the shaft
+        run.limits = r -> {
+            notOnTheCeiling(r);
+            r.limit(r.firstHit > 0 && r.firstHit <= 150, "the hunter up the shaft is hit at tick " + r.firstHit);
+            onFoot(r, 1.2);   // 0.1.11.226 (G3): on foot, the thrusters up the shaft
+        };   // 0.1.11.222 (G2): up the shaft
         run.add(zombie(h, 18.5, 10, 5.5, run.owner));
         play(h, run);
     }
@@ -265,6 +278,7 @@ public final class Round111220GameTests {
             r.limit(r.wrongTicks <= 10, "the Wingman goes for the husk through the rock for " + r.wrongTicks + " ticks");
             r.limit(r.hurtAt[0] < 0, "the husk in the other tunnel is attacked");
             r.limit(r.hurtAt[1] > 0 && r.hurtAt[1] <= 60, "the husk down the tunnel is hit at tick " + r.hurtAt[1]);
+            onFoot(r, 0.3);   // 0.1.11.226 (G3)
         };
         run.wrong.add(run.add(zombie(h, 9.5, 9, 5.5, null)));
         run.add(zombie(h, 26.5, 2, 5.5, null));
@@ -300,7 +314,7 @@ public final class Round111220GameTests {
         carve(h, 22, 2, 4, 26, 4, 6);
         Run run = new Run(h, "deadend", OWNER, WINGMAN);
         // 0.1.11.223 (G4, decision five A): a hunter behind glass, unseen and without a path, is no target: no time stuck at the glass
-        run.limits = r -> { notOnTheCeiling(r); r.limit(r.stuck <= 20, "the Wingman is stuck at the glass for " + r.stuck + " ticks"); };
+        run.limits = r -> { notOnTheCeiling(r); r.limit(r.stuck <= 20, "the Wingman is stuck at the glass for " + r.stuck + " ticks"); onFoot(r, 0.3); };
         run.add(zombie(h, 24.5, 2, 5.5, run.owner));
         play(h, run);
     }
@@ -310,7 +324,7 @@ public final class Round111220GameTests {
     public static void openGround(GameTestHelper h) {
         shell(h, false);
         Run run = new Run(h, "open", OWNER, WINGMAN);
-        run.limits = r -> { notOnTheCeiling(r); hitsSoon(r); };
+        run.limits = r -> { notOnTheCeiling(r); hitsSoon(r); r.limit(r.groundTicks == 0, "on foot in the open for " + r.groundTicks + " ticks"); };
         run.add(zombie(h, 24.5, 2, 5.5, run.owner));
         play(h, run);
     }

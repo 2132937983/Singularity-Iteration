@@ -85,6 +85,26 @@ public final class WingmanNav {
         return lostGoal != null && w.tickCount - lostAt < UNREACHABLE_TICKS && lostGoal.distToCenterSqr(goal) < 2.5 * 2.5;
     }
 
+    /** 0.1.11.224 (G5): extra path cost of the cells round a stall, and for how many ticks. */
+    public static final double STALL_COST = 6;
+    public static final int STALL_COST_TICKS = 200;
+    private final it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap penalties = new it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap();
+
+    /** 0.1.11.224 (G5): the cells round {@code at} cost {@link #STALL_COST} more for {@link #STALL_COST_TICKS} ticks; the path is searched again. */
+    void penalize(BlockPos at) {
+        long until = w.level().getGameTime() + STALL_COST_TICKS;
+        for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++)
+            penalties.put(BlockPos.asLong(at.getX() + dx, at.getY() + dy, at.getZ() + dz), until);
+        reset();
+        lostGoal = null;
+    }
+
+    private double penalty(long cell) {
+        if (penalties.isEmpty()) return 0;
+        long until = penalties.get(cell);
+        return until > w.level().getGameTime() ? STALL_COST : 0;
+    }
+
     /** Drops the path and the search (a new order, a teleport). */
     void reset() {
         path = null;
@@ -123,7 +143,9 @@ public final class WingmanNav {
         if (stale && !unreachable(goal)) {
             if (search == null || search.goal.distSqr(goalCell) > GOAL_SLACK * GOAL_SLACK) {
                 double heightCost = WingmanSpace.of(w).kind().confined() ? HEIGHT_COST : 0;
-                search = WingmanPathing.search(level, w, goal, heightCost);
+                long now0 = level.getGameTime();
+                penalties.long2LongEntrySet().removeIf(en -> en.getLongValue() <= now0);
+                search = WingmanPathing.search(level, w, goal, heightCost, this::penalty);
                 searches++;
                 if (search == null) { lose(goalCell); return goal; }
             }

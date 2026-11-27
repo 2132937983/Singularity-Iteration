@@ -76,6 +76,25 @@ public final class WingmanPerception {
     /** Forgets {@code e} (searched at its last place and not found). */
     void forget(LivingEntity e) { contacts.remove(e.getId()); }
 
+    /** 0.1.11.224 (G5): creatures given up after a stall, and the game time until which they are no target. */
+    private final it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap banned = new it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap();
+    public static final int BAN_TICKS = 200;
+
+    /** 0.1.11.224 (G5): {@code e} is no target for {@link #BAN_TICKS} ticks (the Wingman stalled on the way to it). */
+    void ban(LivingEntity e) {
+        banned.put(e.getId(), w.level().getGameTime() + BAN_TICKS);
+        forget(e);
+    }
+
+    /** True while {@code e} is given up. */
+    public boolean banned(LivingEntity e) {
+        if (banned.isEmpty()) return false;
+        long until = banned.get(e.getId());
+        if (until > w.level().getGameTime()) return true;
+        if (until != 0) banned.remove(e.getId());
+        return false;
+    }
+
     /** A line from {@code eye} to the eyes, the middle or the feet of {@code e} meets no block. */
     static boolean sees(Level level, Vec3 eye, LivingEntity e, LivingEntity from) {
         Vec3[] points = {e.getEyePosition(), e.position().add(0, e.getBbHeight() * 0.5, 0), e.position().add(0, 0.2, 0)};

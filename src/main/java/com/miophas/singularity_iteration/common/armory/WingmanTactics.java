@@ -177,7 +177,7 @@ public final class WingmanTactics {
         double bestScore = Double.NEGATIVE_INFINITY;
         for (LivingEntity e : self.level().getEntitiesOfClass(LivingEntity.class, new AABB(around, around).inflate(range),
                 e -> e instanceof Mob && e.isAlive())) {
-            if (!valid.test(e)) continue;
+            if (!valid.test(e) || known.banned(e)) continue;
             WingmanPerception.Contact c = known.contact(e);
             if (c == null || known.rejects(e)) continue;
             double travel = known.travel(e);
@@ -190,7 +190,8 @@ public final class WingmanTactics {
         }
         // the owner's call may be outside the scan box (a long shot): keep it
         LivingEntity called = owner.getLastHurtMob();
-        if (called instanceof Enemy && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called) && called != best) {
+        if (called instanceof Enemy && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called) && called != best
+                && !known.banned(called)) {
             double s = withSight(self, owner, called, threatBeforeSight(self, owner, called, current, guard, squad));
             if (s > bestScore) best = called;
         }

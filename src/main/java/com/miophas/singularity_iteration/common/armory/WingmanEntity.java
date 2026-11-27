@@ -256,6 +256,12 @@ public class WingmanEntity extends Mob {
     /** 0.1.11.223: the perception, for the cave GameTests. */
     public WingmanPerception perception() { return perception; }
 
+    /** 0.1.11.224 (G5): the stall monitor of every steer. Not saved. */
+    final WingmanStuck stuck = new WingmanStuck();
+
+    /** 0.1.11.224: the stall monitor, for the cave GameTests. */
+    public WingmanStuck stuck() { return stuck; }
+
     /**
      * 0.1.11.221 (G1): the velocity after a tick into a wall or a ceiling. Before, any wall hit added 0.3 upwards, and nothing
      * stopped the climb at the ceiling, so in a cave the Wingman pressed against the roof. Now it climbs a wall only when that
@@ -694,7 +700,11 @@ public class WingmanEntity extends Mob {
     private void trackStuck(double dist, ServerPlayer player) {
         if (dist <= STUCK_DISTANCE || speedStarved) { stuckTicks = 0; stuckBest = Double.MAX_VALUE; return; }
         if (dist < stuckBest - 0.5) { stuckBest = dist; stuckTicks = 0; }
-        else if (++stuckTicks >= STUCK_TICKS) catchUp(player);
+        else if (++stuckTicks >= STUCK_TICKS) {
+            // 0.1.11.224 (decision six A): the jump only out of the owner's sight; in sight it searches its way again
+            if (!player.hasLineOfSight(this)) catchUp(player);
+            else { stuckTicks = 0; stuckBest = dist; nav.penalize(blockPosition()); }
+        }
     }
 
     /** Ground below {@code post} within 8 blocks with room for the suit, or null (water, lava, blocked, too deep). */
@@ -2271,7 +2281,31 @@ public class WingmanEntity extends Mob {
      */
     private void steer(Vec3 goal, double speed, @Nullable ServerPlayer player) {
         Vec3 aim = nav.aim(goal);
-        steerTo(aim, speed, player, aim == goal ? -1 : nav.remaining(goal));
+        double left = aim == goal ? -1 : nav.remaining(goal);
+        // 0.1.11.224 (G5): the stall monitor of every steer (before, only the formation flight had one)
+        unstick(stuck.track(position(), goal, left < 0 ? position().distanceTo(goal) : left), player);
+        Vec3 back = stuck.backOff();
+        if (back != null) { steerTo(back, speed, player); return; }
+        steerTo(aim, speed, player, left);
+    }
+
+    /**
+     * 0.1.11.224 (G5): the steps of a stall ({@link WingmanStuck}): search again round the place, back off, give up the
+     * target (no target for 10 s) or an order whose point cannot be reached, and last (decision six A) the jump back to the
+     * owner when the owner does not see this Wingman.
+     */
+    private void unstick(WingmanStuck.Action action, @Nullable ServerPlayer player) {
+        switch (action) {
+            case REPLAN -> nav.penalize(blockPosition());
+            case GIVE_UP -> {
+                if (target != null) { perception.ban(target); target = null; }
+                else if (order == WingmanOrder.MOVE || order == WingmanOrder.HOLD || order == WingmanOrder.SUPPRESS) clearOrder();
+            }
+            case RECALL -> {
+                if (player != null && player.level() == level() && !player.hasLineOfSight(this)) catchUp(player);
+            }
+            default -> { }
+        }
     }
 
     private void steerTo(Vec3 goal, double speed, @Nullable ServerPlayer player) { steerTo(goal, speed, player, -1); }
@@ -2383,6 +2417,7 @@ public class WingmanEntity extends Mob {
         }
         teleportTo(at.x, at.y, at.z);
         nav.reset();   // 0.1.11.222: the old path starts somewhere else
+        stuck.reset();
         setDeltaMovement(ownerVelocity);   // 0.1.11.50: it arrives at the owner's speed (it stopped dead before and fell behind again)
         stuckTicks = 0;
         stuckBest = Double.MAX_VALUE;

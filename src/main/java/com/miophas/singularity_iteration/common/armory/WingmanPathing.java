@@ -158,6 +158,8 @@ public final class WingmanPathing {
         final Cells cells;
         final BlockPos start, goal;
         final double heightCost;
+        /** 0.1.11.224 (G5): extra cost of a cell (the cells round a stall); zero for none. */
+        final java.util.function.LongToDoubleFunction penalty;
         private final PriorityQueue<Node> open = new PriorityQueue<>();
         private final Long2ObjectOpenHashMap<Node> nodes = new Long2ObjectOpenHashMap<>();
         private int expanded;
@@ -165,11 +167,12 @@ public final class WingmanPathing {
         @Nullable private List<BlockPos> path;
         private double cost;
 
-        Search(Cells cells, BlockPos start, BlockPos goal, double heightCost) {
+        Search(Cells cells, BlockPos start, BlockPos goal, double heightCost, java.util.function.LongToDoubleFunction penalty) {
             this.cells = cells;
             this.start = start;
             this.goal = goal;
             this.heightCost = heightCost;
+            this.penalty = penalty;
             if (!cells.fits(start.getX(), start.getY(), start.getZ()) || !cells.fits(goal.getX(), goal.getY(), goal.getZ())) {
                 status = Status.FAILED;
                 return;
@@ -215,7 +218,8 @@ public final class WingmanPathing {
                     long k = key(x, y, z);
                     Node m = nodes.get(k);
                     if (m != null && m.closed) continue;
-                    double g = n.g + Math.sqrt(axes) + heightCost * cells.floorGap(x, y, z) + (cells.water(x, y, z) ? WATER_COST : 0);
+                    double g = n.g + Math.sqrt(axes) + heightCost * cells.floorGap(x, y, z) + (cells.water(x, y, z) ? WATER_COST : 0)
+                        + penalty.applyAsDouble(k);
                     if (m == null) {
                         m = new Node(x, y, z);
                         nodes.put(k, m);
@@ -242,11 +246,17 @@ public final class WingmanPathing {
     /** A search for {@code who} from its place to the cell near {@code goal}, or null when either end has no fitting cell. */
     @Nullable
     public static Search search(Level level, Entity who, Vec3 goal, double heightCost) {
+        return search(level, who, goal, heightCost, k -> 0);
+    }
+
+    /** The same, with an extra cost for some cells (0.1.11.224: the cells round a stall). */
+    @Nullable
+    public static Search search(Level level, Entity who, Vec3 goal, double heightCost, java.util.function.LongToDoubleFunction penalty) {
         Cells cells = new Cells(level, who);
         BlockPos from = cellNear(cells, who.position(), 1);
         BlockPos to = cellNear(cells, goal, 2);
         if (from == null || to == null) return null;
-        return new Search(cells, from, to, heightCost);
+        return new Search(cells, from, to, heightCost, penalty);
     }
 
     /** The feet places along a found path (one per cell). */

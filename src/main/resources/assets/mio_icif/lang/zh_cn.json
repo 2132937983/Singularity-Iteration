@@ -6244,5 +6244,11 @@
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "地磁",
   "item.mio_icif.item_tool_meter.probe_switched": "探头：%s",
   "item.mio_icif.item_tool_meter.tooltip_probe": "探头：%s（G 键切换）",
-  "tooltip.mio_icif.passive_device.worn": "戴在饰品栏（%s）时生效"
+  "tooltip.mio_icif.passive_device.worn": "戴在饰品栏（%s）时生效",
+  "item.mio_icif.nano_blade": "纳米刃",
+  "item.mio_icif.nano_blade.desc": "碳纳米管与石墨烯叠层的刀身\n压电刃口高频振动，纳米机器人自行修复",
+  "item.mio_icif.quantum_blade": "量子刃",
+  "item.mio_icif.quantum_blade.desc": "处在叠加态的刀\n出刀时坍缩到战甲标记过的目标上",
+  "item.mio_icif.singularity_blade": "奇点刃",
+  "item.mio_icif.singularity_blade.desc": "刀镡里约束着一颗微型奇点\n以电能维持约束，以击杀喂养质量"
 }

@@ -6244,5 +6244,11 @@
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "Геомагнетизм",
   "item.mio_icif.item_tool_meter.probe_switched": "Зонд: %s",
   "item.mio_icif.item_tool_meter.tooltip_probe": "Зонд: %s (G — сменить)",
-  "tooltip.mio_icif.passive_device.worn": "Работает в слоте аксессуара (%s)"
+  "tooltip.mio_icif.passive_device.worn": "Работает в слоте аксессуара (%s)",
+  "item.mio_icif.nano_blade": "Наноклинок",
+  "item.mio_icif.nano_blade.desc": "Клинок из слоёв углеродных нанотрубок и графена.\nПьезокромка вибрирует с ультразвуковой частотой, наноботы чинят его.",
+  "item.mio_icif.quantum_blade": "Квантовый клинок",
+  "item.mio_icif.quantum_blade.desc": "Клинок в состоянии суперпозиции.\nКоллапсирует на цели, отмеченные вашим костюмом.",
+  "item.mio_icif.singularity_blade": "Клинок сингулярности",
+  "item.mio_icif.singularity_blade.desc": "В гарде заключена микросингулярность.\nEU удерживает её, убийства питают её массу."
 }

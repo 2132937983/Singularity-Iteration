@@ -6244,5 +6244,11 @@
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "地磁気",
   "item.mio_icif.item_tool_meter.probe_switched": "プローブ：%s",
   "item.mio_icif.item_tool_meter.tooltip_probe": "プローブ：%s（G で切替）",
-  "tooltip.mio_icif.passive_device.worn": "アクセサリースロット（%s）に装備すると機能"
+  "tooltip.mio_icif.passive_device.worn": "アクセサリースロット（%s）に装備すると機能",
+  "item.mio_icif.nano_blade": "ナノブレード",
+  "item.mio_icif.nano_blade.desc": "カーボンナノチューブとグラフェンを重ねた刀身\n圧電の刃が超音波で震え、ナノマシンが自己修復する",
+  "item.mio_icif.quantum_blade": "量子ブレード",
+  "item.mio_icif.quantum_blade.desc": "重ね合わせ状態にある刀\n抜けばスーツが標的にした敵の上へ収縮する",
+  "item.mio_icif.singularity_blade": "特異点ブレード",
+  "item.mio_icif.singularity_blade.desc": "鍔に微小な特異点を閉じ込めた刀\nEUで閉じ込め続け、撃破で質量を蓄える"
 }

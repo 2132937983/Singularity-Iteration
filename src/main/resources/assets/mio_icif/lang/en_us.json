@@ -6244,5 +6244,11 @@
   "item.mio_icif.item_tool_meter.probe.geomagnetic": "Geomagnetic",
   "item.mio_icif.item_tool_meter.probe_switched": "Probe: %s",
   "item.mio_icif.item_tool_meter.tooltip_probe": "Probe: %s (G to switch)",
-  "tooltip.mio_icif.passive_device.worn": "Works when worn in an accessory slot (%s)"
+  "tooltip.mio_icif.passive_device.worn": "Works when worn in an accessory slot (%s)",
+  "item.mio_icif.nano_blade": "Nano Blade",
+  "item.mio_icif.nano_blade.desc": "A blade of layered carbon nanotubes and graphene.\nIts piezo edge vibrates at ultrasonic speed; nanobots mend it.",
+  "item.mio_icif.quantum_blade": "Quantum Blade",
+  "item.mio_icif.quantum_blade.desc": "A blade held in superposition.\nIt collapses onto the targets your suit has marked.",
+  "item.mio_icif.singularity_blade": "Singularity Blade",
+  "item.mio_icif.singularity_blade.desc": "A micro-singularity held in its guard.\nEU keeps it contained; kills feed its mass."
 }

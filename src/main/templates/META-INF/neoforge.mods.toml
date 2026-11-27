@@ -138,6 +138,14 @@ side="BOTH"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    modId="slashblade"
+    # 0.1.11.231: the three collab blades (nano, quantum, singularity) and their upgrade recipes; without it they are not loaded
+    type="optional"
+    versionRange="[2.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="curios"
     type="optional"
     reason="For trinket equipment slots (rings, necklaces, belts, back)"

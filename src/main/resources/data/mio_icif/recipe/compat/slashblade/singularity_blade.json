@@ -1,0 +1,45 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "slashblade"
+    }
+  ],
+  "type": "slashblade:shaped_blade",
+  "blade": "mio_icif:singularity_blade",
+  "category": "equipment",
+  "key": {
+    "B": {
+      "type": "slashblade:blade",
+      "items": [
+        "slashblade:slashblade"
+      ],
+      "request": {
+        "name": "mio_icif:quantum_blade",
+        "proud_soul": 10000,
+        "refine": 40
+      }
+    },
+    "M": {
+      "item": "mio_icif:resource/item_molecular_transformer_core"
+    },
+    "P": {
+      "item": "mio_icif:resource/item_super_iridium_compress_plate"
+    },
+    "T": {
+      "item": "mio_icif:normal/item_tritium_cell"
+    },
+    "D": {
+      "item": "mio_icif:normal/item_deuterium_cell"
+    }
+  },
+  "pattern": [
+    "PTP",
+    "MBM",
+    "PDP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "slashblade:slashblade"
+  }
+}

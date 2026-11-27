@@ -101,6 +101,15 @@ public final class WingmanTactics {
     /** The score of {@link #threat} before its line-of-sight term. */
     private static double threatBeforeSight(WingmanEntity self, ServerPlayer owner, LivingEntity e, @Nullable LivingEntity current,
                                             Vec3 guard, Squad squad) {
+        return threatBeforeSight(self, owner, e, current, guard, squad, e.distanceTo(self), true);
+    }
+
+    /**
+     * 0.1.11.223 (G4): the same, with the distance to the Wingman given ({@code toSelf}: the travel cost of a grid path in a
+     * cave) and the bonus of the current target only when {@code keep}.
+     */
+    private static double threatBeforeSight(WingmanEntity self, ServerPlayer owner, LivingEntity e, @Nullable LivingEntity current,
+                                            Vec3 guard, Squad squad, double toSelf, boolean keep) {
         double score = 0;
         int now = owner.tickCount;
         // 0.1.11.43 (G-7): the owner's call and the Fleet Datalink mark count for hostile creatures only; a neutral one
@@ -132,9 +141,9 @@ public final class WingmanTactics {
             double closing = new Vec3(v.x, 0, v.z).normalize().dot(new Vec3(dir.x, 0, dir.z).normalize());
             if (closing > 0.3) score += 12 * closing;
         }
-        score -= 1.8 * toOwner + 0.7 * e.distanceTo(self);
+        score -= 1.8 * toOwner + 0.7 * toSelf;
         score += 14 * (1 - e.getHealth() / Math.max(1, e.getMaxHealth()));
-        if (e == current) score += 22;
+        if (e == current && keep) score += 22;
         if (!called && !fusing && squad.engages(e)) score -= 28;
         return score;
     }
@@ -146,29 +155,42 @@ public final class WingmanTactics {
         return select(self, owner, around, range, current, valid, owner.position());
     }
 
-    /** 0.1.10.2: the same, scored from {@code guard} (see {@link #threat(WingmanEntity, ServerPlayer, LivingEntity, LivingEntity, Vec3)}). */
+    /** Score lost by a known creature that nobody sees now (it is hunted at its last place). */
+    static final double UNSEEN = 6;
+
+    /**
+     * 0.1.10.2: the same, scored from {@code guard} (see {@link #threat(WingmanEntity, ServerPlayer, LivingEntity, LivingEntity, Vec3)}).
+     *
+     * <p>0.1.11.223 (cave overhaul G4): only the creatures the Wingman knows are candidates ({@link WingmanPerception}: seen
+     * by it, its owner or its squad, or tracked), and the ones decision five A rejects are not (no path and unseen, or in
+     * another tunnel and not coming for the owner). The distance to the Wingman is its travel cost (a grid path under a
+     * ceiling); a known creature nobody sees now loses {@link #UNSEEN}; the current target keeps its bonus only while it is
+     * seen, tracked or reachable. The owner's call outside the box is kept as before.
+     */
     @Nullable
     static LivingEntity select(WingmanEntity self, ServerPlayer owner, Vec3 around, double range, @Nullable LivingEntity current,
                                java.util.function.Predicate<LivingEntity> valid, Vec3 guard) {
-        // 0.1.10.8: every candidate is scored without its line-of-sight term (an upper bound), then
-        // the rays are cast from the best bound down until no bound can reach the best score. The
-        // choice is the same as scoring every candidate in scan order (the first of equal scores wins).
+        WingmanPerception known = self.perception;
+        known.update(owner, around, range);
         Squad squad = new Squad(self, owner);
-        var candidates = new java.util.ArrayList<LivingEntity>();
+        LivingEntity best = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
         for (LivingEntity e : self.level().getEntitiesOfClass(LivingEntity.class, new AABB(around, around).inflate(range),
                 e -> e instanceof Mob && e.isAlive())) {
-            if (valid.test(e)) candidates.add(e);
+            if (!valid.test(e)) continue;
+            WingmanPerception.Contact c = known.contact(e);
+            if (c == null || known.rejects(e)) continue;
+            double travel = known.travel(e);
+            double toSelf = Double.isNaN(travel) || Double.isInfinite(travel) ? e.distanceTo(self) : travel;
+            boolean keep = c.visible() || c.tracked() || Double.isFinite(travel);
+            double s = threatBeforeSight(self, owner, e, current, guard, squad, toSelf, keep);
+            if (s == Double.NEGATIVE_INFINITY) continue;
+            if (!c.visible() && !c.tracked()) s -= UNSEEN;
+            if (s > bestScore) { bestScore = s; best = e; }
         }
-        int n = candidates.size();
-        double[] bounds = new double[n];
-        for (int i = 0; i < n; i++) bounds[i] = threatBeforeSight(self, owner, candidates.get(i), current, guard, squad);
-        double[] top = new double[1];
-        int pick = bestIndex(bounds, Double.NEGATIVE_INFINITY, i -> withSight(self, owner, candidates.get(i), bounds[i]), top);
-        LivingEntity best = pick < 0 ? null : candidates.get(pick);
-        double bestScore = top[0];
         // the owner's call may be outside the scan box (a long shot): keep it
         LivingEntity called = owner.getLastHurtMob();
-        if (called instanceof Enemy && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called)) {
+        if (called instanceof Enemy && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called) && called != best) {
             double s = withSight(self, owner, called, threatBeforeSight(self, owner, called, current, guard, squad));
             if (s > bestScore) best = called;
         }

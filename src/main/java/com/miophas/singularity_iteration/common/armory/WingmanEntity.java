@@ -250,6 +250,12 @@ public class WingmanEntity extends Mob {
     /** 0.1.11.222: the navigator, for the cave GameTests. */
     public WingmanNav nav() { return nav; }
 
+    /** 0.1.11.223 (G4): what the Wingman knows of the creatures round its owner. Not saved. */
+    final WingmanPerception perception = new WingmanPerception(this);
+
+    /** 0.1.11.223: the perception, for the cave GameTests. */
+    public WingmanPerception perception() { return perception; }
+
     /**
      * 0.1.11.221 (G1): the velocity after a tick into a wall or a ceiling. Before, any wall hit added 0.3 upwards, and nothing
      * stopped the climb at the ceiling, so in a cave the Wingman pressed against the roof. Now it climbs a wall only when that
@@ -1533,6 +1539,8 @@ public class WingmanEntity extends Mob {
 
     /** 0.1.11.52 (P0): ticks of the stare at a newly locked enemy, the rest between two stares, the head turn in a fight. */
     static final int GLARE = 6, GLARE_REST = 40;
+    /** 0.1.11.223 (G4): blocks from the last known place of a lost target at which the Wingman gives up looking. */
+    static final double LOST_REACH = 2.0;
     static final float GAZE_TURN = 45.0F;
     private int glareTicks, lastGlare = -GLARE_REST;
 
@@ -1540,6 +1548,23 @@ public class WingmanEntity extends Mob {
     int glareTicks() { return glareTicks; }
 
     private void engage(LivingEntity enemy, ServerPlayer player) {
+        // 0.1.11.223 (G4, decision four A): a target nobody sees now is hunted at its last known place; found there or not, it
+        // is forgotten when the Wingman gets there without seeing it (a focus order chases its target wherever it is)
+        if (order != WingmanOrder.FOCUS) {
+            perception.refresh();
+            WingmanPerception.Contact c = perception.contact(enemy);
+            if (c != null && perception.lost(enemy)) {
+                glareTicks = 0;
+                if (c.pos().distanceToSqr(position()) < LOST_REACH * LOST_REACH) {
+                    perception.forget(enemy);
+                    target = null;
+                    return;
+                }
+                steer(c.pos(), COMBAT, player);
+                faceSmooth(c.pos().add(0, enemy.getBbHeight() * 0.8, 0), 20);
+                return;
+            }
+        }
         if (glareTicks > 0) {
             // the stare: brake to a hover, the head (and the body after it) on the enemy's eyes
             glareTicks--;

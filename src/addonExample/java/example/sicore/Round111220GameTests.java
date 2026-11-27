@@ -43,7 +43,9 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * reaches to the scene ({@link Run#limits}). 0.1.11.221 (G1): no scene keeps the head against the ceiling for more than a
  * tenth of the run (the tunnel a fifth: its target is above the 2-high spot through the rock, and without a path the
  * Wingman lingered there until G2), and in the cavern and in the open the first hit comes within 80 ticks. 0.1.11.222 (G2):
- * the tunnel is back to a tenth, and the Wingman flies up the shaft and hits the hunter within 150 ticks. The WingmanEntity is reached by
+ * the tunnel is back to a tenth, and the Wingman flies up the shaft and hits the hunter within 150 ticks.
+ * 0.1.11.223 (G4): in the two tunnels the husk through the rock is no target and the one down the tunnel is hit within 60
+ * ticks; at the dead end the Wingman does not wait at the glass. The WingmanEntity is reached by
  * reflection (the addon module may only use the core API).
  */
 @GameTestHolder(CoreExampleMod.ID)
@@ -256,7 +258,14 @@ public final class Round111220GameTests {
         carve(h, 3, 9, 4, 41, 11, 6);
         carve(h, 40, 5, 4, 41, 8, 6);
         Run run = new Run(h, "layers", OWNER, WINGMAN);
-        run.limits = Round111220GameTests::notOnTheCeiling;
+        // 0.1.11.223 (G4): the husk in the upper tunnel is in another tunnel (its path is far longer than the line) and does not
+        // come for the owner: it is no target; the one down the owner's tunnel is hit soon
+        run.limits = r -> {
+            notOnTheCeiling(r);
+            r.limit(r.wrongTicks <= 10, "the Wingman goes for the husk through the rock for " + r.wrongTicks + " ticks");
+            r.limit(r.hurtAt[0] < 0, "the husk in the other tunnel is attacked");
+            r.limit(r.hurtAt[1] > 0 && r.hurtAt[1] <= 60, "the husk down the tunnel is hit at tick " + r.hurtAt[1]);
+        };
         run.wrong.add(run.add(zombie(h, 9.5, 9, 5.5, null)));
         run.add(zombie(h, 26.5, 2, 5.5, null));
         play(h, run);
@@ -290,7 +299,8 @@ public final class Round111220GameTests {
         fill(h, 21, 2, 4, 21, 4, 6, Blocks.GLASS.defaultBlockState());
         carve(h, 22, 2, 4, 26, 4, 6);
         Run run = new Run(h, "deadend", OWNER, WINGMAN);
-        run.limits = Round111220GameTests::notOnTheCeiling;
+        // 0.1.11.223 (G4, decision five A): a hunter behind glass, unseen and without a path, is no target: no time stuck at the glass
+        run.limits = r -> { notOnTheCeiling(r); r.limit(r.stuck <= 20, "the Wingman is stuck at the glass for " + r.stuck + " ticks"); };
         run.add(zombie(h, 24.5, 2, 5.5, run.owner));
         play(h, run);
     }

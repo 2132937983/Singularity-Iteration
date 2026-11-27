@@ -11,6 +11,9 @@ checks what can be checked without the game:
   luminous object (section 2.2);
 - the origin and grip match the template (blade tip toward -X, the grip end at x about 41.74) and the length is
   inside the range section 6 gives the blade;
+- the katana skeleton of section 3.0, measured on cross-sections of the blade: the edge on +Y (the thin side), the
+  curve (the centre line drops toward the tip and bows up between), the width and thickness, the guard and grip
+  envelopes, and the sheath following the blade (it holds every cross-section of it, its mouth at the guard);
 - effect is a shell larger than the sheath on every side, not a copy of it, of at most 60 vertices (section 2.3);
 - the item_* objects stay inside the outline of the default blade's item objects (section 2.5);
 - vertex budgets (section 3.2): all objects <= 3000, item_* together <= 1200;
@@ -112,14 +115,14 @@ def read_obj(path: Path, errors: list[str]):
             current = parts[1] if len(parts) > 1 else ""
             if not NAME.match(current):
                 errors.append(f"line {number}: object name {current!r} is not letters, digits and underscores")
-            objects.setdefault(current, {"v": set(), "uv": set(), "faces": []})
+            objects.setdefault(current, {"v": set(), "uv": set(), "faces": [], "vfaces": []})
         elif parts[0] == "f":
             if current is None:
                 errors.append(f"line {number}: face before any object")
                 continue
             if len(parts) - 1 not in (3, 4):
                 errors.append(f"line {number}: face with {len(parts) - 1} vertices (only 3 or 4 are read)")
-            face = []
+            face, vface = [], []
             for corner in parts[1:]:
                 fields = corner.split("/")
                 if len(fields) < 2 or not fields[1]:
@@ -129,14 +132,113 @@ def read_obj(path: Path, errors: list[str]):
                 objects[current]["v"].add(int(fields[0]) - 1)
                 objects[current]["uv"].add(int(fields[1]) - 1)
                 face.append(int(fields[1]) - 1)
+                vface.append(int(fields[0]) - 1)
             if face:
                 objects[current]["faces"].append(face)
+                objects[current]["vfaces"].append(vface)
     return vertices, uvs, objects
 
 
 def bounds(vertices, indices):
     points = [vertices[i] for i in indices]
     return [(min(p[a] for p in points), max(p[a] for p in points)) for a in range(3)] if points else None
+
+
+# Section 3.0, the katana skeleton. The template (and every SlashBlade katana measured, e.g. yamato) is 9.5 wide,
+# +-0.57 thick, its centre line drops about 21 from 10% to 90% of the blade and bows about 4 above the chord.
+WIDTH = (7.0, 13.0)
+THICK, THICK_WARN = 1.2, 0.9
+DROP = (12.0, 34.0)
+BOW = 1.5
+GUARD = (-60.0, -30.0, 34.0, 24.0)    # x range, the most y and z extent
+GRIP = (0.0, GRIP_X, 14.0, 9.0)
+MOUTH = (-42.0, -30.0)
+
+
+def cross_section(vertices, faces, x0):
+    """(y, z) points where the faces cut the plane x = x0."""
+    points = []
+    for face in faces:
+        for i in range(len(face)):
+            a, b = vertices[face[i]], vertices[face[(i + 1) % len(face)]]
+            if a[0] != b[0] and (a[0] - x0) * (b[0] - x0) <= 0:
+                t = (x0 - a[0]) / (b[0] - a[0])
+                points.append((a[1] + t * (b[1] - a[1]), a[2] + t * (b[2] - a[2])))
+    return points
+
+
+def envelope(vertices, faces, low, high):
+    points = [vertices[i] for face in faces for i in face if low <= vertices[i][0] <= high]
+    if not points:
+        return None
+    return max(p[1] for p in points) - min(p[1] for p in points), max(p[2] for p in points) - min(p[2] for p in points)
+
+
+def skeleton(vertices, objects, errors, warnings):
+    blade = objects["blade"]["vfaces"]
+    tip = min(vertices[i][0] for face in blade for i in face)
+    sections, thin_top, thin_bottom, widths, thicks = [], 0, 0, [], []
+    sheath = objects.get("sheath", {}).get("vfaces")
+    for k in range(1, 10):
+        x0 = -60 + k / 10 * (tip + 60)
+        points = cross_section(vertices, blade, x0)
+        if not points:
+            errors.append(f"the blade has no cross-section at x {x0:.0f}: is it in one piece from guard to tip?")
+            return
+        ys = [p[0] for p in points]
+        low, high = min(ys), max(ys)
+        width, thick = high - low, max(abs(p[1]) for p in points)
+        top = max(abs(p[1]) for p in points if p[0] >= high - 0.2 * width)
+        bottom = max(abs(p[1]) for p in points if p[0] <= low + 0.2 * width)
+        thin_top += top < bottom
+        thin_bottom += bottom < top
+        sections.append((x0, low, high))
+        if k < 9:
+            widths.append((width, x0))
+        thicks.append((thick, x0))
+        if sheath:
+            cut = cross_section(vertices, sheath, x0)
+            if not cut:
+                errors.append(f"the sheath has no cross-section at x {x0:.0f}, where the blade is")
+            else:
+                sy = [p[0] for p in cut]
+                if min(sy) > low + 0.3 or max(sy) < high - 0.3:
+                    errors.append(f"at x {x0:.0f} the blade y {low:.1f}..{high:.1f} sticks out of the sheath "
+                                  f"y {min(sy):.1f}..{max(sy):.1f}: the sheath must follow the blade's curve")
+                elif max(sy) - min(sy) > width + 12:
+                    warnings.append(f"at x {x0:.0f} the sheath is {max(sy) - min(sy):.1f} high for a {width:.1f} blade")
+    wide = [w for w in widths if not WIDTH[0] <= w[0] <= WIDTH[1]]
+    if wide:
+        errors.append(f"the blade is {min(widths)[0]:.1f}..{max(widths)[0]:.1f} wide ({len(wide)} of {len(widths)} sections "
+                      f"outside {WIDTH[0]:.0f}..{WIDTH[1]:.0f}, section 3.0; the template is 9.5)")
+    thickest = max(thicks)
+    if thickest[0] > THICK:
+        errors.append(f"the blade is up to +-{thickest[0]:.2f} thick (x {thickest[1]:.0f}), at most +-{THICK} "
+                      "(section 3.0; the template is +-0.57)")
+    elif thickest[0] > THICK_WARN:
+        warnings.append(f"the blade is up to +-{thickest[0]:.2f} thick (x {thickest[1]:.0f}): it starts to read as a heavy sword")
+    if thin_top <= thin_bottom:
+        errors.append(f"the edge (the thin side of the cross-sections) is on -Y in {thin_bottom} of 9 sections: "
+                      "SlashBlade's motions lead with +Y, the edge must be on +Y (section 3.0)")
+    centre = [(x, (low + high) / 2) for x, low, high in sections]
+    drop = centre[0][1] - centre[-1][1]
+    if not DROP[0] <= drop <= DROP[1]:
+        errors.append(f"the centre line drops {drop:.1f} from x {centre[0][0]:.0f} to {centre[-1][0]:.0f}, "
+                      f"section 3.0 gives {DROP[0]:.0f}..{DROP[1]:.0f} (the template: 21): the blade is not curved like a katana")
+    (xa, ya), (xm, ym), (xb, yb) = centre[0], centre[4], centre[-1]
+    bow = ym - (ya + (yb - ya) * (xm - xa) / (xb - xa))
+    if bow < BOW:
+        errors.append(f"the centre line bows {bow:.1f} above the chord at x {xm:.0f}, at least {BOW} "
+                      "(the template: 4): the curve must be convex on the edge side")
+    for label, (low, high, ymax, zmax) in (("guard", GUARD), ("grip", GRIP)):
+        size = envelope(vertices, blade, low, high)
+        if size and (size[0] > ymax or size[1] > zmax):
+            errors.append(f"the {label} (x {low:.0f}..{high:.0f}) is {size[0]:.1f} x {size[1]:.1f}, "
+                          f"at most {ymax:.0f} x {zmax:.0f} in y x z (section 3.0)")
+    if sheath:
+        mouth = max(vertices[i][0] for face in sheath for i in face)
+        if not MOUTH[0] <= mouth <= MOUTH[1]:
+            errors.append(f"the sheath mouth is at x {mouth:.1f}, section 3.0 puts it at the guard, x {MOUTH[0]:.0f}..{MOUTH[1]:.0f}")
 
 
 def brightness(rows, width, height, uvs, faces):
@@ -211,6 +313,8 @@ def check(blade: str) -> tuple[list[str], list[str]]:
             low, high = LENGTH[blade]
             if not low <= ratio <= high:
                 errors.append(f"blade is {ratio:.2f} of the template length, section 6 gives {low:.2f}..{high:.2f}")
+    if "blade" in objects:
+        skeleton(vertices, objects, errors, warnings)
     if "effect" in objects and "sheath" in objects:
         effect, sheath = objects["effect"]["v"], objects["sheath"]["v"]
         eb, sb = bounds(vertices, effect), bounds(vertices, sheath)

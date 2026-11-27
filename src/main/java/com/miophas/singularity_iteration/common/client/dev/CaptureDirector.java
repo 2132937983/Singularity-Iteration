@@ -3847,6 +3847,104 @@ public final class CaptureDirector {
         }
     }
 
+    /** A named SlashBlade blade of this mod (by reflection; empty without SlashBlade or when the blade is not loaded). */
+    private static ItemStack namedBlade(ServerLevel level, String name) {
+        try {
+            Class<?> def = Class.forName("mods.flammpfeil.slashblade.registry.slashblade.SlashBladeDefinition");
+            @SuppressWarnings("unchecked")
+            var key = (net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<Object>>) def.getField("REGISTRY_KEY").get(null);
+            Object d = level.registryAccess().registryOrThrow(key).get(ResourceLocation.fromNamespaceAndPath("mio_icif", name));
+            if (d == null) {
+                Singularity_Iteration.LOGGER.warn("capture sb1: no named blade mio_icif:{}", name);
+                return ItemStack.EMPTY;
+            }
+            return (ItemStack) def.getMethod("getBlade", net.minecraft.core.HolderLookup.Provider.class).invoke(d, level.registryAccess());
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            Singularity_Iteration.LOGGER.warn("capture sb1: cannot make mio_icif:{}", name, e);
+            return ItemStack.EMPTY;
+        }
+    }
+
+    /**
+     * Scene "sb1_blades" (-Dsi.capture.scene=sb1_blades), 0.1.11.232 (art batch SB1): the three collab blades (SlashBlade:
+     * Resharped must be in the capture client's mods folder). For each blade in turn: held at the waist from the front and
+     * from behind, then a combo from the side (a frame every 2 ticks); then the hotbar and the inventory, and the three
+     * blades in item frames on a wall.
+     */
+    private static void sceneSb1Blades() {
+        String[] blades = {"nano_blade", "quantum_blade", "singularity_blade"};
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().invulnerable = true;
+            look(sp, 0.5, -60, 0.5, 0, 0);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            for (int i = 0; i < blades.length; i++) {
+                ItemStack b = namedBlade(level, blades[i]);
+                Singularity_Iteration.LOGGER.info("capture sb1: {} -> {}", blades[i], b);
+                sp.getInventory().setItem(i, b);
+            }
+            // a wall 4 blocks south with the three blades in item frames (seen later from the front)
+            for (int x = -2; x <= 2; x++) for (int y = -60; y <= -57; y++)
+                level.setBlock(new BlockPos(x, y, 8), net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState(), 3);
+            for (int i = 0; i < blades.length; i++) {
+                var frame = new net.minecraft.world.entity.decoration.ItemFrame(level, new BlockPos(i - 1, -59, 7), Direction.NORTH);
+                frame.setItem(namedBlade(level, blades[i]));
+                level.addFreshEntity(frame);
+            }
+        });
+        for (int i = 0; i < blades.length; i++) {
+            final int slot = i;
+            final String name = blades[i].replace("_blade", "");
+            client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.getInventory().selected = slot; mc.options.hideGui = true; });
+            server(5, sp -> { sp.getInventory().selected = slot; look(sp, 0.5, -60, 0.5, 0, 0); sp.getAbilities().flying = false; sp.onUpdateAbilities(); });
+            client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+            shot(30, "sb1_blades/" + name + "_0_front");
+            client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+            server(1, sp -> look(sp, 0.5, -60, 0.5, -60, 10));
+            shot(20, "sb1_blades/" + name + "_1_back");
+            // a combo, seen from behind: SlashBlade reads the attack key as held (L_DOWN) and swings on the vanilla click
+            server(1, sp -> look(sp, 0.5, -60, 0.5, -30, 5));
+            client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+            for (int f = 0; f < 36; f++) {
+                final int frame = f;
+                client(1, () -> {
+                    var key = Minecraft.getInstance().options.keyAttack;
+                    if (frame % 9 == 0) {
+                        key.setDown(true);
+                        net.minecraft.client.KeyMapping.click(key.getKey());
+                    } else if (frame % 9 == 3) key.setDown(false);
+                });
+                shot(1, String.format("sb1_blades/%s_2_swing%02d", name, f));
+            }
+            client(30, () -> Minecraft.getInstance().options.keyAttack.setDown(false));
+        }
+        // the hotbar and the inventory
+        server(1, sp -> look(sp, 0.5, -60, 0.5, 0, 0));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.hideGui = false; });
+        shot(20, "sb1_blades/3_hotbar");
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(15, "sb1_blades/4_inventory");
+        client(1, () -> Minecraft.getInstance().setScreen(null));
+        // the item frames, close up
+        server(1, sp -> { look(sp, 0.5, -59.6, 5.3, 0, 0); sp.getAbilities().flying = true; sp.onUpdateAbilities(); });
+        client(5, () -> Minecraft.getInstance().options.hideGui = true);
+        shot(30, "sb1_blades/5_frames");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "sb1_blades".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSb1Blades();
+        }
+    }
+
     /**
      * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
      * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;

@@ -30,6 +30,8 @@
   ],
   "render": {
     "carry_type": "default",
-    "summon_sword_color": 16722902
+    "model": "mio_icif:model/slashblade/singularity/model.obj",
+    "summon_sword_color": 16722902,
+    "texture": "mio_icif:model/slashblade/singularity/texture.png"
   }
 }

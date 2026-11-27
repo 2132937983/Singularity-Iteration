@@ -78,23 +78,30 @@ def blade(image):
     for contact in PZT_NODES:
         draw.rectangle((contact,13,contact+2,14), fill=PZT_SHADE)
         draw.line((contact,13,contact+2,13), fill=PZT)
-    # Three one-texel temper lines move toward the centre in hard steps.
-    # Their staggered starts keep the graphite root and its three vents legible.
-    for first, last, row in ((27,64,12),(65,111,11),(112,154,10),(155,195,9),(196,228,8)):
-        for start,offset,colour in ((27,0,"#D9B45A"),(45,1,"#7A5A9E"),(58,2,"#4A6FA8")):
-            if last >= start:
-                draw.line((max(first,start),row-offset,last,row-offset),fill=colour)
+    # Isolated heat tints begin 40% of the way from the grip to the tip.
+    # Each group steps one texel inward; the twill shows between patches.
+    carbon_field(image, (100, 8, xmax, 11))
+    temper = ("#D9B45A", "#7A5A9E", "#4A6FA8")
+    for row, patches in ((11, ((102, 8), (116, 6), (130, 7))),
+                         (10, ((148, 7), (162, 9), (180, 6))),
+                         (9, ((195, 7), (209, 6), (220, 7)))):
+        for (x, length), colour in zip(patches, temper):
+            draw.line((x, row, x + length - 1, row), fill=colour)
+            draw.line((x + 2, row - 1, x + length - 3, row - 1), fill=colour)
     # Keep the substrate dark under the additive ribbon. A second bright
     # orange layer here would saturate to pale yellow in the in-game pass.
     draw.rectangle((0, 16, xmax, 17), fill="#4F1F0D")
     draw.line((0, 17, xmax, 17), fill="#381708")
     draw.line((0, 18, xmax, 18), fill="#676D77")
     draw.line((0, 19, xmax, 19), fill="#92979C")
-    # Pixel marks on the outermost texel of the first 25 model units. Their
-    # dark and bright steps sit outside the uninterrupted additive ribbon.
-    for x in range(4,26,3):
-        draw.point((x,19),fill="#252B33")
-        draw.point((x+1,18),fill="#D4C9B1")
+    # Six teeth across the first exposed 25 model units. The back of each
+    # tooth steps inward one texel; the dark gullets break the outer glint.
+    draw.rectangle((4, 18, 27, 19), fill=SHADE)
+    for x in range(4, 28, 4):
+        draw.point((x, 18), fill=HOT)
+        draw.point((x + 1, 19), fill=HOT)
+        for end in (x, x + 3):
+            draw.point((end, 19), fill=(0, 0, 0, 0))
 
 
 def kissaki(image):

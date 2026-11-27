@@ -319,12 +319,14 @@ def views(m):
     # These are views of the actual meshes, including their depth-tested emissive layers.
     fittings = {
         "quantum": [
-            ("镜面钢与干涉刃纹","blade",rotation(5,-8,-2),(-171,-3,0),6.1),
+            ("互之目刃纹与镜面反光","blade",rotation(3,-4,-1),(-160,-4,0),6.5),
             ("双缝镡","blade",rotation(6,76,-3),(-34,0,0),5.0),
-            ("白陶瓷鞘与干涉刻纹","sheath",rotation(10,-13,2),(-70,0,0),4.9),
+            ("鞘上栗形与环缝","sheath",rotation(27,-20,2),(-121,-2,2),6.1),
+            ("鞘尾金属件与发射环","sheath",rotation(15,-10,1),(-307,-18,0),6.0),
         ],
         "nano": [
-            ("刃根微齿与回火色","blade",rotation(5,-10,1),(-60,1,0),6.8),
+            ("刃根微齿","blade",rotation(-7,-8,-1),(-51,5,0),10.0),
+            ("碳纤维上的回火色块","blade",rotation(4,-6,-4),(-214,-10,0),5.2),
             ("鞘口修复梳齿","sheath",rotation(8,-73,0),(-35,3,0),6.0),
             ("鞘侧充电口","sheath",rotation(12,13,-4),(-83.5,2.5,4.1),6.2),
         ],
@@ -369,6 +371,9 @@ def inventory(m):
     im = page(1160, 1072, f"{m.title}   /   物品栏", "游戏显示变换 · 原尺寸采样")
     cells = (32,48,64,128)
     cols = (398,555,733,950)
+    enlarge_small_slot = m.kind in ("quantum", "nano")
+    if enlarge_small_slot:
+        text(im,275,128,"32 px · 3×",18,MUTED,anchor="mm")
     for cx,n in zip(cols,cells):
         text(im,cx,128,f"{n} × {n}",18,MUTED,anchor="mm")
     for j,name in enumerate(ITEMS):
@@ -377,7 +382,10 @@ def inventory(m):
         text(im,60,y+52,ITEM_ZH[j],22,bold=True)
         text(im,60,y+90,name,16,MUTED)
         for cx,n in zip(cols,cells):
-            slot(im,(cx-n//2,y+(155-n)//2),m.gui(name,n))
+            stamp = m.gui(name,n)
+            slot(im,(cx-n//2,y+(155-n)//2),stamp)
+            if enlarge_small_slot and n == 32:
+                slot(im,(227,y+(155-96)//2),stamp,zoom=3)
     text(im,37,691,"场景显示",25,bold=True)
     for left,title in ((36,"展示框 · 背面"),(589,"掉落 · 离地悬浮")):
         panel(im,(left,742,left+534,1033))

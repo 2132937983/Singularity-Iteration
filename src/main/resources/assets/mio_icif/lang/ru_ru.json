@@ -6262,5 +6262,9 @@
   "hud.mio_icif.blade.no_core": "Нет квантового ядра: коллапс за EU",
   "hud.mio_icif.blade.mass": "Масса %s",
   "hud.mio_icif.blade.unstable": "Удержание сорвано! Масса %s утекает",
-  "hud.mio_icif.blade.contained": "Масса %s · удержание %s"
+  "hud.mio_icif.blade.contained": "Масса %s · удержание %s",
+  "slash_art.mio_icif.piezo_cleave": "Пьезорассечение",
+  "slash_art.mio_icif.piezo_cleave.desc": "Пьезостек возбуждает стоячую волну вдоль разреза, и три остаточных образа бьют почти одновременно",
+  "se.mio_icif.piezo_edge": "Пьезокромка",
+  "se.mio_icif.piezo_edge.desc": "С EU в клинке удары наносят вибрационный урон сквозь броню, растущий с нагревом; от 70 нагрева поджигают цель. В инвентаре наноботы чинят клинок за его EU"
 }

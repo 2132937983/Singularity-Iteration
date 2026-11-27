@@ -3972,6 +3972,47 @@ public final class CaptureDirector {
             client(5, () -> Minecraft.getInstance().player.getInventory().selected = slot);
             shot(20, "sb1_blades/6_hud_" + blades[i].replace("_blade", ""));
         }
+        // 0.1.11.234 (B2): each blade's slash art, released on the server at a still husk 5 blocks ahead (a frame a tick);
+        // the log shows the art, its combo and the resources before and after
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            look(sp, 0.5, -60, -3.5, 180, 5);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            var husk = mob(level, net.minecraft.world.entity.EntityType.HUSK, 0.5, -60, -8.5, true, sp);
+            husk.setInvulnerable(true);
+            husk.setNoAi(true);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        for (int i = 0; i < blades.length; i++) {
+            final int slot = i;
+            final String name = blades[i].replace("_blade", "");
+            server(5, sp -> {
+                var level = sp.serverLevel();
+                ItemStack b = namedBlade(level, blades[slot]);
+                com.miophas.singularity_iteration.common.armory.blade.CollabBlade.set(b, new com.miophas.singularity_iteration.common.armory.blade.BladeCore(
+                    blades[slot], 1_000_000, 20, false, 30, false));
+                sp.getInventory().setItem(0, b);
+                sp.getInventory().selected = 0;
+            });
+            client(3, () -> Minecraft.getInstance().player.getInventory().selected = 0);
+            server(10, sp -> {
+                ItemStack b = sp.getMainHandItem();
+                var before = com.miophas.singularity_iteration.common.armory.blade.CollabBlade.core(b);
+                net.minecraft.world.entity.Entity target = sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class,
+                    sp.getBoundingBox().inflate(12)).stream().findFirst().orElse(null);
+                var combo = com.miophas.singularity_iteration.common.armory.SlashBladeCombat.slashArts(sp, target);
+                Singularity_Iteration.LOGGER.info("capture sb1 art: {} -> combo {}, core {} -> {}", blades[slot], combo, before,
+                    com.miophas.singularity_iteration.common.armory.blade.CollabBlade.core(sp.getMainHandItem()));
+            });
+            for (int f = 0; f < 24; f++) {
+                // two ticks in, the camera turns 75 degrees: the standing wave along the first look is seen from the side
+                if (f == 2) client(0, () -> { var p = Minecraft.getInstance().player; p.setYRot(p.getYRot() + 75); p.yRotO = p.getYRot(); });
+                shot(1, String.format("sb1_blades/7_art_%s_%02d", name, f));
+            }
+            client(20, () -> { var p = Minecraft.getInstance().player; p.setYRot(180); p.yRotO = 180; });
+        }
         client(10, () -> Minecraft.getInstance().stop());
     }
 

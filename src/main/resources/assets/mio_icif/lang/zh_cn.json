@@ -6262,5 +6262,9 @@
   "hud.mio_icif.blade.no_core": "无量子核心：以电能坍缩",
   "hud.mio_icif.blade.mass": "质量 %s",
   "hud.mio_icif.blade.unstable": "约束失效！质量 %s 正在泄漏",
-  "hud.mio_icif.blade.contained": "质量 %s · 约束 %s"
+  "hud.mio_icif.blade.contained": "质量 %s · 约束 %s",
+  "slash_art.mio_icif.piezo_cleave": "压电振动斩",
+  "slash_art.mio_icif.piezo_cleave.desc": "压电陶瓷在刀线上激起驻波，三道残影几乎同时斩出",
+  "se.mio_icif.piezo_edge": "压电刃",
+  "se.mio_icif.piezo_edge.desc": "有电时命中附加无视护甲的振动伤害，刃越热伤害越高；刃温 70 以上点燃目标；携带时纳米机器人以刀内电能修复耐久"
 }

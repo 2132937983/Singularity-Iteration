@@ -57,7 +57,8 @@ public final class Round111231GameTests {
             h.assertTrue(onlyWithSlashBlade(o), b + " does not load only with SlashBlade");
             h.assertTrue(("mio_icif:" + b).equals(o.get("name").getAsString()), b + " is named " + o.get("name"));
             JsonObject p = o.getAsJsonObject("properties");
-            h.assertTrue(p.get("slash_art").getAsString().startsWith("slashblade:"), b + " has no slash art");
+            String art = p.get("slash_art").getAsString();
+            h.assertTrue(art.startsWith("slashblade:") || art.startsWith("mio_icif:"), b + " has no slash art");
             double a = p.get("attack_base").getAsDouble();
             h.assertTrue(a > attack, b + " hits no harder (" + a + ") than the blade before it");
             attack = a;

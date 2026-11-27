@@ -6262,5 +6262,9 @@
   "hud.mio_icif.blade.no_core": "量子コアなし：電力で収縮",
   "hud.mio_icif.blade.mass": "質量 %s",
   "hud.mio_icif.blade.unstable": "閉じ込め失敗！質量 %s が漏れている",
-  "hud.mio_icif.blade.contained": "質量 %s · 閉じ込め %s"
+  "hud.mio_icif.blade.contained": "質量 %s · 閉じ込め %s",
+  "slash_art.mio_icif.piezo_cleave": "圧電振動斬",
+  "slash_art.mio_icif.piezo_cleave.desc": "圧電素子が斬線に定在波を立て、三つの残像がほぼ同時に斬り込む",
+  "se.mio_icif.piezo_edge": "圧電刃",
+  "se.mio_icif.piezo_edge.desc": "電力があれば命中に防具を無視する振動ダメージが加わり、刃が熱いほど強い。刃温 70 以上で対象を燃やす。携帯中はナノマシンが刀の電力で耐久を直す"
 }

@@ -91,6 +91,26 @@ public final class BladeResources {
         return c.withMass(Math.min(CollabBlade.MASS_MAX, c.mass() + add), c.unstable());
     }
 
+    /** 0.1.11.234 (B2): the piezo edge's extra damage on a hit: none without EU or when overheated, else grows with heat. */
+    public static float piezoDamage(BladeCore c) {
+        if (c.eu() <= 0 || c.overheated()) return 0;
+        return Math.min(CollabBlade.PIEZO_MAX, CollabBlade.PIEZO_BASE + c.heat() / CollabBlade.PIEZO_HEAT_DIV);
+    }
+
+    /** 0.1.11.234 (B2): the edge is red-hot (hits set the target on fire). */
+    public static boolean redHot(BladeCore c) {
+        return c.heat() >= CollabBlade.NANO_RED_HOT;
+    }
+
+    /**
+     * 0.1.11.234 (B2): nanobot self-repair at {@code tick} (game time) of a nano blade with {@code damage}: null when it
+     * does not mend now (not on the interval, undamaged, or short of EU), else the core after paying.
+     */
+    public static BladeCore mend(BladeCore c, long tick, int damage) {
+        if (damage <= 0 || tick % CollabBlade.NANO_MEND_INTERVAL != 0 || c.eu() < CollabBlade.NANO_MEND_EU) return null;
+        return c.withEu(c.eu() - CollabBlade.NANO_MEND_EU);
+    }
+
     /** EU the blade can still take. */
     public static long room(BladeCore c, CollabBlade kind) {
         return Math.max(0, kind.euMax - c.eu());

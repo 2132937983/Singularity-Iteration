@@ -9,9 +9,12 @@
   "properties": {
     "attack_base": 6.0,
     "max_damage": 60,
-    "slash_art": "slashblade:drive_vertical",
+    "slash_art": "mio_icif:piezo_cleave",
     "sword_type": [
       "bewitched"
+    ],
+    "special_effects": [
+      "mio_icif:piezo_edge"
     ]
   },
   "enchantments": [

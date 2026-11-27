@@ -48,6 +48,9 @@ final class SiSlashBladeServer {
         ArmoryMaintenance.afterRepair = SiSlashBladeServer::afterRepair;
         modEventBus.addListener(SiSlashBladeServer::capabilities);
         NeoForge.EVENT_BUS.register(SiSlashBladeServer.class);
+        // 0.1.11.234 (B2): slash arts, special effects and their combo states
+        SiSlashBladeContent.register(modEventBus);
+        NeoForge.EVENT_BUS.register(SiNanoBlade.class);
     }
 
     static CollabBlade resolve(ItemStack stack) {

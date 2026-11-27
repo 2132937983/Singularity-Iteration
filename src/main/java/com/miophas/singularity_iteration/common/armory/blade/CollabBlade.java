@@ -46,6 +46,13 @@ public enum CollabBlade {
     /** Heat the edge vents per tick (6 per second). */
     public static final float NANO_VENT = 0.3F;
     public static final long NANO_HIT_EU = 50;
+    /** 0.1.11.234 (B2): the piezo edge's extra (armour-ignoring) damage: base, plus heat / this, at most {@link #PIEZO_MAX}. */
+    public static final float PIEZO_BASE = 2, PIEZO_HEAT_DIV = 25, PIEZO_MAX = 6;
+    /** Heat from which the edge is red-hot: hits set the target on fire. */
+    public static final float NANO_RED_HOT = 70;
+    /** Nanobot self-repair: 1 durability every this many ticks while carried, for this much EU. */
+    public static final int NANO_MEND_INTERVAL = 40;
+    public static final long NANO_MEND_EU = 400;
     // quantum: coherence of one slash art when the wearer has a quantum core
     public static final float QUANTUM_SA_COHERENCE = 30;
     // singularity: mass and containment

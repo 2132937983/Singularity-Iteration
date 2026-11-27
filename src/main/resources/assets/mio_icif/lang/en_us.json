@@ -6262,5 +6262,9 @@
   "hud.mio_icif.blade.no_core": "No quantum core: EU collapse",
   "hud.mio_icif.blade.mass": "Mass %s",
   "hud.mio_icif.blade.unstable": "Containment failed! Mass %s leaking",
-  "hud.mio_icif.blade.contained": "Mass %s · held %s"
+  "hud.mio_icif.blade.contained": "Mass %s · held %s",
+  "slash_art.mio_icif.piezo_cleave": "Piezo Cleave",
+  "slash_art.mio_icif.piezo_cleave.desc": "The piezo stack rings a standing wave along the cut, and three afterimages strike almost at once",
+  "se.mio_icif.piezo_edge": "Piezo Edge",
+  "se.mio_icif.piezo_edge.desc": "With EU in the blade, hits add armour-piercing vibration damage that grows with edge heat; at 70 heat they set the target on fire. Carried, nanobots mend the blade with its own EU"
 }

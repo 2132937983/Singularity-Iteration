@@ -55,14 +55,14 @@ def radial_cap(mesh, ring, tile, reverse=False):
         panel(mesh,(centre,ring[i],ring[j]),tile,((.5,.5),coords[i],coords[j]),reverse)
 
 
-def surface_light(light, points, coords, side, near=0, far=1):
+def surface_light(light, points, coords, side, near, far, tile):
     a,b,c,d = points
     aa,bb,cc,dd = coords
     def mix(first,second,s):
         return tuple(lerp(v,w,s) for v,w in zip(first,second))
     ps = (mix(a,b,near),mix(a,b,far),mix(d,c,far),mix(d,c,near))
     st = (mix(aa,bb,near),mix(aa,bb,far),mix(dd,cc,far),mix(dd,cc,near))
-    panel(light,[(x,y,z+side*.075) for x,y,z in ps],"blade_light",st)
+    panel(light,[(x,y,z+side*.075) for x,y,z in ps],tile,st)
 
 
 def make_blade(part, inventory=False):
@@ -85,18 +85,19 @@ def make_blade(part, inventory=False):
                 continue
             st=tuple(((p[0]-PROFILE[0][0])/(TIP-PROFILE[0][0]),t)
                      for p,t in zip(pts,(ta,ta,tb,tb)))
-            panel(mesh,pts,"blade",st)
+            panel(mesh,pts,"item_steel" if inventory else "blade",st)
             if min(ta,tb)==0 or x0<=-298:
                 near = 2.7/(x0-x1) if part=="tip" and x0==BREAK else 0
                 far = 1-2.7/(x0-x1) if part=="hilt" and x1==BREAK else 1
-                surface_light(light,pts,st,1 if ta<tb else -1,near,far)
+                surface_light(light,pts,st,1 if ta<tb else -1,near,far,
+                              "item_hamon" if inventory else "blade_light")
     if part=="hilt":
         radial_cap(mesh,rings[-1],"fracture",True)
     if part=="tip":
         radial_cap(mesh,rings[0],"fracture")
     else:
         radial_cap(mesh,rings[0],"socket")
-        fittings(mesh,light)
+        fittings(mesh,light,inventory)
     return mesh,light
 
 
@@ -118,7 +119,13 @@ def hull(mesh, rows, sides, shoulders, rim, cap_near=True, cap_far=True, span=No
         for i in range(8):
             j=(i+1)%8
             pts=(a[i],b[i],b[j],a[j])
-            if i in (1,5):
+            if sides==shoulders==rim and sides in ("sheath","kojiri"):
+                # The upper lip, broad cheeks and narrow spine share the same
+                # longitudinal UV. A ceramic joint meets at all eight corners.
+                around=(2/23,4/23,19/23,21/23,1,19/23,4/23,0)
+                ta,tb=around[i],around[j]
+                panel(mesh,pts,sides,((sa,ta),(sb,ta),(sb,tb),(sa,tb)))
+            elif i in (1,5):
                 ta,tb=(0,1) if i==1 else (1,0)
                 panel(mesh,pts,sides,((sa,ta),(sb,ta),(sb,tb),(sa,tb)))
             else:
@@ -130,12 +137,16 @@ def hull(mesh, rows, sides, shoulders, rim, cap_near=True, cap_far=True, span=No
     return rings
 
 
-def tsuba(mesh,light):
+def tsuba(mesh,light,inventory):
     # Section coordinates are (Y,Z). Five strips span the graphite face;
     # the two slit columns intentionally have no surface over their openings.
     centre_y=1.25
     near,far=-31,-34.6
     def point(x,y,z):
+        if inventory:
+            # Turn the plate toward the GUI camera about its mounting point.
+            # The two apertures need distinct samples in the native 32px item.
+            return -32.8+2.2*z+.18*(x+32.8),centre_y+y,.46*z-.94*(x+32.8)
         return (x,centre_y+y,z)
     def contour(h,w,c):
         return [(h,-w+c),(h,w-c),(h-c,w),(-h+c,w),(-h,w-c),
@@ -146,12 +157,12 @@ def tsuba(mesh,light):
         return ((z+10.15)/20.3,(14.65-y)/29.3)
     def flat(surface,x,yz,tile,rev=False):
         panel(surface,[point(x,y,z) for y,z in yz],tile,[cap_uv(y,z) for y,z in yz],rev)
-    holes=((-3.05,-1.55),(1.55,3.05))
+    holes=((-5.45,-2.10),(2.10,5.45)) if inventory else ((-3.05,-1.55),(1.55,3.05))
     for x,rev in ((near,False),(far,True)):
         for i in range(8):
             j=(i+1)%8
             flat(mesh,x,[outer[i],outer[j],inner[j],inner[i]],"ceramic",rev)
-        columns=(-8.65,-5.65,-3.05,-1.55,1.55,3.05,5.65,8.65)
+        columns=(-8.65,-5.65,*holes[0],*holes[1],5.65,8.65)
         for a,b in zip(columns,columns[1:]):
             ha=13.15-max(0,abs(a)-5.65)
             hb=13.15-max(0,abs(b)-5.65)
@@ -168,6 +179,12 @@ def tsuba(mesh,light):
             j=(i+1)%4
             panel(mesh,[point(x,*v) for x,v in ((near,wall[i]),(far,wall[i]),(far,wall[j]),(near,wall[j]))],
                   "socket",reverse=True)
+        if inventory:
+            # Across one item pixel the two luminous lips merge into one
+            # aperture. Represent each as a single cyan sample above dark steel.
+            for x,rev in ((near+.025,False),(far-.025,True)):
+                flat(light,x,[(-10.75,a),(10.75,a),(10.75,b),(-10.75,b)],"seam_light",rev)
+            continue
         # Light is confined to the inside walls and the thin edges of the
         # apertures. The centre still shows clear through the guard from either face.
         for z,sgn in ((a,1),(b,-1)):
@@ -180,14 +197,14 @@ def tsuba(mesh,light):
                             ((-10.75,lo),(10.75,lo),(10.75,hi),(-10.75,hi))],"seam_light",reverse=rev)
 
 
-def fittings(mesh,light):
+def fittings(mesh,light,inventory):
     hull(mesh,[(36,0,3.8,2.98),(27,.1,4.65,3.3),(-20,.65,5.12,3.4),(-28.7,1.1,4.9,3.15)],
          "grip","frame","frame")
     hull(mesh,[(41.74,.2,.32,.27),(37,.25,4.4,3.3),(33,.15,4.25,3.25)],
          "pommel","ceramic","socket")
     hull(mesh,[(-27.6,1.13,4.95,3.32),(-30.95,1.22,5.25,3.5)],
          "socket","frame","frame")
-    tsuba(mesh,light)
+    tsuba(mesh,light,inventory)
 
 
 SAYA=tuple((x,centreline(x),h,z) for x,h,z in (
@@ -209,10 +226,12 @@ def make_sheath():
     mesh,light=Mesh(),Mesh()
     first,last=SAYA[0][0],SAYA[-1][0]
     # The graphite koiguchi seats squarely against the steel blade's guard.
-    outer=hull(mesh,SAYA[:2],"socket","frame","frame",False,False)[0]
-    hull(mesh,SAYA[1:-2],"sheath","ceramic","ceramic",False,False,span=(first,last))
+    throat_end,metal_start=(at(SAYA,x) for x in (-42.50,-301.60))
+    outer=hull(mesh,(SAYA[0],SAYA[1],throat_end),"kojiri","kojiri","kojiri",False,False)[0]
+    hull(mesh,(throat_end,)+SAYA[2:-3]+(metal_start,),"sheath","sheath","sheath",
+         False,False,span=(first,last))
     start,stop=(at(SAYA,x) for x in (-310.6,-312.85))
-    hull(mesh,SAYA[-3:-1]+(start,),"ceramic","ceramic","ceramic",False,False)
+    hull(mesh,(metal_start,)+SAYA[-3:-1]+(start,),"kojiri","kojiri","kojiri",False,False)
     hull(mesh,[start,stop],"socket","frame","socket",False,False)
     hull(mesh,[stop,SAYA[-1]],"ceramic","ceramic","ceramic",False,True)
     inner=ring((first,centreline(first),6.55,2.46))
@@ -222,21 +241,17 @@ def make_sheath():
         panel(mesh,(outer[i],outer[j],inner[j],inner[i]),"socket")
         panel(mesh,(inner[i],inner[j],recess[j],recess[i]),"frame")
     radial_cap(mesh,recess,"socket")
-    # Kurikata is a compact graphite lacing bridge on the outward face.
-    # Two feet leave the transverse passage open beneath its arched crown.
-    upper=[(-117,4.75),(-119,6.05),(-126,6.05),(-128,4.75)]
-    lower=[(-117,3.5),(-120,4.60),(-125,4.60),(-128,3.5)]
-    for i in range(3):
-        front=[(x,centreline(x)+1.9,z) for x,z in (upper[i],upper[i+1],lower[i+1],lower[i])]
-        back=[(x,centreline(x)-1.9,z) for x,z in (upper[i],upper[i+1],lower[i+1],lower[i])]
-        panel(mesh,front,"socket",reverse=True)
-        panel(mesh,back,"socket")
-        panel(mesh,(front[0],front[1],back[1],back[0]),"frame")
-        panel(mesh,(front[2],front[3],back[3],back[2]),"socket")
-        if i==0:
-            panel(mesh,(front[3],front[0],back[0],back[3]),"frame")
-        if i==2:
-            panel(mesh,(front[1],front[2],back[2],back[1]),"frame")
+    # A low, chamfered kurikata follows the cheek; the cord eye is one texel.
+    foot,crown=[],[]
+    for u,v in OCT:
+        for loop,scale,relief in ((foot,1,-.025),(crown,.78,1.35)):
+            x=-122.5+3.9*u*scale
+            _,y,_,z=at(SAYA,x)
+            loop.append((x,y+2.8*v*scale,z+relief))
+    for i in range(8):
+        j=(i+1)%8
+        panel(mesh,(foot[i],foot[j],crown[j],crown[i]),"kojiri")
+    panel(mesh,crown,"kurikata",[(.5+.5*u,.5-.5*v) for u,v in OCT])
     # Five unevenly spaced graduations share one inset near the mouth.
     for side in (1,-1):
         for layer,tile,lift in ((mesh,"ruler",.035),(light,"ruler_light",.105)):
@@ -281,7 +296,9 @@ def inventory_transform(p, is_sheath, broken):
         end=(-84,42) if not broken else (-68,45)
         s=(x-SAYA[0][0])/(SAYA[-1][0]-SAYA[0][0])
         offset=(y-lerp(SAYA[0][1],SAYA[-1][1],s))*1.02
-        depth=12+z*.87
+        # Keep the graphite throat clear of the optional durability backing
+        # and leave the blade's full layer in front at the two meshes' crossing.
+        depth=9.8+z*.83
     else:
         start=(-80,-66) if not broken else (-66,-75)
         end=(66,74)

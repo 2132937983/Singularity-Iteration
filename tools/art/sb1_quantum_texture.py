@@ -1,5 +1,4 @@
 """Original pixel atlas and tiled interference film for the quantum tachi."""
-from math import pi, sin
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -16,6 +15,8 @@ ISLANDS = {
     "fracture": (112, 99, 14, 14), "ruler": (98, 135, 23, 9),
     "ruler_light": (109, 135, 23, 9), "seam_light": (98, 162, 12, 8),
     "pommel": (108, 162, 12, 12),
+    "kurikata": (98, 120, 7, 7), "kojiri": (107, 120, 11, 8),
+    "item_steel": (98, 178, 68, 12), "item_hamon": (112, 178, 68, 12),
 }
 WHITE, PEARL, MIST, SHADE = "#FFFFFF", "#EDEDE8", "#D6D7D2", "#B4B6B3"
 STEEL, INK, DARK, SILVER = "#5A6472", "#1B1E24", "#2B3440", "#9A9DA2"
@@ -25,6 +26,39 @@ CYAN, ICE, VIOLET = "#4DE6FF", "#C8FAFF", "#9B7CFF"
 def uv(tile, s, t):
     x, y, length, width = ISLANDS[tile]
     return (x + .5 + t*(width-1))/128, 1-(y + .5 + s*(length-1))/256
+
+
+def hamon(draw, width, luminous):
+    # Each pair is the length and height of one hand-spaced gunome crown.
+    # The last crowns are about half as wide as the first ones.
+    lobes = ((26,7.3),(24,4.9),(27,7.7),(21,5.4),(22,7.6),(20,4.7),
+             (19,7.8),(17,5.7),(18,7.9),(15,5.1),(16,7.6),(13,5.6),
+             (14,7.4))
+    start = 0
+    for length, height in lobes:
+        for x in range(start, min(start+length, width)):
+            s = x/(width-1)
+            u = 2*(x-start)/length-1
+            # A rounded crown and a steep foot where adjacent lobes meet.
+            crown = 5.35-1.15*s + height*(1-u*u)**.72
+            pitch = 3.8-1.8*s
+            rows = [round(crown-i*pitch) for i in range(3)]
+            if not luminous:
+                draw.line((x,max(1,rows[-1]-1),x,rows[0]+1),fill="#ADBFCB")
+            for row,glow in zip(rows,(CYAN,"#3FC3DF","#48ADC9")):
+                if row<2:
+                    continue
+                if luminous:
+                    draw.point((x,row),fill=glow)
+                else:
+                    draw.point((x,row),fill="#1D3B46")
+                    draw.point((x,row+1),fill="#6F8193")
+            if luminous:
+                draw.point((x,0),fill=ICE)
+                draw.point((x,1),fill=CYAN)
+            else:
+                draw.line((x,0,x,1),fill="#577481")
+        start += length
 
 
 def paint(name, width, height):
@@ -50,49 +84,62 @@ def paint(name, width, height):
             d.polygon(((231,0),(right,0),(right,bottom),(240,bottom)),fill="#A8B8C8")
             d.polygon(((231,0),(right,0),(right,13),(235,14)),fill="#D4DFE7")
             d.line(((231,0),(240,bottom)),fill="#FFF8EE",width=1)
-        # A single band along the edge, with alternating lit and unlit lobes.
-        # Increasing phase frequency compresses their spacing toward the tip.
-        for x in range(right+1):
-            s = x/right
-            cycles = 5*s+9*s*s
-            phase = cycles % 1
-            # Offset the crest so the long fall remains readable at 2x.
-            peak = .40+.045*sin(2*pi*cycles/3)
-            crest = phase/peak if phase<peak else (1-phase)/(1-peak)
-            middle = 4.2+6.1*crest
-            # The cyan tongue tapers into an unlit silver bed at either end.
-            tongue = max(0,1-abs((phase-.48)/.42))
-            thickness = 4.9*tongue**.68
-            top,bottom_y=round(middle-2.4),round(middle+2.4)
-            low,high=round(middle-thickness*.5),round(middle+thickness*.5)
-            if name == "blade":
-                d.line((x,top,x,bottom_y),fill="#6F8193")
-                if thickness>.65:
-                    d.line((x,low,x,high),fill="#19404E")
-                d.line((x,0,x,1),fill="#46707D")
-            else:
-                d.line((x,0,x,1),fill=ICE)
-                if thickness>.65:
-                    d.line((x,low,x,high),fill=CYAN)
-                    if thickness>3.4:
-                        d.point((x,low+1),fill="#9AF1FF")
+            # Reflections stop at the ridge, with one quieter flash on the back.
+            for x,y,run,rise,thick,colour in (
+                    (46,15,10,5,2,"#FFFFFF"), (130,15,7,4,2,"#F2F6FA"),
+                    (202,15,11,6,3,"#FFFFFF"), (158,28,9,5,2,"#A9B6C4")):
+                d.polygon(((x,y),(x+run,y-rise),(x+run,y-rise+thick-1),
+                           (x,y+thick-1)),fill=colour)
+        hamon(d,width,name=="blade_light")
         if name == "blade":
             d.rectangle((247,6,247,10),fill="#51516A")
             d.rectangle((250,0,right,bottom),fill="#294454")
         else:
             d.rectangle((247,6,247,10),fill=VIOLET)
             d.rectangle((250,0,right,bottom),fill=CYAN)
+    elif name in ("item_steel","item_hamon"):
+        # A blade in the native 32px item is only one or two samples wide.
+        # Merge the subpixel interference lines, preserving the rounded envelope.
+        if name=="item_steel":
+            image=paint("blade",252,34).resize((width,height),Image.Resampling.NEAREST)
+            d=ImageDraw.Draw(image)
+            d.rectangle((0,0,right,4),fill="#CAD6E2")
+        for x in range(width):
+            s=x/right
+            phase=(3.9*s+1.8*s*s)%1
+            crest=(1-(2*phase-1)**2)**.5
+            reach=round(1+2.6*crest)
+            if name=="item_steel":
+                d.line((x,0,x,reach),fill="#15303B")
+                d.point((x,reach+1),fill="#9AABBB")
+            else:
+                d.line((x,0,x,reach),fill="#37CBDF")
+                if reach>=3:
+                    d.point((x,reach),fill="#76DEEF")
+            if crest>.83:
+                d.point((x,reach-1),fill="#6F8193" if name=="item_steel" else (0,0,0,0))
+        d.line((right,0,right,bottom),fill=CYAN if name=="item_hamon" else "#25404D")
     elif name == "sheath":
         # A soft ivory face contrasts with the colder, strongly split steel.
         d.rectangle((0,0,right,bottom),fill=PEARL)
         d.polygon(((0,0),(right,0),(right,3),(170,3),(96,4),(0,4)),fill=WHITE)
         d.polygon(((0,18),(51,18),(121,20),(211,18),(right,16),
                    (right,bottom),(0,bottom)),fill=MIST)
+        d.line((0,bottom,right,bottom),fill="#BCC2C3")
         for s in (.24,.49,.75):
             x=round(right*s)
-            for y in range(height):
-                d.point((x+round(3*(y/bottom-.5)),y), fill="#727F8B")
-        d.line((0,bottom,right,bottom),fill="#BCC2C3")
+            d.line((x,0,x,bottom),fill=SILVER)
+            d.line((x+1,0,x+1,bottom),fill=SHADE)
+    elif name == "kurikata":
+        d.rectangle((0,0,right,bottom),fill=DARK)
+        d.line(((1,1),(4,1),(5,2)),fill=STEEL)
+        d.point((3,3),fill="#10151C")
+        d.point((3,4),fill=STEEL)
+    elif name == "kojiri":
+        d.rectangle((0,0,right,bottom),fill=DARK)
+        d.rectangle((0,0,right,1),fill=STEEL)
+        d.line((0,2,right,2),fill="#45515F")
+        d.line((0,bottom,right,bottom),fill=INK)
     elif name == "grip":
         # Interleaved graphite-blue ribbons expose the ivory foundation
         # through repeated diamond windows. The menuki is visible on each cheek.

@@ -16,7 +16,7 @@ from mathutils import Euler
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "src/main/resources/assets/mio_icif/model/slashblade"
 BLENDS = ROOT / "docs/art/sb1/blender"
-MATERIALS = {"nano": "Carbon and ceramic", "quantum": "Glazed ceramic", "singularity": "Dark matter and coils"}
+MATERIALS = {"nano": "Carbon and ceramic", "quantum": "Polished steel and ceramic mounts", "singularity": "Dark matter and coils"}
 GROUPS = (
     ("Blade", "blade"),
     ("Sheath", "sheath"),

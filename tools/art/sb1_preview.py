@@ -251,8 +251,7 @@ def slot(im, xy, stamp, zoom=1):
 
 
 def views(m):
-    height = 1496 if m.kind == "singularity" else 1282
-    im = page(1400, height, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
+    im = page(1400, 1496, f"{m.title}   /   外观对照", "SlashBlade Resharped 2.2.1")
     blade = m.lit("blade")
     closed = m.lit("blade", "sheath")
     front, edge, back, oblique = rotation(), rotation(-90), rotation(y=180), rotation(20,-24,-6)
@@ -317,18 +316,33 @@ def views(m):
             else:
                 scene = closed
             paste(im,m.raster(scene,(296,113),cam,pad=6,supersample=2),(left+11,top+35))
-    if m.kind == "singularity":
-        # Look toward the ends so the dark core and the three separate jaws
-        # can be inspected without changing the assembled game geometry.
-        for left,label,name,cam,focus,zoom in (
-            (36,"约束环与暗芯","blade",rotation(18,69,4),(-34,0,0),5.0),
-            (710,"鞘尾三爪","sheath",rotation(-12,47,-6),(-330,-28,0),7.0),
-        ):
-            panel(im,(left,1242,left+651,1458))
-            text(im,left+17,1260,label,18,INK,bold=True)
-            detail = m.raster(m.lit(name),(615,153),cam,pixels=zoom,
-                              center=(cam @ focus)[:2],supersample=2)
-            paste(im,detail,(left+18,1291))
+    # These are views of the actual meshes, including their depth-tested emissive layers.
+    fittings = {
+        "quantum": [
+            ("镜面钢与干涉刃纹","blade",rotation(5,-8,-2),(-171,-3,0),6.1),
+            ("双缝镡","blade",rotation(6,76,-3),(-34,0,0),5.0),
+            ("白陶瓷鞘与干涉刻纹","sheath",rotation(10,-13,2),(-70,0,0),4.9),
+        ],
+        "nano": [
+            ("刃根微齿与回火色","blade",rotation(5,-10,1),(-60,1,0),6.8),
+            ("鞘口修复梳齿","sheath",rotation(8,-73,0),(-35,3,0),6.0),
+            ("鞘侧充电口","sheath",rotation(12,13,-4),(-83.5,2.5,4.1),6.2),
+        ],
+        "singularity": [
+            ("约束环与泄压口","blade",rotation(5,76,0),(-37,.6,0),4.5),
+            ("刀背吸积槽","blade",rotation(4,-9,1),(-100,1,0),6.5),
+            ("线圈指示格","sheath",rotation(10,-12,0),(-100,0,0),5.0),
+            ("鞘尾三爪","sheath",rotation(-12,47,-6),(-335,-28,0),6.9),
+        ],
+    }[m.kind]
+    stride = 1344 // len(fittings)
+    for i,(label,name,cam,focus,zoom) in enumerate(fittings):
+        left = 36 + i*stride
+        panel(im,(left,1242,left+stride-16,1458),m.background)
+        text(im,left+16,1260,label,18,INK,bold=True)
+        detail = m.raster(m.lit(name),(stride-46,153),cam,pixels=zoom,
+                          center=(cam @ focus)[:2],supersample=2)
+        paste(im,detail,(left+15,1291))
     m.save(im,"views")
 
 

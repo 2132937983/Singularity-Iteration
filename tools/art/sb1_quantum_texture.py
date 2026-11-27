@@ -1,4 +1,5 @@
 """Original pixel atlas and tiled interference film for the quantum tachi."""
+from math import pi, sin
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -10,11 +11,11 @@ SIZE = (128, 256)
 ISLANDS = {
     "blade": (1, 1, 252, 34), "sheath": (36, 1, 252, 24),
     "blade_light": (62, 1, 252, 34), "grip": (98, 1, 66, 14),
-    "frame": (114, 1, 54, 12), "prong": (98, 70, 26, 16),
+    "frame": (114, 1, 54, 12), "tsuba": (98, 70, 26, 16),
     "socket": (116, 70, 26, 9), "ceramic": (98, 99, 32, 12),
-    "fracture": (112, 99, 14, 14), "grille": (98, 135, 12, 12),
-    "emitter": (112, 135, 12, 12), "seam_light": (98, 152, 12, 8),
-    "pommel": (108, 152, 12, 12),
+    "fracture": (112, 99, 14, 14), "ruler": (98, 135, 23, 9),
+    "ruler_light": (109, 135, 23, 9), "seam_light": (98, 162, 12, 8),
+    "pommel": (108, 162, 12, 12),
 }
 WHITE, PEARL, MIST, SHADE = "#FFFFFF", "#EDEDE8", "#D6D7D2", "#B4B6B3"
 STEEL, INK, DARK, SILVER = "#5A6472", "#1B1E24", "#2B3440", "#9A9DA2"
@@ -32,84 +33,97 @@ def paint(name, width, height):
     right, bottom = width-1, height-1
     if name in ("blade", "blade_light"):
         if name == "blade":
-            d.rectangle((0, 0, right, bottom), fill=PEARL)
-            d.rectangle((0, 0, right, 5), fill="#536975")
-            d.rectangle((0, 2, right, 3), fill="#B7C5C8")
-            d.polygon(((0, 6), (right, 6), (right, 9), (154, 10), (56, 10), (0, 11)), fill=WHITE)
-            d.polygon(((0, 12), (174, 11), (225, 9), (236, 10), (230, 16), (0, 16)), fill=MIST)
-            d.polygon(((0, 14), (218, 14), (234, 16), (222, 23), (0, 23)), fill=DARK)
-            d.line(((0, 14), (217, 14), (231, 16)), fill="#7F929A")
-            d.line(((0, 23), (221, 23), (234, 17)), fill=WHITE)
-            d.rectangle((0, 29, right, 32), fill=MIST)
-            d.line((0, bottom, right, bottom), fill=STEEL)
-            # A short indexing mark and two ceramic mounting tongues near the root.
-            d.polygon(((6, 25), (21, 25), (24, 27), (8, 27)), fill="#A7ADAE")
-            d.line((9, 25, 14, 25), fill=VIOLET)
-            d.polygon(((225, 11), (right, 5), (right, 19), (234, 17)), fill="#E3E9E8")
+            # Cool sky reflection over the shinogi, a bright edge-side ground
+            # and a warm, narrow crest where the polishing planes meet.
+            d.rectangle((0,0,right,bottom),fill="#8FA0B2")
+            d.polygon(((0,19),(51,17),(172,19),(right,17),(right,26),
+                       (147,28),(82,24),(0,27)),fill="#73899E")
+            d.polygon(((0,28),(89,26),(165,30),(right,27),(right,bottom),(0,bottom)),fill="#5E6B7A")
+            d.rectangle((0,0,right,16),fill="#C2CCD6")
+            d.polygon(((0,9),(61,11),(125,8),(203,11),(right,9),
+                       (right,15),(121,13),(75,16),(0,14)),fill="#E6ECF2")
+            d.line(((0,17),(72,17),(103,16),(210,16),(235,15)),fill="#FFF8EE")
+            # The short bo-hi on the root section ends with a rounded stop.
+            d.polygon(((4,21),(8,19),(72,19),(78,21),(72,23),(8,23)),fill="#5E6B7A")
+            d.line(((7,23),(70,23),(75,22)),fill="#B8C7D1")
+            # The small tip has its own polished plane and a single yokote.
+            d.polygon(((231,0),(right,0),(right,bottom),(240,bottom)),fill="#A8B8C8")
+            d.polygon(((231,0),(right,0),(right,13),(235,14)),fill="#D4DFE7")
+            d.line(((231,0),(240,bottom)),fill="#FFF8EE",width=1)
+        # A single band along the edge, with alternating lit and unlit lobes.
+        # Increasing phase frequency compresses their spacing toward the tip.
+        for x in range(right+1):
+            s = x/right
+            cycles = 5*s+9*s*s
+            phase = cycles % 1
+            # Offset the crest so the long fall remains readable at 2x.
+            peak = .40+.045*sin(2*pi*cycles/3)
+            crest = phase/peak if phase<peak else (1-phase)/(1-peak)
+            middle = 4.2+6.1*crest
+            # The cyan tongue tapers into an unlit silver bed at either end.
+            tongue = max(0,1-abs((phase-.48)/.42))
+            thickness = 4.9*tongue**.68
+            top,bottom_y=round(middle-2.4),round(middle+2.4)
+            low,high=round(middle-thickness*.5),round(middle+thickness*.5)
+            if name == "blade":
+                d.line((x,top,x,bottom_y),fill="#6F8193")
+                if thickness>.65:
+                    d.line((x,low,x,high),fill="#19404E")
+                d.line((x,0,x,1),fill="#46707D")
+            else:
+                d.line((x,0,x,1),fill=ICE)
+                if thickness>.65:
+                    d.line((x,low,x,high),fill=CYAN)
+                    if thickness>3.4:
+                        d.point((x,low+1),fill="#9AF1FF")
+        if name == "blade":
+            d.rectangle((247,6,247,10),fill="#51516A")
+            d.rectangle((250,0,right,bottom),fill="#294454")
         else:
-            # The paired edge echoes share one flush texture pass. Two clear
-            # texels separate them. Both follow just the +Y side of the blade.
-            d.rectangle((1, 0, right, 1), fill="#9CF5FF")
-            d.rectangle((1, 4, right-2, 5), fill="#66D8EF")
-            d.rectangle((0, 17, 223, 20), fill=CYAN)
-            d.line(((0, 18), (205, 18), (224, 17)), fill=ICE)
-            d.polygon(((222, 17), (231, 16), (224, 19), (222, 20)), fill=CYAN)
-            for x in (21, 94, 159):
-                d.line((x, 20, x+5, 20), fill=VIOLET)
+            d.rectangle((247,6,247,10),fill=VIOLET)
+            d.rectangle((250,0,right,bottom),fill=CYAN)
     elif name == "sheath":
-        d.rectangle((0, 0, right, bottom), fill=PEARL)
-        # Glazed upper lip and a deep, recessed instrument strip, far enough
-        # from the edge that the shell still reads as white ceramic.
-        d.polygon(((0, 0), (right, 0), (right, 3), (173, 3), (115, 5), (0, 5)), fill=WHITE)
-        d.polygon(((0, 20), (30, 18), (217, 18), (right, 14), (right, bottom), (0, bottom)), fill=MIST)
-        d.polygon(((17, 16), (23, 12), (211, 12), (219, 16)), fill="#A9B4B9")
-        d.polygon(((21, 15), (25, 13), (210, 13), (214, 15)), fill=STEEL)
-        for x in (30, 33, 37, 42, 48, 55, 63, 72, 82, 93, 105, 118,
-                  131, 143, 154, 164, 173, 181, 188, 194, 199, 203, 206):
-            d.line((x, 12, x, 16), fill=DARK)
-        for x in (26, 83, 156, 208):
-            d.line((x-11, 7, x-4, 7), fill="#AAB7BB")
-            d.line((x-3, 7, x-2, 6), fill="#AAB7BB")
-        for s in (.22, .47, .73):
-            x = round(s*right)
+        # A soft ivory face contrasts with the colder, strongly split steel.
+        d.rectangle((0,0,right,bottom),fill=PEARL)
+        d.polygon(((0,0),(right,0),(right,3),(170,3),(96,4),(0,4)),fill=WHITE)
+        d.polygon(((0,18),(51,18),(121,20),(211,18),(right,16),
+                   (right,bottom),(0,bottom)),fill=MIST)
+        for s in (.24,.49,.75):
+            x=round(right*s)
             for y in range(height):
-                k = round(x+(y/bottom-.5)*4)
-                d.line((k-2,y,k+2,y),fill=DARK)
-                d.point((k+3,y), fill=WHITE)
-                d.point((k,y),fill="#3893A7")
-        d.line((0, bottom, right, bottom), fill="#BEC4C4")
+                d.point((x+round(3*(y/bottom-.5)),y), fill="#727F8B")
+        d.line((0,bottom,right,bottom),fill="#BCC2C3")
     elif name == "grip":
-        d.rectangle((0, 0, right, bottom), fill=MIST)
-        for x in range(-10, width+8, 12):
-            d.polygon(((x,0),(x+10,0),(x+8,7),(x+4,bottom),(x-3,bottom)), fill=PEARL)
-            d.line(((x+9,0),(x+7,7),(x+3,bottom)), fill="#586B78", width=2)
-            d.line(((x+10,1),(x+8,7),(x+4,bottom)), fill="#65C5D3")
-            d.line((x+2,1,x+7,1), fill=WHITE)
-            d.line((x,10,x+3,8), fill="#B6BFBE")
-    elif name == "prong":
-        d.rectangle((0, 0, right, bottom), fill=MIST)
-        d.polygon(((0, 0), (right, 0), (right-5, 5), (8, 5), (4, 9), (0, 9)),fill=WHITE)
-        d.polygon(((0, bottom-2),(8, 10),(right-6, 10),(right, 6),(right, bottom),(0,bottom)),fill=SHADE)
-        d.line(((0,bottom-1),(8,11),(right-4,11)),fill=STEEL)
+        # Interleaved graphite-blue ribbons expose the ivory foundation
+        # through repeated diamond windows. The menuki is visible on each cheek.
+        d.rectangle((0,0,right,bottom),fill=DARK)
+        for x in range(-7,width+8,13):
+            d.polygon(((x,7),(x+5,3),(x+10,7),(x+5,11)),fill="#E2E3DB")
+            d.line(((x+1,7),(x+5,4),(x+8,6)),fill=WHITE)
+            d.line(((x-2,3),(x+2,0)),fill=STEEL)
+            d.line(((x+7,12),(x+11,9),(x+14,6)),fill="#556373")
+        d.polygon(((30,6),(32,4),(35,4),(37,6),(35,9),(32,9)),fill="#9BA8AA")
+        d.line(((30,6),(32,4),(35,4)),fill="#EEEBDD")
+        d.line(((33,8),(35,8),(36,6)),fill="#596977")
+    elif name == "tsuba":
+        d.rectangle((0,0,right,bottom),fill=DARK)
+        d.polygon(((0,0),(right,0),(right,3),(4,4),(0,8)),fill="#3D4B5A")
+        d.line(((1,3),(3,1),(right-4,1)),fill="#647485")
+        d.line(((1,bottom-2),(right-5,bottom-2),(right-2,bottom-5)),fill="#1E2732")
     elif name == "fracture":
-        d.rectangle((0, 0, right, bottom), fill=MIST)
-        d.polygon(((0, 4),(4, 3),(7, 6),(11, 3),(right, 4),(right, 9),(8, 10),(4, 8),(0, 10)), fill=DARK)
-        for x in (2,5,9,12):
-            d.line((x,5,x,8),fill="#6A8C96")
-        d.line(((0,3),(4,2),(7,5),(10,3)), fill=WHITE)
-    elif name in ("grille", "emitter"):
-        if name == "grille":
-            d.rectangle((0,0,right,bottom),fill=DARK)
-            d.line(((0,bottom),(0,0),(right,0)),fill="#7F8F99")
-            d.rectangle((2,2,right-2,bottom-2),fill=INK)
-        else:
-            for x in (2,5,8):
-                d.line((x,2,x,bottom-2),fill=CYAN)
-            for y in (3,7):
-                d.line((2,y,right-2,y),fill=CYAN)
-            for xy in ((2,3),(5,7),(8,3)):
-                d.point(xy,fill=ICE)
-            d.point((8,8),fill=VIOLET)
+        d.rectangle((0,0,right,bottom),fill="#C2CCD6")
+        d.polygon(((0,0),(7,0),(5,4),(9,8),(7,bottom),(0,bottom)),fill="#E6ECF2")
+        d.line(((6,0),(5,4),(8,8),(6,bottom)),fill="#566676",width=2)
+        d.line(((4,0),(3,4),(6,8)),fill="#FFF8EE")
+    elif name in ("ruler","ruler_light"):
+        if name=="ruler":
+            d.rectangle((0,0,right,bottom),fill="#CBD1CE")
+            d.rectangle((0,0,right,1),fill="#A8B3B4")
+            d.line((0,bottom,right,bottom),fill=WHITE)
+        for x in (2,8,13,17,20):
+            d.line((x,2,x,bottom-2),fill=CYAN if name=="ruler_light" else "#284454")
+            if name=="ruler_light" and x in (2,13):
+                d.point((x,2),fill=ICE)
     elif name == "seam_light":
         d.rectangle((0,0,right,bottom), fill=CYAN)
         d.line((0,2,right,2),fill=ICE)

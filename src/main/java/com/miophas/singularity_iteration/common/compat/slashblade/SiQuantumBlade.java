@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.compat.slashblade;
 
+import com.miophas.singularity_iteration.common.armory.blade.BladeFxPacket;
 import com.miophas.singularity_iteration.common.armory.blade.CollabBlade;
 import com.miophas.singularity_iteration.common.armory.blade.Entanglement;
 import com.miophas.singularity_iteration.common.compat.slashblade.SiSlashBladeContent.Timeline;
@@ -17,7 +18,6 @@ import mods.flammpfeil.slashblade.entity.EntityJudgementCut;
 import mods.flammpfeil.slashblade.event.SlashBladeEvent;
 import mods.flammpfeil.slashblade.registry.combo.ComboState;
 import mods.flammpfeil.slashblade.util.AttackManager;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -28,6 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * 0.1.11.235 (SlashBlade collab B3): the quantum blade's slash art and special effect.
@@ -57,26 +58,22 @@ final class SiQuantumBlade {
             if (!(user.level() instanceof ServerLevel level)) return;
             List<LivingEntity> targets = choose(user, level);
             List<Integer> ids = new ArrayList<>();
-            for (LivingEntity e : targets) {
-                ids.add(e.getId());
-                cloud(level, e, 1.0);
+            int[] packed = new int[targets.size() + 1];
+            packed[0] = user.getId();
+            for (int i = 0; i < targets.size(); i++) {
+                int id = targets.get(i).getId();
+                ids.add(id);
+                packed[i + 1] = id;
             }
             PENDING.put(user.getUUID(), ids);
+            int flags = v == Variant.SUPER ? BladeFxPacket.FLAG_SUPER : v == Variant.JUST ? BladeFxPacket.FLAG_JUST : BladeFxPacket.FLAG_NORMAL;
+            PacketDistributor.sendToPlayersNear(level, null, user.getX(), user.getY(), user.getZ(), 64,
+                BladeFxPacket.of(BladeFxPacket.QUANTUM_CAST, user.position(), user.getLookAngle(), 3.6F, 9F, flags, packed));
             com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.debug("collapse cut: {} targets", ids.size());
             SiSlashBladeContent.sound(user, SoundEvents.BEACON_ACTIVATE, 0.8F, 1.9F);
         });
-        t.put(4, user -> { if (user.level() instanceof ServerLevel level) fringes(level, user, 1.0); });
-        t.put(6, user -> {
-            if (!(user.level() instanceof ServerLevel level)) return;
-            for (LivingEntity e : pending(user, level)) cloud(level, e, 0.5);
-        });
-        t.put(7, user -> { if (user.level() instanceof ServerLevel level) fringes(level, user, 0.6); });
         t.put(10, user -> collapse(user, v == Variant.JUST));
         if (v == Variant.SUPER) {
-            t.put(14, user -> {
-                if (!(user.level() instanceof ServerLevel level)) return;
-                for (LivingEntity e : pending(user, level)) cloud(level, e, 0.6);
-            });
             t.put(18, user -> collapse(user, true));
         }
         t.put(v == Variant.SUPER ? 19 : 11, user -> PENDING.remove(user.getUUID()));
@@ -117,10 +114,14 @@ final class SiQuantumBlade {
         return out;
     }
 
-    /** The collapse: a cyan judgement cut and a hit on every pending target. */
+    /** The collapse: a cyan judgement cut, a blade hit, and razor-sharp client 3D space slices on every pending target. */
     static void collapse(LivingEntity user, boolean critical) {
         if (!(user.level() instanceof ServerLevel level)) return;
-        for (LivingEntity e : pending(user, level)) {
+        List<LivingEntity> targets = pending(user, level);
+        int[] ids = new int[targets.size()];
+        for (int i = 0; i < targets.size(); i++) {
+            LivingEntity e = targets.get(i);
+            ids[i] = e.getId();
             Vec3 at = e.position().add(0, e.getBbHeight() * 0.5, 0);
             EntityJudgementCut cut = new EntityJudgementCut(RegistryEvents.JudgementCut, level);
             cut.setPos(at.x, at.y, at.z);
@@ -129,35 +130,14 @@ final class SiQuantumBlade {
             cut.setIsCritical(critical);
             level.addFreshEntity(cut);
             AttackManager.doMeleeAttack(user, e, true, true, 1.0F);
-            level.sendParticles(ParticleTypes.END_ROD, at.x, at.y, at.z, 16, 0.05, 0.05, 0.05, 0.25);
-            level.sendParticles(SiSlashBladeContent.dust(CORE, 1.4F), at.x, at.y, at.z, 6, 0.1, 0.1, 0.1, 0);
+        }
+        if (ids.length > 0) {
+            int flags = critical ? BladeFxPacket.FLAG_CRITICAL : 0;
+            PacketDistributor.sendToPlayersNear(level, null, user.getX(), user.getY(), user.getZ(), 64,
+                BladeFxPacket.of(BladeFxPacket.QUANTUM_COLLAPSE, user.position(), user.getLookAngle(), 0F, 0F, flags, ids));
         }
         SiSlashBladeContent.sound(user, SoundEvents.AMETHYST_CLUSTER_BREAK, 1.2F, 0.6F);
         SiSlashBladeContent.sound(user, SoundEvents.ENDERMAN_TELEPORT, 0.5F, 1.8F);
-    }
-
-    /** A probability cloud on a target: Gaussian cyan dust (a little violet) of width {@code spread}. */
-    static void cloud(ServerLevel level, LivingEntity e, double spread) {
-        Vec3 c = e.position().add(0, e.getBbHeight() * 0.5, 0);
-        var rnd = level.random;
-        for (int i = 0; i < 36; i++) {
-            Vec3 at = c.add(rnd.nextGaussian() * spread * 0.6, rnd.nextGaussian() * spread * 0.5, rnd.nextGaussian() * spread * 0.6);
-            SiSlashBladeContent.particle(level, SiSlashBladeContent.dust(i % 6 == 0 ? VIOLET : CYAN, 0.8F), at);
-        }
-    }
-
-    /** Interference fringes around the wielder: rings at radius sqrt(k), bright and dark in turn, {@code scale} of full size. */
-    static void fringes(ServerLevel level, LivingEntity user, double scale) {
-        Vec3 c = user.position().add(0, 0.15, 0);
-        for (int k = 1; k <= 7; k++) {
-            double r = 1.4 * Math.sqrt(k) * scale;
-            int count = (int) (10 + 6 * r);
-            var dust = SiSlashBladeContent.dust(k % 2 == 1 ? CYAN : VIOLET, k % 2 == 1 ? 1.0F : 0.6F);
-            for (int i = 0; i < count; i++) {
-                double a = Math.PI * 2 * i / count;
-                SiSlashBladeContent.particle(level, dust, c.add(Math.cos(a) * r, 0, Math.sin(a) * r));
-            }
-        }
     }
 
     static boolean entangles(ItemStack stack) {
@@ -171,19 +151,21 @@ final class SiQuantumBlade {
         ItemStack stack = event.getBlade();
         if (CollabBlade.of(stack) != CollabBlade.QUANTUM || !entangles(stack)) return;
         Entanglement.of(user.getUUID()).add(target.getId(), level.getGameTime());
-        Vec3 at = target.position().add(0, target.getBbHeight() + 0.2, 0);
-        level.sendParticles(SiSlashBladeContent.dust(CYAN, 1.0F), at.x, at.y, at.z, 4, 0.15, 0.05, 0.15, 0);
+        Vec3 at = target.position().add(0, target.getBbHeight() * 0.55, 0);
+        PacketDistributor.sendToPlayersNear(level, null, at.x, at.y, at.z, 48,
+            BladeFxPacket.of(BladeFxPacket.QUANTUM_ENTANGLE_HIT, at, Vec3.ZERO, 0F, 0F, 0));
     }
 
     @SubscribeEvent
     static void onUpdate(SlashBladeEvent.UpdateEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !event.isSelected() || level.getGameTime() % 10 != 0) return;
-        if (!(event.getEntity() instanceof LivingEntity holder) || CollabBlade.of(event.getBlade()) != CollabBlade.QUANTUM) return;
-        for (int id : Entanglement.of(holder.getUUID()).live(level.getGameTime())) {
-            if (!(level.getEntity(id) instanceof LivingEntity e) || !e.isAlive()) continue;
-            Vec3 at = e.position().add(0, e.getBbHeight() + 0.3, 0);
-            level.sendParticles(SiSlashBladeContent.dust(CYAN, 0.7F), at.x, at.y, at.z, 2, 0.1, 0.05, 0.1, 0);
-        }
+        if (!(event.getEntity() instanceof ServerPlayer holder) || CollabBlade.of(event.getBlade()) != CollabBlade.QUANTUM) return;
+        List<Integer> live = Entanglement.of(holder.getUUID()).live(level.getGameTime());
+        if (live.isEmpty()) return;
+        int[] ids = new int[live.size()];
+        for (int i = 0; i < live.size(); i++) ids[i] = live.get(i);
+        PacketDistributor.sendToPlayer(holder,
+            BladeFxPacket.of(BladeFxPacket.QUANTUM_ENTANGLE_MARK, holder.position(), Vec3.ZERO, 0F, 0F, 0, ids));
     }
 
     @SubscribeEvent

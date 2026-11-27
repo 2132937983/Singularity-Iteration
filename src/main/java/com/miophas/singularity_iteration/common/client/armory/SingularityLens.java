@@ -121,7 +121,10 @@ public final class SingularityLens {
 
         @SubscribeEvent
         static void setup(FMLClientSetupEvent event) {
-            SingularityFxPacket.HOOK = SingularityLens::accept;
+            SingularityFxPacket.HOOK = p -> {
+                SingularityLens.accept(p);
+                BladeFxRenderer.acceptSingularity(p);
+            };
         }
 
         @SubscribeEvent

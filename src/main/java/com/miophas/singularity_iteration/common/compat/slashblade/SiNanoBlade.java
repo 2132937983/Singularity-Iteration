@@ -2,6 +2,7 @@
 package com.miophas.singularity_iteration.common.compat.slashblade;
 
 import com.miophas.singularity_iteration.common.armory.blade.BladeCore;
+import com.miophas.singularity_iteration.common.armory.blade.BladeFxPacket;
 import com.miophas.singularity_iteration.common.armory.blade.BladeResources;
 import com.miophas.singularity_iteration.common.armory.blade.CollabBlade;
 import com.miophas.singularity_iteration.common.compat.slashblade.SiSlashBladeContent.Timeline;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * 0.1.11.234 (SlashBlade collab B2): the nano blade's slash art and special effect.
@@ -45,9 +47,10 @@ final class SiNanoBlade {
 
     static ComboState piezoCleave(Variant v) {
         Timeline t = new Timeline();
+        int vFlag = v == Variant.SUPER ? BladeFxPacket.FLAG_SUPER : v == Variant.JUST ? BladeFxPacket.FLAG_JUST : BladeFxPacket.FLAG_NORMAL;
         // the timeline starts at tick 1
         t.put(1, user -> {
-            if (user.level() instanceof ServerLevel level) standingWave(level, user, 8.0);
+            if (user.level() instanceof ServerLevel level) standingWave(level, user, 8.0, vFlag);
             SiSlashBladeContent.sound(user, SoundEvents.AMETHYST_BLOCK_RESONATE, 1.0F, 2.0F);
         });
         int cuts = v == Variant.SUPER ? 6 : 3;
@@ -56,46 +59,43 @@ final class SiNanoBlade {
             final float roll = rolls[i];
             final boolean last = i == cuts - 1;
             t.put(4 + i * (v == Variant.SUPER ? 3 : 4), user -> {
-                if (!(user.level() instanceof ServerLevel)) return;
+                if (!(user.level() instanceof ServerLevel level)) return;
                 AttackManager.doSlash(user, roll, Vec3.ZERO, false, false, 0.6);
                 Drive.doSlash(user, roll, 0F, 10, last ? HOT : ORANGE, Vec3.ZERO, false, 0.8, KnockBacks.cancel, 1.8F);
+                Vec3 origin = user.getEyePosition().add(0, -0.25, 0);
+                int flags = (v == Variant.SUPER ? BladeFxPacket.FLAG_SUPER : 0) | (last ? BladeFxPacket.FLAG_RED_HOT : 0);
+                PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, 64,
+                    BladeFxPacket.of(BladeFxPacket.NANO_SLASH, origin, user.getLookAngle(), roll, v == Variant.SUPER ? 3.4F : 3.1F, flags));
                 SiSlashBladeContent.sound(user, SoundEvents.PLAYER_ATTACK_SWEEP, 0.8F, 1.7F);
             });
         }
         if (v == Variant.SUPER) t.put(13, user -> {
-            if (user.level() instanceof ServerLevel level) standingWave(level, user, 10.0);
+            if (user.level() instanceof ServerLevel level) standingWave(level, user, 10.0, BladeFxPacket.FLAG_SUPER);
         });
         if (v == Variant.JUST) t.put(16, user -> {
-            if (!(user.level() instanceof ServerLevel)) return;
+            if (!(user.level() instanceof ServerLevel level)) return;
             Drive.doSlash(user, -90F, 0F, 14, HOT, Vec3.ZERO, true, 1.2, KnockBacks.cancel, 2.0F);
+            Vec3 origin = user.getEyePosition().add(0, -0.2, 0);
+            PacketDistributor.sendToPlayersNear(level, null, origin.x, origin.y, origin.z, 64,
+                BladeFxPacket.of(BladeFxPacket.NANO_SLASH, origin, user.getLookAngle(), -90F, 4.4F, BladeFxPacket.FLAG_JUST));
             SiSlashBladeContent.sound(user, SoundEvents.PLAYER_ATTACK_CRIT, 1.0F, 1.4F);
         });
         return SiSlashBladeContent.state(1600, 1659, t, "drive_vertical_end");
     }
 
-    /**
-     * A standing wave along the user's look, {@code length} blocks long: two envelopes of {@link #HALF_WAVES} half-waves
-     * (orange dust at the antinodes), white sparks at the nodes.
-     */
-    static void standingWave(ServerLevel level, LivingEntity user, double length) {
+    /** Sends the client 3D standing-wave ribbon + node piezo arcs along the user's look. */
+    static void standingWave(ServerLevel level, LivingEntity user, double length, int flags) {
         Vec3 look = user.getLookAngle().normalize();
-        Vec3 right = look.cross(new Vec3(0, 1, 0));
-        if (right.lengthSqr() < 1.0E-4) right = new Vec3(1, 0, 0);
-        Vec3 up = right.normalize().cross(look).normalize();
         Vec3 from = user.getEyePosition().add(look.scale(0.8)).add(0, -0.25, 0);
-        int n = 60;
-        for (int i = 0; i <= n; i++) {
-            double x = i / (double) n;
-            double amp = 0.45 * Math.sin(Math.PI * HALF_WAVES * x);
-            Vec3 at = from.add(look.scale(length * x));
-            var dust = SiSlashBladeContent.dust(Math.abs(amp) > 0.3 ? HOT : ORANGE, 1.1F);
-            SiSlashBladeContent.particle(level, dust, at.add(up.scale(amp)));
-            SiSlashBladeContent.particle(level, dust, at.add(up.scale(-amp)));
-        }
-        for (int k = 0; k <= HALF_WAVES; k++) {
-            Vec3 node = from.add(look.scale(length * k / HALF_WAVES));
-            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, node.x, node.y, node.z, 4, 0.05, 0.05, 0.05, 0.02);
-        }
+        PacketDistributor.sendToPlayersNear(level, null, from.x, from.y, from.z, 64,
+            BladeFxPacket.of(BladeFxPacket.NANO_WAVE, from, look, (float) length, HALF_WAVES, flags));
+    }
+
+    static void emitOverheatVent(ServerLevel level, LivingEntity user, float heat) {
+        Vec3 hand = user.position().add(user.getLookAngle().scale(0.5)).add(0, user.getBbHeight() * 0.58, 0);
+        PacketDistributor.sendToPlayersNear(level, null, hand.x, hand.y, hand.z, 48,
+            BladeFxPacket.of(BladeFxPacket.NANO_OVERHEAT, hand, user.getLookAngle(), heat, 0F, 0));
+        SiSlashBladeContent.sound(user, SoundEvents.FIRE_EXTINGUISH, 0.7F, 1.6F);
     }
 
     static boolean hasEdge(ItemStack stack) {
@@ -118,8 +118,9 @@ final class SiNanoBlade {
         if (BladeResources.redHot(c)) target.igniteForSeconds(2);
         if (user.level() instanceof ServerLevel level) {
             Vec3 at = target.position().add(0, target.getBbHeight() * 0.6, 0);
-            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 6, 0.2, 0.2, 0.2, 0.15);
-            if (BladeResources.redHot(c)) level.sendParticles(SiSlashBladeContent.dust(ORANGE, 1.0F), at.x, at.y, at.z, 5, 0.2, 0.2, 0.2, 0);
+            int flags = BladeResources.redHot(c) ? BladeFxPacket.FLAG_RED_HOT : 0;
+            PacketDistributor.sendToPlayersNear(level, null, at.x, at.y, at.z, 48,
+                BladeFxPacket.of(BladeFxPacket.NANO_HIT, at, user.getLookAngle(), c.heat(), extra, flags));
         }
     }
 
@@ -135,11 +136,15 @@ final class SiNanoBlade {
             CollabBlade.set(stack, mended);
             if (stack.getDamageValue() == 0) BladeStateAccess.of(stack).filter(ISlashBladeState::isBroken).ifPresent(s -> s.setBroken(false));
         }
-        // a hot edge in the hand shimmers and smokes
-        if (event.isSelected() && c.heat() >= 50 && level.getGameTime() % 6 == 0) {
+        // a hot edge in the hand arcs subtly, and vents smoke while overheated
+        if (event.isSelected() && c.heat() >= 50 && level.getGameTime() % 8 == 0) {
             Vec3 hand = holder.position().add(holder.getLookAngle().scale(0.5)).add(0, holder.getBbHeight() * 0.55, 0);
-            level.sendParticles(SiSlashBladeContent.dust(BladeResources.redHot(c) ? HOT : ORANGE, 0.6F), hand.x, hand.y, hand.z, 2, 0.15, 0.1, 0.15, 0);
-            if (c.overheated()) level.sendParticles(ParticleTypes.SMOKE, hand.x, hand.y, hand.z, 2, 0.1, 0.1, 0.1, 0.01);
+            if (!c.overheated()) {
+                PacketDistributor.sendToPlayersNear(level, null, hand.x, hand.y, hand.z, 32,
+                    BladeFxPacket.of(BladeFxPacket.NANO_HEAT_ARC, hand, holder.getLookAngle(), c.heat(), 0F, 0));
+            } else {
+                level.sendParticles(ParticleTypes.SMOKE, hand.x, hand.y, hand.z, 2, 0.1, 0.1, 0.1, 0.01);
+            }
         }
     }
 }

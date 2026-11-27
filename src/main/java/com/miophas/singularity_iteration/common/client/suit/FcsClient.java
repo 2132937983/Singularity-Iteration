@@ -126,6 +126,7 @@ public final class FcsClient {
         LocalPlayer player = mc.player;
         // 0.1.9.1: Wingman and quantum suit effects (they read synced state; run before the HUD gates)
         com.miophas.singularity_iteration.common.client.armory.WingmanFx.tick(mc);
+        com.miophas.singularity_iteration.common.client.armory.BladeFxRenderer.tick(mc);
         if (player != null && mc.level != null) QuantumFx.tick(mc);
         if (player == null || mc.level == null) {
             FcsState.clear();
@@ -370,6 +371,7 @@ public final class FcsClient {
             com.miophas.singularity_iteration.common.client.armory.GateFx.render(event);      // 0.1.10.32 transfer gates
             QuantumFx.render(event);                                   // 0.1.9.1 photon barrier, active scan
             com.miophas.singularity_iteration.common.client.armory.WingmanFx.render(event);   // 0.1.9.1 Wingman lock-on, flashes, jets
+            com.miophas.singularity_iteration.common.client.armory.BladeFxRenderer.render(event); // collab SlashBlade 3D FX
             com.miophas.singularity_iteration.common.client.armory.CommandFx.render(event);   // 0.1.10.2 orders, markers, recall
             com.miophas.singularity_iteration.common.client.armory.HoloTable.render(event);   // 0.1.10.2 3D holo table
         }

@@ -134,6 +134,9 @@ final class SiSlashBladeServer {
         BladeResources.Spend spend = BladeResources.slashArt(c, kind, coherence);
         if (spend.ok()) {
             CollabBlade.set(stack, spend.core());
+            if (kind == CollabBlade.NANO && !c.overheated() && spend.core().overheated() && user.level() instanceof net.minecraft.server.level.ServerLevel sl) {
+                SiNanoBlade.emitOverheatVent(sl, user, spend.core().heat());
+            }
         } else {
             event.setCanceled(true);
             if (user instanceof Player p) p.displayClientMessage(Component.translatable(spend.refusal().langKey()), true);
@@ -147,7 +150,12 @@ final class SiSlashBladeServer {
         ItemStack stack = event.getBlade();
         CollabBlade kind = CollabBlade.of(stack);
         if (kind != CollabBlade.NANO) return;
-        CollabBlade.set(stack, BladeResources.hit(CollabBlade.core(stack), kind));
+        BladeCore before = CollabBlade.core(stack);
+        BladeCore after = BladeResources.hit(before, kind);
+        CollabBlade.set(stack, after);
+        if (!before.overheated() && after.overheated() && user.level() instanceof net.minecraft.server.level.ServerLevel sl) {
+            SiNanoBlade.emitOverheatVent(sl, user, after.heat());
+        }
     }
 
     @SubscribeEvent

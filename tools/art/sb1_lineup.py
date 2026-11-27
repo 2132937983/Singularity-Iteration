@@ -12,7 +12,7 @@ def main():
     focus = (cam @ np.array([-153, -9, 0]))[:2]
     variants = [
         ("nano","打刀","压电陶瓷 · 碳纤维","#CB6D2D"),
-        ("quantum","太刀","相位芯 · 白陶瓷","#197E8A"),
+        ("quantum","浅弯太刀","镜面钢 · 干涉刃纹","#197E8A"),
         ("singularity","大太刀","约束环 · 暗物质","#9F437E"),
     ]
     for row,(kind,style,detail,accent) in enumerate(variants):

@@ -17,6 +17,10 @@ ISLANDS = {
     'light': (74, 73, 16, 8), 'coil': (88, 73, 24, 15),
     'core': (106, 73, 18, 12), 'impact': (57, 106, 17, 16),
     'hot_break': (77, 106, 17, 16), 'claw': (99, 105, 32, 14),
+    'edge_lip': (119, 2, 250, 8), 'coil_meter': (56, 210, 24, 15),
+    'hook': (75, 210, 22, 9), 'vent_back': (88, 210, 16, 12),
+    'vent_light': (103, 210, 16, 12),
+    **{f'meter_{i+1}': (56+19*(i%3), 150+27*(i//3), 24, 15) for i in range(5)},
 }
 STEEL = '#4B4458'
 LILAC = '#8C84A0'
@@ -41,7 +45,22 @@ def paint(tile, length, width):
         d.line([(12, 10), (88, 10), (132, 9)], fill='#3A3550')
         d.line([(166, 9), (218, 8), (240, 8)], fill='#353045')
         d.line((0, bot, end, bot), fill='#221E30')
-        d.line((0, 1, end, 1), fill='#3F0D34')
+        # Unevenly spaced compression lamellae are densest by the guard.
+        for x in (6,10,15,21,28,36,46,58,72,89,109,133,161,194,232):
+            d.line([(x,5),(x,7),(x+1,9)], fill='#2E2538')
+            d.point((x+1,9), fill='#43334D')
+        # The rails and all the tapered tributaries lead back towards s=0.
+        d.line((7, 13, end-7, 13), fill='#090610')
+        d.line((8, 14, end-9, 14), fill='#423448')
+        for x in (13,40,68,99,132,169,210):
+            d.line([(x+9,11),(x+6,11),(x+3,13),(x,13)], fill='#5A4260')
+            d.line([(x+6,15),(x+3,13),(x,13)], fill='#39283F')
+    elif tile == 'edge_lip':
+        # On the edge facet this swatch and its emission have identical UVs
+        # in every state. The violet lip and black gap each occupy one texel.
+        d.rectangle((0,0,end,bot),fill='#120A19')
+        d.line((0,0,end,0), fill='#5B2A6E')
+        d.line((0,1,end,1), fill='#040207')
     elif tile == 'case':
         d.rectangle((0, 0, end, bot), fill='#2A2433')
         d.polygon([(0, 2), (end, 2), (end, 5), (18, 6)], fill='#3E364B')
@@ -54,9 +73,32 @@ def paint(tile, length, width):
         d.line((0, bot-1, end, bot-1), fill='#302B3B')
     elif tile == 'sear':
         for left, right in ((2, 9), (14, 24), (30, 37), (43, 58), (65, 72), (78, end)):
-            d.polygon([(left, 6), (left+2, 1), (right, 1), (right-1, 6)], fill=MAGENTA)
-            d.line((left+2, 3, right-1, 3), fill=WHITE)
-            d.line((left+2, 4, right-1, 4), fill='#FF89E4')
+            d.polygon([(left, 7), (left+2, 2), (right, 2), (right-1, 7)], fill=MAGENTA)
+            d.line((left+2, 4, right-1, 4), fill=WHITE)
+            d.line((left+2, 5, right-1, 5), fill='#FF89E4')
+    elif tile == 'hook':
+        d.polygon([(2,4),(5,3),(13,3),(17,2),(19,2),(16,4),(9,4),(4,5)], fill=MAGENTA)
+        d.line((6,3,12,3), fill='#FFB1EB')
+    elif tile == 'coil_meter':
+        img = paint('coil',length,width)
+        d = ImageDraw.Draw(img)
+        d.rounded_rectangle((12,2,22,11),radius=2,fill='#1A1522',outline='#80758D')
+        d.rectangle((14,4,20,9),fill='#37213D')
+    elif tile.startswith('meter_'):
+        # Keep the old running seam and an independently addressable inset
+        # lamp in one face. Only the lamp rectangle is gated by the HUD.
+        img.paste(paint('light',7,width), (5,0))
+        d.rectangle((14,4,20,9), fill=MAGENTA)
+        d.rectangle((15,5,19,7), fill='#FF96E9')
+        d.line((15,5,19,5), fill=WHITE)
+    elif tile == 'vent_back':
+        d.rectangle((0,0,end,bot), fill='#241828')
+        d.polygon([(1,2),(3,0),(end,0),(end,1),(3,2),(1,bot)],fill='#72647C')
+        d.rectangle((3,3,end-3,bot-3),fill='#0B0710')
+    elif tile == 'vent_light':
+        d.polygon([(3,5),(5,3),(end-3,3),(end-3,6),(end-5,8),(3,8)],fill=MAGENTA)
+        d.line((5,5,end-4,5),fill=WHITE)
+        d.line((5,6,end-5,6),fill='#FFA6EE')
     elif tile == 'grip':
         d.rectangle((0, 0, end, bot), fill='#2C2936')
         for x in range(-14, length, 9):

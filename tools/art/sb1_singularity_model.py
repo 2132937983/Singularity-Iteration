@@ -19,6 +19,11 @@ def butt(mesh, ring, tile, reverse=False, offset=0):
     left, right = min(p[2] for p in ring), max(p[2] for p in ring)
     def coord(p):
         return ((p[2]-left)/max(.001,right-left), (hi-p[1])/max(.001,hi-lo))
+    if all(p[0]==ring[0][0] for p in ring):
+        # Convex planar caps have affine UVs. Triangulating from the rim
+        # preserves the same surface without a spare centre in every LOD.
+        surface(mesh,[(x+offset,y,z) for x,y,z in ring],tile,[coord(p) for p in ring],reverse)
+        return
     center = tuple(sum(p[i] for p in ring)/len(ring) for i in range(3))
     for i in range(len(ring)):
         pts = [center,ring[i],ring[(i+1)%len(ring)]]
@@ -74,14 +79,23 @@ def sword_body(body, glow, part, item):
                 return min(1,max(0,(ROOT_X-p[0])/(ROOT_X-TIP_X)))
             s = [along(p) for p in points]
             tt = (t,t,tj,tj)
-            if t == tj:
+            if i in (0,len(section)-1):
+                face_uv = [(u,v/edge_span) for u,v in zip(s,tt)]
+                surface(body, points, 'edge_lip', face_uv)
+                side = 1 if i==0 else -1
+                overlay = [(x,y,z+side*.09) for x,y,z in points]
+                surface(glow, overlay, 'sear', face_uv)
+            elif t == tj:
                 surface(body, points, 'dark')
             else:
                 surface(body, points, 'blade', list(zip(s,tt)))
-            if i in (0,len(section)-1):
-                side = 1 if i==0 else -1
+            if i in (1,len(section)-2) and -325 <= xa <= -319:
+                # A short separate trace follows the inside of the upturned
+                # hook. Transparent ends keep it apart from the main edge.
+                side = 1 if i==1 else -1
                 overlay = [(x,y,z+side*.09) for x,y,z in points]
-                surface(glow, overlay, 'sear', [(u,v/edge_span) for u,v in zip(s,tt)])
+                coords = [((-319-x)/13,(v-edge_span)/(.71-edge_span)) for (x,_,_),v in zip(points,tt)]
+                surface(glow,overlay,'hook',coords)
     if part != 'tip':
         butt(body, sword_ring(ROOT_X,section), 'dark')
     if part in ('hilt','tip'):
@@ -115,6 +129,24 @@ def sleeve(mesh, rows, broad, trim, close=True):
     return rings
 
 
+def recessed_port(body,glow,face,item):
+    # Face winding points towards the nose (-X). The floor lies 1.6 units
+    # inside the housing; neither opening changes the guard's outer contour.
+    if item:
+        surface(body,face,'vent_back')
+        surface(glow,[(x-.09,y,z) for x,y,z in face],'vent_light')
+        return
+    cx,cy,cz=(sum(p[i] for p in face)/4 for i in range(3))
+    opening=[(cx,lerp(cy,y,.75),lerp(cz,z,.75)) for _,y,z in face]
+    floor=[(cx+1.6,lerp(cy,y,.59),lerp(cz,z,.59)) for _,y,z in face]
+    for i in range(4):
+        j=(i+1)%4
+        surface(body,(face[i],face[j],opening[j],opening[i]),'metal')
+        surface(body,(opening[i],opening[j],floor[j],floor[i]),'port')
+    surface(body,floor,'vent_back')
+    surface(glow,[(x-.09,y,z) for x,y,z in floor],'vent_light')
+
+
 def restraint(body, glow, item):
     # Three different surfaces remain visible in a diagonal view: faceted
     # field housing, its open bore and the non-emitting core inside the bore.
@@ -126,8 +158,13 @@ def restraint(body, glow, item):
     for i in range(n):
         j = (i+1)%n
         for a,b,tile,rev in ((outer_a,outer_b,'metal',False), (inner_a,inner_b,'port',True),
-                              (inner_a,outer_a,'metal',False), (outer_b,inner_b,'metal',False)):
+                              (inner_a,outer_a,'metal',False)):
             surface(body,(a[i],b[i],b[j],a[j]),tile,reverse=rev)
+        nose=(outer_b[i],inner_b[i],inner_b[j],outer_b[j])
+        if i in (n-1,n//2-1):
+            recessed_port(body,glow,nose,item)
+        else:
+            surface(body,nose,'metal')
         def inner_light(p):
             x,y,z = p
             return (x,.6+(y-.6)*.987,z*.987)
@@ -241,8 +278,10 @@ def case(item=False):
         in_coil=ra>0 and rb>0
         for i in range(sides):
             j=(i+1)%sides
+            meter_face=in_coil and i==flank[0]
             if in_coil or ra!=rb:
-                surface(body,(a[i],b[i],b[j],a[j]),'coil' if in_coil else 'metal')
+                tile='coil_meter' if meter_face else 'coil' if in_coil else 'metal'
+                surface(body,(a[i],b[i],b[j],a[j]),tile)
             else:
                 u,v=(MOUTH-xa)/(MOUTH+335),(MOUTH-xb)/(MOUTH+335)
                 t=(1,0) if i==flank[1] else (0,1)
@@ -251,9 +290,11 @@ def case(item=False):
             if in_coil and (i in flank or k==0):
                 # A magenta status seam crosses the coil surface. The mouth
                 # seam continues around its rim; the other coils vent sideways.
-                ca,cb=case_row(lerp(xa,xb,.22),ra+.09),case_row(lerp(xa,xb,.48),ra+.09)
+                left,right=(xa,xb) if meter_face else (lerp(xa,xb,.22),lerp(xa,xb,.48))
+                ca,cb=case_row(left,ra+.09),case_row(right,ra+.09)
                 p,q=oval(*ca,section),oval(*cb,section)
-                surface(glow,(p[i],q[i],q[j],p[j]),'light')
+                tile=f'meter_{COLLARS.index((xa,xb))+1}' if meter_face else 'light'
+                surface(glow,(p[i],q[i],q[j],p[j]),tile)
     x,cy,h,w=case_row(MOUTH)
     inner=oval(x,cy,h-1.15,w-1.25,section)
     throat=oval(x-11,cy-.1,h-1.25,w-1.32,section)

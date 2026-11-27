@@ -42,7 +42,7 @@ NAME = re.compile(r"^[A-Za-z0-9_]+$")
 GRIP_X = 41.74
 TEMPLATE_LENGTH = GRIP_X - (-290.96)  # the template blade, grip end to tip
 # Section 6: the length of each blade against the template (a little slack for the tip's shape).
-LENGTH = {"nano": (0.97, 1.08), "quantum": (1.02, 1.13), "singularity": (1.07, 1.17)}
+LENGTH = {"nano": (0.97, 1.08), "quantum": (1.02, 1.08), "singularity": (1.07, 1.17)}
 # The item_* frame: the outline of SlashBlade's default blade item objects (model/blade.obj).
 FRAME_X = (-88.0, 72.0)
 FRAME_Y = (-84.0, 81.0)
@@ -149,6 +149,11 @@ def bounds(vertices, indices):
 WIDTH = (7.0, 13.0)
 THICK, THICK_WARN = 1.2, 0.9
 DROP = (12.0, 34.0)
+# Section 6: the curve of each blade (the centre line's drop from 10% to 90%). The template drops 21.
+DROPS = {"nano": (18.0, 25.0), "quantum": (14.0, 19.0), "singularity": (21.0, 30.0)}
+# The curve runs along the whole blade: the last third may drop at most this many times the first third (the
+# template 2.8, a curve bunched at the tip like a sickle 4.4).
+TIP_HEAVY = 3.5
 BOW = 1.5
 GUARD = (-60.0, -30.0, 34.0, 24.0)    # x range, the most y and z extent
 GRIP = (0.0, GRIP_X, 14.0, 9.0)
@@ -174,7 +179,7 @@ def envelope(vertices, faces, low, high):
     return max(p[1] for p in points) - min(p[1] for p in points), max(p[2] for p in points) - min(p[2] for p in points)
 
 
-def skeleton(vertices, objects, errors, warnings):
+def skeleton(vertices, objects, errors, warnings, blade_name=""):
     blade = objects["blade"]["vfaces"]
     tip = min(vertices[i][0] for face in blade for i in face)
     sections, thin_top, thin_bottom, widths, thicks = [], 0, 0, [], []
@@ -222,9 +227,14 @@ def skeleton(vertices, objects, errors, warnings):
                       "SlashBlade's motions lead with +Y, the edge must be on +Y (section 3.0)")
     centre = [(x, (low + high) / 2) for x, low, high in sections]
     drop = centre[0][1] - centre[-1][1]
-    if not DROP[0] <= drop <= DROP[1]:
+    low, high = DROPS.get(blade_name, DROP)
+    if not low <= drop <= high:
         errors.append(f"the centre line drops {drop:.1f} from x {centre[0][0]:.0f} to {centre[-1][0]:.0f}, "
-                      f"section 3.0 gives {DROP[0]:.0f}..{DROP[1]:.0f} (the template: 21): the blade is not curved like a katana")
+                      f"section {'6' if blade_name in DROPS else '3.0'} gives {low:.0f}..{high:.0f} for this blade (the template: 21)")
+    first, last = centre[0][1] - centre[3][1], centre[5][1] - centre[8][1]
+    if last > TIP_HEAVY * max(first, 0.5):
+        errors.append(f"the last third of the blade drops {last:.1f}, the first third {first:.1f}: the curve is bunched at "
+                      f"the tip (at most {TIP_HEAVY}x; the template 2.8x), spread it along the blade (section 3.0)")
     (xa, ya), (xm, ym), (xb, yb) = centre[0], centre[4], centre[-1]
     bow = ym - (ya + (yb - ya) * (xm - xa) / (xb - xa))
     if bow < BOW:
@@ -314,7 +324,7 @@ def check(blade: str) -> tuple[list[str], list[str]]:
             if not low <= ratio <= high:
                 errors.append(f"blade is {ratio:.2f} of the template length, section 6 gives {low:.2f}..{high:.2f}")
     if "blade" in objects:
-        skeleton(vertices, objects, errors, warnings)
+        skeleton(vertices, objects, errors, warnings, blade)
     if "effect" in objects and "sheath" in objects:
         effect, sheath = objects["effect"]["v"], objects["sheath"]["v"]
         eb, sb = bounds(vertices, effect), bounds(vertices, sheath)

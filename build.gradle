@@ -243,6 +243,13 @@ dependencies {
     // Curios API (compile-time only, optional dependency)
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
 
+    // 0.1.11.225: GeckoLib, optional: it only drives the Wingman's and the suits' keyframe animations (the classes that use it
+    // load only when it is installed). In the dev runs and the GameTests it is present so that both paths are exercised.
+    // Local copy (offline build, like GuideMe and Ponder) of software.bernie.geckolib:geckolib-neoforge-1.21.1 from
+    // https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/ (sha1 75a73fab57b6bdc667a0d645922c2c5d6b9b77df).
+    compileOnly files("libs/compile-only/geckolib-neoforge-1.21.1-${geckolib_version}.jar")
+    localRuntime files("libs/compile-only/geckolib-neoforge-1.21.1-${geckolib_version}.jar")
+
 }
 
 tasks.named('jar').configure {

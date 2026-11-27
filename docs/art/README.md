@@ -2,6 +2,8 @@
 
 奇点迭代（Singularity Iteration，mod id `mio_icif`，NeoForge 1.21.1）这一轮的套装模块美术由你（GPT）来画，代码和接入由 Claude 负责。本文是你的入口：先读它，再读它点名的文件，然后按“批次”交付。
 
+> **当前批次是 [AN1：僚机与战甲的 GeckoLib 关键帧动作](batches/AN1.md)，由 Codex 来做。** 它不画贴图，交付的是 Blockbench 骨架和 GeckoLib 动画 JSON。下面第 0 到 3 节是为贴图批次写的，AN1 的文件、格式、检查脚本（`tools/art/check_an1.py`）和预览都以 AN1 说明为准；第 4 节的分支、推送和报告规矩照常适用。
+
 ## 0. 你负责什么
 
 **你写的文件：**
@@ -56,7 +58,7 @@
 
 ## 5. 当前批次
 
-暂无。新批次开始时，这里会写明批次说明和分支。
+[AN1：僚机与战甲的 GeckoLib 关键帧动作](batches/AN1.md)，契约文件 [`an1/spec.json`](an1/spec.json)。从分支 `art/an1-brief` 切新分支 `art/an1`，每交一部分就提交并推送 `art/an1` 到同一个仓库，不开 PR，不改其他分支。交付前运行 `python3 tools/art/check_an1.py --part <部分>`，要输出 `OK`。
 
 已完成：
 

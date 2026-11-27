@@ -10,6 +10,8 @@ allprojects { project ->
             gameDirectory = project.file('build/hud-capture-game')
             systemProperty 'si.capture', project.file('build/hud-capture').absolutePath
             systemProperty 'si.capture.scene', project.findProperty('siCaptureScene') ?: 'wingman'
+            // 0.1.11.225: -PsiWingmanKeyframe=calibrate makes landed Wingmen hold that keyframe animation (scene wingman_keyframes)
+            if (project.findProperty('siWingmanKeyframe')) systemProperty 'si.wingman.keyframe', project.findProperty('siWingmanKeyframe')
             programArguments.addAll '--width', '1600', '--height', '900'
             jvmArguments.addAll '-Xmx3G', '-Xms512m'
             logLevel = org.slf4j.event.Level.INFO

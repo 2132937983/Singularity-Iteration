@@ -66,8 +66,9 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
         // 0.1.11.44 (motion audit M-4): the tilt follows the flight direction (pitch forward or back, roll to the side)
         // 0.1.11.47 (M4): the hover float and the dip of a touchdown
         float air = 1 - entity.landBlend(partialTick);
-        float drop = WingmanPose.hoverBob(entity.tickCount + partialTick, air, flightFactor(entity, partialTick))
-            - 0.12F * WingmanPose.landingCrouch(entity.sinceLanding(partialTick));
+        // 0.1.11.225 (A0): the keyframe landing has its own dip
+        float dip = WingmanKeyframes.active(entity, partialTick) ? 0 : 0.12F * WingmanPose.landingCrouch(entity.sinceLanding(partialTick));
+        float drop = WingmanPose.hoverBob(entity.tickCount + partialTick, air, flightFactor(entity, partialTick)) - dip;
         if (drop != 0) pose.translate(0, drop * scale, 0);
         // 0.1.11.61 (Q0, decision two A): on the ground a blade combo moves the whole body as it moves a player
         if (entity.onGround() && SlashBladeResharpedBridge.isBlade(entity.getMainHandItem())) {
@@ -222,6 +223,12 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
                 leftArm.xRot += 0.25F * crouch - 0.35F * push;
                 rightLeg.xRot += -0.25F * crouch + 0.45F * push;
                 leftLeg.xRot += -0.20F * crouch + 0.40F * push;
+            }
+            // 0.1.11.225 (A0): with GeckoLib, a Wingman on the ground plays the AN1 keyframes (stand, look round, landing, hits);
+            // they replace the six parts, and the head still looks where the Wingman looks
+            if (WingmanKeyframes.pose(entity, this, partial)) {
+                head.yRot += netHeadYaw * Mth.DEG_TO_RAD;
+                head.xRot += headPitch * Mth.DEG_TO_RAD;
             }
             // 0.1.11.52 (P0): idle glances, each Wingman on its own (they replaced the age-driven waves, which a squad shared)
             float[] look = entity.glance(partial);

@@ -3601,6 +3601,71 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "wingman_keyframes" (-Dsi.capture.scene=wingman_keyframes), 0.1.11.225 (Wingman motion A0): one Wingman (diamond
+     * suit, sword) lands beside its still owner; a camera stand takes it from its right side and from the front while it
+     * stands, looks round and takes two blows. With -PsiWingmanKeyframe=calibrate it holds the AN1 calibration pose (right arm
+     * forward, left leg back, head to its own left, 2 pixels up), which checks the GeckoLib bridge's signs.
+     */
+    private static void sceneWingmanKeyframes() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, -6.5, 0, 8);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[] suit = {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                    new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), ItemStack.EMPTY};
+                for (int c = 0; c < 6; c++) if (!suit[c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
+                Singularity_Iteration.LOGGER.info("capture keyframes deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        // the Wingman lands after 40 still ticks of its owner
+        server(160, sp -> {
+            var w = sp.serverLevel().getEntitiesOfClass(com.miophas.singularity_iteration.common.armory.WingmanEntity.class, sp.getBoundingBox().inflate(16)).stream().findFirst().orElse(null);
+            if (w == null) { Singularity_Iteration.LOGGER.warn("capture keyframes: no Wingman"); return; }
+            Singularity_Iteration.LOGGER.info("capture keyframes: Wingman at {} landed {} yaw {}", w.position(), w.landed(), w.getYRot());
+            double yaw = Math.toRadians(w.getYRot());
+            double fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -fz, rz = fx;   // its forward and its right
+            lightTrailCamera(sp, w.getX() + rx * 3.4, w.getY() + 0.4, w.getZ() + rz * 3.4, w.getX(), w.getY() + 1.0, w.getZ());
+        });
+        client(3, CaptureDirector::attachCaptureCamera);
+        for (int f = 0; f < 6; f++) shot(f == 0 ? 2 : 20, String.format("wingman_keyframes/side_%02d", f));
+        server(1, sp -> {
+            var w = sp.serverLevel().getEntitiesOfClass(com.miophas.singularity_iteration.common.armory.WingmanEntity.class, sp.getBoundingBox().inflate(16)).stream().findFirst().orElse(null);
+            if (w == null) return;
+            double yaw = Math.toRadians(w.getYRot());
+            double fx = -Math.sin(yaw), fz = Math.cos(yaw);
+            lightTrailCamera(sp, w.getX() + fx * 3.6, w.getY() + 0.4, w.getZ() + fz * 3.6, w.getX(), w.getY() + 1.0, w.getZ());
+        });
+        client(3, CaptureDirector::attachCaptureCamera);
+        for (int f = 0; f < 4; f++) shot(f == 0 ? 2 : 20, String.format("wingman_keyframes/front_%02d", f));
+        // two light blows (the hit reactions)
+        server(1, sp -> sp.serverLevel().getEntitiesOfClass(com.miophas.singularity_iteration.common.armory.WingmanEntity.class, sp.getBoundingBox().inflate(16))
+            .forEach(w -> w.hurt(sp.serverLevel().damageSources().generic(), 0.5F)));
+        for (int f = 0; f < 6; f++) shot(1, String.format("wingman_keyframes/hit_%02d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_keyframes".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanKeyframes();
+        }
+    }
+
+    /**
      * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
      * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie from the side;
      * 0.1.11.53 (P1): on its own AI (the combo chains), a frame every 2 ticks. Without SlashBlade the scene shows nothing

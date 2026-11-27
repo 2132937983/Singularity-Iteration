@@ -1,6 +1,38 @@
 # 奇点迭代变更日志
 
-累计记录 `0.1.7.16` 至 `0.1.11.224` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+累计记录 `0.1.7.16` 至 `0.1.11.225` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+
+## 0.1.11.225
+
+基于 0.1.11.224。僚机动作大修 A0：GeckoLib 作为可选前置接入，僚机落地后改用关键帧动作。关键帧来自 Codex 按 AN1 批次说明做的第一部分（24 个动作）。
+
+- GeckoLib 4.9.4（Minecraft 1.21.1，NeoForge）是可选依赖：`neoforge.mods.toml` 里声明为 optional，没装时僚机照旧用代码算的姿势。
+  - 本地放一份官方 jar `libs/compile-only/geckolib-neoforge-1.21.1-4.9.4.jar`（sha1 与 GeckoLib Maven 一致），编译只依赖它；开发运行和 GameTest 里会加载它，两条路径都能跑到。原因：Gradle 全局设置里的代理无法连接，做法同 GuideMe 和 Ponder。
+- 不让 GeckoLib 画僚机。
+  - 原因：僚机穿的是任意模组的盔甲，盔甲层、核心挂件、发光层、受击涟漪和拔刀剑都只认原版人形模型。
+  - 做法：每帧让 GeckoLib 在 AN1 的 7 根骨骼上算一步动画，但不渲染；读出各骨骼的旋转和位移，按父子关系（root 带 body 和双腿，body 带头和双臂）换算到原版模型的 6 个部件上。弯腰时头和手臂会跟着动，root 抬起时整体抬起。
+  - GeckoLib 加载关键帧时会把 x、y 旋转取反，这里先还原成作者写的值。
+  - 新增 `WingmanRig`（纯数学）、`WingmanKeyframeChoice`（选动作）、`WingmanKeyframes`（客户端桥接，不含 GeckoLib 类型）。`client/compat/geckolib/GeckoWingman` 只在装了 GeckoLib 时加载：所有僚机共用一个 `GeoReplacedEntity`，每个实体一个动画实例，分 base 和 react 两个控制器。
+  - 驱动出错一次就停用，退回代码姿势并记日志。
+- 这一版只在僚机落地时播放关键帧：
+  - 着地时播 `land_light`；
+  - 之后站立 `idle_stand`，偶尔播环顾 `idle_look` 或自检 `idle_check`。按实体编号错开，编队里的几架不会同时动；
+  - 受击时上半身播 `hit_front`、`hit_back`、`hit_left` 或 `hit_right`；
+  - 头仍然看向僚机看的地方；
+  - 着地下沉改由关键帧负责，原来代码里的下沉在有关键帧时关闭。
+- 飞行仍用代码姿势。步行、跑、跳等等到 G3 地面形态再接。
+- 合入 AN1 批次说明（`docs/art/batches/AN1.md`、契约 `docs/art/an1/spec.json`、检查脚本）和 Codex 交的第一部分：
+  - 骨架 `geo/entity/si_humanoid_rig.geo.json` 和动画 `animations/entity/wingman.animation.json`；
+  - Blockbench 工程、生成与预览脚本、每个动作的预览 GIF 和总览图、报告 `docs/art/an1/PART1.md`；
+  - `check_an1.py --part 1` 输出 OK。
+- 截图场景 `wingman_keyframes`：一架僚机落在不动的主人旁边，相机从右侧和正面拍站立、环顾和两次受击。`-PsiWingmanKeyframe=calibrate`（开发用，对应系统属性 `si.wingman.keyframe`）让落地的僚机停在校准姿势。实机核对结果：右臂向正前方抬平、左腿向后、头转向自己的左侧，方向与契约一致。
+- 测试：新增 `Round111225GameTests`（6 项）：
+  - 骨架不动时与原版站姿相同；
+  - 校准姿势换算后与作者写的一致；
+  - 身体前弯 30° 时，手臂枢轴随身体移动，腿不动；
+  - 只有落地时才放关键帧，空闲动作大多是站立，受击方向分前后左右；
+  - 骨架有 7 根骨骼，动画文件里有第一部分的 24 个动作；
+  - GeckoLib 声明为可选依赖。
 
 ## 0.1.11.224
 

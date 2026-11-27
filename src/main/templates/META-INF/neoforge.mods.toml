@@ -130,6 +130,14 @@ side="BOTH"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    modId="geckolib"
+    # 0.1.11.225: keyframe animations of the Wingman and the suits; without it they keep the code-driven poses
+    type="optional"
+    versionRange="[4.9,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="curios"
     type="optional"
     reason="For trinket equipment slots (rings, necklaces, belts, back)"
